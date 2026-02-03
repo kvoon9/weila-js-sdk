@@ -1,0 +1,103 @@
+syntax = "proto2";
+
+package WL.Common;
+
+//option objc_class_prefix = "WLCommon";
+option java_package = "com.voistech.weila.protobuf";
+//option java_outer_classname = "WEILAIMMessage";
+//option optimize_for = LITE_RUNTIME; //调试使用SPEED,发布使用LITE_RUNTIME
+
+enum ClientType {
+    //Phone
+    CLIENT_IOS         = 0x11;
+    CLIENT_ANDROID     = 0x12;
+    
+    //Extension
+    CLIENT_SMART       = 0x21;
+    
+    CLIENT_EMBEDDED    = 0x24;
+    CLIENT_EMBEDDED_ATTACH = 0x25;
+    
+    //H5 WEB
+    CLIENT_MINIPROGRAM = 0x41;
+    CLIENT_WEB         = 0x42;
+    
+    //Desktop
+    CLIENT_WINDOWS     = 0x81;
+    CLIENT_MAC         = 0x82;
+}
+
+//用户状态类型
+enum UserStatusType {
+    USER_STATUS_ONLINE          = 0x01; //在线
+    USER_STATUS_OFFLINE         = 0x02; //离线
+    USER_STATUS_LEAVE           = 0x03; //离开
+    USER_STATUS_BUSY            = 0x04; //忙碌
+    USER_STATUS_NOT_DISTURB     = 0x05; //免打扰
+}
+
+//用户状态
+message UserStatus {
+    optional uint32 statusType = 1; //状态类型
+    optional uint32 clientType = 2; //设备类型 参考ClientType
+    optional uint64 updated = 3; //更新时间
+}
+
+message UserStatusInfo {
+    optional uint32 userId = 1;
+    repeated UserStatus statusList = 2;
+}
+
+enum UserType {
+    USER_NORMAL = 0; //普通APP用户
+    USER_DEVICE = 1;  //设备用户
+}
+
+message UserInfo{
+    optional uint32 userId = 1;
+    optional string number = 2; //微喇号
+    optional uint32 sex = 3; // 用户性别, 0 男 1 女
+    optional string nick = 4; //绰号
+    optional string avatar = 5;
+    optional string email = 6;
+    optional string phone = 7;
+    optional string countryCode = 8; //国家码 默认86
+    optional uint32 status = 9; //0:正常 其它:删除
+    optional string signature = 10; //个性签名
+    optional uint64 created = 11; //注册时间
+    optional uint32 type = 12; //用户类型 0 普通用户 1 设备用户
+}
+
+enum AnswerStatus {
+    ANSWER_NORMAL    = 0x00; //未处理
+    ANSWER_ACCEPT    = 0x01; //接受
+    ANSWER_REJECT    = 0x02; //拒绝
+    ANSWER_IGNORE    = 0x03; //忽略
+}
+
+enum SubscribeType {
+    SUBSCRIBE_OPEN   = 0; //开启订阅
+    SUBSCRIBE_CLOSE  = 1; //关闭订阅
+}
+
+enum ShieldStatus {
+    SHIELD_CLOSE    = 0; //不屏蔽消息
+    SHIELD_OPEN     = 1; //屏蔽消息
+    SHIELD_MUTE     = 2; //静音
+}
+
+//性别类型
+enum GenderType {
+    GANDER_MAN = 0;
+    GANDER_WOMAN = 1;
+}
+
+enum SessionType {
+    SESSION_TYPE_SINGLE         = 0x01;   //单个用户会话
+    SESSION_TYPE_GROUP          = 0x02;   //群会话
+    SESSION_TYPE_ROOM           = 0x04;   //房间
+    SESSION_TYPE_SERVICE        = 0x08;   //服务
+    SESSION_TYPE_CORP_SINGLE    = 0x11;   //企业个人会话
+    SESSION_TYPE_CORP_GROUP     = 0x12;   //企业群会话
+    SESSION_TYPE_CORP_GROUP_TMP = 0x13;   //企业临时群会话
+}

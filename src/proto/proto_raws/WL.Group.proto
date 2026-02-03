@@ -1,0 +1,658 @@
+syntax = "proto2";
+
+package WL.Group;
+import "WL.Common.proto";
+
+//option objc_class_prefix = "WLGroup";
+option java_package = "com.voistech.weila.protobuf";
+//option java_outer_classname = "WEILAIMMessage";
+//option optimize_for = LITE_RUNTIME; //调试使用SPEED,发布使用LITE_RUNTIME
+
+enum GroupCommandId {
+    GROUP_COMMAND_GET_GROUPVERSION          = 0x00; //获取群组版本
+    GROUP_COMMAND_GET_GROUPATTRIBUTE        = 0x01; //获取群组属性
+    GROUP_COMMAND_CREATE_GROUP              = 0x02; //创建群组
+    GROUP_COMMAND_CHANGE_GROUPATTRIBUTE     = 0x03; //修改群组属性
+    GROUP_COMMAND_GET_GROUPINFO             = 0x04; //获取群信息
+    GROUP_COMMAND_GET_ONLINE_MEMBER         = 0x05; //获取群在线成员
+    GROUP_COMMAND_CHANGE_MEMBERINFO         = 0x06; //修改群成员信息
+    GROUP_COMMAND_NEW_MEMBER                = 0x07; //新成员加入
+    GROUP_COMMAND_GET_MEMBER_USERINFO       = 0x08; //获取群成员用户信息
+    GROUP_COMMAND_DELETE_MEMBER             = 0x09; //删除群成员
+    GROUP_COMMAND_DELETE_GROUP              = 0x0a; //删除群组
+    GROUP_COMMAND_GET_GROUP_INVITEINFO      = 0x0b; //获取群邀请列表
+    GROUP_COMMAND_GROUP_INVITE              = 0x0c; //邀请群成员
+    GROUP_COMMAND_ANSWER_GROUP_INVITE       = 0x0d; //应答邀请
+    GROUP_COMMAND_GET_GROUP_JOININFO        = 0x0e; //获取加群申请列表
+    GROUP_COMMAND_GROUP_JOIN                = 0x0f; //申请加群
+    GROUP_COMMAND_ANSWER_GROUP_JOIN         = 0x10; //加群应答
+    GROUP_COMMAND_BROADCAST                 = 0x11; //群广播
+    GROUP_COMMAND_GET_BLACKLIST             = 0x12; //获取群成员黑名单
+    GROUP_COMMAND_CHANGE_BLACKLIST          = 0x13; //修改群成员黑名单
+    GROUP_COMMAND_GET_MEMBER_CHANGE_LOG     = 0x14; //获取群成员变更日志(只保存一天)
+    GROUP_COMMAND_GET_NOTICE                = 0x15; //获取群通告
+    GROUP_COMMAND_ADD_NOTICE                = 0x16; //添加群通告
+    GROUP_COMMAND_CHANGE_NOTICE             = 0x17; //修改群通告
+    GROUP_COMMAND_DELETE_NOTICE             = 0x18; //删除群通告
+    GROUP_COMMAND_GET_GROUPDETAIL           = 0x1b; //获取群组详情
+    GROUP_COMMAND_GET_SUB_GROUPATTRIBUTE    = 0x1c; //获取子用户群属性
+    GROUP_COMMAND_ADD_SUB_MEMBER            = 0x1d; //添加子用户到群
+    
+    //EMBEDDED
+    GROUP_EMBEDDED_COMMAND_GET_GROUPVERSION = 0x40; //获取嵌入式群组版本
+    GROUP_EMBEDDED_COMMAND_GET_GROUPINFO    = 0x41; //获取嵌入式群组信息
+}
+
+enum GroupType {
+    //个人群
+    GROUP_PERSONAL_NORMAL       = 0x01; //正式群
+    GROUP_PERSONAL_TMP          = 0x02; //临时群(临时性,定期清除僵尸群)
+    
+    //固定群(固定群只能有管理平台接口管理)
+    GROUP_CORP_NORMAL           = 0x21; //企业正式群
+    GROUP_CORP_TMP              = 0x22; //企业临时群
+}
+
+enum GroupBurstType {
+    GROUP_BURST_QUEUE       = 0x00; //排队式
+    GROUP_BURST_CONTROL     = 0x01; //抢占式
+    GROUP_BURST_INTERRUPT   = 0x02; //打断式(高优先级打断低优先级)
+}
+
+enum GroupMemberType {
+    GROUP_MEMBER_NORMAL     = 0x01;
+    GROUP_MEMBER_ADMIN      = 0x02;
+    GROUP_MEMBER_CIRCLE     = 0x03;
+}
+
+enum GroupPublicType {
+    GROUP_PUBLIC_CLOSE = 1;         //不公开
+    GROUP_PUBLIC_OPEN = 2;          //公开
+}
+
+enum GroupAuthType{
+    GROUP_AUTH_NONE = 1;        //不鉴权
+    GROUP_AUTH_CONFIRM = 2;     //管理员确认
+    GROUP_AUTH_CONFIRM_OR_PASSWORD = 3;     //管理员确认或密码认证
+    GROUP_AUTH_CONFIRM_AND_PASSWORD = 4;    //管理员确认与密码认证
+}
+
+enum GroupSearchType {
+  GROUP_SEARCH_NORMAL = 1; //按群号或群名搜索
+  GROUP_SEARCH_NUM = 2; //仅按群号搜索
+  GROUP_SEARCH_NAME = 3; //仅按群名搜索
+};
+
+message GroupVersionInfo {
+    optional uint64 groupId = 1; //群组Id
+    optional uint32 groupVersion = 2; //群组版本号(RspGetGroupVersion为服务器版本号,ReqGetGroupInfo为客户端版本号)
+    optional uint32 memberVersion = 3; //群组成员版本号(RspGetGroupVersion为服务器版本号,ReqGetGroupInfo为客户端版本号)
+}
+
+message GroupAttribute {
+    optional uint64 groupId = 1; //群组Id
+    optional uint32 version = 2; //群组版本号
+    optional uint32 memberVersion = 3; //群组成员版本号
+    optional string name = 4; //群组名
+    optional string number = 5; //群号
+    optional string avatar = 6; //群头像
+    optional uint32 ownerId = 7; //群主
+    optional uint32 type = 8; //群类型(GroupType)
+    optional string desc = 9; //群介绍
+    optional string home = 10; //归属地
+    optional string latitude = 11; //纬度
+    optional string longitude = 12; //经度
+    optional uint32 publicType = 13; //公开类型
+    optional uint32 authType = 14; //认证类型
+    optional uint32 class = 15; //分类
+    optional uint32 memberLimit = 16; //成员上限
+    optional uint32 memberCount = 17; //成员数
+    optional uint64 created = 18; //创建时间
+    optional uint32 audioQuality = 19; //音质
+    optional uint32 audioSupport = 20; //支持的音质类型
+    optional uint32 audioFrame = 21; //每包帧数 默认25 5 10 15 20 25
+    optional uint32 burstType = 22; //话权模式 参考GroupBurstType
+    optional uint32 shutupStatus = 23; //整体禁言(0不禁言 1禁言)
+}
+
+message EmbeddedGroupInfo {
+    optional uint64 groupId = 1; //群组Id
+    optional uint32 version = 2; //群组版本号
+    optional uint32 type = 3; //群类型
+    optional string name = 4; //群组名
+    optional string number = 5; //群号
+    optional uint32 ownerId = 6; //群主
+    optional uint32 burstType = 7; //话权模式
+    optional uint32 shutupStatus = 8;//整体禁言(0不禁言 1禁言)
+    optional uint32 shieldStatus = 9; //0 不屏蔽 1 屏蔽消息
+    optional uint32 tts = 10; //0 关闭 1开启
+    optional uint32 locationShare = 11; //0 不共享 1共享
+    optional uint32 memberVersion = 16; //成员版本
+    optional uint32 memberCount = 17; //成员数
+    optional uint32 memberType = 18; //成员类型
+    optional uint32 memberPrority = 19; //话权优先级
+    optional uint32 memberShutupStatus = 20;
+    optional uint64 memberShutupTimeout = 21;
+}
+
+message GroupMemberInfo {
+    optional uint32 userId = 1; //成员用户Id
+    optional uint32 status = 2; //状态 0正常 1退群
+    optional uint32 type = 3; //成员类型(GroupMemberType)
+    optional string remark = 4; //备注
+    optional uint32 prority = 5; //优先级
+    optional uint32 shutupStatus = 6; //0不禁言 1禁言
+    optional uint64 shutupTimeout = 7; //禁言超时时间单位秒 shutupStatus为1时有效,参考UTC
+    optional uint32 shieldStatus = 8; //0 不屏蔽 1 屏蔽消息
+    optional uint32 tts = 9; //0 关闭 1开启
+    optional uint32 locationShare = 10; //0 不共享 1共享
+    
+    optional uint64 created = 15; //加群时间
+}
+
+message GroupNoticeInfo {
+    optional uint64 noticeId = 1; //公告Id
+    optional uint32 status = 2; //状态 0有效 1删除
+    optional string notice = 3; //公告信息
+    optional uint64 created = 4; //创建时间
+}
+
+message GroupInviteInfo {
+    optional uint32 inviterId = 1; //邀请者用户Id
+    optional uint64 groupId = 2; //群组Id
+    optional uint32 status = 3; //状态 参考WL.Common.AnswerStatus
+    optional uint64 updated = 4; //邀请时间
+}
+
+message GroupJoinInfo {
+    optional uint32 joinId = 1; //请求者用户信息
+    optional uint64 groupId = 2; //群组Id
+    optional uint32 status = 3; //状态 参考WL.Common.AnswerStatus
+    optional string detail = 4; //详情
+    optional uint64 updated = 5; //申请时间
+}
+
+message GroupBroadcastInfo {
+    optional uint64 groupId = 1; //群Id
+    optional uint32 broadcastId = 2; //广播发起者ID
+    optional uint32 status = 3; //广播状态 0关闭 1开启
+}
+
+enum GroupMemberChangeType {
+    GROUPMEMBER_CHANGE_JOIN = 0; //加群
+    GROUPMEMBER_CHANGE_EXIT = 1; //退群
+    GROUPMEMBER_CHANGE_KICKOUT = 2 ; //踢出群
+    GROUPMEMBER_CHANGE_ADD_BLACKLIST = 3; //添加黑名单
+    GROUPMEMBER_CHANGE_DELETE_BLACKLIST = 4; //取消黑名单
+    GROUPMEMBER_CHANGE_SHUTUP_MEMBER = 5; //成员禁言
+    GROUPMEMBER_CHANGE_SHUTUP_MEMBER_CANCEL = 6; //取消成员禁言
+    GROUPMEMBER_CHANGE_SHUTUP = 7; //群禁言
+    GROUPMEMBER_CHANGE_SHUTUP_CANCEL = 8; //取消群禁言
+}
+
+message GroupMemberChangeLog {
+    optional uint32 initiatorId = 1; //发起人
+    optional uint32 memberId = 2; //成员Id
+    optional uint32 type = 3; //参考GroupMemberChangeType
+    optional uint64 created = 4; //时间
+}
+
+message ReqGetGroupVersion {
+}
+
+message RspGetGroupVersion {
+    repeated GroupVersionInfo versionInfoList = 1;
+}
+
+message ReqGetGroupAttribute {
+    //查询群时有效
+    optional uint32 type = 8; //查询类型 参考GroupSearchType
+    optional string key = 9;
+    optional uint32 class = 10;
+    optional uint64 groupId = 11;
+    
+    optional uint32 pageIndex = 14; //页码
+    optional uint32 pageSize = 15; //每页条数
+}
+
+message RspGetGroupAttribute {
+    repeated GroupAttribute groupAttrList = 1;
+}
+
+message ReqCreateGroup {
+    optional string name = 1; //群名
+    optional uint32 type = 2; //群类型
+    optional string avatar = 3; //群头像
+    optional uint32 class = 4; //分类
+    optional uint32 publicType = 5; //公开类型
+    
+    repeated uint32 subUserIdList = 14; //子用户Id
+    repeated uint32 memberIdList = 15; //群成员Id
+    
+    optional uint32 relationType = 16; //成员关系类型(默认好友 0 好友 1 群成员 2 服务会话成员)
+    optional uint64 relationId = 17; //成员关系Id,与relationType匹配 (好友为空 群成员为群Id 服务会话成员为服务会话)
+}
+
+message RspCreateGroup {
+    optional GroupAttribute groupAttribute = 1;
+    repeated GroupMemberInfo memberInfoList = 2; //群成员信息(全量)
+    repeated uint32 failSubUserIdList = 3; //失败子用户Id
+}
+
+message ReqChangeGroupAttribute {
+    optional uint64 groupId = 1;
+    optional string name = 2; //群组名
+    optional string avatar = 3; //群头像
+    optional uint32 ownerId = 4; //群主
+    optional uint32 type = 5; //群类型(GroupType,只能从GROUP_TYPE_TMP变更为GROUP_TYPE_NORMAL)
+    optional string desc = 6; //群介绍
+    optional uint32 publicType = 7; //公开类型
+    optional uint32 authType = 8; //认证类型
+    optional string authPassword = 9; //认证密码
+    optional uint32 class = 10; //分类
+    optional uint32 audioQuality = 11; //音质
+    optional uint32 shutupStatus = 12; //整体禁言(0不禁言 1禁言)
+    optional string home = 13; //归属地
+    optional string latitude = 14; //纬度
+    optional string longitude = 15; //经度
+    optional uint32 burstType = 16; //话权模式
+    optional uint32 memberLimit = 17; //增加群成员上限(当满足条件时(群成员上限剩余50人内)可以终端升级上限,每次升级增加500人)
+}
+
+message RspChangeGroupAttribute {
+    optional GroupAttribute groupAttribute = 1;
+}
+   
+message NtfChangeGroupAttribute {
+    optional GroupAttribute groupAttribute = 1;
+}
+
+message ReqDeleteGroup {
+    optional uint64 groupId = 1;
+}
+
+message RspDeleteGroup {
+}
+
+message NtfDeleteGroup {
+    optional uint64 groupId = 1;
+}
+
+message ReqAddNotice {
+    optional uint64 groupId = 1;
+    optional string notice = 2;
+}
+
+message RspAddNotice {
+    //暂停使用
+    //optional uint64 groupId = 1;
+    optional GroupNoticeInfo noticeInfo = 2;
+}
+
+message NtfAddNotice {
+    optional uint64 groupId = 1;
+    optional GroupNoticeInfo noticeInfo = 2;
+}
+
+message ReqChangeNotice {
+    optional uint64 groupId = 1;
+    optional uint64 noticeId = 2;
+    optional string notice = 3;
+}
+
+message RspChangeNotice {
+    //暂停使用
+    //optional uint64 groupId = 1;
+    optional GroupNoticeInfo noticeInfo = 2;
+}
+
+message NtfChangeNotice {
+    optional uint64 groupId = 1;
+    optional GroupNoticeInfo noticeInfo = 2;
+}
+
+message ReqDeleteNotice {
+    optional uint64 groupId = 1;
+    optional uint64 noticeId = 2;
+}
+
+message RspDeleteNotice {
+}
+
+message NtfDeleteNotice {
+    optional uint64 groupId = 1;
+    optional uint64 noticeId = 2;
+}
+
+message ReqGetNotice {
+    optional uint64 groupId = 1;
+    optional uint64 latestUpdated = 2;
+}
+
+message RspGetNotice {
+    optional uint64 latestUpdated = 1;
+    repeated GroupNoticeInfo noticeInfoList = 2;
+}
+
+message ReqDeleteMember {
+    optional uint64 groupId = 1;
+    repeated uint32 userIdList = 2; //userIdList只有自己表示自己退出群组
+}
+
+message RspDeleteMember {
+}
+
+message NtfDeleteMember {
+    optional uint64 groupId = 1;
+    optional uint32 initiatorId = 2; //发起人
+    repeated uint32 userIdList = 3; //userIdList只有initiatorId表示initiatorId退出群组,userIdList包括自己表示自己被踢
+    repeated WL.Common.UserInfo userInfoList = 4; //成员用户信息
+}
+
+message NtfNewMember {
+    optional uint64 groupId = 1; //用户未加入groupId,收到该消息表示用户自己加入群成功通知,否则表示其它成员加入
+    optional uint32 inviterId = 2; //邀请者Id 未设置表示用户主动加入
+    
+    repeated WL.Common.UserInfo userInfoList = 14; //仅在用户已经加入groupId时有效,表示其它成员加入
+    repeated GroupMemberInfo memberInfoList = 15; //仅在用户已经加入groupId时有效,表示其它成员加入
+}
+
+message ReqGetMemberUserInfo {
+    optional uint64 groupId = 1;
+    repeated uint32 userIdList = 2; //成员用户Id
+}
+
+message RspGetMemberUserInfo {
+    repeated WL.Common.UserInfo userInfoList = 1;
+}
+
+message ReqChangeMemberInfo {
+    optional uint64 groupId = 1;
+    optional uint32 memberId = 2;
+    optional uint32 type = 3; //成员类型(GroupMemberType)
+    optional string remark = 4; //备注(需要审核)
+    optional uint32 prority = 5; //优先级
+    optional uint32 shutupStatus = 6; //0不禁言 1禁言
+    optional uint32 shutupDuration = 7; //禁言时长单位秒 shutupStatus为1时有效,默认600秒
+    optional uint32 shieldStatus = 8; //0 不屏蔽 1 屏蔽消息 2 静音
+    optional uint32 tts = 9; //0 关闭 1开启
+    optional uint32 locationShare = 10; //0 不共享 1共享
+}
+
+message RspChangeMemberInfo {
+    optional uint64 groupId = 1;
+    optional GroupMemberInfo memberInfo = 2;
+}
+
+message NtfChangeMemberInfo {
+    optional uint64 groupId = 1;
+    optional GroupMemberInfo memberInfo = 2;
+}
+
+message ReqGroupInvite {
+    optional uint64 groupId = 1;
+    repeated uint32 userIdList = 2;
+}
+
+message RspGroupInvite {
+}
+
+message NtfGroupInvite {
+    optional uint64 groupId = 1;
+    optional uint32 inviterId = 2; //邀请者用户Id
+    
+    optional WL.Common.UserInfo userInfo = 8; //邀请者用户信息
+}
+
+message ReqAnswerGroupInvite {
+    optional uint64 groupId = 1;
+    optional uint32 inviterId = 2; //邀请者用户Id
+    optional uint32 status = 3; //应答类型(参考WL.Common.AnswerStatus)
+}
+
+message RspAnswerGroupInvite {
+}
+
+message NtfAnswerGroupInvite {
+    optional uint64 groupId = 1;
+    optional uint32 inviterId = 2; //邀请者用户Id
+    optional uint32 inviteeId = 3; //被邀请者用户Id
+    optional uint32 status = 4; //应答类型(参考WL.Common.AnswerStatus)
+    optional uint64 updated = 5; //更新时间
+}
+
+message ReqGetGroupInviteInfo {
+    optional uint64 latestUpdated = 1; //最新更新时间
+}
+
+message RspGetGroupInviteInfo {
+    optional uint64 latestUpdated = 1; //最新更新时间
+    repeated GroupInviteInfo inviteInfoList = 2; //群申请信息   
+    repeated WL.Common.UserInfo userInfos = 3; //群申请者用户信息
+}
+
+message ReqGroupJoin {
+    optional uint64 groupId = 1;
+    optional string detail = 2;
+    optional string password = 3;
+}
+
+message RspGroupJoin {
+}
+
+message NtfGroupJoin {
+    optional uint64 groupId = 1;
+    optional uint32 joinId = 2; //申请入群用户Id
+    optional string detail = 3;
+    
+    optional WL.Common.UserInfo userInfo = 8; //申请者用户信息
+}
+
+message ReqAnswerGroupJoin {
+    optional uint64 groupId = 1;
+    optional uint32 joinId = 2; //申请入群用户Id
+    optional uint32 status = 3; //应答类型(参考WL.Common.AnswerStatus)
+}
+
+message RspAnswerGroupJoin {
+}
+
+message NtfAnswerGroupJoin {
+    optional uint64 groupId = 1;
+    optional uint32 joinId = 2; //申请者用户Id
+    optional uint32 answerId = 3; //应答者用户Id
+    optional uint32 status = 4; //应答类型(参考WL.Common.AnswerStatus)
+    optional uint64 updated = 5; //更新时间
+}
+
+message ReqGetGroupJoinInfo {
+    optional uint64 latestUpdated = 1; //最新更新时间
+    repeated uint64 groupIds = 2; //群Id(用户是管理员的群)
+}
+
+message RspGetGroupJoinInfo {
+    optional uint64 latestUpdated = 1; //最新更新时间
+    repeated GroupJoinInfo joinInfoList = 2;
+    repeated WL.Common.UserInfo userInfos = 3; //申请者用户信息
+}
+
+message ReqGroupBroadcast {
+    optional uint64 groupId = 1; //群Id
+    optional uint32 status = 2; //广播状态 0关闭 1开启
+}
+
+message RspGroupBroadcast {
+}
+
+//用户登录时系统响应所有用户有关群广播
+message NtfGroupBroadcast {
+    repeated GroupBroadcastInfo broadcastInfoList = 1;
+}
+
+message ReqGetGroupOnlineMember {
+    optional uint64 groupId = 1; //群Id
+}
+
+message RspGetGroupOnlineMember {
+    repeated uint32 userIdList = 1;
+}
+ 
+message ReqGetGroupInfo {
+    optional uint64 groupId = 1;
+    optional uint32 memberVersion = 2; //群成员版本号
+}
+
+message RspGetGroupInfo {
+    optional GroupAttribute groupAttribute = 1; //群属性
+    optional uint32 memberPartial = 2; //全量标识 0 全量 1增量
+    repeated GroupMemberInfo memberInfoList = 3; //群成员信息
+}
+
+message ReqGetGroupBlackList {
+    optional uint64 groupId = 1;
+    
+    optional uint32 pageIndex = 14; //页码
+    optional uint32 pageSize = 15; //每页条数
+}
+
+message RspGetGroupBlackList {
+    repeated WL.Common.UserInfo userInfos = 1; //黑名单用户信息
+}
+
+message ReqChangeGroupBlackList {
+    optional uint64 groupId = 1;
+    repeated uint32 userIdList = 2; //黑名单用户Id
+    optional uint32 type = 3; //0添加 1删除
+}
+
+//添加群成员黑名单同时将黑名单成员踢出群
+message RspChangeGroupBlackList {
+}
+
+message ReqGetGroupMemberChangeLog {
+    optional uint64 groupId = 1;
+}
+
+message RspGetGroupMemberChangeLog {
+    repeated GroupMemberChangeLog logList = 1;
+    repeated WL.Common.UserInfo userInfos = 2; //变更成员信息
+}
+
+message ReqGetGroupDetail {
+    optional uint64 groupId = 1;
+}
+
+message RspGetGroupDetail {
+    optional GroupAttribute groupAttribute = 1; //群属性
+    repeated GroupMemberInfo adminInfos = 2; //群管理员
+    repeated WL.Common.UserInfo userInfos = 3; //群管理员用户信息
+}
+
+message ReqGetSubGroupAttribute {
+}
+
+message RspGetSubGroupAttribute {
+    repeated GroupAttribute groupAttrList = 1;
+}
+
+message ReqAddSubMember {
+    optional uint64 groupId = 1;
+    repeated uint32 userIdList = 2; //子用户Id
+}
+
+message RspAddSubMember {
+    repeated uint32 failUserIdList = 1; //失败用户Id
+}
+
+//EMBEDDED使用接口
+message ReqEmbeddedGetGroupVersion {
+    optional uint32 limit = 1; //群数限制
+}
+
+message RspEmbeddedGetGroupVersion {
+    repeated GroupVersionInfo versionInfoList = 1;
+}
+
+message ReqEmbeddedGetGroupInfo {
+    repeated uint64 groupIds = 1; //群Id列表
+}
+
+message RspEmbeddedGetGroupInfo {
+    repeated EmbeddedGroupInfo groupInfos = 1; //群信息
+}
+
+message GroupMessage {
+    optional ReqGetGroupVersion reqGetGroupVersion                       = 1;
+    optional RspGetGroupVersion rspGetGroupVersion                       = 2;
+    optional ReqGetGroupAttribute reqGetGroupAttribute                   = 3;
+    optional RspGetGroupAttribute rspGetGroupAttribute                   = 4;
+    optional ReqCreateGroup reqCreateGroup                               = 5;
+    optional RspCreateGroup rspCreateGroup                               = 6;
+    optional ReqChangeGroupAttribute reqChangeGroupAttribute             = 7;
+    optional RspChangeGroupAttribute rspChangeGroupAttribute             = 8;
+    optional NtfChangeGroupAttribute ntfChangeGroupAttribute             = 9;
+    optional ReqGetGroupInfo reqGetGroupInfo                             = 10;
+    optional RspGetGroupInfo rspGetGroupInfo                             = 11;
+    optional ReqGetGroupOnlineMember reqGetGroupOnlineMember             = 12;
+    optional RspGetGroupOnlineMember rspGetGroupOnlineMember             = 13;
+    optional ReqChangeMemberInfo reqChangeMemberInfo                     = 14;
+    optional RspChangeMemberInfo rspChangeMemberInfo                     = 15;
+    optional NtfChangeMemberInfo ntfChangeMemberInfo                     = 16;
+    optional NtfNewMember ntfNewMember                                   = 17;
+    optional ReqGetMemberUserInfo reqGetMemberUserInfo                   = 18;
+    optional RspGetMemberUserInfo rspGetMemberUserInfo                   = 19;
+    optional ReqDeleteMember reqDeleteMember                             = 20;
+    optional RspDeleteMember rspDeleteMember                             = 21;
+    optional NtfDeleteMember ntfDeleteMember                             = 22;
+    optional ReqDeleteGroup reqDeleteGroup                               = 23;
+    optional RspDeleteGroup rspDeleteGroup                               = 24;
+    optional NtfDeleteGroup ntfDeleteGroup                               = 25;
+    optional ReqGetGroupInviteInfo reqGetGroupInviteInfo                 = 26;
+    optional RspGetGroupInviteInfo rspGetGroupInviteInfo                 = 27;
+    optional ReqGroupInvite reqGroupInvite                               = 28;
+    optional RspGroupInvite rspGroupInvite                               = 29;
+    optional NtfGroupInvite ntfGroupInvite                               = 30;
+    optional ReqAnswerGroupInvite reqAnswerGroupInvite                   = 31;
+    optional RspAnswerGroupInvite rspAnswerGroupInvite                   = 32;
+    optional NtfAnswerGroupInvite ntfAnswerGroupInvite                   = 33;
+    optional ReqGetGroupJoinInfo reqGetGroupJoinInfo                     = 34;
+    optional RspGetGroupJoinInfo rspGetGroupJoinInfo                     = 35;
+    optional ReqGroupJoin reqGroupJoin                                   = 36;
+    optional RspGroupJoin rspGroupJoin                                   = 37;
+    optional NtfGroupJoin ntfGroupJoin                                   = 38;
+    optional ReqAnswerGroupJoin reqAnswerGroupJoin                       = 39;
+    optional RspAnswerGroupJoin rspAnswerGroupJoin                       = 40;
+    optional NtfAnswerGroupJoin ntfAnswerGroupJoin                       = 41;
+    optional ReqGroupBroadcast reqGroupBroadcast                         = 42;
+    optional RspGroupBroadcast rspGroupBroadcast                         = 43;
+    optional NtfGroupBroadcast ntfGroupBroadcast                         = 44;
+    optional ReqGetGroupBlackList reqGetGroupBlackList                   = 45;
+    optional RspGetGroupBlackList rspGetGroupBlackList                   = 46; 
+    optional ReqChangeGroupBlackList reqChangeGroupBlackList             = 47;
+    optional RspChangeGroupBlackList rspChangeGroupBlackList             = 48; 
+    optional ReqGetGroupMemberChangeLog reqGetGroupMemberChangeLog       = 50;
+    optional RspGetGroupMemberChangeLog rspGetGroupMemberChangeLog       = 51;
+    optional ReqGetNotice reqGetNotice                                   = 52;
+    optional RspGetNotice rspGetNotice                                   = 53;
+    optional ReqAddNotice reqAddNotice                                   = 54;
+    optional RspAddNotice rspAddNotice                                   = 55;
+    optional NtfAddNotice ntfAddNotice                                   = 56;
+    optional ReqChangeNotice reqChangeNotice                             = 57;
+    optional RspChangeNotice rspChangeNotice                             = 58;
+    optional NtfChangeNotice ntfChangeNotice                             = 59;
+    optional ReqDeleteNotice reqDeleteNotice                             = 60;
+    optional RspDeleteNotice rspDeleteNotice                             = 61;
+    optional NtfDeleteNotice ntfDeleteNotice                             = 62;
+    optional ReqGetGroupDetail reqGetGroupDetail                         = 67;
+    optional RspGetGroupDetail rspGetGroupDetail                         = 68;
+    optional ReqGetSubGroupAttribute reqGetSubGroupAttribute             = 69;
+    optional RspGetSubGroupAttribute rspGetSubGroupAttribute             = 70;
+    optional ReqAddSubMember reqAddSubMember                             = 71;
+    optional RspAddSubMember rspAddSubMember                             = 72;
+    
+    //EMBEDDED使用接口
+    optional ReqEmbeddedGetGroupVersion reqEmbeddedGetGroupVersion       = 120;
+    optional RspEmbeddedGetGroupVersion rspEmbeddedGetGroupVersion       = 121;
+    optional ReqEmbeddedGetGroupInfo reqEmbeddedGetGroupInfo             = 122;
+    optional RspEmbeddedGetGroupInfo rspEmbeddedGetGroupInfo             = 123;
+}                                                                        

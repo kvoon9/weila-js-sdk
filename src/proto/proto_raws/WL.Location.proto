@@ -1,0 +1,99 @@
+syntax = "proto2";
+
+package WL.Location;
+
+//option objc_class_prefix = "WLLocation";
+option java_package = "com.voistech.weila.protobuf";
+//option java_outer_classname = "WEILAIMMessage";
+//option optimize_for = LITE_RUNTIME; //调试使用SPEED,发布使用LITE_RUNTIME
+
+enum LocationCommandId {
+    LOCATION_COMMAND_REPORT_LOCATION        = 0x00; //上报位置信息
+    LOCATION_COMMAND_GET_LOCATION           = 0x01; //获取位置信息
+    LOCATION_COMMAND_LOCATION_CONTROL       = 0x02; //位置共享控制
+}
+
+//好友共享 session_id为用户Id session_type为SESSION_TYPE_SINGLE 
+//群共享   session_id为群Id session_type为SESSION_TYPE_GROUP
+message LocationSessionInfo{
+    optional uint64 sessionId = 1;
+    optional uint32 sessionType = 2; //参考WL.Common.SessionType
+}
+
+message LocationParam {
+    optional double latitude = 1;
+    optional double longitude = 2;
+    optional double speed = 3;
+    optional double altitude = 4;
+    optional double radius = 5;
+    optional uint64 timestamp = 6;
+    optional double direction = 7;
+}
+
+enum LocationType {
+    LOCATION_TYPE_GCJ02 = 0;
+}
+
+enum LocationExtensionType {
+    LOCATION_EXTENSION_NONE             = 0; //纯位置
+    LOCATION_EXTENSION_ALARM            = 1; //告警
+    LOCATION_EXTENSION_STATUS           = 2; //客户端状态
+}
+
+message LocationInfo {
+    optional uint32 userId = 1;
+    optional uint32 clientType = 2; //参考WL.Common.ClientType
+    optional uint32 locationType = 3;
+    optional LocationParam locationParam = 4;
+}
+
+message LocationControl {
+    optional bool status = 1; //开关 0关闭 1开启
+    optional uint32 frequency = 2; //上报频率 默认2s
+    optional uint32 duration = 3; //持续时长 默认60s
+}
+
+message ReqReportLocation {
+    optional LocationInfo locationInfo = 1;
+    repeated LocationSessionInfo sessionInfos = 2;
+    
+    optional string appid = 8;
+    optional uint32 extensionType = 9; //业务扩展类型
+    optional string extensionBody = 10; //JSON 业务扩展,格式{"自定义"}
+}
+
+message RspReportLocation {
+}
+
+message ReqGetLocation {
+    optional LocationSessionInfo sessionInfo = 1;
+    repeated uint32 userIds = 2; //指定上报用户
+}
+
+message RspGetLocation {
+    repeated LocationInfo locationInfos = 1;
+}
+
+message ReqLocationControl {
+    optional LocationSessionInfo sessionInfo = 1;
+    optional LocationControl locationControl = 2;
+    repeated uint32 userIds = 3; //指定上报用户
+}
+
+message RspLocationControl {
+}
+
+message NtfLocationControl{
+    optional LocationSessionInfo sessionInfo = 1;
+    optional LocationControl locationControl = 2;
+}
+
+message LocationMessage {
+    optional ReqReportLocation reqReportLocation                 = 1;
+    optional RspReportLocation rspReportLocation                 = 2;
+    optional ReqGetLocation reqGetLocation                       = 3;
+    optional RspGetLocation rspGetLocation                       = 4;
+    optional ReqLocationControl reqLocationControl               = 5;
+    optional RspLocationControl rspLocationControl               = 6;
+    optional NtfLocationControl ntfLocationControl               = 7;
+}

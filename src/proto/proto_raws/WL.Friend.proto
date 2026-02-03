@@ -1,0 +1,216 @@
+syntax = "proto2";
+
+package WL.Friend;
+import "WL.Common.proto";
+
+//option objc_class_prefix = "WLFriend";
+option java_package = "com.voistech.weila.protobuf";
+//option java_outer_classname = "WEILAIMMessage";
+//option optimize_for = LITE_RUNTIME; //调试使用SPEED,发布使用LITE_RUNTIME
+
+enum FriendCommandId {
+    FRIEND_COMMAND_GET_FRIENDINFO           = 0x00; //获取好友信息
+    FRIEND_COMMAND_GET_FRIEND_USERINFO      = 0x01; //获取好友用户信息
+    FRIEND_COMMAND_GET_FRIEND_INVITEINFO    = 0x02; //获取好友邀请信息
+    FRIEND_COMMAND_FRIEND_INVITE            = 0x03; //邀请好友
+    FRIEND_COMMAND_ANSWER_FRIEND_INVITE     = 0x04; //应答邀请
+    FRIEND_COMMAND_NEW_FRIEND               = 0x05; //新好友
+    FRIEND_COMMAND_DELETE_FRIEND            = 0x06; //删除好友
+    FRIEND_COMMAND_CHANGE_FRIENDINFO        = 0x07; //修改好友信息
+    FRIEND_COMMAND_GET_BLACKLIST            = 0x08; //获取黑名单
+    FRIEND_COMMAND_CHANGE_BLACKLIST         = 0x09; //修改黑名单
+    FRIEND_COMMAND_GET_ONLINE_FRIEND        = 0x0a; //获取在线好友
+    
+    //EMBEDDED
+    FRIEND_EMBEDDED_COMMAND_GET_FRIENDINFO  = 0x40; //获取嵌入式设备好友信息
+}
+
+message FriendInfo {
+    optional uint32 userId = 1; //好友用户Id
+    optional uint32 status = 2; //好友状态 0正常 非0删除
+    optional string remark = 3; //好友备注
+    optional string label = 4; //标签(可以用来对好友进行分组)
+    optional string desc = 5; //好友描述
+    optional uint32 shieldStatus = 6; //0 不屏蔽 1 屏蔽消息
+    optional uint32 tts = 7; //0 关闭 1开启
+    optional uint32 locationShare = 8; //0 不共享 1共享
+    
+    optional string extension = 15; //Json供业务拓展使用
+}
+
+message EmbeddedFriendInfo {
+    optional uint32 userId = 1;
+    optional uint32 status = 2; //好友状态 0正常 非0删除
+    optional string number = 3; //微喇号
+    optional uint32 sex = 4; // 用户性别, 0 男 1 女
+    optional string nick = 5; //绰号
+    optional uint32 shieldStatus = 6; //0 不屏蔽 1 屏蔽消息
+    optional uint32 tts = 7; //0 关闭 1开启
+    optional uint32 locationShare = 8; //0 不共享 1共享
+}
+
+message FriendInviteInfo {
+    optional uint32 inviterId = 1; //邀请者用户Id
+    optional uint32 inviteeId = 2; //被邀请者用户Id
+    optional string detail = 3; //详情
+    optional uint32 status = 4; //应答状态
+    optional uint64 created = 5; //邀请时间
+}
+
+message ReqGetFriendInfo {
+    optional uint64 latestUpdated = 1; //最新更新时间(如果参数有效,只返回这个时间之后的数据)
+}
+
+message RspGetFriendInfo {
+    optional uint64 latestUpdated = 1; //最新更新时间
+    repeated FriendInfo friendInfos = 2; //好友信息列表
+    repeated WL.Common.UserInfo userInfos = 3; //用户信息更新列表
+}
+
+message ReqGetFriendUserInfo {
+    repeated uint32 userIds = 1; //好友Id
+}
+
+message RspGetFriendUserInfo {
+    repeated WL.Common.UserInfo userInfos = 1; //用户信息列表
+}
+
+message ReqGetFriendInviteInfo {
+    optional uint64 latestUpdated = 1; //最新更新时间(如果参数有效,只返回这个时间之后的数据)
+}
+
+message RspGetFriendInviteInfo {
+    optional uint64 latestUpdated = 1; //最新更新时间
+    repeated FriendInviteInfo inviteInfos = 2; //好友邀请信息列表
+    repeated WL.Common.UserInfo userInfos = 3; //好友邀请者用户信息
+}
+
+message ReqFriendInvite {
+    optional uint32 inviteeId = 1; //被邀请者用户Id
+    optional string detail = 2; //详情
+    optional string remark = 3; //备注(对方接受后可自动设置备注名)
+}
+
+message RspFriendInvite {
+}
+
+message NtfFriendInvite {
+    optional FriendInviteInfo inviteInfo = 1;
+    
+    optional WL.Common.UserInfo userInfo = 8; //邀请者用户信息
+}
+
+message ReqAnswerFriendInvite {
+    optional uint32 inviterId = 1; //邀请者用户Id
+    optional uint32 status = 2; //应答类型(参考WL.Common.AnswerStatus)
+    optional string remark = 3; //备注(type为INVITE_ANSWER_ACCEPT有效)
+}
+
+message RspAnswerFriendInvite {
+}
+
+message NtfAnswerFriendInvite {
+    optional uint32 inviteeId = 1; //被邀请者用户Id
+    optional uint32 status = 2; //应答状态
+}
+
+message NtfNewFriend {
+    optional FriendInfo friendInfo = 1; //好友信息
+    
+    optional WL.Common.UserInfo userInfo = 8; //好友用户信息
+}
+
+message ReqDeleteFriend {
+    optional uint32 userId = 1; //好友用户Id
+}
+
+message RspDeleteFriend {
+}
+
+message NtfDeleteFriend {
+    optional uint32 userId = 1; //好友用户Id
+}
+
+message ReqChangeFriendInfo {
+    optional uint32 userId = 1; //用户Id
+    optional string remark = 2; //好友备注
+    optional string label = 3; //标签(可以用来对好友进行分组)
+    optional string desc = 4; //好友描述
+    optional uint32 shieldStatus = 5; //0 不屏蔽 1 屏蔽消息
+    optional uint32 tts = 6; //0 关闭 1开启
+    optional uint32 locationShare = 7; //0 不共享 1共享
+}
+
+message RspChangeFriendInfo {
+}
+
+message NtfChangeFriendInfo {
+    optional FriendInfo friendInfo = 1; //好友信息
+}
+
+message ReqGetFriendBlackList {
+    optional uint32 pageIndex = 14; //页码
+    optional uint32 pageSize = 15; //每页条数
+}
+
+message RspGetFriendBlackList {
+    repeated WL.Common.UserInfo userInfos = 1; //黑名单用户信息
+}
+
+message ReqChangeFriendBlackList {
+    repeated uint32 userIds = 1; //黑名单用户Id
+    optional uint32 type = 2; //0添加 1删除
+}
+
+message RspChangeFriendBlackList {
+}
+
+message ReqGetOnlineFriend {
+}
+
+message RspGetOnlineFriend {
+    repeated uint32 userIds = 1; //在线好友Id
+}
+
+//EMBEDDED使用接口
+message ReqEmbeddedGetFriendInfo {
+    optional uint64 latestUpdated = 1; //最新更新时间
+    repeated uint32 userIds = 2; //好友Id 该参数有效时限定好友更新范围
+    optional uint32 limit = 3; //好友数量限制(嵌入式设备受限)
+}
+
+message RspEmbeddedGetFriendInfo {
+    optional uint64 latestUpdated = 1; //最新更新时间
+    repeated EmbeddedFriendInfo friendInfos = 2;
+}
+
+message FriendMessage {
+    optional ReqGetFriendInfo reqGetFriendInfo                   = 1;
+    optional RspGetFriendInfo rspGetFriendInfo                   = 2;
+    optional ReqGetFriendUserInfo reqGetFriendUserInfo           = 3;
+    optional RspGetFriendUserInfo rspGetFriendUserInfo           = 4;
+    optional ReqGetFriendInviteInfo reqGetFriendInviteInfo       = 5;
+    optional RspGetFriendInviteInfo rspGetFriendInviteInfo       = 6;
+    optional ReqFriendInvite reqFriendInvite                     = 7;
+    optional RspFriendInvite rspFriendInvite                     = 8;
+    optional NtfFriendInvite ntfFriendInvite                     = 9;
+    optional ReqAnswerFriendInvite reqAnswerFriendInvite         = 10;
+    optional RspAnswerFriendInvite rspAnswerFriendInvite         = 11;
+    optional NtfAnswerFriendInvite ntfAnswerFriendInvite         = 12;
+    optional NtfNewFriend ntfNewFriend                           = 13;
+    optional ReqDeleteFriend reqDeleteFriend                     = 14;
+    optional RspDeleteFriend rspDeleteFriend                     = 15;
+    optional NtfDeleteFriend ntfDeleteFriend                     = 16;
+    optional ReqChangeFriendInfo reqChangeFriendInfo             = 17;
+    optional RspChangeFriendInfo rspChangeFriendInfo             = 18;
+    optional NtfChangeFriendInfo ntfChangeFriendInfo             = 19;
+    optional ReqGetFriendBlackList reqGetFriendBlackList         = 20;
+    optional RspGetFriendBlackList rspGetFriendBlackList         = 21;
+    optional ReqChangeFriendBlackList reqChangeFriendBlackList   = 22;
+    optional RspChangeFriendBlackList rspChangeFriendBlackList   = 23;
+    optional ReqGetOnlineFriend reqGetOnlineFriend               = 25;
+    optional RspGetOnlineFriend rspGetOnlineFriend               = 26;
+    
+    optional ReqEmbeddedGetFriendInfo reqEmbeddedGetFriendInfo   = 120;
+    optional RspEmbeddedGetFriendInfo rspEmbeddedGetFriendInfo   = 121;
+}

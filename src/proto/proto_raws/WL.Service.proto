@@ -1,0 +1,198 @@
+syntax = "proto2";
+
+package WL.Service;
+
+import "WL.Login.proto";
+import "WL.User.proto";
+import "WL.Friend.proto";
+import "WL.Group.proto";
+import "WL.Session.proto";
+import "WL.System.proto";
+import "WL.Location.proto";
+import "WL.Business.proto";
+
+//option objc_class_prefix = "WLService";
+option java_package = "com.voistech.weila.protobuf";
+//option java_outer_classname = "WEILAIMMessage";
+//option optimize_for = LITE_RUNTIME; //调试使用SPEED,发布使用LITE_RUNTIME
+
+enum ServiceID {
+    SERVICE_LOGIN           = 0x01;
+    SERVICE_USER            = 0x02;
+    SERVICE_FRIEND          = 0x03;
+    SERVICE_GROUP           = 0x04;
+    SERVICE_SESSION         = 0x05;
+    SERVICE_SYSTEM          = 0x06;
+    SERVICE_LOCATION        = 0x07;
+    SERVICE_BUSINESS        = 0x0a;
+}
+
+enum CommandType {
+    COMMAND_REQUEST     = 0x00;
+    COMMAND_RESPONSE    = 0x01;
+    COMMAND_NOTIFY      = 0x02;
+}
+
+enum SegmentType {
+    SEGMENT_NONE        = 0x00;
+    SEGMENT_MIDDLE      = 0x01;
+    SEGMENT_END         = 0x02;
+}
+
+enum ResultCode {
+    //System Login Error 0x00~0x1f
+    RESULT_SUCCESS                                  = 0; //成功
+    RESULT_FAILURE                                  = 1; //失败
+            
+    RESULT_DISCONNECT                               = 2; //连接中断
+    RESULT_NO_MSG_SERVER                            = 3; //未连接消息服务器
+    RESULT_NO_DB_SERVER                             = 4; //未连接数据服务器
+    RESULT_NO_CACHE_SERVER                          = 5; //未连接缓存服务器
+    RESULT_NO_LOGIN_SERVER                          = 6; //未连接登录服务器
+    RESULT_NO_ROUTE_SERVER                          = 7; //未连接路由服务器
+            
+    RESULT_DB_EXCEPTION                             = 10; //数据库异常
+    RESULT_CACHE_EXCEPTION                          = 11; //缓存异常
+    RESULT_SERVER_MAINTENANCE                       = 12; //服务器维护中
+    RESULT_SERVER_EXCEPTION                         = 13; //服务器异常
+            
+    RESULT_PARAM_INVALID                            = 20; //参数错误
+    RESULT_REQUEST_NOT_SUPPORT                      = 21; //请求不支持
+    RESULT_REQUEST_LIMITED                          = 22; //请求受限
+    RESULT_REQUEST_INVALID                          = 23; //请求已过期
+    RESULT_VERSION_TOO_OLD                          = 24; //APP版本太旧,需要更新
+    RESULT_BLACKLIST_LIMITED                        = 25; //您已被拉黑
+    RESULT_AUTH_INVALID                             = 26; //认证无效
+    RESULT_PERMIT_LIMITED                           = 27; //权限受限
+    RESULT_DATA_NOT_EXIST                           = 28; //数据不存在
+    RESULT_DATA_INVALID                             = 29; //数据无效
+    RESULT_VERIFICATION_CODE_ERROR                  = 30; //验证码错误
+    RESULT_TOKEN_INVALID                            = 31; //授权失效
+    RESULT_REQUEST_FREQUENTLY                       = 32; //请求太频繁
+    RESULT_NUMBER_RESOURCE_USE_UP                   = 33; //号码资源耗尽
+    RESULT_REQUEST_TIMEOUT                          = 34; //请求超时
+    RESULT_TRANSMIT_TIMEOUT                         = 35; //网络传输超时
+    RESULT_APP_ILLEGAL                              = 36; //应用未授权,请从官方渠道获取
+    RESULT_PHONE_DUPLICATE                          = 37; //手机号已被使用
+    RESULT_PHONE_INVALID                            = 38; //手机号无效
+    RESULT_PHONE_HAS_BEEN_BANNED                    = 39; //手机号被封禁
+    RESULT_PASSWORD_ERROR                           = 40; //密码错误
+    RESULT_SEND_VERIFICATION_CODE_FAIL              = 41; //发送验证码失败
+    RESULT_CONTENT_AUDIT_BLOCK                      = 42; //图文有不合法规内容
+    RESULT_BALANCE_INSUFFICIENT                     = 43; //余额不足
+            
+    //Login Error
+    RESULT_LOGIN_FORBID_IP                          = 100; //用户IP被封 从forbidDuration获取剩余时长(设备不再自动登录)
+    RESULT_LOGIN_FORBID_USER                        = 101; //用户被封号 从forbidDuration获取剩余时长(设备不再自动登录)
+    RESULT_LOGIN_PASSWORD_ERROR_TOO_TIMES           = 102; //密码输入错误次数太多,请待系统解封后再试(默认30分钟后才可登录) 从forbidDuration获取剩余时长(设备不再自动登录)
+    RESULT_LOGIN_SYSTEM_FULL                        = 103; //在线用户达到系统容量
+    RESULT_LOGIN_VERIFYCODE_INVALID                 = 104; //验证码无效
+    RESULT_LOGIN_ACCOUNT_OR_PASSWD_ERROR            = 105; //账号或密码错误(设备不再自动登录)
+    RESULT_LOGIN_EXTENSION_HAS_BIND                 = 110; //用户已绑定设备
+    RESULT_LOGIN_EXTENSION_BINDING                  = 111; //设备绑定中
+    RESULT_LOGIN_EXTENSION_NOT_BIND                 = 112; //未绑定分机
+    RESULT_LOGIN_EXTENSION_LAWLESSNESS              = 113; //非法设备(设备不再自动登录)
+    RESULT_LOGIN_EXTENSION_LICENSE_LIMITED          = 114; //许可证用完(设备不再自动登录)
+    RESULT_LOGIN_EXTENSION_ACCOUNT_ERROR            = 115; //设备账号错误(设备不再自动登录)
+    RESULT_LOGIN_EXTENSION_PASSWORD_ERROR           = 116; //设备密码错误(设备不再自动登录)
+    RESULT_LOGIN_EXTENSION_OFFLINE                  = 117; //设备不在线
+    
+    //User Error        
+    RESULT_USER_NOT_EXIST                           = 200; //用户不存在
+    RESULT_USER_PERIPHERAL_UNAUTHORIZED             = 201; //外设未授权
+    RESULT_USER_PERIPHERAL_REPLICATED               = 202; //外设被复制
+    RESULT_USER_PERIPHERAL_MULTIDEVICE              = 203; //外设在多设备上使用
+    RESULT_USER_OFFLINE                             = 204; //用户不在线
+            
+    //Friend Error
+    RESULT_FRIEND_NOT_FRIEND                        = 300; //不是好友
+    RESULT_FRIEND_INVITE_NOT_EXIST                  = 301; //好友邀请已过期
+    RESULT_FRIEND_IS_BLACKLIST                      = 302; //您已被对方加入黑名单  
+    RESULT_FRIEND_SHIELD_OPEN                       = 303; //好友已开启消息屏蔽   
+            
+    //Group Error       
+    RESULT_GROUP_NOT_EXIST                          = 400; //群组不存在
+    RESULT_GROUP_ACCESS_LIMITED                     = 401; //访问受限,请明天再试(被踢或被封)
+    RESULT_GROUP_YOU_ARE_NOT_OWNER                  = 402; //您不是群主
+    RESULT_GROUP_YOU_ARE_NOT_ADMIN                  = 403; //您不是群管理员
+    RESULT_GROUP_MEMBERS_FULL                       = 404; //成员数达到上限
+    RESULT_GROUP_NUMBER_USEUP                       = 405; //群组号耗尽
+    RESULT_GROUP_BROADCAST_EXIST                    = 406; //群组广播已存在
+    RESULT_GROUP_BROADCAST_NOEXIST                  = 407; //群组广播不存在
+    RESULT_GROUP_PASSWORD_ERROR                     = 408; //群密码错误
+    RESULT_GROUP_OWNER_FULL                         = 409; //您创建的群组数达到上限
+    RESULT_GROUP_BURST_OCCUPY                       = 410; //话权被占用
+    RESULT_GROUP_USER_NOT_MEMBER                    = 411; //用户不是群成员
+    RESULT_GROUP_MEMBER_LIMIT_MAX                   = 412; //群成员上限达到最大值
+    RESULT_GROUP_MEMBER_IS_ADMIN                    = 413; //不能对管理员进行操作
+    RESULT_GROUP_USER_IN_BLACKLIST                  = 414; //用户被加入群黑名单
+    RESULT_GROUP_OWNER_CANNOT_EXIT                  = 415; //群主不能退群,请先转让群主或直接删除群
+    RESULT_GROUP_YOU_ARE_SHUTUP                     = 416; //你已被禁言
+    RESULT_GROUP_MEMBER_SHUTUP                      = 417; //群成员被禁言
+    RESULT_GROUP_MEMBER_IS_OWNER                    = 418; //不能对群主进行操作
+    RESULT_GROUP_BURST_REVOKE                       = 419; //话权被回收
+    RESULT_GROUP_MEMBER_IS_EXTENSION                = 420; //不能对设备用户进行操作
+    RESULT_GROUP_COUNT_LIMIT                        = 421; //加群数量达到上限
+    RESULT_GROUP_MEMBER_HAS_EXTENSION               = 422; //成员中存在设备用户
+    RESULT_GROUP_OWNER_CANNOT_EXTENSION             = 423; //群主不能是设备用户
+    RESULT_GROUP_SUB_USER_GROUP_COUNT_LIMIT         = 424; //子用户群数量达到上限
+            
+    //Session Error
+    RESULT_SESSION_BURST_MONITOR                    = 500; //设备正在被其他人监听,请稍后再试
+    RESULT_SESSION_VOIP_BUSY                        = 501; //用户正在通话中
+    RESULT_SESSION_VOIP_INTERRUPT                   = 502; //通话中断
+            
+    //Room Error        
+    RESULT_ROOM_HAS_EXIST                           = 900; //房间已存在
+    RESULT_ROOM_NOT_EXIST                           = 901; //房间不存在
+    RESULT_ROOM_LOCK                                = 902; //房间处于锁定状态
+    RESULT_ROOM_SPEAKING                            = 903; //有人在讲话
+    RESULT_ROOM_CHANGE_CHARGE_LIMITED               = 904; //房间未锁定或有访客不允许修改计费
+    RESULT_ROOM_HONORED_GUEST_PERMIT                = 905; //只有嘉宾才允许当前操作
+    RESULT_ROOM_NOT_ENTRY                           = 906; //用户未进入房间
+    RESULT_ROOM_YOU_ARE_HONORED_GUEST               = 907; //您已经是嘉宾
+    RESULT_ROOM_HONORED_GUEST_FULL                  = 908; //嘉宾数量达到上限
+            
+    //Business Error        
+    RESULT_BUSINESS_SERVICE_CLOSED                  = 1000; //服务已关闭
+    RESULT_BUSINESS_STAFF_NOT_ADMIN                 = 1001; //客服不是管理员
+    RESULT_BUSINESS_STAFF_INVALID                   = 1002; //客服非法
+    RESULT_BUSINESS_STAFF_NOT_ONLINE                = 1003; //客服不在线
+    RESULT_BUSINESS_STAFF_BUSY                      = 1004; //客服忙
+    RESULT_BUSINESS_STAFF_DUPLICATE                 = 1005; //你已经是本服务号客服
+    RESULT_BUSINESS_SESSION_NOT_EXIST               = 1020; //会话已关闭
+    RESULT_BUSINESS_SESSION_PROCESSING              = 1021; //会话已被其他客服接受
+    RESULT_BUSINESS_SESSION_STAFF_INVALID           = 1022; //用户不是当前服务客服
+    RESULT_BUSINESS_SESSION_REMOVE_SELF_LIMIT       = 1023; //不能移除本人
+    RESULT_BUSINESS_ORDER_NOT_EXIST                 = 1024; //订单不存在
+    RESULT_BUSINESS_ORDER_INVALID                   = 1025; //订单已过期
+}
+
+message ServiceHead {
+    //业务头部分
+    optional uint32 serviceId            = 1; //业务类型
+    optional uint32 commandId            = 2; //业务指令Id
+    optional uint32 commandType          = 3; //业务指令类型(request,response,notify)
+    optional uint32 seq                  = 4; //请求序列号
+    
+    optional int32 resultCode            = 8; //请求响应码,仅响应有效,参考ResultCode
+    
+    //数据分段部分
+    optional uint32 segment              = 9; //0或未赋值 不分段 1 中间分段 2 结束段 参考SegmentType
+    optional uint32 subUserId            = 10; //子用户Id(管理子设备时使用)
+    
+}
+
+message ServiceMessage {
+    optional ServiceHead serviceHead                             = 1;
+
+    optional WL.Login.LoginMessage loginMessage                  = 3;
+    optional WL.User.UserMessage userMessage                     = 4;
+    optional WL.Friend.FriendMessage friendMessage               = 5;
+    optional WL.Group.GroupMessage groupMessage                  = 6;
+    optional WL.Session.SessionMessage sessionMessage            = 7;
+    optional WL.System.SystemMessage systemMessage               = 8;
+    optional WL.Location.LocationMessage locationMessage         = 9;
+    optional WL.Business.BusinessMessage businessMessage         = 12;
+    
+}

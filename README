@@ -1,0 +1,82 @@
+1、初始化载入weilasdk.js的方式，可以参考一下案例
+
+		async initWeilaSDK({state, dispatch, commit}): Promise<boolean> {
+			const weilaModule = await import(/* webpackChunkName: "weilasdk" */'weilasdk');
+			commit('setWeilaSDK', new weilaModule.WeilaCore());
+			state.weila!.weila_onEvent((eventId: WL_ExtEventID, data: any) => {
+				const weilaEvent = {} as WL_UIExtEvent;
+				weilaEvent.eventData = data;
+				weilaEvent.eventId = eventId;
+				dispatch('dispatchWeilaEvent', weilaEvent);
+			});
+
+			await state.weila!.weila_init();
+			initLogger('MOD:*, CORE:*, FSM:*, AUDIO:*, DB:*, NET:*, -socket-client:*');
+			return true;
+		}
+
+2、要设置代理，参考以下信息
+
+      '/v1': {
+        target: 'http://webapi.weila.hk:8080/',
+        secure: false,
+        changeOrigin: true,
+        pathRewrite: {
+          '^/v1': '/v1',
+        },
+      },
+
+      '/audio': {
+        target: 'https://weilaaudio.oss-cn-shenzhen.aliyuncs.com',
+        secure: false,
+        changeOrigin: true,
+        pathRewrite: {
+          '^/audio': '',
+        },
+      },
+
+      'https://weilacache.oss-cn-shenzhen.aliyuncs.com': {
+        target: 'https://weilacache.oss-cn-shenzhen.aliyuncs.com',
+        secure: false,
+        changeOrigin: true,
+        pathRewrite: {
+          '^https://weilacache.oss-cn-shenzhen.aliyuncs.com': '',
+        },
+      },
+
+      'http://weilaavatar.oss-cn-shenzhen.aliyuncs.com': {
+        target: 'https://weilaavatar.oss-cn-shenzhen.aliyuncs.com',
+        secure: false,
+        changeOrigin: true,
+        pathRewrite: {
+          '^https://weilaavatar.oss-cn-shenzhen.aliyuncs.com': '',
+        },
+      },
+
+      '/avatar': {
+        target: 'https://weilaavatar.oss-cn-shenzhen.aliyuncs.com',
+        secure: false,
+        changeOrigin: true,
+        pathRewrite: {
+          '^/avatar': '/avatar',
+        },
+      },
+
+      '/ptt': {
+        target: 'https://weilaspeech.oss-cn-shenzhen.aliyuncs.com',
+        secure: false,
+        changeOrigin: true,
+        pathRewrite: {
+          '^/ptt': '/ptt',
+        },
+
+3、webpack打包的时候，不要分析weilasdk的目录，否则可能会报很多错误
+4、webpack打包尽量用zip
+5、在使用VUE3或VUE2的时候，如果使用Reactive的方式即Proxy的方式包裹weilaSDK实例，会出问题。建议采用markRaw的方式
+   确保不会使weilaSDK的实例Proxy。
+
+
+6. 如果sdk是用在uniapp上开发的，要做如下事情
+   a. 把public/assets/下的sdk用到的资源，放到uniapp工程的static下，最好统一放到一个目录，例如weilasdk
+   b. 在weilaCore初始化之前，调用setConfigData的函数，重新把这些资源的路径重新设置以下，最好版本号也拉高
+   c. 在vue.config.js那里，增加rule规则，判断是wasm尾缀的文件，用file-loader的方式来加载

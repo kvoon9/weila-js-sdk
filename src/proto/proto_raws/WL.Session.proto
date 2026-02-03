@@ -1,0 +1,366 @@
+syntax = "proto2";
+
+package WL.Session;
+import "WL.Common.proto";
+import "WL.Location.proto";
+
+//option objc_class_prefix = "WLSession";
+option java_package = "com.voistech.weila.protobuf";
+//option java_outer_classname = "WEILAIMMessage";
+//option optimize_for = LITE_RUNTIME; //调试使用SPEED,发布使用LITE_RUNTIME
+
+enum SessionCommandId {
+    SESSION_COMMAND_GET_SESSION             = 0x00; //获取会话信息
+    SESSION_COMMAND_REMOVE_SESSION          = 0x01; //删除会话
+    SESSION_COMMAND_BURST_CONTROL           = 0x02; //话权控制
+    SESSION_COMMAND_MSGDATA                 = 0x03; //会话消息
+    SESSION_COMMAND_READ_MSG                = 0x05; //消息已读
+    SESSION_COMMAND_GET_UNREAD_MSG          = 0x06; //拉取未读消息
+    SESSION_COMMAND_GET_MSG                 = 0x07; //拉取消息
+    SESSION_COMMAND_MONITOR_CONTROL         = 0x08; //监听控制
+    SESSION_COMMAND_GET_USERINFO            = 0x09; //获取会话成员用户信息
+    SESSION_COMMAND_GET_ONLINE_MEMBER       = 0x0a; //获取会话在线成员
+    
+    SESSION_COMMAND_VOIP_INVITE             = 0x10; //voip邀请
+    SESSION_COMMAND_VOIP_ACCEPT             = 0x11; //voip接听
+    SESSION_COMMAND_VOIP_HANGUP             = 0x12; //voip挂断
+    
+    //EMBEDDED接口
+    SESSION_EMBEDDED_COMMAND_ATTACH_SESSION = 0x40; //附着会话(只转发附着会话)
+}
+
+enum BurstControlType {
+//请求类型
+    BURST_CONTROL_REQUEST   = 0x00; //请求话权
+    BURST_CONTROL_RELEASE   = 0x01; //释放话权
+    
+    //通知类型
+    BURST_CONTROL_INTERRUPT = 0x08; //打断讲话(终端收到后停止播放被打断用户语音)
+    BURST_CONTROL_REVOKE    = 0x09; //话权回收
+    BURST_CONTROL_TAKEN     = 0x0a; //话权占用
+    BURST_CONTROL_IDLE      = 0x0b; //话权空闲
+}
+
+//SERVICE消息描述
+//图片 {"service_type": "image", "content": {"url": "http://xx.jpg"}}
+//视频 {"service_type": "video", "content": {"url": "http://xx.jpg", "thumb": "http://xx.jpg", "name": "视频名称", "size": "视频大小"}}
+//文件 {"service_type": "file", "content": {"url": "http://xx", "thumb": "http://xx.jpg", "name": "文件名称", "size": "视频大小"}}
+//位置 {"service_type": "location", "content": {"url": "http://xx.jpg", "latitude": "123.123", "longitude": "23.113", "type": "gcj02", "name": "位置名称", "address": "地址"}}
+//二维码名片 {"service_type": "qrcode", "content": {"url": "http://xx.jpg", "name": "二维码名称", "desc": "二维码描述", "session_id": "会话ID", "session_type": "会话类型"}}
+//会话成员变更 {"service_type": "session-member-change", "content": {"action": "join/exit", "members": [{"user_id":1, "nick":"张三"}, {"user_id":2, "nick":"李四"}]}}
+//群销毁 {"service_type": "group-destroy"}
+//设备电量告警{"service_type": "alarm-power", "content":{"user_id":告警用户Id数字,"user_number":"告警用户微喇号","user_nick":"告警用户昵称","user_avatar":"告警用户头像","timestamp":"告警时间戳","info":"告警信息"}
+//设备电子围栏告警{"service_type": "alarm-geofence", "content":{"user_id":告警用户Id数字,"user_number":"告警用户微喇号","user_nick":"告警用户昵称","user_avatar":"告警用户头像","geofence_id":围栏Id数字,"latitude":"设备纬度",,"longitude":"设备经度","location_type":0,"transition_type":1进入2离开3驻留,"timestamp":"告警时间戳","addr":"告警地址"}
+//设备SOS告警{"service_type": "alarm-sos", "content":{"user_id":告警用户Id数字,"user_number":"告警用户微喇号","user_nick":"告警用户昵称","user_avatar":"告警用户头像","latitude":"设备纬度",,"longitude":"设备经度","location_type":0,"timestamp":"告警时间戳","addr":"告警地址","info":"告警信息"}
+enum MessageType {
+    MSG_TYPE_TEXT = 0x01;
+    MSG_TYPE_AUDIO = 0x02;
+    MSG_TYPE_PTT = 0x03;
+    MSG_TYPE_SWITCH = 0x04;
+    MSG_TYPE_SERVICE = 0x05; //JSON业务消息 {"service_type": "业务类型", "content": "业务消息"}
+    MSG_TYPE_REVOCATION = 0x06;
+    MSG_TYPE_VOIP = 0x07;
+}
+
+message CodecData {
+    optional uint32 frameCount = 1; //帧数
+    optional bytes payload = 2; //编码数据
+}
+
+enum AudioSourceType {
+    PTT_SOURCE_ANDROID = 1;
+    PTT_SOURCE_IPHONE = 2;
+    PTT_SOURCE_WL100 = 3;
+    PTT_SOURCE_F1 = 4;
+    PTT_SOURCE_APP = 5;
+}
+    
+//PTT包数据
+message PttData {
+    optional uint32 marker = 1; //0x00 话音首包 0x01 话音中间包 0x02 话音分段包 0x03 语音整段 0xff 丢弃
+    optional uint32 seq = 2; //话音序号 每段话音自增
+    optional uint32 packageSeq = 3; //段内分包 0为首包 用于未来支持UDP协议组包
+    optional uint32 source = 4; //音源类型 AudioSourceType或由终端定义
+    optional uint32 monitor = 5; //是否为监听0否 1是
+    
+    optional CodecData opusData = 8; //OPUS语音数据
+}
+
+//语音数据
+message AudioData {
+    optional string url = 1; //语音URL
+    optional bytes payload = 2; //语音数据(未赋值时APP需要通过URL下载)
+}
+
+//透传消息
+message SwitchData {
+    optional string serviceData = 1; //JSON业务消息,同MsgData.serviceData
+}
+
+//聊天消息
+message MsgData {
+    optional uint32 senderId = 1;
+    optional uint64 sessionId = 2;
+    optional uint32 sessionType = 3;
+    optional uint32 msgId = 4; //msgId由后台生成,发送时赋值0或不赋值
+    optional uint32 msgType = 5;
+    optional uint64 created = 6;
+    optional string tag = 7; //发送者名称
+    optional uint32 autoReply = 8; //是否为自动回复消息 0或未赋值 不是 1 是
+    
+    optional string textData = 10; //文本消息对应MSG_TYPE_TEXT
+    optional AudioData audioData = 11; //语音消息 对应MSG_TYPE_AUDIO
+    optional PttData pttData = 12; //PTT实时消息 对应MSG_TYPE_PTT
+    optional SwitchData switchData = 13; //透传消息 对应MSG_TYPE_SWITCH
+    optional string serviceData = 14; //JSON业务消息,对应MSG_TYPE_SERVICE,可以携带多种消息(语音、图片、视频、位置、分享、业务类等消息
+    optional uint32 revocationMsgId = 15; //撤回消息Id,对应MSG_TYPE_REVOCATION
+}
+
+message EmbeddedAttachSessionInfo {
+    optional uint64 sessionId = 1;
+    optional uint32 sessionType = 2;
+}
+
+message SessionInfo {
+    optional uint64 sessionId = 1;
+    optional uint32 sessionType = 2;
+    optional uint32 readMsgId = 3; //已读消息Id(APP检查readMsgId与latestMsgId之间缺失的消息段,然后调用GET_UNREAD_MSG拉取)
+    optional uint64 latestUpdated = 4; //最近更新时间
+
+    optional MsgData latestMsgData = 8; //最新一条会话消息
+}
+
+//用户Session Redis存储(Session暂时使用Mysql表存储)
+//1、获取用户群Id
+//2、获取群Id Session列表
+//3、获取用户Related列表
+//4、获取RelatedId Session列表
+//5、获取删除Session列表
+//5、合并更新时间大于latestUpdated的Session且过滤在删除Session列表并且更新时间小于删除时间的Session
+
+//过期Session处理
+//闲时遍历过期Session,逐条删除Session消息记录
+//闲时遍历Session,逐条删除Session过期消息,更新Session readMsgId为基本
+message ReqGetSession {
+    optional uint64 latestUpdated = 1; //APP每次收发消息成功后使用系统返回的created更新Session列表latestUpdated
+    optional uint32 type = 2; //0 个人 1 企业
+}
+
+message RspGetSession {
+    optional uint64 latestUpdated = 1;
+    repeated SessionInfo sessionInfoList = 2;
+}
+
+//存储删除会话信息(Redis按会话过期时间设置过期时间)
+message ReqRemoveSession {
+    optional uint64 sessionId = 1;
+    optional uint32 sessionType = 2;
+}
+
+message RspRemoveSession {
+}
+
+message ReqBurstControl {
+    optional uint64 sessionId = 1;
+    optional uint32 sessionType = 2;
+    optional uint32 burstType = 3;
+}
+
+message RspBurstControl {
+    optional uint32 duration = 1; //BurstType为Request有效,讲话最大时长单位秒
+}
+
+message NtfBurstControl {
+    optional uint64 sessionId = 1;
+    optional uint32 sessionType = 2;
+    optional uint32 burstType = 3;
+    
+    optional uint32 talkerId = 8; //讲话人Id burstType为INTERRUPT、REVOKE时有效
+}
+
+//发送消息
+message ReqMsg {
+    optional MsgData msgData = 1;
+    optional WL.Location.LocationInfo locationInfo = 2;
+}
+
+message RspMsg {
+    optional uint32 msgId = 1;
+    optional uint64 created = 2;
+
+    //兼容旧协议
+    optional uint64 sessionId = 6;
+    optional uint32 sessionType = 7;
+    
+    //一对一会话有效
+    optional uint32 remoteStatus = 8; //被叫状态 0或未赋值在线 1不在线
+    optional uint32 onlineMemberCount = 9; //在线用户数
+}
+
+//转发消息
+message NtfMsg {
+    optional MsgData msgData = 1;
+    optional uint32 onlineMemberCount = 2; //在线用户数
+}
+
+message ReqMsgRead {
+    optional uint64 sessionId = 1;
+    optional uint32 sessionType = 2;
+    optional uint32 readMsgId = 3;
+}
+
+message RspMsgRead {
+    optional uint32 readMsgId  = 1;
+}
+
+message ReqGetUnreadMsg {
+    optional uint64 sessionId = 1;
+    optional uint32 sessionType = 2;
+    optional uint32 fromMsgId = 3;
+    optional uint32 toMsgId = 4;
+}
+
+message RspGetUnreadMsg {
+    repeated MsgData msgList = 1;
+}
+
+message ReqGetMsg {
+    optional uint64 sessionId = 1;
+    optional uint32 sessionType = 2;
+    optional uint32 msgId = 3; //按消息Id与条数获取
+    optional uint32 count = 4;
+    
+    optional uint32 oldestMsgId = 5; //拉取该消息ID之后所有消息(缓存模式)
+    
+    repeated uint32 msgIds = 8; //按消息Id获取
+}
+
+message RspGetMsg {
+    repeated MsgData msgList = 1;
+}
+
+message ReqMonitorControl {
+    optional uint32 status = 1; //状态 0 停止监听 1启动监听
+    optional uint32 duration = 2; //持续时长 默认60s
+}
+
+message RspMonitorControl {
+}
+
+message NtfMonitorControl{
+    optional uint32 monitorId = 1; //监听用户Id
+    optional uint32 status = 2; //状态 0 停止监听 1启动监听
+    optional uint32 duration = 3; //持续时长 默认60s
+}
+
+message ReqGetSessionUserInfo {
+    optional uint64 sessionId = 1;
+    optional uint32 sessionType = 2;
+    repeated uint32 userIds = 3; //用户Id
+}
+
+message RspGetSessionUserInfo {
+    repeated WL.Common.UserInfo userInfos = 1; //用户信息列表
+}
+
+message ReqGetSessionOnlineMember {
+    optional uint64 sessionId = 1; //会话Id
+    optional uint32 sessionType = 2; //会话类型
+}
+
+message RspGetSessionOnlineMember {
+    repeated uint32 userIdList = 1;
+}
+
+message ReqVoipInvite {
+    optional string callId = 1; //呼叫Id
+    optional uint32 userId = 2; //被邀请者
+}
+
+message RspVoipInvite {
+    optional WL.Common.UserInfo userInfo = 8; //被邀请者用户信息
+}
+
+message NtfVoipInvite {
+    optional string callId = 1; //呼叫Id
+    optional uint32 userId = 2; //被邀请者
+    
+    optional WL.Common.UserInfo userInfo = 8; //邀请者用户信息
+}
+
+message ReqVoipAccept {
+    optional string callId = 1; //呼叫Id
+    optional uint32 userId = 2; //被邀请者
+}
+
+message RspVoipAccept {
+}
+
+message NtfVoipAccept {
+    optional string callId = 1; //呼叫Id
+    optional uint32 userId = 2; //被邀请者
+    
+    optional WL.Common.UserInfo userInfo = 8; //被邀请者用户信息
+}
+
+message ReqVoipHangup {
+    optional string callId = 1; //呼叫Id
+    optional uint32 userId = 2; //被邀请者
+}
+
+message RspVoipHangup {
+}
+
+message NtfVoipHangup {
+    optional string callId = 1; //呼叫Id
+    optional uint32 userId = 2; //被邀请者
+}
+
+//EMBEDDED接口
+message ReqEmbeddedAttachSession {
+    repeated EmbeddedAttachSessionInfo sessionInfos = 1;
+    optional uint32 supportSingle = 2;
+}
+
+message RspEmbeddedAttachSession {
+}
+
+message SessionMessage {
+    optional ReqGetSession reqGetSession                     = 1;
+    optional RspGetSession rspGetSession                     = 2;
+    optional ReqRemoveSession reqRemoveSession               = 3;
+    optional RspRemoveSession rspRemoveSession               = 4;
+    optional ReqBurstControl reqBurstControl                 = 5;
+    optional RspBurstControl rspBurstControl                 = 6;
+    optional NtfBurstControl ntfBurstControl                 = 7;
+    optional ReqMsg reqMsg                                   = 8;
+    optional RspMsg rspMsg                                   = 9;
+    optional NtfMsg ntfMsg                                   = 10;
+    optional ReqMsgRead reqMsgRead                           = 13;
+    optional RspMsgRead rspMsgRead                           = 14;
+    optional ReqGetUnreadMsg reqGetUnreadMsg                 = 15;
+    optional RspGetUnreadMsg rspGetUnreadMsg                 = 16;
+    optional ReqGetMsg reqGetMsg                             = 17;
+    optional RspGetMsg rspGetMsg                             = 18;
+    optional ReqMonitorControl reqMonitorControl             = 19;
+    optional RspMonitorControl rspMonitorControl             = 20;
+    optional NtfMonitorControl ntfMonitorControl             = 21;
+    optional ReqGetSessionUserInfo reqGetSessionUserInfo     = 22;
+    optional RspGetSessionUserInfo rspGetSessionUserInfo     = 23;
+    optional ReqGetSessionOnlineMember reqGetSessionOnlineMember = 24;
+    optional RspGetSessionOnlineMember rspGetSessionOnlineMember = 25;
+    
+    optional ReqVoipInvite reqVoipInvite                     = 64;
+    optional RspVoipInvite rspVoipInvite                     = 65;
+    optional NtfVoipInvite ntfVoipInvite                     = 66;
+    optional ReqVoipAccept reqVoipAccept                     = 67;
+    optional RspVoipAccept rspVoipAccept                     = 68;
+    optional NtfVoipAccept ntfVoipAccept                     = 69;
+    optional ReqVoipHangup reqVoipHangup                     = 70;
+    optional RspVoipHangup rspVoipHangup                     = 71;
+    optional NtfVoipHangup ntfVoipHangup                     = 72;
+
+    //EMBEDDED接口
+    optional ReqEmbeddedAttachSession reqEmbeddedAttachSession = 120;
+    optional RspEmbeddedAttachSession rspEmbeddedAttachSession = 121;
+}

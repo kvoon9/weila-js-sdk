@@ -1,0 +1,61 @@
+syntax = "proto2";
+
+package WL.System;
+
+//option objc_class_prefix = "WLSystem";
+option java_package = "com.voistech.weila.protobuf";
+//option java_outer_classname = "WEILAIMMessage";
+//option optimize_for = LITE_RUNTIME; //调试使用SPEED,发布使用LITE_RUNTIME
+
+enum SystemCommandId {
+    SYSTEM_COMMAND_NOTIFICATION             = 0x00; //系统通知
+    SYSTEM_COMMAND_SYNC_NOTIFICATION        = 0x01; //同步系统通知
+}
+     
+//格式 {"msg_id":消息Id数字,"msg_type":"消息类型","timestamp":"消息时间戳","content":"消息内容"}
+//设备电量告警{"msg_id":1,"msg_type":"alarm-power","timestamp":"1639550435",
+//"content":{"user_id":告警用户Id数字,"user_number":"告警用户微喇号","user_nick":"告警用户昵称","user_avatar":"告警用户头像","timestamp":"告警时间戳","info":"告警信息"}
+//设备电子围栏告警{"msg_id":1,"msg_type":"alarm-geofence","timestamp":"1639550435",
+//"content":{"user_id":告警用户Id数字,"user_number":"告警用户微喇号","user_nick":"告警用户昵称","user_avatar":"告警用户头像",
+//"geofence_id":围栏Id数字,"latitude":"设备纬度",,"longitude":"设备经度","location_type":0,"transition_type":1进入2离开3驻留,"timestamp":"告警时间戳","addr":"告警地址"}
+//设备SOS告警{"msg_id":1,"msg_type":"alarm-sos","timestamp":"1639550435",
+//"content":{"user_id":告警用户Id数字,"user_number":"告警用户微喇号","user_nick":"告警用户昵称","user_avatar":"告警用户头像",
+//"latitude":"设备纬度",,"longitude":"设备经度","location_type":0,"timestamp":"告警时间戳","addr":"告警地址","info":"告警信息"}
+//设备好友邀请{"msg_id":1,"msg_type":"friend-invite","timestamp":"1639550435",
+//"content":{"inviter_id":邀请者用户Id数字,"inviter_number":"邀请者微喇号","inviter_nick":"邀请者昵称","inviter_avatar":"邀请者头像",
+//"invitee_id":被邀请者用户Id数字,"invitee_number":"邀请者微喇号","invitee_nick":"邀请者昵称","invitee_avatar":"邀请者头像","detail":"描述"}}
+//系统公告{"msg_id":1,"msg_type":"system-announcement","timestamp":"1639550435",
+//"content":{"user_id":用户Id数字,"user_number":"用户微喇号","user_nick":"用户昵称","user_avatar":"用户头像","type":"公告类型","announcement":"公告信息"}
+//审核变更通知{"msg_id":1,"msg_type":"review-change","timestamp":"1639550435",
+//"content":{"avatar":"头像","title":"什么信息审核通知","describe":"身份认证审核通过","weburl":"http://"}
+//taxi订单更新
+//{"msg_id":1,"msg_type":"taxi-order-change","timestamp":"1639550435",
+//"content":{"wait-accept-appoint":1,"wait-dispatch-appoint":1,"accept-appoint":1,"tone"="您有回程单超时,系统已自动关闭,请及时查看"}
+//系统通知
+//{"msg_id":1,"msg_type":"system-prompt","timestamp":"1639550435","content":{"title": "订单抢单失败", "prompt": "司机XX距离乘客的更近,获得了订单"}
+//企业通知
+//{"msg_id":1,"msg_type":"corp-member-change","timestamp":"1639550435","content":{"org_number": "1213"} //企业成员变更
+//{"msg_id":1,"msg_type":"corp-group-change","timestamp":"1639550435","content":{"org_number": "1213", "group_id": 123} //群变更
+//{"msg_id":1,"msg_type":"corp-group-delete","timestamp":"1639550435","content":{"org_number": "1213", "group_id": 123} //群删除
+
+//设备群邀请
+message NtfNotification {
+    optional string content = 1; //文本数据JSON格式
+    
+    optional bool transfer = 2; //是否透传 0 否 1 是
+}
+
+message ReqSyncNotification {
+    optional uint64 latestUpdated = 1; //最新同步时间
+}
+
+message RspSyncNotification {
+    optional uint64 latestUpdated = 1; //最新同步时间
+    repeated string content = 2; //文本数据JSON格式
+}
+
+message SystemMessage {
+    optional NtfNotification ntfNotification                 = 3;
+    optional ReqSyncNotification reqSyncNotification         = 4;
+    optional RspSyncNotification rspSyncNotification         = 5;
+}

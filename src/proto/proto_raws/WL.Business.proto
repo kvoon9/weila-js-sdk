@@ -1,0 +1,324 @@
+syntax = "proto2";
+
+package WL.Business;
+import "WL.Common.proto";
+
+//option objc_class_prefix = "WLBusiness";
+option java_package = "com.voistech.weila.protobuf";
+//option java_outer_classname = "WEILAIMMessage";
+//option optimize_for = LITE_RUNTIME; //调试使用SPEED,发布使用LITE_RUNTIME
+
+enum BusinessCommandId {
+    //公共接口
+    BUSINESS_COMMAND_COMMON_SESSION_CHANGE              = 0x01; //服务会话变更通知
+    BUSINESS_COMMAND_COMMON_GET_SESSION                 = 0x02; //获取服务会话信息
+    BUSINESS_COMMAND_COMMON_STAFF_INVITE                = 0x03; //服务号客服邀请(邀请加入服务号)
+    BUSINESS_COMMAND_COMMON_ANSWER_STAFF_INVITE         = 0x04; //服务号客服邀请应答
+    BUSINESS_COMMAND_COMMON_GET_STAFF_INVITE            = 0x05; //获取服务号客服邀请
+    BUSINESS_COMMAND_COMMON_STAFF_EXIT                  = 0x06; //服务号客服退出
+    BUSINESS_COMMAND_COMMON_STAFF_DELETE                = 0x07; //服务号客服删除
+    
+    //客服接口
+    BUSINESS_COMMAND_STAFF_ACCEPT_SESSION               = 0x20; //接受服务会话(其他客服自动退出)
+    BUSINESS_COMMAND_STAFF_EXIT_SESSION                 = 0x21; //退出服务会话(所有客服退出自动关闭)
+    BUSINESS_COMMAND_STAFF_CLOSE_SESSION                = 0x22; //关闭服务会话
+    BUSINESS_COMMAND_STAFF_SESSION_INVITE               = 0x23; //服务会话邀请
+    BUSINESS_COMMAND_STAFF_ANSWER_SESSION_INVITE        = 0x24; //服务会话邀请应答
+    BUSINESS_COMMAND_STAFF_REMOVE_SESSION_STAFFS        = 0x25; //请出会话客服
+    BUSINESS_COMMAND_STAFF_SEARCH_STAFFS                = 0x26; //查询客服
+    BUSINESS_COMMAND_STAFF_RESET_SESSION                = 0x27; //重新激活服务会话
+    
+    //客户接口
+    BUSINESS_COMMAND_CUSTOMER_CLOSE_SESSION             = 0x50; //乘客关闭服务会话
+}
+
+enum ServiceType {
+    SERVICE_PERSON          = 0; //个人服务号
+    SERVICE_ENTERPRISE      = 1; //企业服务号
+}
+ 
+message ServiceAttribute {
+    optional uint32 id = 1; //服务号Id
+    optional string number = 2; //服务号号码
+    optional string name = 3; //服务号名称
+    optional uint32 type = 4; //服务号类型 参考ServiceType
+    optional uint32 class = 5; //服务号分类 前16bit大类 后16bit小类
+    optional string avatar = 6; //头像
+    optional string intro = 7; //简介
+    optional string url = 11; //服务号web
+    
+    optional uint64 created = 15;
+}
+
+enum ServiceStaffStatus {
+    SERVICE_STAFF_WORK = 0; //工作状态
+    SERVICE_STAFF_LEAVE = 1; //离开
+}
+
+message StaffAttribute {
+    optional WL.Common.UserInfo userInfo = 1; //客户微喇信息
+    optional uint32 type = 2; // 0 人工客服
+    optional uint32 admin = 3; //是否管理类型 0不是 1是
+    optional uint32 class = 4; //客服分类
+    
+    optional uint32 operator = 14; //是否接线员
+    optional uint64 created = 15;
+}
+
+message StaffInvite {
+    optional ServiceAttribute serviceAttribute = 1; //服务号属性
+    optional StaffAttribute invitor = 2; //邀请客服
+    optional uint32 status = 3;
+    optional string content = 4; //说明
+}
+
+enum ServiceStatus {
+    SERVICE_STATUS_INIT             = 0; //服务初始化
+    SERVICE_STATUS_PROCESSING       = 1; //服务进行中(客服分配成功)
+    SERVICE_STATUS_TERMINATE        = 2; //全部客服离开导致关闭
+    SERVICE_STATUS_FINISH           = 3; //正常关闭
+    SERVICE_STATUS_DISPATCH_TIMEOUT = 4; //超时关闭(未分配客服)
+    SERVICE_STATUS_MSG_TIMEOUT      = 5; //超时关闭(客户长时无消息)
+    SERVICE_STATUS_STAFF_MISSING    = 6; //没有在线客服
+    SERVICE_STATUS_CUSTOMER_CANCEL  = 7; //客户取消
+    SERVICE_STATUS_STAFF_CALLBACK   = 8; //客服回呼
+}
+
+message CustomerAttribute {
+    optional WL.Common.UserInfo userInfo = 1; //客户微喇信息
+}
+
+//extra
+//{"distance":1200, "address":"xx路", "tts":"实时,有乘客在xx路叫车"}
+message ServiceSession {
+    optional ServiceAttribute serviceAttribute = 1; //服务号信息
+    optional CustomerAttribute customerAttribute = 2; //客户信息
+    repeated StaffAttribute staffAttributes = 3; //客服信息
+    optional uint32 status = 4; //服务状态 参考ServiceStatus
+    
+    optional string extra = 8; //额外信息 Json
+    optional uint64 created = 14; //服务开始时间
+    optional uint64 updated = 15; //最近更新时间
+}
+
+message ServiceSessionInvite {
+    optional ServiceSession session = 1; //服务会话
+    optional StaffAttribute invitor = 2; //邀请客服
+    optional string content = 3; //说明
+}
+    
+//公共接口
+message NtfCommonSessionChange {
+    optional ServiceSession session = 1; //服务信息
+}
+
+message ReqCommonGetSessions {
+    repeated uint64 sessionIds = 1;
+}
+
+message RspCommonGetSessions {
+    repeated ServiceSession sessions = 1;
+}
+
+message ReqCommonStaffInvite {
+    optional uint32 serviceId = 1; //服务号Id
+    repeated uint32 userIds = 2; //被邀请用户Id
+    optional string content = 3; //说明
+}
+
+message RspCommonStaffInvite {
+}
+
+message NtfCommonStaffInvite {
+    optional StaffInvite inviteInfo = 1;
+}
+
+message ReqCommonAnswerStaffInvite {
+    optional uint32 serviceId = 1; //服务号Id
+    optional uint32 invitorId = 2; //邀请者Id
+    optional uint32 status = 3; //应答类型(参考WL.Common.AnswerStatus)
+}
+
+message RspCommonAnswerStaffInvite {
+}
+
+message NtfCommonAnswerStaffInvite {
+    optional uint32 serviceId = 1; //服务号Id
+    optional uint32 userId = 2; //被邀请微喇用户Id
+    optional uint32 status = 3; //应答类型(参考WL.Common.AnswerStatus)  
+}
+
+message ReqCommonGetStaffInvite {
+    optional uint64 latestUpdated = 1;
+}
+
+message RspCommonGetStaffInvite {
+    repeated StaffInvite invites = 1;
+    optional uint64 latestUpdated = 2;
+}
+
+message ReqCommonStaffExit {
+    optional uint32 serviceId = 1; //服务号Id
+}
+
+message RspCommonStaffExit {
+}
+
+message ReqCommonStaffDelete {
+    optional uint32 serviceId = 1; //服务号Id
+    optional uint32 userId = 2;
+}
+
+message RspCommonStaffDelete {
+}
+
+//客服接口
+message ReqStaffAcceptSession {
+    optional uint64 sessionId = 1;
+}
+
+message RspStaffAcceptSession {
+}
+
+message NtfStaffAcceptSession {
+    optional uint64 sessionId = 1;
+    optional uint32 staffId = 2; //接受客服Id
+}
+    
+message ReqStaffExitSession {
+    optional uint64 sessionId = 1;
+}
+
+message RspStaffExitSession {
+}
+
+message NtfStaffExitSession {
+    optional uint64 sessionId = 1;
+    optional uint32 staffId = 2; //退出客服Id
+}
+
+message ReqStaffCloseSession {
+    optional uint64 sessionId = 1;
+}
+
+message RspStaffCloseSession {
+}
+
+message NtfStaffCloseSession {
+    optional uint64 sessionId = 1;
+    optional uint32 staffId = 2; //关闭客服Id 空或0表示系统关闭
+}
+
+message ReqStaffSessionInvite {
+    optional uint64 sessionId = 1;
+    repeated uint32 staffIds = 2; //被邀请客服Id
+    optional string content = 3; //说明
+}
+
+message RspStaffSessionInvite {
+}
+
+message NtfStaffSessionInvite {
+    optional ServiceSession session = 1; //服务会话
+    optional string content = 2; //说明
+}
+
+message ReqStaffAnswerSessionInvite {
+    optional uint64 sessionId = 1;
+    optional uint32 status = 2; //应答类型(参考WL.Common.AnswerStatus)
+}
+
+message RspStaffAnswerSessionInvite {
+}
+
+message NtfStaffAnswerSessionInvite {
+    optional uint64 sessionId = 1;
+    optional StaffAttribute invitee = 2; //被邀请客服信息
+    optional uint32 status = 3; //应答类型(参考WL.Common.AnswerStatus)  
+}
+
+message ReqStaffRemoveSessionStaff {
+    optional uint64 sessionId = 1;
+    repeated uint32 staffIds = 2; //被移除客服Id
+}
+
+message RspStaffRemoveSessionStaff {
+}
+
+message NtfStaffRemoveSessionStaff {
+    optional uint64 sessionId = 1;
+}
+
+message ReqStaffSearchStaffs {
+    optional uint32 serviceId = 1;
+    optional uint32 class = 2; //客服分类 (前16bit大类,后16bit小类,后16bit为0,大类匹配)
+    
+    optional uint32 pageIndex = 14; //页码
+    optional uint32 pageSize = 15; //每页条数
+}
+    
+message RspStaffSearchStaffs {
+    repeated StaffAttribute staffs = 1;
+}
+
+message ReqStaffResetSession {
+    optional uint64 sessionId = 1;
+}
+
+message RspStaffResetSession {
+}
+
+//Customer接口
+message ReqCustomerCloseSession {
+    optional uint64 sessionId = 1;
+}
+
+message RspCustomerCloseSession {
+}
+
+message BusinessMessage {
+    //公共消息
+    optional NtfCommonSessionChange ntfCommonSessionChange                  = 1;
+    optional ReqCommonGetSessions reqCommonGetSessions                      = 2;
+    optional RspCommonGetSessions rspCommonGetSessions                      = 3;
+    optional ReqCommonStaffInvite reqCommonStaffInvite                      = 4;
+    optional RspCommonStaffInvite rspCommonStaffInvite                      = 5;
+    optional NtfCommonStaffInvite ntfCommonStaffInvite                      = 6;
+    optional ReqCommonAnswerStaffInvite reqCommonAnswerStaffInvite          = 7;
+    optional RspCommonAnswerStaffInvite rspCommonAnswerStaffInvite          = 8;
+    optional NtfCommonAnswerStaffInvite ntfCommonAnswerStaffInvite          = 9;
+    optional ReqCommonGetStaffInvite reqCommonGetStaffInvite                = 10;
+    optional RspCommonGetStaffInvite rspCommonGetStaffInvite                = 11;
+    optional ReqCommonStaffExit reqCommonStaffExit                          = 12;
+    optional RspCommonStaffExit rspCommonStaffExit                          = 13;
+    optional ReqCommonStaffDelete reqCommonStaffDelete                      = 15;
+    optional RspCommonStaffDelete rspCommonStaffDelete                      = 16;
+    
+    //客服消息
+    optional ReqStaffAcceptSession reqStaffAcceptSession                    = 40;
+    optional RspStaffAcceptSession rspStaffAcceptSession                    = 41;
+    optional NtfStaffAcceptSession ntfStaffAcceptSession                    = 42;
+    optional ReqStaffExitSession reqStaffExitSession                        = 43;
+    optional RspStaffExitSession rspStaffExitSession                        = 44;
+    optional NtfStaffExitSession ntfStaffExitSession                        = 45;
+    optional ReqStaffCloseSession reqStaffCloseSession                      = 46;
+    optional RspStaffCloseSession rspStaffCloseSession                      = 47;
+    optional NtfStaffCloseSession ntfStaffCloseSession                      = 48;
+    optional ReqStaffSessionInvite reqStaffSessionInvite                    = 49;
+    optional RspStaffSessionInvite rspStaffSessionInvite                    = 50;
+    optional NtfStaffSessionInvite ntfStaffSessionInvite                    = 51;
+    optional ReqStaffAnswerSessionInvite reqStaffAnswerSessionInvite        = 52;
+    optional RspStaffAnswerSessionInvite rspStaffAnswerSessionInvite        = 53;
+    optional NtfStaffAnswerSessionInvite ntfStaffAnswerSessionInvite        = 54;
+    optional ReqStaffRemoveSessionStaff reqStaffRemoveSessionStaff          = 55;
+    optional RspStaffRemoveSessionStaff rspStaffRemoveSessionStaff          = 56;
+    optional NtfStaffRemoveSessionStaff ntfStaffRemoveSessionStaff          = 57;
+    optional ReqStaffSearchStaffs reqStaffSearchStaffs                      = 58;
+    optional RspStaffSearchStaffs rspStaffSearchStaffs                      = 59;
+    optional ReqStaffResetSession reqStaffResetSession                      = 60;
+    optional RspStaffResetSession rspStaffResetSession                      = 61;
+    
+    //乘客消息
+    optional ReqCustomerCloseSession reqCustomerCloseSession                = 160;
+    optional RspCustomerCloseSession rspCustomerCloseSession                = 161;
+}

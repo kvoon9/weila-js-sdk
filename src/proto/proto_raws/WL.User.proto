@@ -1,0 +1,75 @@
+syntax = "proto2";
+
+package WL.User;
+import "WL.Common.proto";
+
+//option objc_class_prefix = "WLUser";
+option java_package = "com.voistech.weila.protobuf";
+//option java_outer_classname = "WEILAIMMessage";
+//option optimize_for = LITE_RUNTIME; //调试使用SPEED,发布使用LITE_RUNTIME
+
+enum UserCommandId {
+    USER_COMMAND_GET_USERINFO               = 0x00; //获取用户信息
+    USER_COMMAND_CHANGE_USERINFO            = 0x01; //修改用户信息
+    USER_COMMAND_GET_CONFIG                 = 0x20; //获取配置
+    USER_COMMAND_SET_CONFIG                 = 0x21; //设置配置
+}
+
+message ReqGetUserInfo {
+    //查询用户时有效
+    optional string key = 8;
+}
+
+message RspGetUserInfo {
+    repeated WL.Common.UserInfo userInfoList = 2; //用户信息列表
+}
+
+message ReqChangeUserInfo {
+    optional uint32 sex = 1; //性别
+    optional string nick = 2; //昵称
+    optional string avatar = 3; //头像url
+    optional string signature = 4; //签名
+}
+
+message RspChangeUserInfo {
+    optional WL.Common.UserInfo userInfo = 1;
+}
+
+message NtfChangeUserInfo {
+    optional WL.Common.UserInfo userInfo = 1;
+}
+
+message ReqGetConfig {
+}
+
+message RspGetConfig {
+    optional string config = 1; //配置信息
+}
+
+message ReqSetConfig {
+    optional uint32 userId = 1; //配置用户Id
+    optional string name = 2; //配置名
+    optional string content = 3; //配置内容
+}
+
+message RspSetConfig {
+    optional string config = 1; //配置信息
+}
+
+message NtfSetConfig {
+    optional string config = 1; //配置信息
+}
+
+message UserMessage {
+    optional ReqGetUserInfo reqGetUserInfo                   = 1;
+    optional RspGetUserInfo rspGetUserInfo                   = 2;
+    optional ReqChangeUserInfo reqChangeUserInfo             = 3;
+    optional RspChangeUserInfo rspChangeUserInfo             = 4;
+    optional NtfChangeUserInfo ntfChangeUserInfo             = 5;
+    
+    optional ReqGetConfig reqGetConfig                       = 60;
+    optional RspGetConfig rspGetConfig                       = 61;
+    optional ReqSetConfig reqSetConfig                       = 62;
+    optional RspSetConfig rspSetConfig                       = 63;
+    optional NtfSetConfig ntfSetConfig                       = 64;
+}

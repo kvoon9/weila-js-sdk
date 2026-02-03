@@ -1,0 +1,312 @@
+syntax = "proto2";
+
+package WL.Login;
+import "WL.Common.proto";
+
+//option objc_class_prefix = "WLLogin";
+option java_package = "com.voistech.weila.protobuf";
+//option java_outer_classname = "WEILAIMMessage";
+//option optimize_for = LITE_RUNTIME; //调试使用SPEED,发布使用LITE_RUNTIME
+
+enum LoginCommandId {
+    LOGIN_COMMAND_LOGOUT                    = 0x01; //注销
+    LOGIN_COMMAND_KICKOUT                   = 0x02; //踢人
+    LOGIN_COMMAND_TOKEN                     = 0x03; //Token(推送需要)
+    LOGIN_COMMAND_HEARTBEAT                 = 0x04; //心跳
+    LOGIN_COMMAND_LOGIN_APP                 = 0x05; //登录
+    LOGIN_COMMAND_REFRESH_ACCESS_TOKEN      = 0x06; //刷新accesstoken(对一些安全性要求较高的业务(比如SOS)请求后刷新,防止数据被破解带来损失)
+    
+    LOGIN_COMMAND_BIND_EXTENSION            = 0x10; //绑定外设
+    LOGIN_COMMAND_ANSWER_BIND_EXTENSION     = 0x11; //绑定应答
+    LOGIN_COMMAND_UNBIND_EXTENSION          = 0x12; //解绑外设
+    LOGIN_COMMAND_GET_EXTENSIONINFO         = 0x13; //获取外设信息
+    LOGIN_COMMAND_LOCK_EXTENSION            = 0x14; //锁定外设
+    LOGIN_COMMAND_UNLOCK_EXTENSION          = 0x15; //解锁外设
+    LOGIN_COMMAND_GET_EXTENSIONLIST         = 0x16; //获取外设列表
+    LOGIN_COMMAND_GET_EXTENSION_CONFIG      = 0x17; //获取外设配置
+    LOGIN_COMMAND_SET_EXTENSION_CONFIG      = 0x18; //设置外设配置
+    LOGIN_COMMAND_SHUTDOWN_EXTENSION        = 0x19; //远程关机
+    LOGIN_COMMAND_ANSWER_SHUTDOWN_EXTENSION = 0x1a; //远程关机应答
+}
+
+enum KickoutReason {
+    KICKOUT_REASON_LOCK                     = 0; //封号
+    KICKOUT_REASON_DUPLICATE_CLIENT         = 1; //同一类型客户端同时登录
+    KICKOUT_REASON_MOBILE_KICK              = 2; //被移动设备踢
+}
+
+enum ExtensionState{
+    EXTENSION_NOBIND                        = 0x00;
+    EXTENSION_BINDING                       = 0x01;
+    EXTENSION_BIND                          = 0x02;
+    EXTENSION_LOCK                          = 0x03;
+}
+
+enum ExtensionType {
+    EXTENSION_SLAVE                         = 0x00; //从设备
+    EXTENSION_SUB                           = 0x01; //子设备
+}
+
+message ExtensionInfo {
+    optional string imei = 1;
+    optional uint32 state = 2; //参考DeviceState
+    optional string product = 3; //产品名
+    optional uint32 type = 4; //设备类型参考ExtensionType
+    optional uint32 userId = 5; //用户Id
+    optional uint32 managerId = 6; //管理员ID
+    optional uint32 status = 7; //在线状态 0 离线 1 在线
+    optional string version = 8; //客户端版本信息
+    optional string config = 9; //设备配置
+    optional uint32 groupLimit = 10; //群数限制
+    optional uint32 groupCount = 11; //加群数量
+    
+    optional uint32 cardRenew = 12; //卡续费标识 0 不续费 1 续费
+    optional uint64 actived = 13; //激活时间(0未激活)
+    optional uint64 warranted = 14; //保修过期时间(0未激活)
+    optional uint64 created = 15; //生产时间    
+    
+    optional string imsi = 20; //SIM imsi 仅服务器有效
+}
+
+message ReqLoginApp {
+    optional string signature = 1; //签名JSON {"et"="xxx","app_id"="123","sign"="xxx"} sign算法 MD5(et+appKey) et为请求过期时间UTC+10 app_id为微喇分配应用Id version版本号固定
+    optional string account = 2; //账号(微喇号或邮箱或手机号,clientType为Extension分类且为空表示为绑定设备登录)
+    optional string countryCode = 3; //国家码(空或0表示account为微喇号或邮箱,正常国家码表示account为手机号)
+    optional string password = 4; //密码(md5加密)
+    optional uint32 clientType = 5; //客户端类型
+    optional uint32 status = 6; //状态 UserStatusType
+    optional string version = 7; //客户端版本号{json,示例 {"appid":"com.voischat.weila","version":"1.0","versioncode":1}}
+    optional string deviceInfo = 8; //硬件信息JSON
+    optional uint32 pduVersion = 9; //PDU协议版本 1支持Group、Session新协议 2支持Login新协议
+    optional uint32 configVersion = 10; //用户配置版本号
+    optional uint32 extensionConfigVersion = 11; //设备配置版本号
+    
+    optional string special = 14; //特殊信息JSON(用于标识定制版本或某些敏感信息等,clientType为Extension{"id":"xxx","imei":"xxx","product":"meizu_M5s","imsi":"XXX"})
+}
+
+message RspLoginApp {
+    optional uint64 serverTime = 1; //服务器UTC时间Client要使用该时间来校准本地时间
+    optional WL.Common.UserInfo userInfo = 2; //用户信息
+    repeated WL.Common.UserStatus statusList = 3; //用户所有状态(APP、PC等多设备登录时)
+    optional string ip = 4; //禁止登录IP
+    optional uint64 forbidDuration = 5; //禁止登录剩余时长
+    optional string userConfig = 7; //配置信息 {"version":1,"configs":[{"type":0},{"type":1}]}
+    optional string token = 8; //使用http请求时携带
+    
+    //设备相关信息(ReqLogin clientType为Extension分类有效)
+    optional uint32 extensionState = 10; //设备状态
+    optional string verificationCode = 11; //设备绑定验证码(extensionState为EXTENSION_NOBIND时有效)
+    optional string extensionAccount = 12; //绑定用户账号(仅登录请求未携带account时有效)
+    optional string extensionPassword = 13; //登录密码(仅登录请求未携带account时有效)
+    optional uint32 extensionManagerId = 14; //设备管理员id
+    optional string extensionConfig = 15; //设备配置
+}
+
+message ReqLogout {
+}
+
+message RspLogout {
+}
+
+message ReqKickout {
+    repeated uint32 kickoutIds = 1; //被踢用户Id
+    optional uint32 clientType = 2; //客户端类型(未赋值表示踢掉所有客户端)
+    optional uint32 reason = 3; //踢人原因
+}
+
+message RspKickout {
+}
+
+message NtfKickout {
+    optional uint32 reason = 3; //踢人原因
+}
+
+message ReqToken {
+    optional string token = 1;
+}
+
+message RspToken {
+}
+
+message ReqHeartbeat {
+   optional uint64 serverTime = 1; //服务器方向有效,服务器UTC时间Client要使用该时间来校准本地时间
+   optional uint32 interval = 2; //心跳间隔
+}
+
+message RspHeartbeat {
+    optional uint64 serverTime = 1; //服务器方向有效,服务器UTC时间Client要使用该时间来校准本地时间
+    optional uint32 interval = 2; //心跳间隔
+}
+
+message ReqRefreshAccessToken {
+}
+
+message RspRefreshAccessToken {
+    optional string accessToken = 1;
+}
+
+message ReqBindExtension {
+    optional string verificationCode = 1;
+}
+
+message RspBindExtension {
+    optional uint32 extensionState = 1; //设备状态
+}
+
+message NtfBindExtension {
+    optional uint32 binderId = 1; //绑定用户Id
+    optional string binderNick = 2;
+}
+
+message ReqAnswerBindExtension {
+    optional uint32 binderId = 1; //绑定用户Id
+    optional string verificationCode = 2; //验证码
+    optional uint32 status = 3; //应答类型(参考WL.Common.AnswerStatus)
+}
+
+message RspAnswerBindExtension {
+    optional uint32 extensionState = 1; //设备状态
+    optional string account = 2; //绑定用户账号(使用该账号登录)
+    optional string password = 3; //登录密码(使用该密码登录)
+}
+
+message NtfAnswerBindExtension {
+    optional uint32 status = 1; //应答类型(参考WL.Common.AnswerStatus)
+    optional ExtensionInfo extensionInfo = 2; //设备信息
+    optional string verificationCode = 3; //验证码
+    optional WL.Common.UserInfo userInfo = 4; //设备用户信息
+}
+
+message ReqUnbindExtension {
+}
+
+message RspUnbindExtension {
+    optional uint32 extensionState = 1; //设备状态
+}
+
+message NtfUnbindExtension {
+}
+
+message ReqGetExtensionInfo {
+}
+
+message RspGetExtensionInfo {
+    optional ExtensionInfo info = 1;
+}
+
+message ReqGetExtensionList {
+}
+
+message RspGetExtensionList {
+    repeated ExtensionInfo infos = 1;
+}
+
+message ReqLockExtension {
+}
+
+message RspLockExtension {
+    optional uint32 extensionState = 1; //设备状态
+}
+
+message NtfLockExtension {
+    optional uint32 extensionState = 1; //设备状态
+}
+
+message ReqUnlockExtension {
+}
+
+message RspUnlockExtension {
+    optional uint32 extensionState = 1; //设备状态
+}
+
+message NtfUnlockExtension {
+    optional uint32 extensionState = 1; //设备状态
+}
+
+message ReqGetExtensionConfig {
+}
+
+message RspGetExtensionConfig {
+    optional string config = 1; //配置信息
+}
+
+message ReqSetExtensionConfig {
+    optional string name = 1; //配置名
+    optional string content = 2; //配置内容
+}
+
+message RspSetExtensionConfig {
+    optional string config = 1; //配置信息
+}
+
+message NtfSetExtensionConfig {
+    optional string config = 1; //配置信息
+}
+
+message ReqShutdownExtension {
+}
+
+message RspShutdownExtension {
+}
+
+message NtfShutdownExtension {
+    optional uint32 guardianId = 1;
+}
+
+message ReqAnswerShutdownExtension {
+    optional uint32 guardianId = 1;
+}
+
+message RspAnswerShutdownExtension {
+}
+
+message NtfAnswerShutdownExtension {
+    optional uint32 subUserId = 1;
+}
+
+message LoginMessage {
+    optional ReqLogout reqLogout                             = 3;
+    optional RspLogout rspLogout                             = 4;
+    optional ReqKickout reqKickout                           = 5;
+    optional RspKickout rspKickout                           = 6;
+    optional NtfKickout ntfKickout                           = 7;
+    optional ReqToken reqToken                               = 8;
+    optional RspToken rspToken                               = 9;
+    optional ReqHeartbeat reqHeartbeat                       = 10;
+    optional RspHeartbeat rspHeartbeat                       = 11;
+    optional ReqLoginApp reqLoginApp                         = 12;
+    optional RspLoginApp rspLoginApp                         = 13;
+    optional ReqRefreshAccessToken reqRefreshAccessToken     = 14;
+    optional RspRefreshAccessToken rspRefreshAccessToken     = 15;
+    
+    optional ReqBindExtension reqBindExtension               = 60;
+    optional RspBindExtension rspBindExtension               = 61;
+    optional NtfBindExtension ntfBindExtension               = 62;
+    optional ReqAnswerBindExtension reqAnswerBindExtension   = 63;
+    optional RspAnswerBindExtension rspAnswerBindExtension   = 64;
+    optional NtfAnswerBindExtension ntfAnswerBindExtension   = 65;
+    optional ReqUnbindExtension reqUnbindExtension           = 66;
+    optional RspUnbindExtension rspUnbindExtension           = 67;
+    optional NtfUnbindExtension ntfUnbindExtension           = 68;
+    optional ReqGetExtensionInfo reqGetExtensionInfo         = 69;
+    optional RspGetExtensionInfo rspGetExtensionInfo         = 70;
+    optional ReqLockExtension reqLockExtension               = 71;
+    optional RspLockExtension rspLockExtension               = 72;
+    optional NtfLockExtension ntfLockExtension               = 73;
+    optional ReqUnlockExtension reqUnlockExtension           = 74;
+    optional RspUnlockExtension rspUnlockExtension           = 75;
+    optional NtfUnlockExtension ntfUnlockExtension           = 76;
+    optional ReqGetExtensionList reqGetExtensionList         = 77;
+    optional RspGetExtensionList rspGetExtensionList         = 78;
+    optional ReqGetExtensionConfig reqGetExtensionConfig     = 79;
+    optional RspGetExtensionConfig rspGetExtensionConfig     = 80;
+    optional ReqSetExtensionConfig reqSetExtensionConfig     = 81;
+    optional RspSetExtensionConfig rspSetExtensionConfig     = 82;
+    optional NtfSetExtensionConfig ntfSetExtensionConfig     = 83;
+    optional ReqShutdownExtension reqShutdownExtension       = 84;
+    optional RspShutdownExtension rspShutdownExtension       = 85;
+    optional NtfShutdownExtension ntfShutdownExtension       = 86;
+    optional ReqAnswerShutdownExtension reqAnswerShutdownExtension = 87;
+    optional RspAnswerShutdownExtension rspAnswerShutdownExtension = 88;
+    optional NtfAnswerShutdownExtension ntfAnswerShutdownExtension = 89;
+}
