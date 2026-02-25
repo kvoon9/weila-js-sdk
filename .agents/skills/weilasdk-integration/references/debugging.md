@@ -25,16 +25,16 @@ initLogger('*,-socket-client:*');
 
 ### 日志模块前缀
 
-| 前缀 | 说明 |
-|------|------|
-| `MOD:*` | 所有模块 |
-| `CORE:*` | 核心模块 |
-| `FSM:*` | 状态机 |
-| `AUDIO:*` | 音频模块 |
-| `DB:*` | 数据库模块 |
-| `NET:*` | 网络模块 |
-| `CFG:*` | 配置模块 |
-| `UTIL:*` | 工具模块 |
+| 前缀      | 说明       |
+| --------- | ---------- |
+| `MOD:*`   | 所有模块   |
+| `CORE:*`  | 核心模块   |
+| `FSM:*`   | 状态机     |
+| `AUDIO:*` | 音频模块   |
+| `DB:*`    | 数据库模块 |
+| `NET:*`   | 网络模块   |
+| `CFG:*`   | 配置模块   |
+| `UTIL:*`  | 工具模块   |
 
 ## 常见问题排查
 
@@ -93,22 +93,22 @@ ws.onerror = (e) => console.error('连接失败', e);
 
 **常见错误码**：
 
-| 错误码 | 说明 | 解决方案 |
-|--------|------|----------|
-| 106 | 账号或密码错误 | 检查账号密码是否正确 |
-| 23 | 授权失效 | 检查 App ID/Key 是否正确 |
-| 16 | APP版本太旧 | 需要更新 SDK 版本 |
+| 错误码 | 说明           | 解决方案                 |
+| ------ | -------------- | ------------------------ |
+| 106    | 账号或密码错误 | 检查账号密码是否正确     |
+| 23     | 授权失效       | 检查 App ID/Key 是否正确 |
+| 16     | APP版本太旧    | 需要更新 SDK 版本        |
 
 **排查代码**：
 
 ```typescript
 try {
-    const userInfo = await weila.weila_login(account, password, countryCode);
+  const userInfo = await weila.weila_login(account, password, countryCode);
 } catch (error) {
-    console.error('登录失败:', error);
-    // 使用 getErrorMsg 解析错误
-    const msg = getErrorMsg(error.message);
-    console.log('错误信息:', msg);
+  console.error('登录失败:', error);
+  // 使用 getErrorMsg 解析错误
+  const msg = getErrorMsg(error.message);
+  console.log('错误信息:', msg);
 }
 ```
 
@@ -128,9 +128,9 @@ console.log('isLoginReady:', weila.isLoginReady);
 
 ```typescript
 weila.weila_onEvent((eventId, data) => {
-    if (eventId === 'WL_EXT_SYSTEM_EXCEPTION_IND') {
-        console.log('系统异常:', data);
-    }
+  if (eventId === 'WL_EXT_SYSTEM_EXCEPTION_IND') {
+    console.log('系统异常:', data);
+  }
 });
 ```
 
@@ -138,9 +138,9 @@ weila.weila_onEvent((eventId, data) => {
 
 ```typescript
 weila.weila_onEvent((eventId, data) => {
-    if (eventId === 'WL_EXT_MSG_SEND_IND') {
-        console.log('消息状态:', data.status);
-    }
+  if (eventId === 'WL_EXT_MSG_SEND_IND') {
+    console.log('消息状态:', data.status);
+  }
 });
 ```
 
@@ -153,18 +153,19 @@ weila.weila_onEvent((eventId, data) => {
 1. 检查麦克风权限
 
 ```typescript
-navigator.mediaDevices.getUserMedia({ audio: true })
-    .then(stream => console.log('麦克风权限已授予'))
-    .catch(err => console.error('麦克风权限被拒绝', err));
+navigator.mediaDevices
+  .getUserMedia({ audio: true })
+  .then((stream) => console.log('麦克风权限已授予'))
+  .catch((err) => console.error('麦克风权限被拒绝', err));
 ```
 
 2. 检查 PTT 事件
 
 ```typescript
 weila.weila_onEvent((eventId, data) => {
-    if (eventId === 'WL_EXT_PTT_RECORD_IND') {
-        console.log('PTT 录音状态:', data.state);
-    }
+  if (eventId === 'WL_EXT_PTT_RECORD_IND') {
+    console.log('PTT 录音状态:', data.state);
+  }
 });
 ```
 
@@ -227,7 +228,7 @@ await weila.weila_sendTextMsg(sessionId, sessionType, text);
 
 ```typescript
 weila.weila_onEvent((eventId, data) => {
-    console.log(`事件: ${eventId}`, JSON.stringify(data, null, 2));
+  console.log(`事件: ${eventId}`, JSON.stringify(data, null, 2));
 });
 ```
 

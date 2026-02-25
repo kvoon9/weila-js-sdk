@@ -19,35 +19,32 @@ import { App } from 'vue';
 let weilaInstance: WeilaCore | null = null;
 
 export function initWeilaSDK(app: App) {
-    // 创建实例，使用 markRaw 避免 Vue 响应式代理
-    weilaInstance = new WeilaCore();
+  // 创建实例，使用 markRaw 避免 Vue 响应式代理
+  weilaInstance = new WeilaCore();
 
-    // 初始化日志
-    initLogger('MOD:*, CORE:*, FSM:*, AUDIO:*, DB:*, NET:*, -socket-client:*');
+  // 初始化日志
+  initLogger('MOD:*, CORE:*, FSM:*, AUDIO:*, DB:*, NET:*, -socket-client:*');
 
-    // 设置服务器
-    weilaInstance.weila_setWebSock(import.meta.env.VITE_WS_URL);
-    weilaInstance.weila_setAuthInfo(
-        import.meta.env.VITE_APP_ID,
-        import.meta.env.VITE_APP_KEY
-    );
+  // 设置服务器
+  weilaInstance.weila_setWebSock(import.meta.env.VITE_WS_URL);
+  weilaInstance.weila_setAuthInfo(import.meta.env.VITE_APP_ID, import.meta.env.VITE_APP_KEY);
 
-    // 注册事件
-    weilaInstance.weila_onEvent((eventId, data) => {
-        console.log('[Weila]', eventId, data);
-    });
+  // 注册事件
+  weilaInstance.weila_onEvent((eventId, data) => {
+    console.log('[Weila]', eventId, data);
+  });
 
-    // 提供给全局
-    app.config.globalProperties.$weila = weilaInstance;
-    
-    return weilaInstance;
+  // 提供给全局
+  app.config.globalProperties.$weila = weilaInstance;
+
+  return weilaInstance;
 }
 
 export function getWeila(): WeilaCore {
-    if (!weilaInstance) {
-        throw new Error('Weila SDK 未初始化');
-    }
-    return weilaInstance;
+  if (!weilaInstance) {
+    throw new Error('Weila SDK 未初始化');
+  }
+  return weilaInstance;
 }
 ```
 
@@ -77,53 +74,50 @@ const isReady = ref(false);
 const isLoginReady = ref(false);
 
 export function useWeila() {
-    const init = async () => {
-        if (weila.value) return;
+  const init = async () => {
+    if (weila.value) return;
 
-        // 使用 shallowRef 避免深度响应式
-        weila.value = new WeilaCore();
+    // 使用 shallowRef 避免深度响应式
+    weila.value = new WeilaCore();
 
-        initLogger('MOD:*, CORE:*, FSM:*, AUDIO:*, DB:*, NET:*');
+    initLogger('MOD:*, CORE:*, FSM:*, AUDIO:*, DB:*, NET:*');
 
-        // 设置配置
-        weila.value.weila_setWebSock(import.meta.env.VITE_WS_URL);
-        weila.value.weila_setAuthInfo(
-            import.meta.env.VITE_APP_ID,
-            import.meta.env.VITE_APP_KEY
-        );
+    // 设置配置
+    weila.value.weila_setWebSock(import.meta.env.VITE_WS_URL);
+    weila.value.weila_setAuthInfo(import.meta.env.VITE_APP_ID, import.meta.env.VITE_APP_KEY);
 
-        // 监听事件
-        weila.value.weila_onEvent((eventId, data) => {
-            console.log('[Weila]', eventId, data);
-            
-            // 处理登录就绪
-            if (eventId === 'WL_EXT_DATA_PREPARE_IND' && data?.state === 'PREPARE_SUCC_END') {
-                isReady.value = true;
-            }
-        });
+    // 监听事件
+    weila.value.weila_onEvent((eventId, data) => {
+      console.log('[Weila]', eventId, data);
 
-        // 初始化
-        await weila.value.weila_init();
-    };
+      // 处理登录就绪
+      if (eventId === 'WL_EXT_DATA_PREPARE_IND' && data?.state === 'PREPARE_SUCC_END') {
+        isReady.value = true;
+      }
+    });
 
-    const initAudio = async () => {
-        if (!weila.value) return;
-        await weila.value.weila_audioInit();
-    };
+    // 初始化
+    await weila.value.weila_init();
+  };
 
-    const login = async (account: string, password: string, countryCode: string) => {
-        if (!weila.value) return;
-        return await weila.value.weila_login(account, password, countryCode);
-    };
+  const initAudio = async () => {
+    if (!weila.value) return;
+    await weila.value.weila_audioInit();
+  };
 
-    return {
-        weila,
-        isReady,
-        isLoginReady,
-        init,
-        initAudio,
-        login
-    };
+  const login = async (account: string, password: string, countryCode: string) => {
+    if (!weila.value) return;
+    return await weila.value.weila_login(account, password, countryCode);
+  };
+
+  return {
+    weila,
+    isReady,
+    isLoginReady,
+    init,
+    initAudio,
+    login,
+  };
 }
 ```
 
@@ -140,13 +134,13 @@ import { useWeila } from '@/composables/useWeila';
 const { init, initAudio, login } = useWeila();
 
 onMounted(async () => {
-    await init();
+  await init();
 });
 
 const handleLogin = async () => {
-    // 音频必须在用户点击事件中初始化
-    await initAudio();
-    await login('13800138000', 'password', '86');
+  // 音频必须在用户点击事件中初始化
+  await initAudio();
+  await login('13800138000', 'password', '86');
 };
 </script>
 ```
@@ -156,10 +150,12 @@ const handleLogin = async () => {
 ### markRaw 或 shallowRef
 
 Vue 的响应式系统会对对象进行深层代理，这会导致：
+
 - 性能问题
 - SDK 内部状态异常
 
 **解决方案**：
+
 1. 使用 `markRaw()` 包装实例
 2. 或使用 `shallowRef()` 代替 `ref()`
 
@@ -187,8 +183,8 @@ VITE_APP_KEY=your-app-key
 import type { WeilaCore } from 'weilasdk';
 
 declare module '@vue/runtime-core' {
-    interface ComponentCustomProperties {
-        $weila: WeilaCore;
-    }
+  interface ComponentCustomProperties {
+    $weila: WeilaCore;
+  }
 }
 ```

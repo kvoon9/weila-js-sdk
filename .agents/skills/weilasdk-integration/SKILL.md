@@ -37,7 +37,7 @@ weila.weila_setAuthInfo('your-app-id', 'your-app-key');
 
 // 注册事件回调
 weila.weila_onEvent((eventId, data) => {
-    console.log('事件:', eventId, data);
+  console.log('事件:', eventId, data);
 });
 
 // 初始化
@@ -58,12 +58,12 @@ const userInfo = await weila.weila_login('13800138000', 'password', '86');
 
 详细集成指南见 references 文件：
 
-| 框架 | 文件 | 说明 |
-|------|------|------|
-| Vue 3 | [vue3.md](references/vue3.md) | Vue 3 项目集成（含 markRaw 最佳实践） |
-| Vue 2 | [vue2.md](references/vue2.md) | Vue 2 项目集成 |
-| UniApp | [uniapp.md](references/uniapp.md) | UniApp 跨平台集成 |
-| React | [react.md](references/react.md) | React 项目集成 |
+| 框架   | 文件                              | 说明                                  |
+| ------ | --------------------------------- | ------------------------------------- |
+| Vue 3  | [vue3.md](references/vue3.md)     | Vue 3 项目集成（含 markRaw 最佳实践） |
+| Vue 2  | [vue2.md](references/vue2.md)     | Vue 2 项目集成                        |
+| UniApp | [uniapp.md](references/uniapp.md) | UniApp 跨平台集成                     |
+| React  | [react.md](references/react.md)   | React 项目集成                        |
 
 ## 配置参考
 
@@ -73,11 +73,31 @@ const userInfo = await weila.weila_login('13800138000', 'password', '86');
 
 ```typescript
 setConfigData([
-    { id: WL_ConfigID.WL_RES_RING_START_PLAY_ID, url: 'https://cdn.example.com/start_player.wav', version: 1 },
-    { id: WL_ConfigID.WL_RES_RING_STOP_PLAY_ID, url: 'https://cdn.example.com/stop_player.wav', version: 1 },
-    { id: WL_ConfigID.WL_RES_RING_START_RECORD_ID, url: 'https://cdn.example.com/start_record.wav', version: 1 },
-    { id: WL_ConfigID.WL_RES_RING_STOP_RECORD_ID, url: 'https://cdn.example.com/stop_record.wav', version: 1 },
-    { id: WL_ConfigID.WL_RES_DATA_OPUS_WASM_ID, url: 'https://cdn.example.com/opuslibs.wasm', version: 1 }
+  {
+    id: WL_ConfigID.WL_RES_RING_START_PLAY_ID,
+    url: 'https://cdn.example.com/start_player.wav',
+    version: 1,
+  },
+  {
+    id: WL_ConfigID.WL_RES_RING_STOP_PLAY_ID,
+    url: 'https://cdn.example.com/stop_player.wav',
+    version: 1,
+  },
+  {
+    id: WL_ConfigID.WL_RES_RING_START_RECORD_ID,
+    url: 'https://cdn.example.com/start_record.wav',
+    version: 1,
+  },
+  {
+    id: WL_ConfigID.WL_RES_RING_STOP_RECORD_ID,
+    url: 'https://cdn.example.com/stop_record.wav',
+    version: 1,
+  },
+  {
+    id: WL_ConfigID.WL_RES_DATA_OPUS_WASM_ID,
+    url: 'https://cdn.example.com/opuslibs.wasm',
+    version: 1,
+  },
 ]);
 ```
 
@@ -85,12 +105,12 @@ setConfigData([
 
 开发环境配置见 [proxy.md](references/proxy.md)：
 
-| 路径 | 目标服务器 |
-|------|-----------|
-| /v1 | http://webapi.weila.hk:8080/ |
-| /audio | https://weilaaudio.oss-cn-shenzhen.aliyuncs.com |
+| 路径    | 目标服务器                                       |
+| ------- | ------------------------------------------------ |
+| /v1     | http://webapi.weila.hk:8080/                     |
+| /audio  | https://weilaaudio.oss-cn-shenzhen.aliyuncs.com  |
 | /avatar | https://weilaavatar.oss-cn-shenzhen.aliyuncs.com |
-| /ptt | https://weilaspeech.oss-cn-shenzhen.aliyuncs.com |
+| /ptt    | https://weilaspeech.oss-cn-shenzhen.aliyuncs.com |
 
 ## 常见任务
 
@@ -116,7 +136,10 @@ weila.weila_stopSingle();
 
 ```typescript
 // 创建群
-const group = await weila.weila_createGroup('群名', WL_IDbGroupType.GROUP_NORMAL, null, 0, [userId1, userId2]);
+const group = await weila.weila_createGroup('群名', WL_IDbGroupType.GROUP_NORMAL, null, 0, [
+  userId1,
+  userId2,
+]);
 
 // 获取群列表
 const groups = await weila.weila_getAllGroups();
@@ -133,6 +156,7 @@ npm run "build production"
 ```
 
 输出文件：
+
 - `dist/weilasdk.js` - 主 SDK
 - `dist/weilasdk_data.js` - 数据模块
 - `dist/weilasdk_log.js` - 日志模块
@@ -154,11 +178,11 @@ initLogger('*');
 
 ### 常见问题
 
-| 问题 | 解决方案 |
-|------|----------|
-| 音频初始化失败 | 确保 `weila_audioInit()` 在用户点击事件中调用 |
-| WebSocket 连接失败 | 检查 `weila_setWebSock()` 地址是否正确 |
-| 登录失败 | 检查 App ID/Key 是否正确，账号密码是否有效 |
-| 消息发送失败 | 检查 `isLoginReady` 状态 |
+| 问题               | 解决方案                                      |
+| ------------------ | --------------------------------------------- |
+| 音频初始化失败     | 确保 `weila_audioInit()` 在用户点击事件中调用 |
+| WebSocket 连接失败 | 检查 `weila_setWebSock()` 地址是否正确        |
+| 登录失败           | 检查 App ID/Key 是否正确，账号密码是否有效    |
+| 消息发送失败       | 检查 `isLoginReady` 状态                      |
 
 详细调试指南：[debugging.md](references/debugging.md)

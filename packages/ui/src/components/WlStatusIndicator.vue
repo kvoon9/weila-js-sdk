@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed } from 'vue';
 
 export interface WlStatusIndicatorProps {
   /** 当前状态 */
-  status: 'idle' | 'connecting' | 'connected' | 'error'
+  status: 'idle' | 'connecting' | 'connected' | 'error';
   /** 显示的标签文本 */
-  label?: string
+  label?: string;
 }
 
 const props = withDefaults(defineProps<WlStatusIndicatorProps>(), {
   label: '',
-})
+});
 
 const statusText = computed(() => {
   const map: Record<string, string> = {
@@ -18,11 +18,11 @@ const statusText = computed(() => {
     connecting: '连接中...',
     connected: '已连接',
     error: '连接错误',
-  }
-  return props.label || map[props.status] || props.status
-})
+  };
+  return props.label || map[props.status] || props.status;
+});
 
-const statusClass = computed(() => `wl-status--${props.status}`)
+const statusClass = computed(() => `wl-status--${props.status}`);
 </script>
 
 <template>
@@ -61,7 +61,12 @@ const statusClass = computed(() => `wl-status--${props.status}`)
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
 }
 </style>

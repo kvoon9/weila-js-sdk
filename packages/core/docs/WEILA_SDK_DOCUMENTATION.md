@@ -80,31 +80,31 @@ import { setConfigData, WL_ConfigID } from 'weilasdk';
 
 // 配置自定义资源路径
 setConfigData([
-    {
-        id: WL_ConfigID.WL_RES_RING_START_PLAY_ID,
-        url: 'https://your-cdn.com/start_player.wav',
-        version: 1
-    },
-    {
-        id: WL_ConfigID.WL_RES_RING_STOP_PLAY_ID,
-        url: 'https://your-cdn.com/stop_player.wav',
-        version: 1
-    },
-    {
-        id: WL_ConfigID.WL_RES_RING_START_RECORD_ID,
-        url: 'https://your-cdn.com/start_record.wav',
-        version: 1
-    },
-    {
-        id: WL_ConfigID.WL_RES_RING_STOP_RECORD_ID,
-        url: 'https://your-cdn.com/stop_record.wav',
-        version: 1
-    },
-    {
-        id: WL_ConfigID.WL_RES_DATA_OPUS_WASM_ID,
-        url: 'https://your-cdn.com/opuslibs.wasm',
-        version: 1
-    }
+  {
+    id: WL_ConfigID.WL_RES_RING_START_PLAY_ID,
+    url: 'https://your-cdn.com/start_player.wav',
+    version: 1,
+  },
+  {
+    id: WL_ConfigID.WL_RES_RING_STOP_PLAY_ID,
+    url: 'https://your-cdn.com/stop_player.wav',
+    version: 1,
+  },
+  {
+    id: WL_ConfigID.WL_RES_RING_START_RECORD_ID,
+    url: 'https://your-cdn.com/start_record.wav',
+    version: 1,
+  },
+  {
+    id: WL_ConfigID.WL_RES_RING_STOP_RECORD_ID,
+    url: 'https://your-cdn.com/stop_record.wav',
+    version: 1,
+  },
+  {
+    id: WL_ConfigID.WL_RES_DATA_OPUS_WASM_ID,
+    url: 'https://your-cdn.com/opuslibs.wasm',
+    version: 1,
+  },
 ]);
 ```
 
@@ -122,7 +122,7 @@ weila.weila_setAuthInfo('your-app-id', 'your-app-key');
 
 // 注册事件回调
 weila.weila_onEvent((eventId, eventData) => {
-    console.log('事件:', eventId, eventData);
+  console.log('事件:', eventId, eventData);
 });
 
 // 初始化 SDK（首次较慢，之后会缓存）
@@ -138,13 +138,13 @@ await weila.weila_audioInit();
 
 ### 3.1 初始化与配置
 
-| 方法 | 说明 |
-|------|------|
-| `weila_init()` | 初始化 SDK，加载资源 |
-| `weila_setWebSock(addr: string)` | 设置 WebSocket 服务器地址 |
-| `weila_setAuthInfo(appId: string, appKey: string)` | 设置 App 认证信息 |
-| `weila_audioInit()` | 初始化音频系统（必须在用户事件中调用） |
-| `weila_onEvent(callback: WL_ExtEventCallback)` | 注册事件回调 |
+| 方法                                               | 说明                                   |
+| -------------------------------------------------- | -------------------------------------- |
+| `weila_init()`                                     | 初始化 SDK，加载资源                   |
+| `weila_setWebSock(addr: string)`                   | 设置 WebSocket 服务器地址              |
+| `weila_setAuthInfo(appId: string, appKey: string)` | 设置 App 认证信息                      |
+| `weila_audioInit()`                                | 初始化音频系统（必须在用户事件中调用） |
+| `weila_onEvent(callback: WL_ExtEventCallback)`     | 注册事件回调                           |
 
 ### 3.2 登录与登出
 
@@ -165,12 +165,12 @@ const token = await weila.weila_get_token();
 const currentUser = weila.getLoginUserInfo();
 ```
 
-| 方法 | 说明 |
-|------|------|
-| `weila_login(account, password, countryCode)` | 用户登录 |
-| `weila_logout()` | 登出系统 |
-| `weila_get_token()` | 获取当前登录用户 token |
-| `getLoginUserInfo()` | 获取当前登录用户信息 |
+| 方法                                          | 说明                   |
+| --------------------------------------------- | ---------------------- |
+| `weila_login(account, password, countryCode)` | 用户登录               |
+| `weila_logout()`                              | 登出系统               |
+| `weila_get_token()`                           | 获取当前登录用户 token |
+| `getLoginUserInfo()`                          | 获取当前登录用户信息   |
 
 ---
 
@@ -215,15 +215,11 @@ const setting = await weila.weila_getSessionSetting(sessionId, sessionType);
 const allSettings = await weila.weila_getSessionSettings();
 
 // 更新会话设置
-await weila.weila_updateSessionSetting(
-    sessionId,
-    sessionType,
-    {
-        tts: true,        // 开启 TTS 语音播报
-        mute: false,      // 关闭静音
-        loactionShared: true  // 开启位置共享
-    }
-);
+await weila.weila_updateSessionSetting(sessionId, sessionType, {
+  tts: true, // 开启 TTS 语音播报
+  mute: false, // 关闭静音
+  loactionShared: true, // 开启位置共享
+});
 ```
 
 ### 4.4 会话类型
@@ -232,13 +228,13 @@ await weila.weila_updateSessionSetting(
 import { WL_IDbSessionType } from 'weilasdk';
 
 // 个人会话
-WL_IDbSessionType.SESSION_INDIVIDUAL_TYPE  // 0x01
+WL_IDbSessionType.SESSION_INDIVIDUAL_TYPE; // 0x01
 
 // 群会话
-WL_IDbSessionType.SESSION_GROUP_TYPE        // 0x02
+WL_IDbSessionType.SESSION_GROUP_TYPE; // 0x02
 
 // 服务号
-WL_IDbSessionType.SESSION_SERVICE_TYPE       // 0x08
+WL_IDbSessionType.SESSION_SERVICE_TYPE; // 0x08
 ```
 
 ---
@@ -262,11 +258,11 @@ await weila.weila_sendVideo(sessionId, sessionType, 'video.mp4', videoFile);
 
 // 发送位置
 await weila.weila_sendPosition(sessionId, sessionType, {
-    locationType: 'share',
-    latitude: 39.9042,
-    longitude: 116.4074,
-    title: '天安门广场',
-    address: '北京市东城区'
+  locationType: 'share',
+  latitude: 39.9042,
+  longitude: 116.4074,
+  title: '天安门广场',
+  address: '北京市东城区',
 });
 
 // 发送音频消息（URL 形式）
@@ -288,12 +284,7 @@ const msgData = await weila.weila_getMsgData(comboId);
 // 获取会话消息列表
 // fromMsgId: 起始消息 ID，0 表示从最新消息往后取
 // count: 获取数量
-const messages = await weila.weila_getMsgDatas(
-    sessionId,
-    sessionType,
-    fromMsgId,
-    count
-);
+const messages = await weila.weila_getMsgDatas(sessionId, sessionType, fromMsgId, count);
 
 // 更新消息数据
 await weila.weila_updateMsgData(msgData);
@@ -308,26 +299,26 @@ const audioData = await weila.weila_fetchAudioData(audioUrl);
 import { WL_IDbMsgDataType, WL_IDbMsgDataStatus } from 'weilasdk';
 
 // 消息类型
-WL_IDbMsgDataType.WL_DB_MSG_DATA_TEXT_TYPE      // 文本
-WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE     // 音频
-WL_IDbMsgDataType.WL_DB_MSG_DATA_IMAGE_TYPE     // 图片
-WL_IDbMsgDataType.WL_DB_MSG_DATA_VIDEO_TYPE     // 视频
-WL_IDbMsgDataType.WL_DB_MSG_DATA_FILE_TYPE      // 文件
-WL_IDbMsgDataType.WL_DB_MSG_DATA_LOCATION_TYPE   // 位置
-WL_IDbMsgDataType.WL_DB_MSG_DATA_COMMAND_TYPE   // 命令
-WL_IDbMsgDataType.WL_DB_MSG_DATA_PTT_TYPE       // PTT
-WL_IDbMsgDataType.WL_DB_MSG_DATA_SERVICE_TYPE   // 服务
-WL_IDbMsgDataType.WL_DB_MSG_DATA_SWITCH_TYPE   // 切换
-WL_IDbMsgDataType.WL_DB_MSG_DATA_WITHDRAW_TYPE // 撤回
+WL_IDbMsgDataType.WL_DB_MSG_DATA_TEXT_TYPE; // 文本
+WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE; // 音频
+WL_IDbMsgDataType.WL_DB_MSG_DATA_IMAGE_TYPE; // 图片
+WL_IDbMsgDataType.WL_DB_MSG_DATA_VIDEO_TYPE; // 视频
+WL_IDbMsgDataType.WL_DB_MSG_DATA_FILE_TYPE; // 文件
+WL_IDbMsgDataType.WL_DB_MSG_DATA_LOCATION_TYPE; // 位置
+WL_IDbMsgDataType.WL_DB_MSG_DATA_COMMAND_TYPE; // 命令
+WL_IDbMsgDataType.WL_DB_MSG_DATA_PTT_TYPE; // PTT
+WL_IDbMsgDataType.WL_DB_MSG_DATA_SERVICE_TYPE; // 服务
+WL_IDbMsgDataType.WL_DB_MSG_DATA_SWITCH_TYPE; // 切换
+WL_IDbMsgDataType.WL_DB_MSG_DATA_WITHDRAW_TYPE; // 撤回
 
 // 消息状态
-WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_NEW      // 新消息
-WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_SENT     // 已发送
-WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_UNSENT  // 未发送
-WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_READ     // 已读
-WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_SENDING  // 发送中
-WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_WITHDRAW // 已撤回
-WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR      // 错误
+WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_NEW; // 新消息
+WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_SENT; // 已发送
+WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_UNSENT; // 未发送
+WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_READ; // 已读
+WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_SENDING; // 发送中
+WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_WITHDRAW; // 已撤回
+WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR; // 错误
 ```
 
 ---
@@ -366,17 +357,17 @@ await weila.weila_releaseTalk();
 
 ```typescript
 weila.weila_onEvent((eventId, eventData) => {
-    if (eventId === WL_ExtEventID.WL_EXT_PTT_RECORD_IND) {
-        // PTT 录音通知
-        // eventData: WL_PttRecordInd
-        console.log('录音状态:', eventData.state);
-    }
-    
-    if (eventId === WL_ExtEventID.WL_EXT_PTT_PLAY_IND) {
-        // PTT 播放通知
-        // eventData: WL_PttPlayInd
-        console.log('播放状态:', eventData.indData.state);
-    }
+  if (eventId === WL_ExtEventID.WL_EXT_PTT_RECORD_IND) {
+    // PTT 录音通知
+    // eventData: WL_PttRecordInd
+    console.log('录音状态:', eventData.state);
+  }
+
+  if (eventId === WL_ExtEventID.WL_EXT_PTT_PLAY_IND) {
+    // PTT 播放通知
+    // eventData: WL_PttPlayInd
+    console.log('播放状态:', eventData.indData.state);
+  }
 });
 ```
 
@@ -389,11 +380,11 @@ weila.weila_onEvent((eventId, eventData) => {
 ```typescript
 // 创建群
 const group = await weila.weila_createGroup(
-    '群名称',
-    WL_IDbGroupType.GROUP_NORMAL,  // 群类型
-    groupIconBlob,                  // 群头像（可选）
-    WL_IDbGroupPublicType.GROUP_PUBLIC_OPEN,  // 公开类型
-    [userId1, userId2]              // 初始成员
+  '群名称',
+  WL_IDbGroupType.GROUP_NORMAL, // 群类型
+  groupIconBlob, // 群头像（可选）
+  WL_IDbGroupPublicType.GROUP_PUBLIC_OPEN, // 公开类型
+  [userId1, userId2], // 初始成员
 );
 
 // 解散群（仅群主可执行）
@@ -437,11 +428,7 @@ await weila.weila_inviteUserJoinGroup(groupId, [userId1, userId2]);
 await weila.weila_changeGroupOwner(groupId, newOwnerUserId);
 
 // 更改成员类型（普通成员 ↔ 管理员）
-await weila.weila_changeMemberType(
-    groupId,
-    memberUserId,
-    WL_IDbMemberType.ADMIN_MEMBER_TYPE
-);
+await weila.weila_changeMemberType(groupId, memberUserId, WL_IDbMemberType.ADMIN_MEMBER_TYPE);
 
 // 添加设备成员
 await weila.weila_addDeviceMembers(groupId, [subUserId1, subUserId2]);
@@ -463,27 +450,32 @@ await weila.weila_answerGroupInvitation(groupId, invitorId, WL_AnswerStatus.ANSW
 ### 8.4 群组类型
 
 ```typescript
-import { WL_IDbGroupType, WL_IDbGroupPublicType, WL_IDbGroupAuthType, WL_IDbMemberType } from 'weilasdk';
+import {
+  WL_IDbGroupType,
+  WL_IDbGroupPublicType,
+  WL_IDbGroupAuthType,
+  WL_IDbMemberType,
+} from 'weilasdk';
 
 // 群类型
-WL_IDbGroupType.GROUP_NORMAL          // 普通群
-WL_IDbGroupType.GROUP_TEMP           // 临时群
-WL_IDbGroupType.GROUP_COMPANY_NORMAL // 公司群
-WL_IDbGroupType.GROUP_COMPANY_DEPT   // 公司部门群
+WL_IDbGroupType.GROUP_NORMAL; // 普通群
+WL_IDbGroupType.GROUP_TEMP; // 临时群
+WL_IDbGroupType.GROUP_COMPANY_NORMAL; // 公司群
+WL_IDbGroupType.GROUP_COMPANY_DEPT; // 公司部门群
 
 // 公开类型
-WL_IDbGroupPublicType.GROUP_PUBLIC_CLOSE // 不公开
-WL_IDbGroupPublicType.GROUP_PUBLIC_OPEN  // 公开
+WL_IDbGroupPublicType.GROUP_PUBLIC_CLOSE; // 不公开
+WL_IDbGroupPublicType.GROUP_PUBLIC_OPEN; // 公开
 
 // 认证类型
-WL_IDbGroupAuthType.GROUP_AUTH_NONE                   // 不鉴权
-WL_IDbGroupAuthType.GROUP_AUTH_CONFIRM               // 管理员确认
-WL_IDbGroupAuthType.GROUP_AUTH_CONFIRM_OR_PASSWORD   // 管理员确认或密码
-WL_IDbGroupAuthType.GROUP_AUTH_CONFIRM_AND_PASSWORD  // 管理员确认与密码
+WL_IDbGroupAuthType.GROUP_AUTH_NONE; // 不鉴权
+WL_IDbGroupAuthType.GROUP_AUTH_CONFIRM; // 管理员确认
+WL_IDbGroupAuthType.GROUP_AUTH_CONFIRM_OR_PASSWORD; // 管理员确认或密码
+WL_IDbGroupAuthType.GROUP_AUTH_CONFIRM_AND_PASSWORD; // 管理员确认与密码
 
 // 成员类型
-WL_IDbMemberType.NORMAL_MEMBER_TYPE // 普通成员
-WL_IDbMemberType.ADMIN_MEMBER_TYPE  // 管理员
+WL_IDbMemberType.NORMAL_MEMBER_TYPE; // 普通成员
+WL_IDbMemberType.ADMIN_MEMBER_TYPE; // 管理员
 ```
 
 ---
@@ -492,7 +484,7 @@ WL_IDbMemberType.ADMIN_MEMBER_TYPE  // 管理员
 
 ```typescript
 // 获取好友列表
-const friends = await weila.weila_getFriends();           // 获取所有
+const friends = await weila.weila_getFriends(); // 获取所有
 const friends = await weila.weila_getFriends([userId1, userId2]); // 获取指定
 
 // 获取在线好友
@@ -505,11 +497,7 @@ await weila.weila_inviteFriend(inviteeId, '你好', '备注');
 await weila.weila_deleteFriends([userId1, userId2]);
 
 // 应答好友邀请
-await weila.weila_answerFriendInvite(
-    inviterUserId,
-    WL_AnswerStatus.ANSWER_ACCEPT,
-    '同意'
-);
+await weila.weila_answerFriendInvite(inviterUserId, WL_AnswerStatus.ANSWER_ACCEPT, '同意');
 
 // 设备相关
 await weila.weila_inviteFriendsForDevice(inviteeIds, subUserId, detail);
@@ -521,10 +509,10 @@ await weila.weila_deleteFriendsForDevice(userIds, subUserId);
 ```typescript
 import { WL_AnswerStatus } from 'weilasdk';
 
-WL_AnswerStatus.ANSWER_NORMAL   // 未处理
-WL_AnswerStatus.ANSWER_ACCEPT   // 接受
-WL_AnswerStatus.ANSWER_REJECT   // 拒绝
-WL_AnswerStatus.ANSWER_IGNORE   // 忽略
+WL_AnswerStatus.ANSWER_NORMAL; // 未处理
+WL_AnswerStatus.ANSWER_ACCEPT; // 接受
+WL_AnswerStatus.ANSWER_REJECT; // 拒绝
+WL_AnswerStatus.ANSWER_IGNORE; // 忽略
 ```
 
 ---
@@ -581,14 +569,14 @@ await weila.weila_setDeviceConfig(cfgKey, cfgValue, subUserId);
 import { WL_IDbExtensionState, WL_IDbExtensionType } from 'weilasdk';
 
 // 设备状态
-WL_IDbExtensionState.EXTENSION_UNBIND    // 未绑定
-WL_IDbExtensionState.EXTENSION_BINDING  // 绑定中
-WL_IDbExtensionState.EXTENSION_BOUND    // 已绑定
-WL_IDbExtensionState.EXTENSION_LOCKED   // 已锁定
+WL_IDbExtensionState.EXTENSION_UNBIND; // 未绑定
+WL_IDbExtensionState.EXTENSION_BINDING; // 绑定中
+WL_IDbExtensionState.EXTENSION_BOUND; // 已绑定
+WL_IDbExtensionState.EXTENSION_LOCKED; // 已锁定
 
 // 设备类型
-WL_IDbExtensionType.EXTENSION_SLAVE  // 从设备
-WL_IDbExtensionType.EXTENSION_SUB    // 子设备
+WL_IDbExtensionType.EXTENSION_SLAVE; // 从设备
+WL_IDbExtensionType.EXTENSION_SUB; // 子设备
 ```
 
 ---
@@ -662,12 +650,12 @@ await weila.weila_updateNotification(notification);
 ```typescript
 import { WL_IDbNotificationType } from 'weilasdk';
 
-WL_IDbNotificationType.FRIEND_INVITE_NOTIFICATION           // 好友邀请
-WL_IDbNotificationType.FRIEND_ANSWER_NOTIFICATION          // 好友应答
-WL_IDbNotificationType.GROUP_INVITE_NOTIFICATION           // 群邀请
-WL_IDbNotificationType.GROUP_JOIN_NOTIFICATION             // 入群申请
-WL_IDbNotificationType.GROUP_ANSWER_INVITE_NOTIFICATION    // 群邀请应答
-WL_IDbNotificationType.GROUP_ANSWER_JOIN_NOTIFICATION      // 入群申请应答
+WL_IDbNotificationType.FRIEND_INVITE_NOTIFICATION; // 好友邀请
+WL_IDbNotificationType.FRIEND_ANSWER_NOTIFICATION; // 好友应答
+WL_IDbNotificationType.GROUP_INVITE_NOTIFICATION; // 群邀请
+WL_IDbNotificationType.GROUP_JOIN_NOTIFICATION; // 入群申请
+WL_IDbNotificationType.GROUP_ANSWER_INVITE_NOTIFICATION; // 群邀请应答
+WL_IDbNotificationType.GROUP_ANSWER_JOIN_NOTIFICATION; // 入群申请应答
 ```
 
 ---
@@ -678,50 +666,50 @@ WL_IDbNotificationType.GROUP_ANSWER_JOIN_NOTIFICATION      // 入群申请应答
 
 ```typescript
 weila.weila_onEvent((eventId, eventData) => {
-    console.log('收到事件:', eventId, eventData);
+  console.log('收到事件:', eventId, eventData);
 });
 ```
 
 ### 15.2 事件类型
 
-| 事件 ID | 说明 | 事件数据类型 |
-|---------|------|------------|
-| `WL_EXT_DATA_PREPARE_IND` | 登录后数据准备状态 | `WL_DataPrepareInd` |
-| `WL_EXT_SYSTEM_EXCEPTION_IND` | 系统异常通知 | 异常原因 |
-| `WL_EXT_PTT_PLAY_IND` | PTT 播放通知 | `WL_PttPlayInd` |
-| `WL_EXT_PTT_RECORD_IND` | PTT 录音通知 | `WL_PttRecordInd` |
-| `WL_EXT_MSG_SEND_IND` | 消息发送结果 | `WL_IDbMsgData` |
-| `WL_EXT_NEW_MSG_RECV_IND` | 新消息通知 | `WL_IDbMsgData` |
-| `WL_EXT_NEW_SESSION_OPEN_IND` | 新会话自动创建 | `WL_IDbSession` |
-| `WL_EXT_NEW_NOTIFICATION_IND` | 新通知 | `WL_IDbNotification` |
-| `WL_EXT_GROUP_MODIFIED_IND` | 群属性变更 | - |
-| `WL_EXT_GROUP_MEMBERS_MODIFIED_IND` | 群成员更新 | - |
-| `WL_EXT_GROUP_DELETED_IND` | 群被删除 | - |
-| `WL_EXT_GROUP_MEMBER_DELETED_IND` | 群成员被删除 | `WL_GroupMemberDeleteInfo` |
-| `WL_EXT_GROUP_NEW_MEMBER_JOINED_IND` | 新成员加入 | - |
-| `WL_EXT_FRIEND_DELETED_IND` | 好友被删除 | userId |
-| `WL_EXT_FRIEND_MODIFIED_IND` | 好友信息更新 | friendInfo |
-| `WL_EXT_FRIEND_NEW_IND` | 新好友 | - |
-| `WL_EXT_COMMON_SESSION_CHANGE_IND` | 服务会话变更 | `WL_IDbServiceSessionInfo` |
-| `WL_EXT_COMMON_STAFF_INVITE_IND` | 客服邀请 | `WL_StaffInvite` |
-| `WL_EXT_COMMON_ANSWER_INVITE_IND` | 客服应答邀请 | `WL_CommonAnswerStaffInvite` |
-| `WL_EXT_STAFF_ACCEPT_SESSION_IND` | 客服接受会话 | `WL_StaffSessionInfo` |
-| `WL_EXT_STAFF_EXIT_SESSION_IND` | 客服退出会话 | `WL_StaffSessionInfo` |
-| `WL_EXT_STAFF_CLOSE_SESSION_IND` | 客服关闭会话 | `WL_StaffSessionInfo` |
-| `WL_EXT_STAFF_SESSION_INVITE_IND` | 客服会话邀请 | `WL_ServiceSessionInvite` |
-| `WL_EXT_STAFF_ANSWER_INVITE_IND` | 客服应答邀请 | `WL_StaffAnswerSessionInvite` |
-| `WL_EXT_STAFF_REMOVED_SESSION_IND` | 被移出会话 | sessionId |
-| `WL_EXT_DEVICE_BINDING_ANSWER_IND` | 设备绑定应答 | `WL_bindAnswerInfo` |
+| 事件 ID                              | 说明               | 事件数据类型                  |
+| ------------------------------------ | ------------------ | ----------------------------- |
+| `WL_EXT_DATA_PREPARE_IND`            | 登录后数据准备状态 | `WL_DataPrepareInd`           |
+| `WL_EXT_SYSTEM_EXCEPTION_IND`        | 系统异常通知       | 异常原因                      |
+| `WL_EXT_PTT_PLAY_IND`                | PTT 播放通知       | `WL_PttPlayInd`               |
+| `WL_EXT_PTT_RECORD_IND`              | PTT 录音通知       | `WL_PttRecordInd`             |
+| `WL_EXT_MSG_SEND_IND`                | 消息发送结果       | `WL_IDbMsgData`               |
+| `WL_EXT_NEW_MSG_RECV_IND`            | 新消息通知         | `WL_IDbMsgData`               |
+| `WL_EXT_NEW_SESSION_OPEN_IND`        | 新会话自动创建     | `WL_IDbSession`               |
+| `WL_EXT_NEW_NOTIFICATION_IND`        | 新通知             | `WL_IDbNotification`          |
+| `WL_EXT_GROUP_MODIFIED_IND`          | 群属性变更         | -                             |
+| `WL_EXT_GROUP_MEMBERS_MODIFIED_IND`  | 群成员更新         | -                             |
+| `WL_EXT_GROUP_DELETED_IND`           | 群被删除           | -                             |
+| `WL_EXT_GROUP_MEMBER_DELETED_IND`    | 群成员被删除       | `WL_GroupMemberDeleteInfo`    |
+| `WL_EXT_GROUP_NEW_MEMBER_JOINED_IND` | 新成员加入         | -                             |
+| `WL_EXT_FRIEND_DELETED_IND`          | 好友被删除         | userId                        |
+| `WL_EXT_FRIEND_MODIFIED_IND`         | 好友信息更新       | friendInfo                    |
+| `WL_EXT_FRIEND_NEW_IND`              | 新好友             | -                             |
+| `WL_EXT_COMMON_SESSION_CHANGE_IND`   | 服务会话变更       | `WL_IDbServiceSessionInfo`    |
+| `WL_EXT_COMMON_STAFF_INVITE_IND`     | 客服邀请           | `WL_StaffInvite`              |
+| `WL_EXT_COMMON_ANSWER_INVITE_IND`    | 客服应答邀请       | `WL_CommonAnswerStaffInvite`  |
+| `WL_EXT_STAFF_ACCEPT_SESSION_IND`    | 客服接受会话       | `WL_StaffSessionInfo`         |
+| `WL_EXT_STAFF_EXIT_SESSION_IND`      | 客服退出会话       | `WL_StaffSessionInfo`         |
+| `WL_EXT_STAFF_CLOSE_SESSION_IND`     | 客服关闭会话       | `WL_StaffSessionInfo`         |
+| `WL_EXT_STAFF_SESSION_INVITE_IND`    | 客服会话邀请       | `WL_ServiceSessionInvite`     |
+| `WL_EXT_STAFF_ANSWER_INVITE_IND`     | 客服应答邀请       | `WL_StaffAnswerSessionInvite` |
+| `WL_EXT_STAFF_REMOVED_SESSION_IND`   | 被移出会话         | sessionId                     |
+| `WL_EXT_DEVICE_BINDING_ANSWER_IND`   | 设备绑定应答       | `WL_bindAnswerInfo`           |
 
 ### 15.3 数据准备状态
 
 ```typescript
 import { WL_DataPrepareState } from 'weilasdk';
 
-WL_DataPrepareState.START_PREPARING        // 开始准备
-WL_DataPrepareState.PREPARE_PROGRESS_IND   // 准备中
-WL_DataPrepareState.PREPARE_SUCC_END       // 准备成功
-WL_DataPrepareState.PREPARE_FAIL_END       // 准备失败
+WL_DataPrepareState.START_PREPARING; // 开始准备
+WL_DataPrepareState.PREPARE_PROGRESS_IND; // 准备中
+WL_DataPrepareState.PREPARE_SUCC_END; // 准备成功
+WL_DataPrepareState.PREPARE_FAIL_END; // 准备失败
 ```
 
 ### 15.4 PTT 播放状态
@@ -730,14 +718,14 @@ WL_DataPrepareState.PREPARE_FAIL_END       // 准备失败
 import { WL_PttAudioPlayState, WL_PttAudioPlaySource } from 'weilasdk';
 
 // 播放状态
-WL_PttAudioPlayState.PTT_AUDIO_PLAYING_START  // 开始播放
-WL_PttAudioPlayState.PTT_AUDIO_PLAYING         // 播放中
-WL_PttAudioPlayState.PTT_AUDIO_PLAYING_END    // 播放结束
+WL_PttAudioPlayState.PTT_AUDIO_PLAYING_START; // 开始播放
+WL_PttAudioPlayState.PTT_AUDIO_PLAYING; // 播放中
+WL_PttAudioPlayState.PTT_AUDIO_PLAYING_END; // 播放结束
 
 // 播放来源
-WL_PttAudioPlaySource.PTT_AUDIO_SRC_STREAM   // 实时流
-WL_PttAudioPlaySource.PTT_AUDIO_SRC_HISTORY  // 历史消息
-WL_PttAudioPlaySource.PTT_AUDIO_SRC_SINGLE   // 单条消息
+WL_PttAudioPlaySource.PTT_AUDIO_SRC_STREAM; // 实时流
+WL_PttAudioPlaySource.PTT_AUDIO_SRC_HISTORY; // 历史消息
+WL_PttAudioPlaySource.PTT_AUDIO_SRC_SINGLE; // 单条消息
 ```
 
 ---
@@ -751,7 +739,7 @@ import { getErrorMsg } from 'weilasdk';
 
 // 从错误消息中提取可读的错误描述
 const errorMessage = getErrorMsg(errorMsg);
-console.log(errorMessage);  // 输出如 "密码错误"、"服务器异常" 等
+console.log(errorMessage); // 输出如 "密码错误"、"服务器异常" 等
 ```
 
 ### 16.2 错误码参考
@@ -760,98 +748,98 @@ SDK 定义了丰富的错误码，以下是常见错误：
 
 **通用错误**
 
-| 错误码 | 说明 |
-|--------|------|
-| 0 | 成功 |
-| 1 | 失败 |
-| 2 | 连接中断 |
-| 3 | 未连接消息服务器 |
-| 4 | 未连接数据服务器 |
-| 5 | 未连接缓存服务器 |
-| 6 | 未连接登录服务器 |
-| 7 | 未连接路由服务器 |
-| 8 | 数据库异常 |
-| 9 | 缓存异常 |
-| 10 | 服务器维护中 |
-| 11 | 服务器异常 |
-| 12 | 参数错误 |
-| 13 | 请求不支持 |
-| 14 | 请求受限 |
-| 15 | 请求已过期 |
-| 16 | APP版本太旧 |
-| 17 | 您已被拉黑 |
-| 18 | 认证无效 |
-| 19 | 权限受限 |
-| 20 | 数据不存在 |
-| 21 | 数据无效 |
-| 22 | 验证码错误 |
-| 23 | 授权失效 |
-| 24 | 请求太频繁 |
-| 25 | 号码资源耗尽 |
-| 26 | 请求超时 |
-| 27 | 网络传输超时 |
-| 28 | 应用未授权 |
+| 错误码 | 说明             |
+| ------ | ---------------- |
+| 0      | 成功             |
+| 1      | 失败             |
+| 2      | 连接中断         |
+| 3      | 未连接消息服务器 |
+| 4      | 未连接数据服务器 |
+| 5      | 未连接缓存服务器 |
+| 6      | 未连接登录服务器 |
+| 7      | 未连接路由服务器 |
+| 8      | 数据库异常       |
+| 9      | 缓存异常         |
+| 10     | 服务器维护中     |
+| 11     | 服务器异常       |
+| 12     | 参数错误         |
+| 13     | 请求不支持       |
+| 14     | 请求受限         |
+| 15     | 请求已过期       |
+| 16     | APP版本太旧      |
+| 17     | 您已被拉黑       |
+| 18     | 认证无效         |
+| 19     | 权限受限         |
+| 20     | 数据不存在       |
+| 21     | 数据无效         |
+| 22     | 验证码错误       |
+| 23     | 授权失效         |
+| 24     | 请求太频繁       |
+| 25     | 号码资源耗尽     |
+| 26     | 请求超时         |
+| 27     | 网络传输超时     |
+| 28     | 应用未授权       |
 
 **登录错误**
 
-| 错误码 | 说明 |
-|--------|------|
-| 101 | 用户IP被封 |
-| 102 | 用户被封号 |
-| 103 | 密码输入错误次数太多 |
-| 104 | 在线用户达到系统容量 |
-| 105 | 验证码无效 |
-| 106 | 账号或密码错误 |
-| 107 | 用户已绑定设备 |
-| 108 | 设备绑定中 |
-| 109 | 未绑定分机 |
-| 110 | 非法设备 |
-| 111 | 许可证用完 |
-| 112 | 设备账号错误 |
-| 113 | 设备密码错误 |
-| 114 | 设备不在线 |
+| 错误码 | 说明                 |
+| ------ | -------------------- |
+| 101    | 用户IP被封           |
+| 102    | 用户被封号           |
+| 103    | 密码输入错误次数太多 |
+| 104    | 在线用户达到系统容量 |
+| 105    | 验证码无效           |
+| 106    | 账号或密码错误       |
+| 107    | 用户已绑定设备       |
+| 108    | 设备绑定中           |
+| 109    | 未绑定分机           |
+| 110    | 非法设备             |
+| 111    | 许可证用完           |
+| 112    | 设备账号错误         |
+| 113    | 设备密码错误         |
+| 114    | 设备不在线           |
 
 **好友错误**
 
-| 错误码 | 说明 |
-|--------|------|
-| 201 | 不是好友 |
-| 202 | 好友邀请已过期 |
-| 203 | 您已被对方加入黑名单 |
-| 204 | 好友已开启消息屏蔽 |
+| 错误码 | 说明                 |
+| ------ | -------------------- |
+| 201    | 不是好友             |
+| 202    | 好友邀请已过期       |
+| 203    | 您已被对方加入黑名单 |
+| 204    | 好友已开启消息屏蔽   |
 
 **群组错误**
 
-| 错误码 | 说明 |
-|--------|------|
-| 301 | 群组不存在 |
-| 302 | 访问受限（被踢或被封） |
-| 303 | 您不是群主 |
-| 304 | 您不是群管理员 |
-| 305 | 成员数达到上限 |
-| 306 | 群组号耗尽 |
-| 307 | 群密码错误 |
-| 308 | 您创建的群组数达到上限 |
-| 309 | 话权被占用 |
-| 310 | 用户不是群成员 |
-| 311 | 群成员上限达到最大值 |
-| 312 | 不能对管理员进行操作 |
-| 313 | 用户被加入群黑名单 |
-| 314 | 群主不能退群 |
-| 315 | 你已被禁言 |
-| 316 | 群成员被禁言 |
-| 317 | 话权被回收 |
-| 318 | 不能对设备用户进行操作 |
-| 319 | 加群数量达到上限 |
+| 错误码 | 说明                   |
+| ------ | ---------------------- |
+| 301    | 群组不存在             |
+| 302    | 访问受限（被踢或被封） |
+| 303    | 您不是群主             |
+| 304    | 您不是群管理员         |
+| 305    | 成员数达到上限         |
+| 306    | 群组号耗尽             |
+| 307    | 群密码错误             |
+| 308    | 您创建的群组数达到上限 |
+| 309    | 话权被占用             |
+| 310    | 用户不是群成员         |
+| 311    | 群成员上限达到最大值   |
+| 312    | 不能对管理员进行操作   |
+| 313    | 用户被加入群黑名单     |
+| 314    | 群主不能退群           |
+| 315    | 你已被禁言             |
+| 316    | 群成员被禁言           |
+| 317    | 话权被回收             |
+| 318    | 不能对设备用户进行操作 |
+| 319    | 加群数量达到上限       |
 
 **客服错误**
 
-| 错误码 | 说明 |
-|--------|------|
-| 401 | 服务已关闭 |
-| 402 | 不是客服号 |
-| 403 | 客服不在线 |
-| 404 | 客服忙 |
+| 错误码 | 说明       |
+| ------ | ---------- |
+| 401    | 服务已关闭 |
+| 402    | 不是客服号 |
+| 403    | 客服不在线 |
+| 404    | 客服忙     |
 
 ---
 
@@ -894,19 +882,19 @@ logger('这是核心模块的日志');
 
 ```typescript
 interface WL_IDbUserInfo {
-    userId: number;
-    weilaNum: string;
-    sex: number;
-    nick: string;
-    pinyinName: string;
-    avatar: string;
-    email?: string;
-    phone?: string;
-    countryCode?: string;
-    status: number;
-    signature?: string;
-    userType: number;
-    created: number;
+  userId: number;
+  weilaNum: string;
+  sex: number;
+  nick: string;
+  pinyinName: string;
+  avatar: string;
+  email?: string;
+  phone?: string;
+  countryCode?: string;
+  status: number;
+  signature?: string;
+  userType: number;
+  created: number;
 }
 ```
 
@@ -914,28 +902,28 @@ interface WL_IDbUserInfo {
 
 ```typescript
 interface WL_IDbGroup {
-    groupId: string;
-    name: string;
-    pinyinName: string;
-    avatar: string;
-    groupNum: string;
-    ownerId: number;
-    groupType: WL_IDbGroupType;
-    desc?: string;
-    publicType: WL_IDbGroupPublicType;
-    authType: WL_IDbGroupAuthType;
-    groupClass: number;
-    audioQuality: number;
-    speechEnable: boolean;
-    home?: string;
-    latitude?: string;
-    longitude?: string;
-    burstType: number;
-    memberLimit: number;
-    memberCount: number;
-    memberVersion: number;
-    version: number;
-    created: number;
+  groupId: string;
+  name: string;
+  pinyinName: string;
+  avatar: string;
+  groupNum: string;
+  ownerId: number;
+  groupType: WL_IDbGroupType;
+  desc?: string;
+  publicType: WL_IDbGroupPublicType;
+  authType: WL_IDbGroupAuthType;
+  groupClass: number;
+  audioQuality: number;
+  speechEnable: boolean;
+  home?: string;
+  latitude?: string;
+  longitude?: string;
+  burstType: number;
+  memberLimit: number;
+  memberCount: number;
+  memberVersion: number;
+  version: number;
+  created: number;
 }
 ```
 
@@ -943,48 +931,48 @@ interface WL_IDbGroup {
 
 ```typescript
 interface WL_IDbMsgData {
-    combo_id: string;
-    senderId: number;
-    sessionId: string;
-    sessionType: number;
-    msgId: number;
-    msgType: WL_IDbMsgDataType;
-    created: number;
-    autoReply: number;
-    status: WL_IDbMsgDataStatus;
-    tag?: string;
-    textData?: string;
-    audioData?: WL_IDbAudioData;
-    fileInfo?: WL_IDbFileData;
-    command?: string;
-    location?: WL_IDbLocationShared;
-    switchData?: string;
-    serviceData?: string;
-    withdrawMsgId?: number;
-    pttData?: WL_IDbPttData;
+  combo_id: string;
+  senderId: number;
+  sessionId: string;
+  sessionType: number;
+  msgId: number;
+  msgType: WL_IDbMsgDataType;
+  created: number;
+  autoReply: number;
+  status: WL_IDbMsgDataStatus;
+  tag?: string;
+  textData?: string;
+  audioData?: WL_IDbAudioData;
+  fileInfo?: WL_IDbFileData;
+  command?: string;
+  location?: WL_IDbLocationShared;
+  switchData?: string;
+  serviceData?: string;
+  withdrawMsgId?: number;
+  pttData?: WL_IDbPttData;
 }
 
 interface WL_IDbAudioData {
-    frameCount: number;
-    data?: Uint8Array;
-    audioUrl?: string;
+  frameCount: number;
+  data?: Uint8Array;
+  audioUrl?: string;
 }
 
 interface WL_IDbFileData {
-    fileSize: number;
-    fileName?: string;
-    fileUrl?: string;
-    fileThumbnail?: string;
+  fileSize: number;
+  fileName?: string;
+  fileUrl?: string;
+  fileThumbnail?: string;
 }
 
 interface WL_IDbLocationShared {
-    locationType: string;
-    latitude: number;
-    longitude: number;
-    title?: string;
-    name?: string;
-    address?: string;
-    mapUrl?: string;
+  locationType: string;
+  latitude: number;
+  longitude: number;
+  title?: string;
+  name?: string;
+  address?: string;
+  mapUrl?: string;
 }
 ```
 
@@ -992,25 +980,25 @@ interface WL_IDbLocationShared {
 
 ```typescript
 interface WL_IDbSession {
-    combo_id_type: string;
-    sessionId: string;
-    sessionType: WL_IDbSessionType;
-    sessionName: string;
-    sessionAvatar: string;
-    readMsgId: number;
-    lastMsgId: number;
-    latestUpdate: number;
-    status: WL_IDbSessionStatus;
-    extra?: any;
+  combo_id_type: string;
+  sessionId: string;
+  sessionType: WL_IDbSessionType;
+  sessionName: string;
+  sessionAvatar: string;
+  readMsgId: number;
+  lastMsgId: number;
+  latestUpdate: number;
+  status: WL_IDbSessionStatus;
+  extra?: any;
 }
 
 interface WL_IDbSessionSetting {
-    combo_id_type: string;
-    sessionId: string;
-    sessionType: number;
-    tts: boolean;
-    mute: boolean;
-    loactionShared: boolean;
+  combo_id_type: string;
+  sessionId: string;
+  sessionType: number;
+  tts: boolean;
+  mute: boolean;
+  loactionShared: boolean;
 }
 ```
 
@@ -1018,20 +1006,20 @@ interface WL_IDbSessionSetting {
 
 ```typescript
 interface WL_IDbFriend {
-    friendInfo: WL_IDbFriendInfo;
-    userInfo: WL_IDbUserInfo | null;
+  friendInfo: WL_IDbFriendInfo;
+  userInfo: WL_IDbUserInfo | null;
 }
 
 interface WL_IDbFriendInfo {
-    userId: number;
-    status: WL_IDbFriendStatus;
-    remark?: string;
-    label?: string;
-    desc?: string;
-    blockedStatus: boolean;
-    tts: boolean;
-    locationShared: boolean;
-    extension?: string;
+  userId: number;
+  status: WL_IDbFriendStatus;
+  remark?: string;
+  label?: string;
+  desc?: string;
+  blockedStatus: boolean;
+  tts: boolean;
+  locationShared: boolean;
+  extension?: string;
 }
 ```
 
@@ -1039,24 +1027,24 @@ interface WL_IDbFriendInfo {
 
 ```typescript
 interface WL_IDbGroupMember {
-    memberInfo: WL_IDbMemberInfo;
-    userInfo?: WL_IDbUserInfo;
+  memberInfo: WL_IDbMemberInfo;
+  userInfo?: WL_IDbUserInfo;
 }
 
 interface WL_IDbMemberInfo {
-    combo_gid_uid: string;
-    groupId: string;
-    userId: number;
-    status: WL_IDbMemberStatus;
-    memberType: WL_IDbMemberType;
-    remark?: string;
-    priority: number;
-    speechEnable: boolean;
-    speechDisableTimeout: number;
-    blockedStatus: boolean;
-    tts: boolean;
-    locationShared: boolean;
-    created: number;
+  combo_gid_uid: string;
+  groupId: string;
+  userId: number;
+  status: WL_IDbMemberStatus;
+  memberType: WL_IDbMemberType;
+  remark?: string;
+  priority: number;
+  speechEnable: boolean;
+  speechDisableTimeout: number;
+  blockedStatus: boolean;
+  tts: boolean;
+  locationShared: boolean;
+  created: number;
 }
 ```
 
@@ -1064,26 +1052,26 @@ interface WL_IDbMemberInfo {
 
 ```typescript
 interface WL_IDbExtension {
-    info: WL_IDbExtensionInfo;
-    userInfo: WL_IDbUserInfo;
-    supervisor: WL_IDbUserInfo;
+  info: WL_IDbExtensionInfo;
+  userInfo: WL_IDbUserInfo;
+  supervisor: WL_IDbUserInfo;
 }
 
 interface WL_IDbExtensionInfo {
-    imei: string;
-    state: WL_IDbExtensionState;
-    productName: string;
-    extensionType: WL_IDbExtensionType;
-    userId: number;
-    supervisorId: number;
-    status: number;
-    version: string;
-    config: string;
-    groupLimit: number;
-    groupCount: number;
-    activeTime: number;
-    warrant: number;
-    createdTime: number;
+  imei: string;
+  state: WL_IDbExtensionState;
+  productName: string;
+  extensionType: WL_IDbExtensionType;
+  userId: number;
+  supervisorId: number;
+  status: number;
+  version: string;
+  config: string;
+  groupLimit: number;
+  groupCount: number;
+  activeTime: number;
+  warrant: number;
+  createdTime: number;
 }
 ```
 
@@ -1091,27 +1079,27 @@ interface WL_IDbExtensionInfo {
 
 ```typescript
 interface WL_IDbService {
-    serviceId: number;
-    serviceNum: string;
-    serviceType: number;
-    serviceClass: number;
-    name: string;
-    avatar: string;
-    intro: string;
-    url: string;
-    createdTime: number;
+  serviceId: number;
+  serviceNum: string;
+  serviceType: number;
+  serviceClass: number;
+  name: string;
+  avatar: string;
+  intro: string;
+  url: string;
+  createdTime: number;
 }
 
 interface WL_IDbServiceStaffInfo {
-    staff: WL_IDbServiceStaff;
-    userData: WL_IDbUserInfo;
+  staff: WL_IDbServiceStaff;
+  userData: WL_IDbUserInfo;
 }
 
 interface WL_IDbServiceSessionInfo {
-    service: WL_IDbService;
-    customer: WL_IDbUserInfo | undefined;
-    staffs: WL_IDbServiceStaffInfo[];
-    serviceSession: WL_IDbServiceSession;
+  service: WL_IDbService;
+  customer: WL_IDbUserInfo | undefined;
+  staffs: WL_IDbServiceStaffInfo[];
+  serviceSession: WL_IDbServiceSession;
 }
 ```
 

@@ -4,8 +4,16 @@
   "scripts": {
     "build": "pnpm -r run build",
     "build:core": "pnpm --filter @weilasdk/core run build",
-    "dev:vue3": "pnpm --filter @weilasdk/playground-vue3 run dev",
-    "typecheck": "pnpm -r run typecheck"
+    "dev": "pnpm --filter @weilasdk/playground-vue3 run dev",
+    "typecheck": "pnpm -r run typecheck",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check"
+  },
+  "devDependencies": {
+    "oxfmt": "^0.28.0",
+    "oxlint": "^1.39.0"
   },
   "engines": {
     "node": ">=18",

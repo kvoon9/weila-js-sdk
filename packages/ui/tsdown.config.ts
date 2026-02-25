@@ -1,5 +1,5 @@
-import { defineConfig } from 'tsdown'
-import Vue from 'unplugin-vue/rolldown'
+import { defineConfig } from 'tsdown';
+import Vue from 'unplugin-vue/rolldown';
 
 export default defineConfig({
   entry: ['./src/index.ts'],
@@ -8,4 +8,4 @@ export default defineConfig({
   dts: { vue: true },
   plugins: [Vue({ isProduction: true })],
   external: ['vue', '@weilasdk/core'],
-})
+});
