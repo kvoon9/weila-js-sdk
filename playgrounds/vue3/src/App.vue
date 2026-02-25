@@ -1,26 +1,26 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref } from 'vue';
 
-const sdkStatus = ref<'idle' | 'loading' | 'ready' | 'error'>('idle')
-const statusMessage = ref('')
+const sdkStatus = ref<'idle' | 'loading' | 'ready' | 'error'>('idle');
+const statusMessage = ref('');
 
 async function initSDK() {
-  sdkStatus.value = 'loading'
-  statusMessage.value = '正在加载 SDK...'
+  sdkStatus.value = 'loading';
+  statusMessage.value = '正在加载 SDK...';
 
   try {
     // 动态导入 SDK，使用 markRaw 避免 Vue Proxy 包裹
-    const { markRaw } = await import('vue')
-    const weilaModule = await import('@weilasdk/core')
+    const { markRaw } = await import('vue');
+    const weilaModule = await import('@weilasdk/core');
 
-    statusMessage.value = 'SDK 模块加载成功 ✓'
-    sdkStatus.value = 'ready'
+    statusMessage.value = 'SDK 模块加载成功 ✓';
+    sdkStatus.value = 'ready';
 
-    console.log('[Playground] SDK module loaded:', weilaModule)
+    console.log('[Playground] SDK module loaded:', weilaModule);
   } catch (e) {
-    sdkStatus.value = 'error'
-    statusMessage.value = `SDK 加载失败: ${e}`
-    console.error('[Playground] SDK load error:', e)
+    sdkStatus.value = 'error';
+    statusMessage.value = `SDK 加载失败: ${e}`;
+    console.error('[Playground] SDK load error:', e);
   }
 }
 </script>

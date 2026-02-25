@@ -30,69 +30,69 @@ const STATIC_BASE = '/static/weilasdk/';
 
 // 配置资源路径
 function configResources() {
-    setConfigData([
-        {
-            id: WL_ConfigID.WL_RES_RING_START_PLAY_ID,
-            url: STATIC_BASE + 'start_player.wav',
-            version: 1
-        },
-        {
-            id: WL_ConfigID.WL_RES_RING_STOP_PLAY_ID,
-            url: STATIC_BASE + 'stop_player.wav',
-            version: 1
-        },
-        {
-            id: WL_ConfigID.WL_RES_RING_START_RECORD_ID,
-            url: STATIC_BASE + 'start_record.wav',
-            version: 1
-        },
-        {
-            id: WL_ConfigID.WL_RES_RING_STOP_RECORD_ID,
-            url: STATIC_BASE + 'stop_record.wav',
-            version: 1
-        },
-        {
-            id: WL_ConfigID.WL_RES_DATA_OPUS_WASM_ID,
-            url: STATIC_BASE + 'opuslibs.wasm',
-            version: 1
-        }
-    ]);
+  setConfigData([
+    {
+      id: WL_ConfigID.WL_RES_RING_START_PLAY_ID,
+      url: STATIC_BASE + 'start_player.wav',
+      version: 1,
+    },
+    {
+      id: WL_ConfigID.WL_RES_RING_STOP_PLAY_ID,
+      url: STATIC_BASE + 'stop_player.wav',
+      version: 1,
+    },
+    {
+      id: WL_ConfigID.WL_RES_RING_START_RECORD_ID,
+      url: STATIC_BASE + 'start_record.wav',
+      version: 1,
+    },
+    {
+      id: WL_ConfigID.WL_RES_RING_STOP_RECORD_ID,
+      url: STATIC_BASE + 'stop_record.wav',
+      version: 1,
+    },
+    {
+      id: WL_ConfigID.WL_RES_DATA_OPUS_WASM_ID,
+      url: STATIC_BASE + 'opuslibs.wasm',
+      version: 1,
+    },
+  ]);
 }
 
 let weilaInstance = null;
 
 export function initWeila() {
-    if (weilaInstance) {
-        return weilaInstance;
-    }
-
-    // 先配置资源路径
-    configResources();
-
-    weilaInstance = new WeilaCore();
-
-    // 初始化日志
-    initLogger('MOD:*, CORE:*, FSM:*, AUDIO:*, DB:*, NET:*');
-
-    // 设置服务器
-    // #ifdef H5
-    weilaInstance.weila_setWebSock('wss://your-server.com');
-    weilaInstance.weila_setAuthInfo('your-app-id', 'your-app-key');
-    // #endif
-
-    // 注册事件
-    weilaInstance.weila_onEvent((eventId, data) => {
-        console.log('[Weila]', eventId, data);
-    });
-
+  if (weilaInstance) {
     return weilaInstance;
+  }
+
+  // 先配置资源路径
+  configResources();
+
+  weilaInstance = new WeilaCore();
+
+  // 初始化日志
+  initLogger('MOD:*, CORE:*, FSM:*, AUDIO:*, DB:*, NET:*');
+
+  // 设置服务器
+  // #ifdef H5
+  weilaInstance.weila_setWebSock('wss://your-server.com');
+  weilaInstance.weila_setAuthInfo('your-app-id', 'your-app-key');
+  // #endif
+
+  // 注册事件
+  weilaInstance.weila_onEvent((eventId, data) => {
+    console.log('[Weila]', eventId, data);
+  });
+
+  return weilaInstance;
 }
 
 export function getWeila() {
-    if (!weilaInstance) {
-        throw new Error('Weila SDK 未初始化');
-    }
-    return weilaInstance;
+  if (!weilaInstance) {
+    throw new Error('Weila SDK 未初始化');
+  }
+  return weilaInstance;
 }
 ```
 
@@ -106,42 +106,54 @@ import { WeilaCore, setConfigData, WL_ConfigID, initLogger } from 'weilasdk';
 const STATIC_BASE = '/static/weilasdk/';
 
 function configResources() {
-    setConfigData([
-        { id: WL_ConfigID.WL_RES_RING_START_PLAY_ID, url: STATIC_BASE + 'start_player.wav', version: 1 },
-        { id: WL_ConfigID.WL_RES_RING_STOP_PLAY_ID, url: STATIC_BASE + 'stop_player.wav', version: 1 },
-        { id: WL_ConfigID.WL_RES_RING_START_RECORD_ID, url: STATIC_BASE + 'start_record.wav', version: 1 },
-        { id: WL_ConfigID.WL_RES_RING_STOP_RECORD_ID, url: STATIC_BASE + 'stop_record.wav', version: 1 },
-        { id: WL_ConfigID.WL_RES_DATA_OPUS_WASM_ID, url: STATIC_BASE + 'opuslibs.wasm', version: 1 }
-    ]);
+  setConfigData([
+    {
+      id: WL_ConfigID.WL_RES_RING_START_PLAY_ID,
+      url: STATIC_BASE + 'start_player.wav',
+      version: 1,
+    },
+    { id: WL_ConfigID.WL_RES_RING_STOP_PLAY_ID, url: STATIC_BASE + 'stop_player.wav', version: 1 },
+    {
+      id: WL_ConfigID.WL_RES_RING_START_RECORD_ID,
+      url: STATIC_BASE + 'start_record.wav',
+      version: 1,
+    },
+    {
+      id: WL_ConfigID.WL_RES_RING_STOP_RECORD_ID,
+      url: STATIC_BASE + 'stop_record.wav',
+      version: 1,
+    },
+    { id: WL_ConfigID.WL_RES_DATA_OPUS_WASM_ID, url: STATIC_BASE + 'opuslibs.wasm', version: 1 },
+  ]);
 }
 
 let weilaInstance: WeilaCore | null = null;
 
 export function initWeila() {
-    if (weilaInstance) return weilaInstance;
+  if (weilaInstance) return weilaInstance;
 
-    configResources();
-    weilaInstance = new WeilaCore();
-    
-    initLogger('MOD:*, CORE:*, FSM:*, AUDIO:*, DB:*, NET:*');
-    
-    // #ifdef H5
-    weilaInstance.weila_setWebSock('wss://your-server.com');
-    weilaInstance.weila_setAuthInfo('your-app-id', 'your-app-key');
-    // #endif
-    
-    weilaInstance.weila_onEvent((eventId, data) => {
-        console.log('[Weila]', eventId, data);
-    });
-    
-    return weilaInstance;
+  configResources();
+  weilaInstance = new WeilaCore();
+
+  initLogger('MOD:*, CORE:*, FSM:*, AUDIO:*, DB:*, NET:*');
+
+  // #ifdef H5
+  weilaInstance.weila_setWebSock('wss://your-server.com');
+  weilaInstance.weila_setAuthInfo('your-app-id', 'your-app-key');
+  // #endif
+
+  weilaInstance.weila_onEvent((eventId, data) => {
+    console.log('[Weila]', eventId, data);
+  });
+
+  return weilaInstance;
 }
 
 export function getWeila(): WeilaCore {
-    if (!weilaInstance) {
-        throw new Error('Weila SDK 未初始化');
-    }
-    return weilaInstance;
+  if (!weilaInstance) {
+    throw new Error('Weila SDK 未初始化');
+  }
+  return weilaInstance;
 }
 ```
 
@@ -154,13 +166,13 @@ UniApp 需要添加 `.wasm` 文件支持：
 // 或 uni.config.js (UniApp Vue3)
 
 module.exports = {
-    chainWebpack: config => {
-        // 添加 WASM 文件支持
-        config.module
-            .rule('wasm')
-            .test(/\.wasm$/)
-            .type('asset/resource');
-    }
+  chainWebpack: (config) => {
+    // 添加 WASM 文件支持
+    config.module
+      .rule('wasm')
+      .test(/\.wasm$/)
+      .type('asset/resource');
+  },
 };
 ```
 
@@ -187,15 +199,15 @@ export default {
   methods: {
     async handleLogin() {
       const weila = getWeila();
-      
+
       // 音频初始化必须在用户点击事件中
       await weila.weila_audioInit();
-      
+
       // 登录
       const userInfo = await weila.weila_login('13800138000', 'password', '86');
       console.log('登录成功', userInfo);
-    }
-  }
+    },
+  },
 };
 </script>
 ```
@@ -229,9 +241,9 @@ UniApp 的音频 API 与 Web 不同，可能需要适配：
 ```javascript
 // 如果需要自定义音频播放
 weila.weila_onEvent((eventId, data) => {
-    if (eventId === 'WL_EXT_PTT_PLAY_IND') {
-        // 处理播放事件
-        // 可以使用 uni.createInnerAudioContext() 播放
-    }
+  if (eventId === 'WL_EXT_PTT_PLAY_IND') {
+    // 处理播放事件
+    // 可以使用 uni.createInnerAudioContext() 播放
+  }
 });
 ```

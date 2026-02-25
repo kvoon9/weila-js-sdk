@@ -8,30 +8,30 @@
 
 ```javascript
 module.exports = {
-    devServer: {
-        proxy: {
-            '/v1': {
-                target: 'http://webapi.weila.hk:8080/',
-                changeOrigin: true,
-                secure: false
-            },
-            '/audio': {
-                target: 'https://weilaaudio.oss-cn-shenzhen.aliyuncs.com',
-                changeOrigin: true,
-                secure: true
-            },
-            '/avatar': {
-                target: 'https://weilaavatar.oss-cn-shenzhen.aliyuncs.com',
-                changeOrigin: true,
-                secure: true
-            },
-            '/ptt': {
-                target: 'https://weilaspeech.oss-cn-shenzhen.aliyuncs.com',
-                changeOrigin: true,
-                secure: true
-            }
-        }
-    }
+  devServer: {
+    proxy: {
+      '/v1': {
+        target: 'http://webapi.weila.hk:8080/',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/audio': {
+        target: 'https://weilaaudio.oss-cn-shenzhen.aliyuncs.com',
+        changeOrigin: true,
+        secure: true,
+      },
+      '/avatar': {
+        target: 'https://weilaavatar.oss-cn-shenzhen.aliyuncs.com',
+        changeOrigin: true,
+        secure: true,
+      },
+      '/ptt': {
+        target: 'https://weilaspeech.oss-cn-shenzhen.aliyuncs.com',
+        changeOrigin: true,
+        secure: true,
+      },
+    },
+  },
 };
 ```
 
@@ -39,31 +39,31 @@ module.exports = {
 
 ```javascript
 module.exports = {
-    devServer: {
-        proxy: {
-            '/v1': {
-                target: 'http://webapi.weila.hk:8080/',
-                changeOrigin: true,
-                secure: false,
-                ws: true
-            },
-            '/audio': {
-                target: 'https://weilaaudio.oss-cn-shenzhen.aliyuncs.com',
-                changeOrigin: true,
-                secure: true
-            },
-            '/avatar': {
-                target: 'https://weilaavatar.oss-cn-shenzhen.aliyuncs.com',
-                changeOrigin: true,
-                secure: true
-            },
-            '/ptt': {
-                target: 'https://weilaspeech.oss-cn-shenzhen.aliyuncs.com',
-                changeOrigin: true,
-                secure: true
-            }
-        }
-    }
+  devServer: {
+    proxy: {
+      '/v1': {
+        target: 'http://webapi.weila.hk:8080/',
+        changeOrigin: true,
+        secure: false,
+        ws: true,
+      },
+      '/audio': {
+        target: 'https://weilaaudio.oss-cn-shenzhen.aliyuncs.com',
+        changeOrigin: true,
+        secure: true,
+      },
+      '/avatar': {
+        target: 'https://weilaavatar.oss-cn-shenzhen.aliyuncs.com',
+        changeOrigin: true,
+        secure: true,
+      },
+      '/ptt': {
+        target: 'https://weilaspeech.oss-cn-shenzhen.aliyuncs.com',
+        changeOrigin: true,
+        secure: true,
+      },
+    },
+  },
 };
 ```
 
@@ -74,32 +74,32 @@ import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 
 export default defineConfig({
-    plugins: [vue()],
-    server: {
-        proxy: {
-            '/v1': {
-                target: 'http://webapi.weila.hk:8080/',
-                changeOrigin: true,
-                secure: false,
-                ws: true
-            },
-            '/audio': {
-                target: 'https://weilaaudio.oss-cn-shenzhen.aliyuncs.com',
-                changeOrigin: true,
-                secure: true
-            },
-            '/avatar': {
-                target: 'https://weilaavatar.oss-cn-shenzhen.aliyuncs.com',
-                changeOrigin: true,
-                secure: true
-            },
-            '/ptt': {
-                target: 'https://weilaspeech.oss-cn-shenzhen.aliyuncs.com',
-                changeOrigin: true,
-                secure: true
-            }
-        }
-    }
+  plugins: [vue()],
+  server: {
+    proxy: {
+      '/v1': {
+        target: 'http://webapi.weila.hk:8080/',
+        changeOrigin: true,
+        secure: false,
+        ws: true,
+      },
+      '/audio': {
+        target: 'https://weilaaudio.oss-cn-shenzhen.aliyuncs.com',
+        changeOrigin: true,
+        secure: true,
+      },
+      '/avatar': {
+        target: 'https://weilaavatar.oss-cn-shenzhen.aliyuncs.com',
+        changeOrigin: true,
+        secure: true,
+      },
+      '/ptt': {
+        target: 'https://weilaspeech.oss-cn-shenzhen.aliyuncs.com',
+        changeOrigin: true,
+        secure: true,
+      },
+    },
+  },
 });
 ```
 
@@ -107,43 +107,43 @@ export default defineConfig({
 
 ```javascript
 module.exports = {
-    devServer: {
-        https: false,
-        proxy: {
-            '/v1': {
-                target: 'http://webapi.weila.hk:8080/',
-                changeOrigin: true,
-                secure: false,
-                ws: true
-            },
-            '/audio': {
-                target: 'https://weilaaudio.oss-cn-shenzhen.aliyuncs.com',
-                changeOrigin: true,
-                secure: true
-            },
-            '/avatar': {
-                target: 'https://weilaavatar.oss-cn-shenzhen.aliyuncs.com',
-                changeOrigin: true,
-                secure: true
-            },
-            '/ptt': {
-                target: 'https://weilaspeech.oss-cn-shenzhen.aliyuncs.com',
-                changeOrigin: true,
-                secure: true
-            }
-        }
-    }
+  devServer: {
+    https: false,
+    proxy: {
+      '/v1': {
+        target: 'http://webapi.weila.hk:8080/',
+        changeOrigin: true,
+        secure: false,
+        ws: true,
+      },
+      '/audio': {
+        target: 'https://weilaaudio.oss-cn-shenzhen.aliyuncs.com',
+        changeOrigin: true,
+        secure: true,
+      },
+      '/avatar': {
+        target: 'https://weilaavatar.oss-cn-shenzhen.aliyuncs.com',
+        changeOrigin: true,
+        secure: true,
+      },
+      '/ptt': {
+        target: 'https://weilaspeech.oss-cn-shenzhen.aliyuncs.com',
+        changeOrigin: true,
+        secure: true,
+      },
+    },
+  },
 };
 ```
 
 ## 服务器端点说明
 
-| 路径 | 用途 | 目标服务器 |
-|------|------|-----------|
-| `/v1` | API 请求 | http://webapi.weila.hk:8080/ |
-| `/audio` | 音频文件 | https://weilaaudio.oss-cn-shenzhen.aliyuncs.com |
+| 路径      | 用途     | 目标服务器                                       |
+| --------- | -------- | ------------------------------------------------ |
+| `/v1`     | API 请求 | http://webapi.weila.hk:8080/                     |
+| `/audio`  | 音频文件 | https://weilaaudio.oss-cn-shenzhen.aliyuncs.com  |
 | `/avatar` | 头像图片 | https://weilaavatar.oss-cn-shenzhen.aliyuncs.com |
-| `/ptt` | PTT 语音 | https://weilaspeech.oss-cn-shenzhen.aliyuncs.com |
+| `/ptt`    | PTT 语音 | https://weilaspeech.oss-cn-shenzhen.aliyuncs.com |
 
 ## 生产环境
 

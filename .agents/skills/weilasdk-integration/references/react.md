@@ -19,83 +19,79 @@ import React, { createContext, useContext, useEffect, useState, useRef } from 'r
 import { WeilaCore, initLogger } from 'weilasdk';
 
 interface WeilaContextType {
-    weila: WeilaCore | null;
-    isReady: boolean;
-    isLoginReady: boolean;
+  weila: WeilaCore | null;
+  isReady: boolean;
+  isLoginReady: boolean;
 }
 
 const WeilaContext = createContext<WeilaContextType>({
-    weila: null,
-    isReady: false,
-    isLoginReady: false
+  weila: null,
+  isReady: false,
+  isLoginReady: false,
 });
 
 export function useWeila() {
-    return useContext(WeilaContext);
+  return useContext(WeilaContext);
 }
 
 interface WeilaProviderProps {
-    children: React.ReactNode;
-    wsUrl: string;
-    appId: string;
-    appKey: string;
+  children: React.ReactNode;
+  wsUrl: string;
+  appId: string;
+  appKey: string;
 }
 
 export function WeilaProvider({ children, wsUrl, appId, appKey }: WeilaProviderProps) {
-    const weilaRef = useRef<WeilaCore | null>(null);
-    const [isReady, setIsReady] = useState(false);
-    const [isLoginReady, setIsLoginReady] = useState(false);
+  const weilaRef = useRef<WeilaCore | null>(null);
+  const [isReady, setIsReady] = useState(false);
+  const [isLoginReady, setIsLoginReady] = useState(false);
 
-    useEffect(() => {
-        const init = async () => {
-            const weila = new WeilaCore();
-            
-            // 保存引用
-            weilaRef.current = weila;
+  useEffect(() => {
+    const init = async () => {
+      const weila = new WeilaCore();
 
-            // 初始化日志
-            initLogger('MOD:*, CORE:*, FSM:*, AUDIO:*, DB:*, NET:*');
+      // 保存引用
+      weilaRef.current = weila;
 
-            // 设置服务器
-            weila.weila_setWebSock(wsUrl);
-            weila.weila_setAuthInfo(appId, appKey);
+      // 初始化日志
+      initLogger('MOD:*, CORE:*, FSM:*, AUDIO:*, DB:*, NET:*');
 
-            // 注册事件
-            weila.weila_onEvent((eventId, data) => {
-                console.log('[Weila]', eventId, data);
-                
-                if (eventId === 'WL_EXT_DATA_PREPARE_IND') {
-                    if (data?.state === 'PREPARE_SUCC_END') {
-                        setIsReady(true);
-                    }
-                }
-            });
+      // 设置服务器
+      weila.weila_setWebSock(wsUrl);
+      weila.weila_setAuthInfo(appId, appKey);
 
-            // 初始化
-            await weila.weila_init();
-        };
+      // 注册事件
+      weila.weila_onEvent((eventId, data) => {
+        console.log('[Weila]', eventId, data);
 
-        init();
+        if (eventId === 'WL_EXT_DATA_PREPARE_IND') {
+          if (data?.state === 'PREPARE_SUCC_END') {
+            setIsReady(true);
+          }
+        }
+      });
 
-        return () => {
-            // 清理
-            if (weilaRef.current) {
-                weilaRef.current.weila_logout();
-            }
-        };
-    }, [wsUrl, appId, appKey]);
-
-    const value = {
-        weila: weilaRef.current,
-        isReady,
-        isLoginReady
+      // 初始化
+      await weila.weila_init();
     };
 
-    return (
-        <WeilaContext.Provider value={value}>
-            {children}
-        </WeilaContext.Provider>
-    );
+    init();
+
+    return () => {
+      // 清理
+      if (weilaRef.current) {
+        weilaRef.current.weila_logout();
+      }
+    };
+  }, [wsUrl, appId, appKey]);
+
+  const value = {
+    weila: weilaRef.current,
+    isReady,
+    isLoginReady,
+  };
+
+  return <WeilaContext.Provider value={value}>{children}</WeilaContext.Provider>;
 }
 ```
 
@@ -108,67 +104,67 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { WeilaCore, initLogger } from 'weilasdk';
 
 interface UseWeilaOptions {
-    wsUrl: string;
-    appId: string;
-    appKey: string;
+  wsUrl: string;
+  appId: string;
+  appKey: string;
 }
 
 export function useWeila({ wsUrl, appId, appKey }: UseWeilaOptions) {
-    const weilaRef = useRef<WeilaCore | null>(null);
-    const [isReady, setIsReady] = useState(false);
-    const [userInfo, setUserInfo] = useState<any>(null);
+  const weilaRef = useRef<WeilaCore | null>(null);
+  const [isReady, setIsReady] = useState(false);
+  const [userInfo, setUserInfo] = useState<any>(null);
 
-    useEffect(() => {
-        const init = async () => {
-            const weila = new WeilaCore();
-            weilaRef.current = weila;
+  useEffect(() => {
+    const init = async () => {
+      const weila = new WeilaCore();
+      weilaRef.current = weila;
 
-            initLogger('MOD:*, CORE:*, FSM:*, AUDIO:*, DB:*, NET:*');
+      initLogger('MOD:*, CORE:*, FSM:*, AUDIO:*, DB:*, NET:*');
 
-            weila.weila_setWebSock(wsUrl);
-            weila.weila_setAuthInfo(appId, appKey);
+      weila.weila_setWebSock(wsUrl);
+      weila.weila_setAuthInfo(appId, appKey);
 
-            weila.weila_onEvent((eventId, data) => {
-                console.log('[Weila]', eventId, data);
-                
-                if (eventId === 'WL_EXT_DATA_PREPARE_IND' && data?.state === 'PREPARE_SUCC_END') {
-                    setIsReady(true);
-                }
-            });
+      weila.weila_onEvent((eventId, data) => {
+        console.log('[Weila]', eventId, data);
 
-            await weila.weila_init();
-        };
-
-        init();
-    }, [wsUrl, appId, appKey]);
-
-    const login = useCallback(async (account: string, password: string, countryCode: string) => {
-        if (!weilaRef.current) {
-            throw new Error('Weila SDK 未初始化');
+        if (eventId === 'WL_EXT_DATA_PREPARE_IND' && data?.state === 'PREPARE_SUCC_END') {
+          setIsReady(true);
         }
-        
-        // 音频初始化必须在用户交互事件中
-        await weilaRef.current.weila_audioInit();
-        
-        const user = await weilaRef.current.weila_login(account, password, countryCode);
-        setUserInfo(user);
-        return user;
-    }, []);
+      });
 
-    const logout = useCallback(async () => {
-        if (weilaRef.current) {
-            await weilaRef.current.weila_logout();
-            setUserInfo(null);
-        }
-    }, []);
-
-    return {
-        weila: weilaRef.current,
-        isReady,
-        userInfo,
-        login,
-        logout
+      await weila.weila_init();
     };
+
+    init();
+  }, [wsUrl, appId, appKey]);
+
+  const login = useCallback(async (account: string, password: string, countryCode: string) => {
+    if (!weilaRef.current) {
+      throw new Error('Weila SDK 未初始化');
+    }
+
+    // 音频初始化必须在用户交互事件中
+    await weilaRef.current.weila_audioInit();
+
+    const user = await weilaRef.current.weila_login(account, password, countryCode);
+    setUserInfo(user);
+    return user;
+  }, []);
+
+  const logout = useCallback(async () => {
+    if (weilaRef.current) {
+      await weilaRef.current.weila_logout();
+      setUserInfo(null);
+    }
+  }, []);
+
+  return {
+    weila: weilaRef.current,
+    isReady,
+    userInfo,
+    login,
+    logout,
+  };
 }
 ```
 
@@ -183,15 +179,15 @@ import { WeilaProvider } from './contexts/WeilaContext';
 import Chat from './components/Chat';
 
 function App() {
-    return (
-        <WeilaProvider
-            wsUrl={process.env.REACT_APP_WS_URL!}
-            appId={process.env.REACT_APP_ID!}
-            appKey={process.env.REACT_APP_KEY!}
-        >
-            <Chat />
-        </WeilaProvider>
-    );
+  return (
+    <WeilaProvider
+      wsUrl={process.env.REACT_APP_WS_URL!}
+      appId={process.env.REACT_APP_ID!}
+      appKey={process.env.REACT_APP_KEY!}
+    >
+      <Chat />
+    </WeilaProvider>
+  );
 }
 
 export default App;
@@ -205,37 +201,33 @@ import React from 'react';
 import { useWeila } from '../contexts/WeilaContext';
 
 export function Login() {
-    const { isReady, login } = useWeila();
-    const [account, setAccount] = React.useState('');
-    const [password, setPassword] = React.useState('');
+  const { isReady, login } = useWeila();
+  const [account, setAccount] = React.useState('');
+  const [password, setPassword] = React.useState('');
 
-    const handleLogin = async () => {
-        try {
-            const user = await login(account, password, '86');
-            console.log('登录成功', user);
-        } catch (error) {
-            console.error('登录失败', error);
-        }
-    };
+  const handleLogin = async () => {
+    try {
+      const user = await login(account, password, '86');
+      console.log('登录成功', user);
+    } catch (error) {
+      console.error('登录失败', error);
+    }
+  };
 
-    return (
-        <div>
-            <input
-                value={account}
-                onChange={e => setAccount(e.target.value)}
-                placeholder="手机号"
-            />
-            <input
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="密码"
-            />
-            <button onClick={handleLogin} disabled={!isReady}>
-                登录
-            </button>
-        </div>
-    );
+  return (
+    <div>
+      <input value={account} onChange={(e) => setAccount(e.target.value)} placeholder="手机号" />
+      <input
+        type="password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        placeholder="密码"
+      />
+      <button onClick={handleLogin} disabled={!isReady}>
+        登录
+      </button>
+    </div>
+  );
 }
 ```
 
@@ -262,13 +254,17 @@ const weilaRef = useRef<WeilaCore | null>(null);
 ```tsx
 // 错误 ❌
 useEffect(() => {
-    weila.weila_audioInit(); // 不在用户事件中调用
+  weila.weila_audioInit(); // 不在用户事件中调用
 }, []);
 
 // 正确 ✓
-<button onClick={async () => {
+<button
+  onClick={async () => {
     await weila.weila_audioInit(); // 在点击事件中调用
-}}>登录</button>
+  }}
+>
+  登录
+</button>;
 ```
 
 ### TypeScript 类型
@@ -279,6 +275,6 @@ useEffect(() => {
 import { WeilaCore } from 'weilasdk';
 
 declare module 'weilasdk' {
-    // 如果需要扩展类型
+  // 如果需要扩展类型
 }
 ```

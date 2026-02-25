@@ -23,20 +23,20 @@ pnpm --filter @weilasdk/ui run typecheck
 
 构建产物位于 `dist/`：
 
-| 文件 | 说明 |
-|------|------|
-| `index.js` | ESM 格式 |
-| `index.cjs` | CJS 格式 |
-| `index.css` | 提取的样式 |
-| `index.d.ts` | ESM 类型声明 |
+| 文件          | 说明         |
+| ------------- | ------------ |
+| `index.js`    | ESM 格式     |
+| `index.cjs`   | CJS 格式     |
+| `index.css`   | 提取的样式   |
+| `index.d.ts`  | ESM 类型声明 |
 | `index.d.cts` | CJS 类型声明 |
 
 ## 使用方式
 
 ```vue
 <script setup lang="ts">
-import { WlStatusIndicator } from '@weilasdk/ui'
-import '@weilasdk/ui/dist/index.css'
+import { WlStatusIndicator } from '@weilasdk/ui';
+import '@weilasdk/ui/dist/index.css';
 </script>
 
 <template>

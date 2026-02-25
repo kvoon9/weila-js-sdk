@@ -16,36 +16,33 @@ import { WeilaCore, initLogger } from 'weilasdk';
 let weilaInstance = null;
 
 export function initWeilaSDK() {
-    if (weilaInstance) {
-        return weilaInstance;
-    }
-
-    // 创建实例
-    weilaInstance = new WeilaCore();
-
-    // 初始化日志
-    initLogger('MOD:*, CORE:*, FSM:*, AUDIO:*, DB:*, NET:*');
-
-    // 设置服务器（使用 Vue 2 的语法获取环境变量）
-    weilaInstance.weila_setWebSock(process.env.WS_URL);
-    weilaInstance.weila_setAuthInfo(
-        process.env.APP_ID,
-        process.env.APP_KEY
-    );
-
-    // 注册事件
-    weilaInstance.weila_onEvent((eventId, data) => {
-        console.log('[Weila]', eventId, data);
-    });
-
+  if (weilaInstance) {
     return weilaInstance;
+  }
+
+  // 创建实例
+  weilaInstance = new WeilaCore();
+
+  // 初始化日志
+  initLogger('MOD:*, CORE:*, FSM:*, AUDIO:*, DB:*, NET:*');
+
+  // 设置服务器（使用 Vue 2 的语法获取环境变量）
+  weilaInstance.weila_setWebSock(process.env.WS_URL);
+  weilaInstance.weila_setAuthInfo(process.env.APP_ID, process.env.APP_KEY);
+
+  // 注册事件
+  weilaInstance.weila_onEvent((eventId, data) => {
+    console.log('[Weila]', eventId, data);
+  });
+
+  return weilaInstance;
 }
 
 export function getWeila() {
-    if (!weilaInstance) {
-        throw new Error('Weila SDK 未初始化');
-    }
-    return weilaInstance;
+  if (!weilaInstance) {
+    throw new Error('Weila SDK 未初始化');
+  }
+  return weilaInstance;
 }
 ```
 
@@ -60,11 +57,11 @@ const weila = initWeilaSDK();
 
 // 初始化 SDK
 weila.weila_init().then(() => {
-    console.log('Weila SDK 初始化完成');
-    
-    new Vue({
-        render: h => h(App)
-    }).$mount('#app');
+  console.log('Weila SDK 初始化完成');
+
+  new Vue({
+    render: (h) => h(App),
+  }).$mount('#app');
 });
 ```
 
@@ -85,15 +82,15 @@ export default {
   methods: {
     async handleLogin() {
       const weila = getWeila();
-      
+
       // 音频初始化必须在用户点击事件中调用
       await weila.weila_audioInit();
-      
+
       // 登录
       const userInfo = await weila.weila_login('13800138000', 'password', '86');
       console.log('登录成功', userInfo);
-    }
-  }
+    },
+  },
 };
 </script>
 ```
@@ -142,14 +139,14 @@ APP_KEY=your-app-key
 ```javascript
 // vue.config.js
 module.exports = {
-  chainWebpack: config => {
-    config.plugin('define').tap(args => {
+  chainWebpack: (config) => {
+    config.plugin('define').tap((args) => {
       args[0]['process.env'].WS_URL = JSON.stringify(process.env.WS_URL);
       args[0]['process.env'].APP_ID = JSON.stringify(process.env.APP_ID);
       args[0]['process.env'].APP_KEY = JSON.stringify(process.env.APP_KEY);
       return args;
     });
-  }
+  },
 };
 ```
 
@@ -158,13 +155,13 @@ module.exports = {
 ```javascript
 async login() {
     const weila = getWeila();
-    
+
     try {
         const userInfo = await weila.weila_login('13800138000', 'password', '86');
-        
+
         // 存储用户信息
         this.userInfo = userInfo;
-        
+
         return userInfo;
     } catch (error) {
         console.error('登录失败', error);
