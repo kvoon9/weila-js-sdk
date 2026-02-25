@@ -1,3 +1,5 @@
-// @weilasdk/ui - placeholder
-// 集成了 Weila SDK 的 UI 组件将在这里导出
-export {}
+// @weilasdk/ui - Weila SDK Vue 组件库
+export { default as WlStatusIndicator } from './components/WlStatusIndicator.vue'
+
+// Re-export component prop types
+export type { WlStatusIndicatorProps } from './components/WlStatusIndicator.vue'

@@ -18,7 +18,7 @@ Settings in `.npmrc`:
 wl-js-sdk/
 ├── packages/
 │   ├── core/        # @weilasdk/core  — TypeScript SDK (Webpack 5)
-│   └── ui/          # @weilasdk/ui    — SDK-integrated UI components (placeholder)
+│   └── ui/          # @weilasdk/ui    — Vue 3 组件库 (tsdown + unplugin-vue)
 ├── playgrounds/
 │   └── vue3/        # @weilasdk/playground-vue3 — Vue3 + Vite dev environment
 ├── .agents/skills/  # Agent skills (repo-level)
@@ -59,7 +59,7 @@ Run these commands from the root directory using pnpm:
 The primary TypeScript SDK for the Weila communication platform. It handles WebSocket networking, audio processing (Opus), protobuf messaging, and IndexedDB storage. It outputs UMD bundles using Webpack 5.
 
 ### @weilasdk/ui
-A placeholder package intended for UI components that integrate directly with the Weila SDK.
+Vue 3 component library built with tsdown and unplugin-vue. Outputs ESM/CJS bundles with extracted CSS and full TypeScript declarations. See `packages/ui/README.md` for details.
 
 ### @weilasdk/playground-vue3
 A development environment using Vue 3.5 and Vite 6. It includes pre-configured proxy settings for Weila API endpoints (V1, Audio, Avatar, and PTT).

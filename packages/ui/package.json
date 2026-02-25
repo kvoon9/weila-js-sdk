@@ -3,15 +3,35 @@
   "version": "0.0.1",
   "private": true,
   "description": "集成了 Weila SDK 的 UI 组件",
-  "main": "src/index.ts",
-  "types": "src/index.ts",
+  "type": "module",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "typecheck": "vue-tsc --noEmit"
   },
   "dependencies": {
     "@weilasdk/core": "workspace:*"
   },
+  "peerDependencies": {
+    "vue": "^3.5.0"
+  },
   "devDependencies": {
-    "typescript": "^5.9.3"
+    "tsdown": "0.20.0-beta.3",
+    "typescript": "^5.9.3",
+    "unplugin-vue": "^7.1.0",
+    "vue": "^3.5.13",
+    "vue-tsc": "^2.2.0"
   }
 }
