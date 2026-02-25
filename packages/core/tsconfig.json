@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "fsm/*": ["src/fsm/*"],
+      "log/*": ["src/log/*"],
+      "main/*": ["src/main/*"],
+      "db/*": ["src/database/*"],
+      "proto/*": ["src/proto/*"],
+      "audio/*": ["src/audio/*"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
