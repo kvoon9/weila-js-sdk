@@ -13,14 +13,14 @@
 
 ### Production Build
 ```bash
-pnpm run "build production"
+pnpm run build
 ```
 Builds SDK bundle with webpack in production mode (no source maps).
 Output: `dist/weilasdk.js`, `dist/weilasdk_data.js`, `dist/weilasdk_log.js`, `dist/weilasdk.d.ts`
 
 ### Development Build
 ```bash
-pnpm run "build development"
+pnpm run build:dev
 ```
 Builds SDK with source maps for debugging.
 Output written to sibling project path (configured in webpack).
@@ -234,8 +234,8 @@ Required API endpoints:
 
 Before committing changes:
 - [ ] TypeScript compiles without errors (`pnpm exec tsc --noEmit`)
-- [ ] Production build succeeds (`pnpm run "build production"`)
-- [ ] Development build succeeds (`pnpm run "build development"`)
+- [ ] Production build succeeds (`pnpm run build`)
+- [ ] Development build succeeds (`pnpm run build:dev`)
 - [ ] No `@ts-ignore` added without justification
 - [ ] Public APIs have JSDoc comments
 - [ ] Import paths use configured aliases (not relative paths like `../../`)
