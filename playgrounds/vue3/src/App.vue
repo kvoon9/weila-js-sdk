@@ -12,6 +12,7 @@ async function initSDK() {
     // 动态导入 SDK，使用 markRaw 避免 Vue Proxy 包裹
     const { markRaw } = await import('vue');
     const weilaModule = await import('@weilasdk/core');
+    console.log('weilaModule',weilaModule)
 
     statusMessage.value = 'SDK 模块加载成功 ✓';
     sdkStatus.value = 'ready';

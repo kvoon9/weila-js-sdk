@@ -52,7 +52,7 @@ module.exports = (env) => {
       //         path.resolve(__dirname, '../wl_dashboard/node_modules/weilasdk/dist'),
       // path: path.resolve(__dirname, '../wlsdk_test/node_modules/wl_js_new_sdk/dist'),
       //path: path.resolve(__dirname, 'dist'),
-      globalObject: 'this',
+      globalObject: 'globalThis',
       publicPath: '/',
       assetModuleFilename: 'assets/[name][ext]',
     },
