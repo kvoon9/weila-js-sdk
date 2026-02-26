@@ -1,9 +1,9 @@
 // @ts-ignore
-import Network from 'main/weila_network.worker';
-import { fsmEvents, mainFsm } from 'fsm/weila_fsmScript';
-import { WLConfig } from 'main/weila_config';
-import { interpret } from 'xstate';
-import Long from 'long';
+import Network from 'main/weila_network.worker'
+import { fsmEvents, mainFsm } from 'fsm/weila_fsmScript'
+import { WLConfig } from 'main/weila_config'
+import { interpret } from 'xstate'
+import Long from 'long'
 
 import {
   WL_CoreInterface,
@@ -15,8 +15,8 @@ import {
   WL_PbMsgData,
   WL_PbMsgHandler,
   WL_PromiseCallback,
-} from 'main/weila_internal_data';
-import { WLBuildMsgRet } from 'proto/weilapb_wrapper_data';
+} from 'main/weila_internal_data'
+import { WLBuildMsgRet } from 'proto/weilapb_wrapper_data'
 import {
   WL_IDbAudioData,
   WL_IDbExtension,
@@ -40,77 +40,77 @@ import {
   WL_IDbSessionType,
   WL_IDbSettingID,
   WL_IDbUserInfo,
-} from 'db/weila_db_data';
-import { getLogger } from 'log/weila_log';
+} from 'db/weila_db_data'
+import { getLogger } from 'log/weila_log'
 import {
   calculateOpusDataFrame,
   fetchWithTimeout,
   getMsgDataIdByCombo,
   getPbResultCodeMassage,
-} from 'main/weila_utils';
-import WLLoginModule from 'main/weila_login_module';
-import WLSessionModule from 'main/weila_session_module';
-import WLFriendModule from 'main/weila_friend_module';
-import WLGroupModule from 'main/weila_group_module';
-import WLLocationModule from 'main/weila_location_module';
-import WLUserModule from 'main/weila_user_module';
-import { WL } from 'proto/weilapb';
-import { WeilaDB } from 'db/weila_db';
-import { TinyEmitter } from 'tiny-emitter';
+} from 'main/weila_utils'
+import WLLoginModule from 'main/weila_login_module'
+import WLSessionModule from 'main/weila_session_module'
+import WLFriendModule from 'main/weila_friend_module'
+import WLGroupModule from 'main/weila_group_module'
+import WLLocationModule from 'main/weila_location_module'
+import WLUserModule from 'main/weila_user_module'
+import { WL } from 'proto/weilapb'
+import { WeilaDB } from 'db/weila_db'
+import { TinyEmitter } from 'tiny-emitter'
 import {
   WL_AnswerStatus,
   WL_DataPrepareInd,
   WL_DataPrepareState,
   WL_ExtEventCallback,
   WL_ExtEventID,
-} from 'main/weila_external_data';
-import { AliOssHelper, WL_UploadResult } from 'main/weila_ali_oss';
-import { TextMsgDataParser } from 'proto/weilapb_textmsg_parser';
-import WLBusinessModule from 'main/weila_business_module';
+} from 'main/weila_external_data'
+import { AliOssHelper, WL_UploadResult } from 'main/weila_ali_oss'
+import { TextMsgDataParser } from 'proto/weilapb_textmsg_parser'
+import WLBusinessModule from 'main/weila_business_module'
 
-const wllog = getLogger('CORE:info');
-const wlerr = getLogger('CORE:err');
+const wllog = getLogger('CORE:info')
+const wlerr = getLogger('CORE:err')
 
 interface WL_WaitingRspPbMsgInfo {
-  resolve(value: any): any;
-  reject(reason: any): any;
-  pbMsgData: WL_PbMsgData;
-  timeout: number;
+  resolve(value: any): any
+  reject(reason: any): any
+  pbMsgData: WL_PbMsgData
+  timeout: number
 }
 
 interface WL_SendingPbMsgInfo {
-  resolve(value: any): any;
-  reject(reason: any): any;
-  buildPbMsg: WLBuildMsgRet;
-  timeout?: number;
+  resolve(value: any): any
+  reject(reason: any): any
+  buildPbMsg: WLBuildMsgRet
+  timeout?: number
 }
 
 class WeilaCore implements WL_CoreInterface {
-  readonly maxRetryLoginTimes = 2;
-  mainFsm?: any;
-  mainFsmService?: any;
-  network?: Network;
-  waitingRspMap: Map<number, WL_WaitingRspPbMsgInfo>;
-  waitingTimeoutChecking: boolean;
-  pbMsgHandlerList: Map<number, WL_PbMsgHandler>;
-  sendingPbMsgList: WL_SendingPbMsgInfo[];
-  loginUserInfo?: WL_IDbUserInfo;
-  loginModule: WLLoginModule;
-  sessionModule: WLSessionModule;
-  friendModule: WLFriendModule;
-  groupModule: WLGroupModule;
-  businessModule: WLBusinessModule;
-  locationModule: WLLocationModule;
-  userModule: WLUserModule;
-  isLoginReady: boolean;
-  emitter: TinyEmitter;
-  heartbeatTimerId: any;
-  refreshTokenTimerId: any;
+  readonly maxRetryLoginTimes = 2
+  mainFsm?: any
+  mainFsmService?: any
+  network?: Network
+  waitingRspMap: Map<number, WL_WaitingRspPbMsgInfo>
+  waitingTimeoutChecking: boolean
+  pbMsgHandlerList: Map<number, WL_PbMsgHandler>
+  sendingPbMsgList: WL_SendingPbMsgInfo[]
+  loginUserInfo?: WL_IDbUserInfo
+  loginModule: WLLoginModule
+  sessionModule: WLSessionModule
+  friendModule: WLFriendModule
+  groupModule: WLGroupModule
+  businessModule: WLBusinessModule
+  locationModule: WLLocationModule
+  userModule: WLUserModule
+  isLoginReady: boolean
+  emitter: TinyEmitter
+  heartbeatTimerId: any
+  refreshTokenTimerId: any
 
   constructor() {
-    this.emitter = new TinyEmitter();
-    this.waitingTimeoutChecking = false;
-    this.isLoginReady = false;
+    this.emitter = new TinyEmitter()
+    this.waitingTimeoutChecking = false
+    this.isLoginReady = false
     this.mainFsm = mainFsm
       .withContext({
         loginParam: null,
@@ -145,7 +145,7 @@ class WeilaCore implements WL_CoreInterface {
           isLoginSucc: this.isLoginSucc.bind(this),
           canRetry: this.canRetry.bind(this),
         },
-      });
+      })
 
     // 主要状态机的激活
     this.mainFsmService = interpret(this.mainFsm)
@@ -155,52 +155,52 @@ class WeilaCore implements WL_CoreInterface {
           JSON.stringify(event),
           state.history ? JSON.stringify(state.history.value) : '初始状态',
           JSON.stringify(state.value),
-        );
+        )
       })
-      .start();
+      .start()
 
-    this.waitingRspMap = new Map<number, WL_WaitingRspPbMsgInfo>();
-    this.pbMsgHandlerList = new Map<number, WL_PbMsgHandler>();
-    this.sendingPbMsgList = [];
+    this.waitingRspMap = new Map<number, WL_WaitingRspPbMsgInfo>()
+    this.pbMsgHandlerList = new Map<number, WL_PbMsgHandler>()
+    this.sendingPbMsgList = []
 
-    this.network = new Network();
-    this.network.onmessage = this.onNetworkMessage.bind(this);
+    this.network = new Network()
+    this.network.onmessage = this.onNetworkMessage.bind(this)
 
-    this.loginModule = new WLLoginModule(this);
-    this.friendModule = new WLFriendModule(this);
-    this.groupModule = new WLGroupModule(this);
-    this.businessModule = new WLBusinessModule(this);
-    this.sessionModule = new WLSessionModule(this);
-    this.locationModule = new WLLocationModule(this);
-    this.userModule = new WLUserModule(this);
+    this.loginModule = new WLLoginModule(this)
+    this.friendModule = new WLFriendModule(this)
+    this.groupModule = new WLGroupModule(this)
+    this.businessModule = new WLBusinessModule(this)
+    this.sessionModule = new WLSessionModule(this)
+    this.locationModule = new WLLocationModule(this)
+    this.userModule = new WLUserModule(this)
   }
 
   sendExtEvent(event: WL_ExtEventID, data: any): void {
-    this.emitter.emit('ext_event', event, data);
+    this.emitter.emit('ext_event', event, data)
   }
 
   getLoginUserInfo(): WL_IDbUserInfo {
-    return this.loginUserInfo;
+    return this.loginUserInfo
   }
 
   registerPbMsgHandler(serviceId: number, handler: WL_PbMsgHandler): void {
-    this.pbMsgHandlerList.set(serviceId, handler);
+    this.pbMsgHandlerList.set(serviceId, handler)
   }
 
   rspPbMsg(seq: number, resultCode: number, data: any): void {
     if (this.waitingRspMap.has(seq)) {
-      const sendingItem = this.waitingRspMap.get(seq);
-      this.waitingRspMap.delete(seq);
+      const sendingItem = this.waitingRspMap.get(seq)
+      this.waitingRspMap.delete(seq)
 
       if (sendingItem) {
         if (resultCode === 0) {
-          sendingItem.resolve(data);
+          sendingItem.resolve(data)
         } else {
-          let errorMessage = 'RET_CODE:' + resultCode + '-MESSAGE:';
-          const msg = getPbResultCodeMassage(resultCode);
-          errorMessage += msg ? msg : '未知错误码';
-          errorMessage += ':END';
-          sendingItem.reject(new Error(errorMessage));
+          let errorMessage = 'RET_CODE:' + resultCode + '-MESSAGE:'
+          const msg = getPbResultCodeMassage(resultCode)
+          errorMessage += msg ? msg : '未知错误码'
+          errorMessage += ':END'
+          sendingItem.reject(new Error(errorMessage))
         }
       }
     }
@@ -208,22 +208,22 @@ class WeilaCore implements WL_CoreInterface {
 
   async executeCoreFunc(funcName: string, ...argvs: any[]): Promise<any> {
     if (funcName in this) {
-      return this[funcName](...argvs);
+      return this[funcName](...argvs)
     }
 
-    return Promise.reject(new Error('Not Support Function:' + funcName));
+    return Promise.reject(new Error('Not Support Function:' + funcName))
   }
 
   sendPbMsg(buildPbMsg: WLBuildMsgRet, timeout?: number): Promise<any> {
     return new Promise<any>((resolve, reject) => {
-      const sendingItem = {} as WL_SendingPbMsgInfo;
-      sendingItem.resolve = resolve;
-      sendingItem.reject = reject;
-      sendingItem.buildPbMsg = buildPbMsg;
-      sendingItem.timeout = timeout ? timeout : 6000;
-      this.sendingPbMsgList.push(sendingItem);
-      setTimeout(this.processSendingPbMsg.bind(this), 0);
-    });
+      const sendingItem = {} as WL_SendingPbMsgInfo
+      sendingItem.resolve = resolve
+      sendingItem.reject = reject
+      sendingItem.buildPbMsg = buildPbMsg
+      sendingItem.timeout = timeout ? timeout : 6000
+      this.sendingPbMsgList.push(sendingItem)
+      setTimeout(this.processSendingPbMsg.bind(this), 0)
+    })
   }
 
   private processSendingPbMsg(): void {
@@ -231,209 +231,209 @@ class WeilaCore implements WL_CoreInterface {
       '处理PB消息，队列有%d个等待发送消息',
       this.sendingPbMsgList.length,
       this.waitingTimeoutChecking,
-    );
+    )
     if (this.sendingPbMsgList.length > 0) {
-      const shouldCheck = this.waitingRspMap.size === 0;
-      const sendingItem = this.sendingPbMsgList.shift()!;
-      const waitingItem = {} as WL_WaitingRspPbMsgInfo;
-      waitingItem.resolve = sendingItem.resolve;
-      waitingItem.reject = sendingItem.reject;
-      waitingItem.pbMsgData = {} as WL_PbMsgData;
-      waitingItem.pbMsgData.header = sendingItem.buildPbMsg.weilaMsgHeader;
-      waitingItem.pbMsgData.pbMsgData = sendingItem.buildPbMsg.reqData;
-      waitingItem.timeout = new Date().getTime() + sendingItem.timeout;
-      this.waitingRspMap.set(sendingItem.buildPbMsg.weilaMsgHeader!.seqNum, waitingItem);
-      this.sendNetworkEvent(WL_NetworkEventID.NET_SEND_DATA_EVT, sendingItem.buildPbMsg.reqData);
+      const shouldCheck = this.waitingRspMap.size === 0
+      const sendingItem = this.sendingPbMsgList.shift()!
+      const waitingItem = {} as WL_WaitingRspPbMsgInfo
+      waitingItem.resolve = sendingItem.resolve
+      waitingItem.reject = sendingItem.reject
+      waitingItem.pbMsgData = {} as WL_PbMsgData
+      waitingItem.pbMsgData.header = sendingItem.buildPbMsg.weilaMsgHeader
+      waitingItem.pbMsgData.pbMsgData = sendingItem.buildPbMsg.reqData
+      waitingItem.timeout = new Date().getTime() + sendingItem.timeout
+      this.waitingRspMap.set(sendingItem.buildPbMsg.weilaMsgHeader!.seqNum, waitingItem)
+      this.sendNetworkEvent(WL_NetworkEventID.NET_SEND_DATA_EVT, sendingItem.buildPbMsg.reqData)
     }
 
     if (this.sendingPbMsgList.length > 0) {
-      setTimeout(this.processSendingPbMsg.bind(this), 0);
+      setTimeout(this.processSendingPbMsg.bind(this), 0)
     }
 
     if (!this.waitingTimeoutChecking) {
       setTimeout(() => {
-        this.mainFsmService.send('FSM_SYSTEM_WATCH_TIMEOUT_EVT');
-      }, 1000);
-      this.waitingTimeoutChecking = true;
+        this.mainFsmService.send('FSM_SYSTEM_WATCH_TIMEOUT_EVT')
+      }, 1000)
+      this.waitingTimeoutChecking = true
     }
   }
 
   private sendNetworkEvent(eventId: WL_NetworkEventID, eventData: any) {
-    const netEvent = {} as WL_NetworkEvent;
-    netEvent.eventId = eventId;
-    netEvent.eventData = eventData;
-    this.network.postMessage(netEvent);
+    const netEvent = {} as WL_NetworkEvent
+    netEvent.eventId = eventId
+    netEvent.eventData = eventData
+    this.network.postMessage(netEvent)
   }
 
   private onNetworkMessage(event: any) {
-    const netEvent = event.data as WL_NetworkEvent;
+    const netEvent = event.data as WL_NetworkEvent
     switch (netEvent.eventId) {
       case WL_NetworkEventID.NET_STATE_IND_EVT:
         {
-          const netState = netEvent.eventData as WL_NetworkState;
+          const netState = netEvent.eventData as WL_NetworkState
           if (netState === WL_NetworkState.NET_CONNECTED_STATE) {
-            this.mainFsmService.send(fsmEvents.FSM_NET_CONNECTED_IND_EVT);
+            this.mainFsmService.send(fsmEvents.FSM_NET_CONNECTED_IND_EVT)
           } else if (netState === WL_NetworkState.NET_CONNECTING_STATE) {
-            this.mainFsmService.send(fsmEvents.FSM_NET_CONNECTING_IND_EVT);
+            this.mainFsmService.send(fsmEvents.FSM_NET_CONNECTING_IND_EVT)
           } else if (netState === WL_NetworkState.NET_DISCONNECTED_STATE) {
-            this.mainFsmService.send(fsmEvents.FSM_NET_DISCONNECT_IND_EVT);
+            this.mainFsmService.send(fsmEvents.FSM_NET_DISCONNECT_IND_EVT)
 
-            const keys = this.waitingRspMap.keys();
+            const keys = this.waitingRspMap.keys()
             for (let k of keys) {
-              const waitingRsp = this.waitingRspMap.get(k);
-              waitingRsp.reject(new Error('网络失去连接'));
-              this.waitingRspMap.delete(k);
+              const waitingRsp = this.waitingRspMap.get(k)
+              waitingRsp.reject(new Error('网络失去连接'))
+              this.waitingRspMap.delete(k)
             }
           }
         }
-        break;
+        break
 
       case WL_NetworkEventID.NET_MSG_RECV_IND_EVT:
         {
-          const msgData = netEvent.eventData as WL_PbMsgData;
-          const serverMessage = WL.Service.ServiceMessage.decode(msgData.pbMsgData);
+          const msgData = netEvent.eventData as WL_PbMsgData
+          const serverMessage = WL.Service.ServiceMessage.decode(msgData.pbMsgData)
 
           if (this.pbMsgHandlerList.has(serverMessage.serviceHead.serviceId)) {
-            const handler = this.pbMsgHandlerList.get(serverMessage.serviceHead.serviceId);
-            handler(serverMessage);
+            const handler = this.pbMsgHandlerList.get(serverMessage.serviceHead.serviceId)
+            handler(serverMessage)
           }
         }
-        break;
+        break
 
       case WL_NetworkEventID.NET_EXCEPTION_IND_EVT:
         {
-          this.mainFsmService.send(fsmEvents.FSM_NET_EXCEPTION_IND_EVT);
+          this.mainFsmService.send(fsmEvents.FSM_NET_EXCEPTION_IND_EVT)
         }
-        break;
+        break
     }
   }
 
   private async loadResource(context: any, event: any): Promise<any> {
-    const callback = event.data;
+    const callback = event.data
     try {
-      await WLConfig.loadResource();
-      callback.resolve(true);
-      wllog('加载数据成功');
+      await WLConfig.loadResource()
+      callback.resolve(true)
+      wllog('加载数据成功')
     } catch (e) {
-      wlerr('加载数据失败', e);
-      callback.reject(e);
-      return Promise.reject(e);
+      wlerr('加载数据失败', e)
+      callback.reject(e)
+      return Promise.reject(e)
     }
 
-    return true;
+    return true
   }
 
   private async prepareData(context: any, event: any): Promise<boolean> {
-    console.time('prepare data');
-    const ind = {} as WL_DataPrepareInd;
-    ind.state = WL_DataPrepareState.PREPARE_PROGRESS_IND;
-    ind.msg = 'SDK.FriendInit';
-    this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind);
-    await this.friendModule.initFriends();
-    ind.msg = 'SDK.GroupInit';
-    this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind);
-    await this.groupModule.initGroups();
-    ind.msg = 'SDK.SessionInit';
-    this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind);
-    await this.sessionModule.initSessions();
-    ind.msg = 'SDK.ExtensionInit';
-    this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind);
-    await this.loginModule.initExtension();
-    console.timeEnd('prepare data');
-    ind.msg = 'SDK.Services';
-    this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind);
-    const sessionList = this.sessionModule.getSessionList();
+    console.time('prepare data')
+    const ind = {} as WL_DataPrepareInd
+    ind.state = WL_DataPrepareState.PREPARE_PROGRESS_IND
+    ind.msg = 'SDK.FriendInit'
+    this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind)
+    await this.friendModule.initFriends()
+    ind.msg = 'SDK.GroupInit'
+    this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind)
+    await this.groupModule.initGroups()
+    ind.msg = 'SDK.SessionInit'
+    this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind)
+    await this.sessionModule.initSessions()
+    ind.msg = 'SDK.ExtensionInit'
+    this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind)
+    await this.loginModule.initExtension()
+    console.timeEnd('prepare data')
+    ind.msg = 'SDK.Services'
+    this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind)
+    const sessionList = this.sessionModule.getSessionList()
     try {
       await this.businessModule.initService(
         sessionList.filter((value) => {
-          return value.sessionType === WL_IDbSessionType.SESSION_SERVICE_TYPE;
+          return value.sessionType === WL_IDbSessionType.SESSION_SERVICE_TYPE
         }),
-      );
+      )
     } catch (e) {
-      wlerr('初始化服务失败:', e);
+      wlerr('初始化服务失败:', e)
     }
-    return true;
+    return true
   }
 
   private async logout(context: any, event: any): Promise<boolean> {
-    return this.loginModule.logoutReq();
+    return this.loginModule.logoutReq()
   }
 
   private async loginServer(context: any, event: any): Promise<WL_LoginResult> {
-    const loginParam = context.loginParam as WL_LoginParam;
-    const loginResult = {} as WL_LoginResult;
-    console.log('loginServer', context);
-    loginResult.callback = loginParam.callback;
-    loginParam.retryCount++;
+    const loginParam = context.loginParam as WL_LoginParam
+    const loginResult = {} as WL_LoginResult
+    console.log('loginServer', context)
+    loginResult.callback = loginParam.callback
+    loginParam.retryCount++
     try {
-      wllog('开始登陆');
+      wllog('开始登陆')
       loginResult.loginUserInfo = await this.loginModule.loginReq(
         loginParam.account,
         loginParam.password,
         loginParam.countryCode,
-      );
-      wllog('loginServer succ', loginResult);
-      return loginResult;
+      )
+      wllog('loginServer succ', loginResult)
+      return loginResult
     } catch (e) {
-      loginResult.error = e;
-      wllog('loginServer error', loginResult, e);
-      return Promise.reject(loginResult);
+      loginResult.error = e
+      wllog('loginServer error', loginResult, e)
+      return Promise.reject(loginResult)
     }
   }
 
   private onResourceLoadFail(context: any, event: any, actionMeta: any) {
-    wlerr('初始加载数据出错', event.data);
+    wlerr('初始加载数据出错', event.data)
   }
 
   private onLoadingResource(context: any, event: any, actionMeta: any) {
-    wllog('加载数据成功');
+    wllog('加载数据成功')
   }
 
   private onException(context: any, event: any, actionMeta: any) {
-    this.sendExtEvent(WL_ExtEventID.WL_EXT_SYSTEM_EXCEPTION_IND, event.data);
+    this.sendExtEvent(WL_ExtEventID.WL_EXT_SYSTEM_EXCEPTION_IND, event.data)
   }
 
   private onDataInit(context: any, event: any, actionMeta: any) {
     // 对外发出正在准备数据中.
-    const ind = {} as WL_DataPrepareInd;
-    ind.state = WL_DataPrepareState.START_PREPARING;
-    ind.msg = 'Commons.startPrepare';
-    this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind);
+    const ind = {} as WL_DataPrepareInd
+    ind.state = WL_DataPrepareState.START_PREPARING
+    ind.msg = 'Commons.startPrepare'
+    this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind)
   }
 
   private onDataInited(context: any, event: any, actionMeta: any) {
     // 对外通知数据已经准备好
-    const ind = {} as WL_DataPrepareInd;
-    ind.state = WL_DataPrepareState.PREPARE_SUCC_END;
-    ind.msg = 'Commons.prepareFinishSucc';
-    this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind);
+    const ind = {} as WL_DataPrepareInd
+    ind.state = WL_DataPrepareState.PREPARE_SUCC_END
+    ind.msg = 'Commons.prepareFinishSucc'
+    this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind)
   }
 
   private onDataPrepareFail(context: any, event: any, actionMeta: any) {
     // 因为数据准备失败，登出系统
-    this.weila_logout().then((value) => {});
+    this.weila_logout().then((value) => {})
 
     //通知外部，出现异常，并告知异常信息
-    const ind = {} as WL_DataPrepareInd;
-    ind.state = WL_DataPrepareState.PREPARE_FAIL_END;
-    ind.msg = 'Commons.prepareFinishFail';
-    this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind);
+    const ind = {} as WL_DataPrepareInd
+    ind.state = WL_DataPrepareState.PREPARE_FAIL_END
+    ind.msg = 'Commons.prepareFinishFail'
+    this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind)
   }
 
   private onLoginFail(context: any, event: any, actionMeta: any) {
-    wllog('onLoginFail:', event);
-    this.sendNetworkEvent(WL_NetworkEventID.NET_DISCONNECT_EVT, null);
-    this.mainFsmService.send('FSM_LOGIN_PROCEDURE_FAIL_EVT', { data: event.data });
+    wllog('onLoginFail:', event)
+    this.sendNetworkEvent(WL_NetworkEventID.NET_DISCONNECT_EVT, null)
+    this.mainFsmService.send('FSM_LOGIN_PROCEDURE_FAIL_EVT', { data: event.data })
   }
 
   private onLoginSucc(context: any, event: any, actionMeta: any) {
-    const loginResult = event.data as WL_LoginResult;
-    wllog('onLogin:', event);
-    this.loginUserInfo = loginResult.loginUserInfo;
+    const loginResult = event.data as WL_LoginResult
+    wllog('onLogin:', event)
+    this.loginUserInfo = loginResult.loginUserInfo
     if (loginResult.callback) {
-      loginResult.callback.resolve(loginResult.loginUserInfo);
+      loginResult.callback.resolve(loginResult.loginUserInfo)
     }
-    this.mainFsmService.send('FSM_LOGIN_PROCEDURE_SUCC_EVT', { data: event.data });
+    this.mainFsmService.send('FSM_LOGIN_PROCEDURE_SUCC_EVT', { data: event.data })
   }
 
   private onSysTimeChecking(context: any, event: any, actionMeta: any) {
@@ -442,118 +442,118 @@ class WeilaCore implements WL_CoreInterface {
       event,
       this.waitingRspMap.size,
       this.waitingTimeoutChecking,
-    );
+    )
     if (this.waitingRspMap.size > 0) {
-      const timeoutKeyList = [];
-      const now = new Date().getTime();
+      const timeoutKeyList = []
+      const now = new Date().getTime()
 
       this.waitingRspMap.forEach((value, key) => {
-        wllog('checkSendingMsgItemTimeout:', value.timeout, now);
+        wllog('checkSendingMsgItemTimeout:', value.timeout, now)
         if (value.timeout <= now) {
-          timeoutKeyList.push(key);
+          timeoutKeyList.push(key)
         }
-      });
+      })
 
       timeoutKeyList.forEach((key) => {
-        let waitingPbMsg = this.waitingRspMap.get(key);
-        waitingPbMsg.reject(new Error('消息超时'));
-        waitingPbMsg = null;
-        this.waitingRspMap.delete(key);
-      });
+        let waitingPbMsg = this.waitingRspMap.get(key)
+        waitingPbMsg.reject(new Error('消息超时'))
+        waitingPbMsg = null
+        this.waitingRspMap.delete(key)
+      })
 
       if (this.waitingRspMap.size > 0) {
         setTimeout(() => {
-          this.mainFsmService.send('FSM_SYSTEM_WATCH_TIMEOUT_EVT');
-        }, 2000);
-        this.waitingTimeoutChecking = true;
+          this.mainFsmService.send('FSM_SYSTEM_WATCH_TIMEOUT_EVT')
+        }, 2000)
+        this.waitingTimeoutChecking = true
       } else {
-        this.waitingTimeoutChecking = false;
+        this.waitingTimeoutChecking = false
       }
     } else {
-      this.waitingTimeoutChecking = false;
+      this.waitingTimeoutChecking = false
     }
   }
 
   private onReadyEntry(context: any, event: any, actionMeta: any) {
-    wllog('系统已经准备好，可以接受任何消息');
-    this.isLoginReady = true;
+    wllog('系统已经准备好，可以接受任何消息')
+    this.isLoginReady = true
     this.heartbeatTimerId = setInterval(() => {
       this.loginModule
         .sendHeartbeat()
         .then((value) => {
-          wllog('发送心跳成功');
+          wllog('发送心跳成功')
         })
         .catch((reason) => {
-          wlerr('发送心跳失败', reason);
-        });
-    }, 59000);
+          wlerr('发送心跳失败', reason)
+        })
+    }, 59000)
 
     this.refreshTokenTimerId = setInterval(() => {
       this.loginModule
         .refreshToken()
         .then((value) => {
-          wllog('刷新token成功');
+          wllog('刷新token成功')
         })
         .catch((reason) => {
-          wlerr('刷新token失败:', reason);
-        });
-    }, 3600000);
+          wlerr('刷新token失败:', reason)
+        })
+    }, 3600000)
   }
 
   private onReadyExit(context: any, event: any, actionMeta: any) {
-    wllog('系统没有准备好');
-    this.isLoginReady = false;
+    wllog('系统没有准备好')
+    this.isLoginReady = false
 
-    clearInterval(this.heartbeatTimerId);
-    this.heartbeatTimerId = null;
+    clearInterval(this.heartbeatTimerId)
+    this.heartbeatTimerId = null
 
-    clearInterval(this.refreshTokenTimerId);
-    this.refreshTokenTimerId = null;
+    clearInterval(this.refreshTokenTimerId)
+    this.refreshTokenTimerId = null
   }
 
   private onLoginTryEntry(context: any, event: any, actionMeta: any) {
-    wllog('onLoginTryEntry', event.data, event.type);
+    wllog('onLoginTryEntry', event.data, event.type)
     if (event.data && event.data.error) {
-      const index = event.data.error.message.search(/.*-MESSAGE:.*:END/);
-      wllog('onLoginTryEntry', index);
+      const index = event.data.error.message.search(/.*-MESSAGE:.*:END/)
+      wllog('onLoginTryEntry', index)
       if (index !== -1) {
-        this.mainFsmService.send(event.type, { data: event.data });
+        this.mainFsmService.send(event.type, { data: event.data })
       }
     }
   }
 
   private canRetry(context: any, event: any): boolean {
-    const loginParams = context.loginParam as WL_LoginParam;
-    wllog('canRetry', loginParams);
-    return loginParams.retryCount < this.maxRetryLoginTimes;
+    const loginParams = context.loginParam as WL_LoginParam
+    wllog('canRetry', loginParams)
+    return loginParams.retryCount < this.maxRetryLoginTimes
   }
 
   private isLoginSucc(context: any, event: any): boolean {
-    const loginResult = event.data.loginResult as WL_LoginResult;
-    return loginResult.loginUserInfo !== undefined;
+    const loginResult = event.data.loginResult as WL_LoginResult
+    return loginResult.loginUserInfo !== undefined
   }
 
   private connectServer(context: any, event: any, actionMeta: any) {
-    this.sendNetworkEvent(WL_NetworkEventID.NET_CONNECT_EVT, null);
+    this.sendNetworkEvent(WL_NetworkEventID.NET_CONNECT_EVT, null)
   }
 
   private onConnecting(context: any, event: any, actionMeta: any) {
-    wllog('onConnecting:', context, event, actionMeta.state.value);
+    wllog('onConnecting:', context, event, actionMeta.state.value)
   }
 
   private onDisconnectInReadyState(context: any, event: any, actionMeta: any) {
-    const loginParam = context.loginParam as WL_LoginParam;
+    const loginParam = context.loginParam as WL_LoginParam
   }
 
   private onLoginRetryFail(context: any, event: any, actionMeta: any) {
-    wllog('onLoginRetryFail', event.data);
-    const loginParam = context.loginParam as WL_LoginParam;
+    wllog('onLoginRetryFail', event.data)
+    const loginParam = context.loginParam as WL_LoginParam
     if (event.data && event.data.error) {
-      loginParam.callback.reject(event.data.error);
+      loginParam.callback.reject(event.data.error)
     } else {
-      loginParam.callback.reject(new Error('登陆尝试多次失败'));
+      loginParam.callback.reject(new Error('登陆尝试多次失败'))
     }
-    context.loginParam = null;
+    context.loginParam = null
   }
 
   /**
@@ -561,7 +561,7 @@ class WeilaCore implements WL_CoreInterface {
    * @param callback 事件回调函数，回调的事件在weila_external_data.d.ts定义
    */
   public weila_onEvent(callback: WL_ExtEventCallback): void {
-    this.emitter.on('ext_event', callback);
+    this.emitter.on('ext_event', callback)
   }
 
   /**
@@ -571,11 +571,11 @@ class WeilaCore implements WL_CoreInterface {
    */
   public async weila_init(): Promise<boolean> {
     return new Promise<boolean>((resolve, reject) => {
-      const callback = {} as WL_PromiseCallback;
-      callback.resolve = resolve;
-      callback.reject = reject;
-      this.mainFsmService.send(fsmEvents.FSM_LOAD_RESOURCE_EVT, { data: callback });
-    });
+      const callback = {} as WL_PromiseCallback
+      callback.resolve = resolve
+      callback.reject = reject
+      this.mainFsmService.send(fsmEvents.FSM_LOAD_RESOURCE_EVT, { data: callback })
+    })
   }
 
   /**
@@ -591,16 +591,16 @@ class WeilaCore implements WL_CoreInterface {
     countryCode: string,
   ): Promise<WL_IDbUserInfo> {
     return new Promise<WL_IDbUserInfo>((resolve, reject) => {
-      const params = {} as WL_LoginParam;
-      params.retryCount = 0;
-      params.callback = {} as WL_PromiseCallback;
-      params.callback.resolve = resolve;
-      params.callback.reject = reject;
-      params.account = account;
-      params.password = password;
-      params.countryCode = countryCode;
-      this.mainFsmService.send(fsmEvents.FSM_LOGIN_SERVER_EVT, { data: params });
-    });
+      const params = {} as WL_LoginParam
+      params.retryCount = 0
+      params.callback = {} as WL_PromiseCallback
+      params.callback.resolve = resolve
+      params.callback.reject = reject
+      params.account = account
+      params.password = password
+      params.countryCode = countryCode
+      this.mainFsmService.send(fsmEvents.FSM_LOGIN_SERVER_EVT, { data: params })
+    })
   }
 
   /**
@@ -608,7 +608,7 @@ class WeilaCore implements WL_CoreInterface {
    * 所以此函数的调用必须放到网页的人为事件中操作，可以建议放到登陆的按钮事件中操作
    */
   public async weila_audioInit(): Promise<boolean> {
-    return this.sessionModule.initAudioSystem();
+    return this.sessionModule.initAudioSystem()
   }
 
   /**
@@ -616,68 +616,68 @@ class WeilaCore implements WL_CoreInterface {
    * @param audioMsgData 单条语音消息
    */
   public async weila_playSingle(audioMsgData: WL_IDbMsgData): Promise<boolean> {
-    console.log('weila_playSingle--------------->');
-    console.log('weila_playSingle', JSON.stringify(audioMsgData));
+    console.log('weila_playSingle--------------->')
+    console.log('weila_playSingle', JSON.stringify(audioMsgData))
 
     if (
       audioMsgData.msgType !== WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE &&
       audioMsgData.msgType !== WL_IDbMsgDataType.WL_DB_MSG_DATA_PTT_TYPE
     ) {
-      return false;
+      return false
     }
 
     if (audioMsgData.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE) {
       if (!audioMsgData.audioData.data && audioMsgData.audioData.audioUrl) {
-        const audioUrl = audioMsgData.audioData.audioUrl.replace(/^http(?!s)/, 'https');
+        const audioUrl = audioMsgData.audioData.audioUrl.replace(/^http(?!s)/, 'https')
         try {
-          audioMsgData.audioData = await this.weila_fetchAudioData(audioMsgData.audioData.audioUrl);
+          audioMsgData.audioData = await this.weila_fetchAudioData(audioMsgData.audioData.audioUrl)
           if (!audioMsgData.audioData) {
-            audioMsgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR;
+            audioMsgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR
             audioMsgData.audioData = {
               audioUrl: audioUrl,
               frameCount: 0,
-            };
+            }
           }
         } catch (e) {
-          audioMsgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR;
+          audioMsgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR
           audioMsgData.audioData = {
             audioUrl: audioUrl,
             frameCount: 0,
-          };
+          }
         } finally {
-          await WeilaDB.getInstance().putMsgData(audioMsgData);
+          await WeilaDB.getInstance().putMsgData(audioMsgData)
           console.log(
             'audioMsgData audioData is undefined ? ',
             audioMsgData.audioData === undefined,
-          );
+          )
         }
 
         if (audioMsgData.status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR) {
-          return false;
+          return false
         }
       }
     } else {
-      console.log('ptt消息体', JSON.stringify(audioMsgData));
-      audioMsgData.msgType = WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE;
+      console.log('ptt消息体', JSON.stringify(audioMsgData))
+      audioMsgData.msgType = WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE
       audioMsgData.audioData = {
         frameCount: audioMsgData.pttData.frameCount,
         data: audioMsgData.pttData.data,
-      };
+      }
 
-      await WeilaDB.getInstance().putMsgData(audioMsgData);
+      await WeilaDB.getInstance().putMsgData(audioMsgData)
       if (audioMsgData.status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR) {
-        return false;
+        return false
       }
     }
 
-    return this.sessionModule.playSingleAudioItem(audioMsgData);
+    return this.sessionModule.playSingleAudioItem(audioMsgData)
   }
 
   /**
    * 停止单条语音的播放
    */
   public weila_stopSingle() {
-    return this.sessionModule.stopPlayAudio();
+    return this.sessionModule.stopPlayAudio()
   }
 
   /**
@@ -689,25 +689,25 @@ class WeilaCore implements WL_CoreInterface {
       return (
         value.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE &&
         value.status !== WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR
-      );
-    });
+      )
+    })
 
     for (let msgData of audioMsgDatas) {
       if (!msgData.audioData.data && msgData.audioData.audioUrl) {
-        msgData.audioData = await this.weila_fetchAudioData(msgData.audioData.audioUrl);
+        msgData.audioData = await this.weila_fetchAudioData(msgData.audioData.audioUrl)
         if (!msgData.audioData) {
-          msgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR;
+          msgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR
         }
 
-        await WeilaDB.getInstance().putMsgData(msgData);
+        await WeilaDB.getInstance().putMsgData(msgData)
       }
     }
 
     audioMsgDatas = audioMsgDatas.filter((value) => {
-      return value.status !== WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR;
-    });
+      return value.status !== WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR
+    })
 
-    return this.sessionModule.playHistoryAudioItems(audioMsgDatas);
+    return this.sessionModule.playHistoryAudioItems(audioMsgDatas)
   }
 
   /**
@@ -715,7 +715,7 @@ class WeilaCore implements WL_CoreInterface {
    * @param comboId  数据库中的comboId
    */
   public async weila_getMsgData(comboId: string): Promise<WL_IDbMsgData> {
-    return WeilaDB.getInstance().getMsgData(comboId);
+    return WeilaDB.getInstance().getMsgData(comboId)
   }
 
   /**
@@ -732,8 +732,8 @@ class WeilaCore implements WL_CoreInterface {
     fromMsgId: number,
     count: number,
   ): Promise<WL_IDbMsgData[]> {
-    const result = await this.sessionModule.getMsgDatas(sessionId, sessionType, fromMsgId, count);
-    return result.toReversed();
+    const result = await this.sessionModule.getMsgDatas(sessionId, sessionType, fromMsgId, count)
+    return result.toReversed()
   }
 
   /**
@@ -742,21 +742,21 @@ class WeilaCore implements WL_CoreInterface {
    * @param sessionType 会话类型
    */
   public async weila_requestTalk(sessionId: string, sessionType: number): Promise<boolean> {
-    return this.sessionModule.requestTalk(sessionId, sessionType);
+    return this.sessionModule.requestTalk(sessionId, sessionType)
   }
 
   /**
    * 释放发言
    */
   public async weila_releaseTalk(): Promise<boolean> {
-    return this.sessionModule.releaseTalk();
+    return this.sessionModule.releaseTalk()
   }
 
   /**
    * 登出系统
    */
   public async weila_logout(): Promise<boolean> {
-    return this.mainFsmService.send('FSM_LOGOUT_EVT');
+    return this.mainFsmService.send('FSM_LOGOUT_EVT')
   }
 
   /**
@@ -765,7 +765,7 @@ class WeilaCore implements WL_CoreInterface {
    * 返回群成员数组
    */
   public async weila_getGroupMembers(groupId: string): Promise<WL_IDbGroupMember[]> {
-    return WeilaDB.getInstance().getGroupMembers(groupId);
+    return WeilaDB.getInstance().getGroupMembers(groupId)
   }
 
   /**
@@ -774,7 +774,7 @@ class WeilaCore implements WL_CoreInterface {
    * 可能返回undefined，因为可能不存在
    */
   public async weila_getGroup(groupId: string): Promise<WL_IDbGroup | undefined> {
-    return WeilaDB.getInstance().getGroup(groupId);
+    return WeilaDB.getInstance().getGroup(groupId)
   }
 
   /**
@@ -782,14 +782,14 @@ class WeilaCore implements WL_CoreInterface {
    * @param groupId
    */
   public async weila_getGroupFromServer(groupId: string): Promise<WL_IDbGroup | undefined> {
-    return await this.groupModule.getGroupFromServer(groupId);
+    return await this.groupModule.getGroupFromServer(groupId)
   }
 
   /**
    * 获取用户加入的所有群信息，从本地数据库中获取
    */
   public async weila_getAllGroups(): Promise<WL_IDbGroup[]> {
-    return WeilaDB.getInstance().getGroups();
+    return WeilaDB.getInstance().getGroups()
   }
 
   /**
@@ -798,7 +798,7 @@ class WeilaCore implements WL_CoreInterface {
    * @param ownerUserId
    */
   public async weila_changeGroupOwner(groupId: string, ownerUserId: number): Promise<boolean> {
-    return this.groupModule.changeGroupOwner(groupId, ownerUserId);
+    return this.groupModule.changeGroupOwner(groupId, ownerUserId)
   }
 
   /**
@@ -806,7 +806,7 @@ class WeilaCore implements WL_CoreInterface {
    * @param groupId
    */
   public async weila_quitGroup(groupId: string): Promise<boolean> {
-    return this.groupModule.quitGroup(groupId);
+    return this.groupModule.quitGroup(groupId)
   }
 
   /**
@@ -816,10 +816,10 @@ class WeilaCore implements WL_CoreInterface {
    */
   public async weila_quitGroupsForDevice(groupIds: string[], subUserId: number): Promise<boolean> {
     for (const groupId of groupIds) {
-      await this.groupModule.quitGroup(groupId, subUserId);
+      await this.groupModule.quitGroup(groupId, subUserId)
     }
 
-    return true;
+    return true
   }
 
   /**
@@ -828,7 +828,7 @@ class WeilaCore implements WL_CoreInterface {
    * @param memberUserIds 成员id列表
    */
   public async weila_deleteMembers(groupId: string, memberUserIds: number[]): Promise<boolean> {
-    return this.groupModule.deleteGroupMembers(groupId, memberUserIds);
+    return this.groupModule.deleteGroupMembers(groupId, memberUserIds)
   }
 
   /**
@@ -836,7 +836,7 @@ class WeilaCore implements WL_CoreInterface {
    * @param groupId 群id
    */
   public async weila_getGroupAdminMembers(groupId: string): Promise<WL_IDbGroupMember[]> {
-    return WeilaDB.getInstance().getGroupAdminMembers(groupId);
+    return WeilaDB.getInstance().getGroupAdminMembers(groupId)
   }
 
   /**
@@ -850,7 +850,7 @@ class WeilaCore implements WL_CoreInterface {
     memberUserId: number,
     memberType: number,
   ): Promise<boolean> {
-    return this.groupModule.changeMemberType(groupId, memberUserId, memberType);
+    return this.groupModule.changeMemberType(groupId, memberUserId, memberType)
   }
 
   /**
@@ -859,7 +859,7 @@ class WeilaCore implements WL_CoreInterface {
    * @param userIds 用户id列表
    */
   public async weila_inviteUserJoinGroup(groupId: string, userIds: number[]): Promise<boolean> {
-    return this.groupModule.inviteUser(groupId, userIds);
+    return this.groupModule.inviteUser(groupId, userIds)
   }
 
   /**
@@ -868,7 +868,7 @@ class WeilaCore implements WL_CoreInterface {
    * @param userIds 设备id列表
    */
   public async weila_addDeviceMembers(groupId: string, userIds: number[]): Promise<number[]> {
-    return this.groupModule.addSubDeviceMember(groupId, userIds);
+    return this.groupModule.addSubDeviceMember(groupId, userIds)
   }
 
   /**
@@ -876,7 +876,7 @@ class WeilaCore implements WL_CoreInterface {
    * @param userId 用户id
    */
   public async weila_getUserInfo(userId: number): Promise<WL_IDbUserInfo | undefined> {
-    return WeilaDB.getInstance().getUser(userId);
+    return WeilaDB.getInstance().getUser(userId)
   }
 
   /**
@@ -884,7 +884,7 @@ class WeilaCore implements WL_CoreInterface {
    * @param userIdList 用户id列表
    */
   public async weila_getUserInfos(userIdList: number[]): Promise<WL_IDbUserInfo[]> {
-    return WeilaDB.getInstance().getUserInfos(userIdList);
+    return WeilaDB.getInstance().getUserInfos(userIdList)
   }
 
   /**
@@ -892,7 +892,7 @@ class WeilaCore implements WL_CoreInterface {
    * @param userIds 如果为空，则获取所有的好友信息
    */
   public async weila_getFriends(userIds?: number[]): Promise<WL_IDbFriend[]> {
-    return WeilaDB.getInstance().getFriends(userIds);
+    return WeilaDB.getInstance().getFriends(userIds)
   }
 
   /**
@@ -901,19 +901,19 @@ class WeilaCore implements WL_CoreInterface {
    * @param sessionType 会话类型
    */
   public weila_getSession(sessionId: string, sessionType: number): WL_IDbSession | undefined {
-    const sessionList = this.sessionModule.getSessionList();
+    const sessionList = this.sessionModule.getSessionList()
     const index = sessionList.findIndex((value) => {
-      return value.sessionId === sessionId && value.sessionType === sessionType;
-    });
+      return value.sessionId === sessionId && value.sessionType === sessionType
+    })
 
-    return index !== -1 ? sessionList[index] : undefined;
+    return index !== -1 ? sessionList[index] : undefined
   }
 
   /**
    * 获取内存中的会话列表
    */
   public weila_getSessions(): WL_IDbSession[] {
-    return this.sessionModule.getSessionList().slice();
+    return this.sessionModule.getSessionList()?.slice()
   }
 
   /**
@@ -925,14 +925,14 @@ class WeilaCore implements WL_CoreInterface {
     sessionId: string,
     sessionType: number,
   ): Promise<WL_IDbSession | undefined> {
-    return WeilaDB.getInstance().getSession(sessionId, sessionType);
+    return WeilaDB.getInstance().getSession(sessionId, sessionType)
   }
 
   /**
    * 从数据库中获取所有会话信息
    */
   public async weila_getSessionsFromDb(): Promise<WL_IDbSession[]> {
-    return WeilaDB.getInstance().getSessions();
+    return WeilaDB.getInstance().getSessions()
   }
 
   /**
@@ -941,8 +941,8 @@ class WeilaCore implements WL_CoreInterface {
    * @param sessionType 会话类型
    */
   public async weila_clearSession(sessionId: string, sessionType: number): Promise<boolean> {
-    await WeilaDB.getInstance().delMsgDatas(sessionId, sessionType);
-    return true;
+    await WeilaDB.getInstance().delMsgDatas(sessionId, sessionType)
+    return true
   }
 
   /**
@@ -951,7 +951,7 @@ class WeilaCore implements WL_CoreInterface {
    * @param sessionType 会话类型
    */
   public async weila_deleteSession(sessionId: string, sessionType: number): Promise<boolean> {
-    return this.sessionModule.deleteSession(sessionId, sessionType);
+    return this.sessionModule.deleteSession(sessionId, sessionType)
   }
 
   /**
@@ -963,14 +963,14 @@ class WeilaCore implements WL_CoreInterface {
     sessionId: string,
     sessionType: number,
   ): Promise<WL_IDbSessionSetting | undefined> {
-    return WeilaDB.getInstance().getSessionSetting(sessionId, sessionType);
+    return WeilaDB.getInstance().getSessionSetting(sessionId, sessionType)
   }
 
   /**
    * 从数据库获取所有的会话配置
    */
   public async weila_getSessionSettings(): Promise<WL_IDbSessionSetting[]> {
-    return WeilaDB.getInstance().getSessionSettings();
+    return WeilaDB.getInstance().getSessionSettings()
   }
 
   /**
@@ -984,7 +984,7 @@ class WeilaCore implements WL_CoreInterface {
     sessionType: number,
     settingParam: WL_IDbSessionSettingParams,
   ): Promise<boolean> {
-    return WeilaDB.getInstance().updateSessionSetting(sessionId, sessionType, settingParam);
+    return WeilaDB.getInstance().updateSessionSetting(sessionId, sessionType, settingParam)
   }
 
   /**
@@ -998,14 +998,14 @@ class WeilaCore implements WL_CoreInterface {
     sessionType: number,
     extra?: any,
   ): Promise<WL_IDbSession> {
-    return this.sessionModule.startSession(sessionId, sessionType, extra);
+    return this.sessionModule.startSession(sessionId, sessionType, extra)
   }
 
   /**
    * 从数据库中获取所有系统通知项
    */
   public async weila_getAllTypeNotifications(): Promise<WL_IDbNotification[]> {
-    return WeilaDB.getInstance().getAllNotifications();
+    return WeilaDB.getInstance().getAllNotifications()
   }
 
   /**
@@ -1013,7 +1013,7 @@ class WeilaCore implements WL_CoreInterface {
    * @param notification
    */
   public async weila_updateNotification(notification: WL_IDbNotification): Promise<number> {
-    return WeilaDB.getInstance().putNotification(notification);
+    return WeilaDB.getInstance().putNotification(notification)
   }
 
   /**
@@ -1029,10 +1029,10 @@ class WeilaCore implements WL_CoreInterface {
     audioData: Uint8Array,
   ): Promise<boolean> {
     if (!this.isLoginReady) {
-      return Promise.reject('微喇状态不正确');
+      return Promise.reject('微喇状态不正确')
     }
 
-    return this.sessionModule.sendPttMsgByData(sessionId, sessionType, audioData);
+    return this.sessionModule.sendPttMsgByData(sessionId, sessionType, audioData)
   }
 
   /**
@@ -1051,10 +1051,10 @@ class WeilaCore implements WL_CoreInterface {
     frameCount?: number,
   ): Promise<boolean> {
     if (!this.isLoginReady) {
-      return Promise.reject('微喇状态不正确');
+      return Promise.reject('微喇状态不正确')
     }
 
-    return this.sessionModule.sendAudioMsg(sessionId, sessionType, audioUrl, frameCount);
+    return this.sessionModule.sendAudioMsg(sessionId, sessionType, audioUrl, frameCount)
   }
 
   /**
@@ -1072,10 +1072,10 @@ class WeilaCore implements WL_CoreInterface {
     audioData: Uint8Array,
   ): Promise<boolean> {
     if (!this.isLoginReady) {
-      return Promise.reject('微喇状态不正确');
+      return Promise.reject('微喇状态不正确')
     }
 
-    return this.sessionModule.sendPttPacketsByAudioData(sessionId, sessionType, audioData);
+    return this.sessionModule.sendPttPacketsByAudioData(sessionId, sessionType, audioData)
   }
 
   /**
@@ -1090,7 +1090,7 @@ class WeilaCore implements WL_CoreInterface {
     text: string,
   ): Promise<boolean> {
     if (!this.isLoginReady) {
-      return Promise.reject('微喇状态不正确');
+      return Promise.reject('微喇状态不正确')
     }
 
     return this.sessionModule.sendMsgData(
@@ -1098,7 +1098,7 @@ class WeilaCore implements WL_CoreInterface {
       sessionType,
       text,
       WL_IDbMsgDataType.WL_DB_MSG_DATA_TEXT_TYPE,
-    );
+    )
   }
 
   /**
@@ -1113,7 +1113,7 @@ class WeilaCore implements WL_CoreInterface {
     position: WL_IDbLocationShared,
   ): Promise<boolean> {
     if (!this.isLoginReady) {
-      return Promise.reject('微喇状态不正确');
+      return Promise.reject('微喇状态不正确')
     }
 
     return this.sessionModule.sendMsgData(
@@ -1121,7 +1121,7 @@ class WeilaCore implements WL_CoreInterface {
       sessionType,
       position,
       WL_IDbMsgDataType.WL_DB_MSG_DATA_LOCATION_TYPE,
-    );
+    )
   }
 
   private async weila_sendFileInfo(
@@ -1132,41 +1132,41 @@ class WeilaCore implements WL_CoreInterface {
     msgType: WL_IDbMsgDataType,
   ): Promise<boolean> {
     if (!this.isLoginReady) {
-      return Promise.reject('微喇状态不正确');
+      return Promise.reject('微喇状态不正确')
     }
-    const lastMsgData = await WeilaDB.getInstance().getLastMsgData(sessionId, sessionType);
-    const msgData: WL_IDbMsgData = {} as WL_IDbMsgData;
+    const lastMsgData = await WeilaDB.getInstance().getLastMsgData(sessionId, sessionType)
+    const msgData: WL_IDbMsgData = {} as WL_IDbMsgData
     const seqSetting = await WeilaDB.getInstance().getSettingItem(
       WL_IDbSettingID.SETTING_MSG_SENDING_SEQ,
-    );
-    let index = filename.lastIndexOf('\\');
+    )
+    let index = filename.lastIndexOf('\\')
     if (index === -1) {
-      index = filename.lastIndexOf('/');
+      index = filename.lastIndexOf('/')
     }
-    msgData.fileInfo = {} as WL_IDbFileData;
+    msgData.fileInfo = {} as WL_IDbFileData
     if (index !== -1) {
-      msgData.fileInfo.fileName = filename.substring(index + 1);
+      msgData.fileInfo.fileName = filename.substring(index + 1)
     } else {
-      msgData.fileInfo.fileName = filename;
+      msgData.fileInfo.fileName = filename
     }
-    msgData.fileInfo.fileUrl = '';
+    msgData.fileInfo.fileUrl = ''
     msgData.fileInfo.fileThumbnail = TextMsgDataParser.getExtendFileFormatUrl(
       msgData.fileInfo.fileName,
-    );
-    msgData.fileInfo.fileSize = data.size;
-    msgData.msgType = msgType;
-    msgData.msgId = lastMsgData ? lastMsgData.msgId + 1 : 0;
-    msgData.sessionType = sessionType;
-    msgData.sessionId = sessionId;
-    msgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_SENDING;
-    msgData.senderId = this.loginUserInfo.userId;
-    msgData.created = new Date().getTime() / 1000;
+    )
+    msgData.fileInfo.fileSize = data.size
+    msgData.msgType = msgType
+    msgData.msgId = lastMsgData ? lastMsgData.msgId + 1 : 0
+    msgData.sessionType = sessionType
+    msgData.sessionId = sessionId
+    msgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_SENDING
+    msgData.senderId = this.loginUserInfo.userId
+    msgData.created = new Date().getTime() / 1000
 
-    msgData.autoReply = 0;
-    msgData.combo_id = getMsgDataIdByCombo(msgData, seqSetting.data++);
-    await WeilaDB.getInstance().putSettingItem(seqSetting);
-    await WeilaDB.getInstance().putMsgData(msgData);
-    this.sendExtEvent(WL_ExtEventID.WL_EXT_MSG_SEND_IND, msgData);
+    msgData.autoReply = 0
+    msgData.combo_id = getMsgDataIdByCombo(msgData, seqSetting.data++)
+    await WeilaDB.getInstance().putSettingItem(seqSetting)
+    await WeilaDB.getInstance().putMsgData(msgData)
+    this.sendExtEvent(WL_ExtEventID.WL_EXT_MSG_SEND_IND, msgData)
 
     const uploadResult = await AliOssHelper.getInstance().uploadToCache(
       this.loginUserInfo!.userId,
@@ -1174,23 +1174,23 @@ class WeilaCore implements WL_CoreInterface {
       sessionType,
       filename,
       data,
-    );
+    )
 
     if (uploadResult.statusCode === 200) {
-      msgData.fileInfo.fileUrl = uploadResult.remoteUrl;
+      msgData.fileInfo.fileUrl = uploadResult.remoteUrl
       return this.sessionModule.sendMsgData(
         sessionId,
         sessionType,
         msgData.fileInfo,
         msgType,
         msgData,
-      );
+      )
     } else {
-      wllog('上传文件失败', uploadResult);
-      msgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_UNSENT;
+      wllog('上传文件失败', uploadResult)
+      msgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_UNSENT
     }
 
-    return Promise.reject('上传图片失败:' + uploadResult.statusCode);
+    return Promise.reject('上传图片失败:' + uploadResult.statusCode)
   }
 
   /**
@@ -1212,7 +1212,7 @@ class WeilaCore implements WL_CoreInterface {
       imageName,
       image,
       WL_IDbMsgDataType.WL_DB_MSG_DATA_IMAGE_TYPE,
-    );
+    )
   }
 
   /**
@@ -1234,7 +1234,7 @@ class WeilaCore implements WL_CoreInterface {
       filename,
       fileData,
       WL_IDbMsgDataType.WL_DB_MSG_DATA_FILE_TYPE,
-    );
+    )
   }
 
   /**
@@ -1256,7 +1256,7 @@ class WeilaCore implements WL_CoreInterface {
       videoName,
       video,
       WL_IDbMsgDataType.WL_DB_MSG_DATA_VIDEO_TYPE,
-    );
+    )
   }
 
   /**
@@ -1268,7 +1268,7 @@ class WeilaCore implements WL_CoreInterface {
     sessionId: string,
     sessionType: number,
   ): Promise<WL_IDbLocationInfo[]> {
-    return this.locationModule.getLocation(sessionId, sessionType);
+    return this.locationModule.getLocation(sessionId, sessionType)
   }
 
   /**
@@ -1282,7 +1282,7 @@ class WeilaCore implements WL_CoreInterface {
     joinId: number,
     answerStatus: number,
   ): Promise<boolean> {
-    return this.groupModule.answerGroupJoin(groupId, joinId, answerStatus);
+    return this.groupModule.answerGroupJoin(groupId, joinId, answerStatus)
   }
 
   /**
@@ -1296,14 +1296,14 @@ class WeilaCore implements WL_CoreInterface {
     detail: string,
     remark: string,
   ): Promise<boolean> {
-    return this.friendModule.inviteFriend(inviteeId, detail, remark);
+    return this.friendModule.inviteFriend(inviteeId, detail, remark)
   }
 
   /**
    * 获取在线的好友
    */
   public async weila_getOnlineFriends(): Promise<WL_IDbFriend[]> {
-    return this.friendModule.getOnlineFriends();
+    return this.friendModule.getOnlineFriends()
   }
 
   /**
@@ -1317,7 +1317,7 @@ class WeilaCore implements WL_CoreInterface {
     subUserId: number,
     detail: string,
   ): Promise<boolean> {
-    return this.friendModule.inviteFriendsForDevice(inviteeIds, subUserId, detail);
+    return this.friendModule.inviteFriendsForDevice(inviteeIds, subUserId, detail)
   }
 
   /**
@@ -1329,7 +1329,7 @@ class WeilaCore implements WL_CoreInterface {
     userIds: number[],
     subUserId: number,
   ): Promise<boolean> {
-    return this.friendModule.deleteFriends(userIds, subUserId);
+    return this.friendModule.deleteFriends(userIds, subUserId)
   }
 
   /**
@@ -1337,7 +1337,7 @@ class WeilaCore implements WL_CoreInterface {
    * @param userIds
    */
   public async weila_deleteFriends(userIds: number[]): Promise<boolean> {
-    return this.friendModule.deleteFriends(userIds);
+    return this.friendModule.deleteFriends(userIds)
   }
 
   /**
@@ -1351,7 +1351,7 @@ class WeilaCore implements WL_CoreInterface {
     answerStatus: number,
     info: string,
   ): Promise<boolean> {
-    return this.friendModule.answerFriendInvite(inviterUserId, answerStatus, info);
+    return this.friendModule.answerFriendInvite(inviterUserId, answerStatus, info)
   }
 
   /**
@@ -1365,7 +1365,7 @@ class WeilaCore implements WL_CoreInterface {
     invitorId: number,
     status: number,
   ): Promise<boolean> {
-    return this.groupModule.answerGroupInvitation(groupId, invitorId, status);
+    return this.groupModule.answerGroupInvitation(groupId, invitorId, status)
   }
 
   /**
@@ -1383,7 +1383,7 @@ class WeilaCore implements WL_CoreInterface {
     publicType: number,
     memberUserIdList: number[],
   ): Promise<WL_IDbGroup> {
-    let avatar = '';
+    let avatar = ''
     if (groupIcon) {
       try {
         const uploadResult = await AliOssHelper.getInstance().uploadToAvatar(
@@ -1392,14 +1392,14 @@ class WeilaCore implements WL_CoreInterface {
           groupIcon,
           100,
           100,
-        );
+        )
         if (uploadResult.statusCode === 200) {
-          avatar = uploadResult.remoteUrl;
+          avatar = uploadResult.remoteUrl
         }
-        wllog('上传头像成功:', uploadResult);
+        wllog('上传头像成功:', uploadResult)
       } catch (e) {
-        wllog('上传头像失败:', e);
-        avatar = '';
+        wllog('上传头像失败:', e)
+        avatar = ''
       }
     }
 
@@ -1409,12 +1409,12 @@ class WeilaCore implements WL_CoreInterface {
       avatar,
       publicType,
       memberUserIdList,
-    );
+    )
     if (groupType === WL_IDbGroupType.GROUP_TEMP) {
-      await this.weila_startNewSession(groupInfo.groupId, WL_IDbSessionType.SESSION_GROUP_TYPE);
+      await this.weila_startNewSession(groupInfo.groupId, WL_IDbSessionType.SESSION_GROUP_TYPE)
     }
 
-    return groupInfo;
+    return groupInfo
   }
 
   /**
@@ -1428,7 +1428,7 @@ class WeilaCore implements WL_CoreInterface {
     detail?: string,
     password?: string,
   ): Promise<boolean> {
-    return this.groupModule.joinGroup(groupId, detail, password);
+    return this.groupModule.joinGroup(groupId, detail, password)
   }
 
   /**
@@ -1436,7 +1436,7 @@ class WeilaCore implements WL_CoreInterface {
    * @param key 关键字
    */
   public async weila_searchUserInfos(key: string): Promise<WL_IDbUserInfo[]> {
-    return this.userModule.searchUserByNumber(key);
+    return this.userModule.searchUserByNumber(key)
   }
 
   /**
@@ -1444,7 +1444,7 @@ class WeilaCore implements WL_CoreInterface {
    * @param groupId
    */
   public async weila_dismissGroup(groupId: string): Promise<boolean> {
-    return this.groupModule.dismissGroup(groupId);
+    return this.groupModule.dismissGroup(groupId)
   }
 
   /**
@@ -1452,7 +1452,7 @@ class WeilaCore implements WL_CoreInterface {
    * @param groupId
    */
   public async weila_getOnlineMemberIds(groupId: string): Promise<number[]> {
-    return this.groupModule.getGroupOnlineMembers(groupId);
+    return this.groupModule.getGroupOnlineMembers(groupId)
   }
 
   /**
@@ -1460,7 +1460,7 @@ class WeilaCore implements WL_CoreInterface {
    * @param msgData
    */
   public async weila_updateMsgData(msgData: WL_IDbMsgData): Promise<string> {
-    return WeilaDB.getInstance().putMsgData(msgData);
+    return WeilaDB.getInstance().putMsgData(msgData)
   }
 
   /**
@@ -1474,27 +1474,27 @@ class WeilaCore implements WL_CoreInterface {
     sessionType: number,
     imageFile: File,
   ): Promise<string> {
-    const name = new Date().toTimeString() + '_map.png';
+    const name = new Date().toTimeString() + '_map.png'
     const result: WL_UploadResult = await AliOssHelper.getInstance().uploadToCache(
       this.loginUserInfo.userId,
       sessionId,
       sessionType,
       name,
       imageFile,
-    );
-    wllog('weila_uploadImageCache', result);
+    )
+    wllog('weila_uploadImageCache', result)
     if (result.statusCode === 200) {
-      return result.remoteUrl;
+      return result.remoteUrl
     }
 
-    return Promise.reject(new Error('上传出错'));
+    return Promise.reject(new Error('上传出错'))
   }
 
   /**
    * 获取登录扩展信息
    */
   public async weila_getExtensions(): Promise<WL_IDbExtension[]> {
-    return this.loginModule.getExtensionList();
+    return this.loginModule.getExtensionList()
   }
 
   /**
@@ -1502,7 +1502,7 @@ class WeilaCore implements WL_CoreInterface {
    * @param extensionInfo
    */
   public async weila_putExtension(extensionInfo: WL_IDbExtensionInfo): Promise<number> {
-    return WeilaDB.getInstance().putExtension(extensionInfo);
+    return WeilaDB.getInstance().putExtension(extensionInfo)
   }
 
   /**
@@ -1510,7 +1510,7 @@ class WeilaCore implements WL_CoreInterface {
    * @param subUserId 设备id
    */
   public async weila_getDeviceSubGroups(subUserId: number): Promise<WL_IDbGroup[]> {
-    return this.groupModule.getDeviceSubGroups(subUserId);
+    return this.groupModule.getDeviceSubGroups(subUserId)
   }
 
   /**
@@ -1518,7 +1518,7 @@ class WeilaCore implements WL_CoreInterface {
    * @param subUserId 设备id
    */
   public async weila_getDeviceSubFriends(subUserId: number): Promise<WL_IDbFriend[]> {
-    return this.friendModule.getDeviceSubFriends(subUserId);
+    return this.friendModule.getDeviceSubFriends(subUserId)
   }
 
   /**
@@ -1532,7 +1532,7 @@ class WeilaCore implements WL_CoreInterface {
     cfgValue: string,
     subUserId: number,
   ): Promise<string> {
-    return this.loginModule.setDeviceConfig(cfgKey, cfgValue, subUserId);
+    return this.loginModule.setDeviceConfig(cfgKey, cfgValue, subUserId)
   }
 
   /**
@@ -1540,7 +1540,7 @@ class WeilaCore implements WL_CoreInterface {
    * @param verifyCode 设备验证码
    */
   public async weila_bindDevice(verifyCode: string): Promise<number> {
-    return this.loginModule.bindDevice(verifyCode);
+    return this.loginModule.bindDevice(verifyCode)
   }
 
   /**
@@ -1548,14 +1548,14 @@ class WeilaCore implements WL_CoreInterface {
    * @param deviceUserId 设备UserId
    */
   public async weila_unbindDevice(deviceUserId: number): Promise<number> {
-    return this.loginModule.unbindDevice(deviceUserId);
+    return this.loginModule.unbindDevice(deviceUserId)
   }
 
   /**
    * 如果此时正在播放实时语音，调用此命令，可以直接跳过当前播放，播放下一条
    */
   public weila_playNext() {
-    return this.sessionModule.playNext();
+    return this.sessionModule.playNext()
   }
 
   /**
@@ -1568,26 +1568,26 @@ class WeilaCore implements WL_CoreInterface {
     const session: WL_IDbSession | undefined = await WeilaDB.getInstance().getSession(
       sessionId,
       WL_IDbSessionType.SESSION_SERVICE_TYPE,
-    );
+    )
     if (session) {
-      const serviceId = Long.fromValue(session.sessionId).high;
-      const service = await WeilaDB.getInstance().getService(serviceId);
+      const serviceId = Long.fromValue(session.sessionId).high
+      const service = await WeilaDB.getInstance().getService(serviceId)
       if (service) {
-        const serviceSessionInfo = {} as WL_IDbServiceSessionInfo;
-        serviceSessionInfo.serviceSession = session.extra;
+        const serviceSessionInfo = {} as WL_IDbServiceSessionInfo
+        serviceSessionInfo.serviceSession = session.extra
         if (serviceSessionInfo.serviceSession) {
-          serviceSessionInfo.service = service;
+          serviceSessionInfo.service = service
           serviceSessionInfo.staffs = await WeilaDB.getInstance().getServiceStaffs(
             serviceSessionInfo.serviceSession.staffIds,
-          );
+          )
           serviceSessionInfo.customer = await WeilaDB.getInstance().getUser(
             serviceSessionInfo.serviceSession.customerId,
-          );
-          return serviceSessionInfo;
+          )
+          return serviceSessionInfo
         }
       }
     }
-    return this.businessModule.getSessionServiceFromServer(sessionId);
+    return this.businessModule.getSessionServiceFromServer(sessionId)
   }
 
   /**
@@ -1595,7 +1595,7 @@ class WeilaCore implements WL_CoreInterface {
    * @param sessionId 会话id
    */
   public async weila_staffAcceptSession(sessionId: string): Promise<boolean> {
-    return this.businessModule.staffAcceptSession(sessionId);
+    return this.businessModule.staffAcceptSession(sessionId)
   }
 
   /**
@@ -1603,7 +1603,7 @@ class WeilaCore implements WL_CoreInterface {
    * @param sessionId 会话id
    */
   public async weila_staffExitSession(sessionId: string): Promise<boolean> {
-    return this.businessModule.staffExitSession(sessionId);
+    return this.businessModule.staffExitSession(sessionId)
   }
 
   /**
@@ -1611,7 +1611,7 @@ class WeilaCore implements WL_CoreInterface {
    * @param sessionId 会话id
    */
   public async weila_staffCloseSession(sessionId: string): Promise<boolean> {
-    return this.businessModule.staffCloseSession(sessionId);
+    return this.businessModule.staffCloseSession(sessionId)
   }
 
   /**
@@ -1625,7 +1625,7 @@ class WeilaCore implements WL_CoreInterface {
     userIds: number[],
     content?: string,
   ): Promise<boolean> {
-    return this.businessModule.staffSessionInvite(sessionId, userIds, content);
+    return this.businessModule.staffSessionInvite(sessionId, userIds, content)
   }
 
   /**
@@ -1637,7 +1637,7 @@ class WeilaCore implements WL_CoreInterface {
     sessionId: string,
     status: WL_AnswerStatus,
   ): Promise<boolean> {
-    return this.businessModule.staffAnswerSessionInvite(sessionId, status);
+    return this.businessModule.staffAnswerSessionInvite(sessionId, status)
   }
 
   /**
@@ -1649,7 +1649,7 @@ class WeilaCore implements WL_CoreInterface {
     sessionId: string,
     staffIds: number[],
   ): Promise<boolean> {
-    return this.businessModule.staffRemoveSessionStaff(sessionId, staffIds);
+    return this.businessModule.staffRemoveSessionStaff(sessionId, staffIds)
   }
 
   /**
@@ -1665,7 +1665,7 @@ class WeilaCore implements WL_CoreInterface {
     pageSize: number,
     staffClass?: number,
   ): Promise<WL_IDbServiceStaffInfo[]> {
-    return this.businessModule.staffSearchStaffs(serviceId, pageIndex, pageSize, staffClass);
+    return this.businessModule.staffSearchStaffs(serviceId, pageIndex, pageSize, staffClass)
   }
 
   /**
@@ -1673,7 +1673,7 @@ class WeilaCore implements WL_CoreInterface {
    * @param sessionId 会话id
    */
   public async weila_staffResetSession(sessionId: string): Promise<boolean> {
-    return this.businessModule.staffResetSession(sessionId);
+    return this.businessModule.staffResetSession(sessionId)
   }
 
   /**
@@ -1681,7 +1681,7 @@ class WeilaCore implements WL_CoreInterface {
    * @param userIds 用户id
    */
   public async weila_getStaffInfos(userIds: number[]): Promise<WL_IDbServiceStaffInfo[]> {
-    return WeilaDB.getInstance().getServiceStaffs(userIds);
+    return WeilaDB.getInstance().getServiceStaffs(userIds)
   }
 
   /**
@@ -1690,7 +1690,7 @@ class WeilaCore implements WL_CoreInterface {
    * @param customerId
    */
   public weila_getServiceSessionId(serviceId: number, customerId: number): string {
-    return new Long(customerId, serviceId).toString(10);
+    return new Long(customerId, serviceId).toString(10)
   }
 
   /**
@@ -1699,23 +1699,23 @@ class WeilaCore implements WL_CoreInterface {
    * @param url
    */
   public async weila_fetchAudioData(url: string): Promise<WL_IDbAudioData | undefined> {
-    const audioData = {} as WL_IDbAudioData;
+    const audioData = {} as WL_IDbAudioData
     // let matchResult = url.match(/(http|https):\/\/([^\/]+)\/(.+)/i);
     // const newUrl = '/audio/' + matchResult[3];
-    const newUrl = url;
+    const newUrl = url
     try {
-      const result = await fetchWithTimeout(newUrl, { method: 'GET', mode: 'cors' }, 5000);
+      const result = await fetchWithTimeout(newUrl, { method: 'GET', mode: 'cors' }, 5000)
       if (result.ok) {
-        const data = await result.arrayBuffer();
-        audioData.data = new Uint8Array(data.slice(10));
-        audioData.frameCount = calculateOpusDataFrame(audioData.data);
-        return audioData;
+        const data = await result.arrayBuffer()
+        audioData.data = new Uint8Array(data.slice(10))
+        audioData.frameCount = calculateOpusDataFrame(audioData.data)
+        return audioData
       }
     } catch (e) {
-      wlerr('获取数据异常', e);
+      wlerr('获取数据异常', e)
     }
 
-    return undefined;
+    return undefined
   }
 
   /**
@@ -1723,7 +1723,7 @@ class WeilaCore implements WL_CoreInterface {
    * @param webSock
    */
   public weila_setWebSock(webSock: string) {
-    this.sendNetworkEvent(WL_NetworkEventID.NET_WEBSOCK_ADDR_SET_EVT, webSock);
+    this.sendNetworkEvent(WL_NetworkEventID.NET_WEBSOCK_ADDR_SET_EVT, webSock)
   }
 
   /**
@@ -1732,7 +1732,7 @@ class WeilaCore implements WL_CoreInterface {
    * @param appKey
    */
   public weila_setAuthInfo(appId: string, appKey: string) {
-    WeilaDB.setAppAuthInfo(appId, appKey);
+    WeilaDB.setAppAuthInfo(appId, appKey)
   }
 
   /**
@@ -1742,9 +1742,9 @@ class WeilaCore implements WL_CoreInterface {
   public async weila_get_token(): Promise<string> {
     const tokenItem = await WeilaDB.getInstance().getSettingItem(
       WL_IDbSettingID.SETTING_LOGIN_TOKEN,
-    );
-    return tokenItem.data;
+    )
+    return tokenItem.data
   }
 }
 
-export { WeilaCore };
+export { WeilaCore }
