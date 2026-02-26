@@ -5,6 +5,11 @@ module.exports = (env) => {
   return {
     mode: process.env.NODE_ENV,
     context: path.resolve(__dirname, 'src'),
+    experiments: {
+      outputModule: true,
+    },
+    mode: process.env.NODE_ENV,
+    context: path.resolve(__dirname, 'src'),
     devtool: process.env.NODE_ENV === 'production' ? false : 'source-map',
     stats: {
       children: true,
@@ -14,30 +19,25 @@ module.exports = (env) => {
       weilasdk: {
         import: './weilasdk.ts',
         library: {
-          name: 'weilasdk',
-          type: 'umd',
+          type: 'module',
         },
       },
       weilasdk_data: {
         import: './weilasdk_data.ts',
         library: {
-          name: 'weilasdk',
-          type: 'umd',
+          type: 'module',
         },
       },
       weilasdk_log: {
         import: './weilasdk_log.ts',
         library: {
-          name: 'weilasdk',
-          type: 'umd',
+          type: 'module',
         },
       },
-
       weilasdk_compile_cfg: {
         import: './weila_compile_config.ts',
         library: {
-          name: 'weilasdk_cfg',
-          type: 'commonjs',
+          type: 'module',
         },
       },
     },
@@ -89,6 +89,7 @@ module.exports = (env) => {
               loader: 'ts-loader',
               options: {
                 compilerOptions: {
+                  baseUrl: path.resolve(__dirname, 'src'),
                   // outDir: path.resolve(__dirname, '../wlsdk_test/node_modules/wl_js_new_sdk/dist')
                   //outDir: path.resolve(__dirname, 'dist'),
                   outDir:
@@ -98,7 +99,7 @@ module.exports = (env) => {
                           __dirname,
                           '../../project_dir/weila_webapp/node_modules/weilasdk/dist',
                         ),
-                  //outDir: env.production ? path.resolve(__dirname, 'dist') : path.resolve(__dirname, '../../project_dir/test_new_pro/node_modules/weilasdk/dist')
+                  //outDir: env.production ? path.resolve(__dirname, 'dist') : path.resolve(__dirname, '../../project_dir/test_new_pro/node_modules/wl_js_new_sdk/dist')
                   // outDir: env.production ? path.resolve(__dirname, 'dist') :
                   //     env.webweila ? path.resolve(__dirname, '../weila_webapp/node_modules/weilasdk/dist') :
                   //         path.resolve(__dirname, '../wl_dashboard/node_modules/weilasdk/dist')

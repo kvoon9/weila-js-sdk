@@ -6,11 +6,8 @@
     "build:core": "pnpm --filter @weilasdk/core run build",
     "dev": "pnpm --filter @weilasdk/playground-vue3 run dev",
     "typecheck": "pnpm -r run typecheck",
-    "lint": "oxlint",
-    "lint:fix": "oxlint --fix",
-    "lint:type-aware": "oxlint --type-aware packages/ui playgrounds",
-    "lint:type-aware:fix": "oxlint --type-aware --fix packages/ui playgrounds",
-    "lint:type-check": "oxlint --type-aware --type-check packages/ui playgrounds",
+    "lint": "oxlint --type-aware packages/ui playgrounds",
+    "lint:fix": "oxlint --type-aware --fix packages/ui playgrounds",
     "format": "oxfmt",
     "format:check": "oxfmt --check"
   },

@@ -76,6 +76,21 @@ SDK 入口点主要导出以下内容：
 - **`WL_ConfigID`**: 静态资源配置项 ID 的枚举。
 - **`SetConfigDataParam`**: 配置参数接口定义。
 
+### 模块格式
+
+SDK 使用 ESM (ECMAScript Modules) 格式导出，这是现代 JavaScript 的标准模块系统。如果你的项目使用 CommonJS 或其他模块系统，可能需要配置相应的转换器。
+
+支持的导入方式：
+
+```typescript
+// ESM 导入 (推荐)
+import { WeilaCore, initLogger } from 'weilasdk';
+
+// 动态导入
+const weilaModule = await import('weilasdk');
+const { WeilaCore, initLogger } = weilaModule;
+```
+
 ### 类型与日志重导出
 
 SDK 还从 `weilasdk_data` 导出了所有数据库相关的接口类型（`WL_IDb*`）和事件 ID（`WL_ExtEventID`），从 `weilasdk_log` 导出了日志初始化工具（`initLogger`, `getLogger`）。
