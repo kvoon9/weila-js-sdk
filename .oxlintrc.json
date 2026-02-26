@@ -30,6 +30,12 @@
       }
     },
     {
+      "files": ["packages/ui/**"],
+      "rules": {
+        "typescript/no-redundant-type-constituents": "off"
+      }
+    },
+    {
       "files": ["**/playgrounds/**"],
       "rules": {
         "no-console": "off"

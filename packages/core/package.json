@@ -9,7 +9,22 @@
   "files": [
     "dist"
   ],
-  "main": "dist/weilasdk.js",
+  "exports": {
+    ".": {
+      "import": "dist/weilasdk.mjs",
+      "types": "dist/weilasdk.d.ts"
+    },
+    "./data": {
+      "import": "dist/weilasdk_data.mjs",
+      "types": "dist/weilasdk_data.d.ts"
+    },
+    "./log": {
+      "import": "dist/weilasdk_log.mjs",
+      "types": "dist/weilasdk_log.d.ts"
+    }
+  },
+  "module": "dist/weilasdk.mjs",
+  "main": "dist/weilasdk.mjs",
   "types": "dist/weilasdk.d.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
