@@ -7,3 +7,7 @@ dist/
 !.env.example
 
 .agents/skills/.venv
+
+#Volar generated files (should be in node_modules/.cache/)
+*.vue.js
+*.vue.d.ts

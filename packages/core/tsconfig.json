@@ -1,14 +1,13 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "baseUrl": ".",
     "paths": {
-      "fsm/*": ["src/fsm/*"],
-      "log/*": ["src/log/*"],
-      "main/*": ["src/main/*"],
-      "db/*": ["src/database/*"],
-      "proto/*": ["src/proto/*"],
-      "audio/*": ["src/audio/*"]
+      "./src/fsm/*": ["./src/fsm/*"],
+      "./src/log/*": ["./src/log/*"],
+      "./src/main/*": ["./src/main/*"],
+      "./src/db/*": ["./src/database/*"],
+      "./src/proto/*": ["./src/proto/*"],
+      "./src/audio/*": ["./src/audio/*"]
     }
   },
   "include": ["src/**/*"],

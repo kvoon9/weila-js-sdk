@@ -1,106 +1,124 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import { SessionList } from '@weilasdk/ui';
+import type { WeilaCore } from '@weilasdk/core';
 
-const sdkStatus = ref<'idle' | 'loading' | 'ready' | 'error'>('idle');
-const statusMessage = ref('');
+const weilaCore = ref<any>(null);
+const selectedSession = ref('');
+const account = '2012679166';
+const password = '123456';
 
-async function initSDK() {
-  sdkStatus.value = 'loading';
-  statusMessage.value = '正在加载 SDK...';
-
-  try {
-    // 动态导入 SDK，使用 markRaw 避免 Vue Proxy 包裹
-    const { markRaw } = await import('vue');
-    const weilaModule = await import('@weilasdk/core');
-    console.log('weilaModule',weilaModule)
-
-    statusMessage.value = 'SDK 模块加载成功 ✓';
-    sdkStatus.value = 'ready';
-
-    console.log('[Playground] SDK module loaded:', weilaModule);
-  } catch (e) {
-    sdkStatus.value = 'error';
-    statusMessage.value = `SDK 加载失败: ${e}`;
-    console.error('[Playground] SDK load error:', e);
+onMounted(async () => {
+  console.log('[Playground] Starting SDK load...');
+  
+  // 动态导入 SDK (UMD 会挂在 window.weilasdk 上)
+  await import('@weilasdk/core');
+  console.log('[Playground] SDK module loaded');
+  
+  // 等待一下让 UMD 加载完成
+  await new Promise(resolve => setTimeout(resolve, 100));
+  
+  // 从全局变量获取 WeilaCore
+  const WeilaCore = (window as any).weilasdk?.WeilaCore;
+  console.log('[Playground] WeilaCore:', WeilaCore);
+  
+  if (!WeilaCore) {
+    console.error('Failed to load WeilaCore from global');
+    return;
   }
+  
+  // 创建实例
+  const core: WeilaCore = new WeilaCore();
+  console.log('[Playground] Core instance created');
+  
+  // 设置服务器地址
+  core.weila_setWebSock('wss://api.weila.hk/ws');
+  core.weila_setWebSock('wss://api.weila.online/ws');
+  core.weila_setAuthInfo('10006', '123456');
+  console.log('[Playground] Server configured');
+  
+  // 注册事件监听 (必须在 init 和 login 之前)
+  core.weila_onEvent((eventId: string, eventData: any) => {
+    console.log('[Playground] Event:', eventId, eventData);
+  });
+  console.log('[Playground] Event listener registered');
+  
+  // 初始化 SDK
+  core.weila_init();
+  console.log('[Playground] SDK init called');
+  
+  // 登录
+  core.weila_login(account, password, '0')
+  
+  .then((res) => {
+    console.log('res',res)
+  })
+  .catch(console.error)
+  console.log('[Playground] Login called')
+  
+  // 保存引用用于传递给组件
+  weilaCore.value = core;
+});
+
+function handleSelectSession(session: any) {
+  selectedSession.value = session.sessionId;
+  console.log('[Playground] Selected session:', session);
 }
 </script>
 
 <template>
-  <div class="container">
-    <h1>🔧 Weila SDK Playground</h1>
-    <p class="subtitle">Vue 3 + Vite</p>
-
-    <div class="card">
-      <button @click="initSDK" :disabled="sdkStatus === 'loading'">
-        {{ sdkStatus === 'idle' ? '初始化 SDK' : '重新加载' }}
-      </button>
-
-      <p v-if="statusMessage" :class="['status', sdkStatus]">
-        {{ statusMessage }}
-      </p>
+  <div class="app-container">
+    <div class="sidebar">
+      <SessionList 
+        v-if="weilaCore"
+        :weila-core="weilaCore" 
+        @select="handleSelectSession"
+      />
+      <div v-else class="loading">
+        Loading SDK...
+      </div>
+    </div>
+    <div class="main-content">
+      <div v-if="selectedSession">
+        <h2>Selected Session: {{ selectedSession }}</h2>
+      </div>
+      <div v-else class="placeholder">
+        <p>Select a session to start chatting</p>
+      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.container {
-  max-width: 640px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+.app-container {
+  display: flex;
+  height: 100vh;
 }
 
-h1 {
-  font-size: 2rem;
-  margin-bottom: 0.5rem;
+.sidebar {
+  width: 320px;
+  border-right: 1px solid #e5e7eb;
+  overflow: hidden;
 }
 
-.subtitle {
-  color: #888;
-  margin-bottom: 2rem;
+.main-content {
+  flex: 1;
+  padding: 1rem;
 }
 
-.card {
-  padding: 2rem;
-  border-radius: 8px;
-  background: #f9f9f9;
+.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #9ca3af;
 }
 
-button {
-  padding: 0.6rem 1.2rem;
-  font-size: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  cursor: pointer;
-  background: #fff;
-  transition: border-color 0.2s;
-}
-
-button:hover {
-  border-color: #42b883;
-}
-
-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.status {
-  margin-top: 1rem;
-  padding: 0.5rem;
-  border-radius: 4px;
-}
-
-.status.ready {
-  color: #42b883;
-}
-
-.status.error {
-  color: #e74c3c;
-}
-
-.status.loading {
-  color: #f39c12;
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #6b7280;
 }
 </style>
