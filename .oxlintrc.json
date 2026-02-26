@@ -15,7 +15,8 @@
     "node_modules/",
     "*.d.ts",
     "*.js",
-    "pnpm-lock.yaml"
+    "pnpm-lock.yaml",
+    "packages/core/**"
   ],
   "overrides": [
     {

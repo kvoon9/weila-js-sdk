@@ -8,12 +8,16 @@
     "typecheck": "pnpm -r run typecheck",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
+    "lint:type-aware": "oxlint --type-aware packages/ui playgrounds",
+    "lint:type-aware:fix": "oxlint --type-aware --fix packages/ui playgrounds",
+    "lint:type-check": "oxlint --type-aware --type-check packages/ui playgrounds",
     "format": "oxfmt",
     "format:check": "oxfmt --check"
   },
   "devDependencies": {
     "oxfmt": "^0.28.0",
-    "oxlint": "^1.39.0"
+    "oxlint": "^1.39.0",
+    "oxlint-tsgolint": "^0.15.0"
   },
   "engines": {
     "node": ">=18",

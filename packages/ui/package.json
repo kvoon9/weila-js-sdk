@@ -17,7 +17,8 @@
     }
   },
   "scripts": {
-    "build": "tsdown",
+    "build:css": "pnpm exec postcss src/style.postcss.css -o dist/index.css",
+    "build": "tsdown && pnpm build:css",
     "dev": "tsdown --watch",
     "typecheck": "vue-tsc --noEmit"
   },
@@ -25,6 +26,11 @@
     "@weilasdk/core": "workspace:*"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.2.1",
+    "autoprefixer": "^10.4.23",
+    "postcss": "^8.5.6",
+    "postcss-cli": "^11.0.1",
+    "tailwindcss": "^4.1.18",
     "tsdown": "0.20.0-beta.3",
     "typescript": "^5.9.3",
     "unplugin-vue": "^7.1.0",
