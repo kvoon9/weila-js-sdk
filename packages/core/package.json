@@ -28,7 +28,8 @@
   "types": "dist/weilasdk.d.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "webpack --config webpack.config.js --progress --node-env production",
+    "build": "webpack --config webpack.config.js --progress --node-env production && tsc-alias -p tsconfig.json",
+    "build:dev": "webpack --config webpack.config.js --progress --node-env development && tsc-alias -p tsconfig.json",
     "build:dev": "webpack --config webpack.config.js --progress --node-env development",
     "typecheck": "tsc --noEmit"
   },
@@ -53,6 +54,7 @@
     "dotenv-webpack": "^8.0.1",
     "file-loader": "^6.2.0",
     "ts-loader": "^9.2.8",
+    "tsc-alias": "^1.8.16",
     "typescript": "^5.9.3",
     "url-loader": "^4.1.1",
     "webpack": "^5.71.0",
