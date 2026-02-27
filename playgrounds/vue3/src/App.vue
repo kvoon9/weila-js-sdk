@@ -6,6 +6,23 @@ import type { WL_IDbMsgData, WL_IDbUserInfo } from '@weilasdk/core'
 import { WL_IDbMsgDataType } from '@weilasdk/core'
 import { weilaCore, userInfo, ensureWeilaCore } from './weilaCore'
 
+function formatFileSize(bytes?: number): string {
+  if (!bytes) return ''
+  if (bytes < 1024) return bytes + ' B'
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+}
+
+function openUrl(url?: string) {
+  if (url) window.open(url)
+}
+
+function openLocation(location?: { latitude?: number; longitude?: number }) {
+  if (location?.latitude && location?.longitude) {
+    window.open(`https://maps.google.com/?q=${location.latitude},${location.longitude}`)
+  }
+}
+
 const selectedSessionId = useRouteQuery<string>('sessionId')
 const sessions = ref<any[]>([])
 const messages = ref<WL_IDbMsgData[]>([])
@@ -127,15 +144,55 @@ async function sendMessage() {
               </template>
               <span v-else-if="msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE" class="text-blue-600">[Voice]</span>
               <span v-else-if="msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_PTT_TYPE" class="text-blue-600">[PTT]</span>
-              <span v-else-if="msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_IMAGE_TYPE" class="text-green-600">[Image]</span>
-              <span v-else-if="msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_VIDEO_TYPE" class="text-green-600">[Video]</span>
-              <span v-else-if="msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_FILE_TYPE" class="text-orange-600">[File]</span>
-              <span v-else-if="msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_LOCATION_TYPE" class="text-purple-600">[Location]</span>
-              <span v-else-if="msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_COMMAND_TYPE" class="text-red-600">[Command]</span>
-              <span v-else-if="msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_SERVICE_TYPE" class="text-gray-600">[Service]</span>
-              <span v-else-if="msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_SWITCH_TYPE" class="text-gray-600">[Switch]</span>
-              <span v-else-if="msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_WITHDRAW_TYPE" class="text-gray-400">[Withdrawn]</span>
-              <span v-else class="text-gray-400">[Unknown: {{ msg.msgType }}]</span>
+              <template v-else-if="msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_IMAGE_TYPE">
+                <img 
+                  v-if="msg.fileInfo?.fileUrl" 
+                  :src="msg.fileInfo.fileUrl" 
+                  class="max-w-[200px] max-h-[200px] rounded object-cover cursor-pointer"
+                  alt="image"
+                  @click="openUrl(msg.fileInfo?.fileUrl)"
+                />
+              </template>
+              <template v-else-if="msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_FILE_TYPE">
+                <div 
+                  v-if="msg.fileInfo?.fileUrl" 
+                  class="flex items-center gap-2 p-2 rounded bg-white border border-gray-200 cursor-pointer min-w-[180px]"
+                  @click="openUrl(msg.fileInfo?.fileUrl)"
+                >
+                  <img 
+                    v-if="msg.fileInfo?.fileThumbnail" 
+                    :src="msg.fileInfo.fileThumbnail" 
+                    class="w-10 h-10 object-contain"
+                    alt="file"
+                  />
+                  <div v-else class="w-10 h-10 bg-gray-100 rounded flex items-center justify-center text-gray-400">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="text-sm font-medium text-gray-900 truncate">{{ msg.fileInfo?.fileName || 'File' }}</div>
+                    <div class="text-xs text-gray-500">{{ formatFileSize(msg.fileInfo?.fileSize) }}</div>
+                  </div>
+                </div>
+              </template>
+              <template v-else-if="msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_LOCATION_TYPE">
+                <div 
+                  v-if="msg.location?.mapUrl" 
+                  class="max-w-[240px] cursor-pointer"
+                  @click="openLocation(msg.location)"
+                >
+                  <img 
+                    :src="msg.location.mapUrl" 
+                    class="w-full h-[120px] object-cover rounded-t"
+                    alt="location"
+                  />
+                  <div class="p-2 bg-white border border-t-0 border-gray-200 rounded-b">
+                    <div v-if="msg.location?.name" class="text-sm font-medium text-gray-900">{{ msg.location.name }}</div>
+                    <div v-if="msg.location?.address" class="text-xs text-gray-500 truncate">{{ msg.location.address }}</div>
+                  </div>
+                </div>
+              </template>
             </WlMessageContent>
           </WlMessage>
         </div>

@@ -9,7 +9,7 @@ defineProps<WlMessageProps>()
 
 <template>
   <div
-    class="wl-message group flex w-full items-end gap-2 py-2"
+    class="wl-message group flex w-full items-start gap-2 py-2"
     :class="from === 'self' ? 'justify-end' : 'flex-row-reverse justify-end'"
   >
     <slot />
