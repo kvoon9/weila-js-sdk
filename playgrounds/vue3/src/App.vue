@@ -8,6 +8,7 @@ const weilaCore = shallowRef<WeilaCore>(null)
 const selectedSession = ref<any>(null)
 const sessions = ref<any[]>([])
 const messages = ref<any[]>([])
+const messageInput = ref('')
 const account = '12679166'
 const password = '30215594'
 
@@ -68,6 +69,26 @@ async function loadMessages(session: any) {
     messages.value = []
   }
 }
+
+async function sendMessage() {
+  if (!weilaCore.value || !selectedSession.value || !messageInput.value.trim()) return
+  
+  const text = messageInput.value.trim()
+  messageInput.value = ''
+  
+  try {
+    await weilaCore.value.weila_sendTextMsg(
+      selectedSession.value.sessionId,
+      selectedSession.value.sessionType,
+      text
+    )
+    console.log('[Playground] Message sent')
+    // Reload messages after sending
+    loadMessages(selectedSession.value)
+  } catch (err) {
+    console.error('[Playground] Failed to send message:', err)
+  }
+}
 </script>
 
 <template>
@@ -92,7 +113,7 @@ async function loadMessages(session: any) {
         <div v-if="messages.length > 0" class="space-y-3">
           <div v-for="msg in messages" :key="msg.combo_id" class="p-3 bg-gray-50 rounded">
             <div class="text-xs text-gray-500 mb-1">
-              Sender: {{ msg.senderId }} | Time: {{ new Date(msg.created).toLocaleString() }}
+              Sender: {{ msg.senderId }} | Time: {{ new Date(msg.created * 1000).toLocaleString() }}
             </div>
             <div class="text-sm">
               <span v-if="msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_TEXT_TYPE">{{ msg.textData }}</span>
@@ -111,6 +132,23 @@ async function loadMessages(session: any) {
           </div>
         </div>
         <div v-else class="text-gray-400">No messages in this session</div>
+        
+        <!-- Message Input -->
+        <div class="mt-4 flex gap-2">
+          <input 
+            v-model="messageInput" 
+            type="text" 
+            placeholder="Type a message..."
+            class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            @keyup.enter="sendMessage"
+          />
+          <button 
+            @click="sendMessage"
+            class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none"
+          >
+            Send
+          </button>
+        </div>
       </div>
       <div v-else class="flex items-center justify-center h-full text-gray-400">
         <p>Select a session to start chatting</p>
