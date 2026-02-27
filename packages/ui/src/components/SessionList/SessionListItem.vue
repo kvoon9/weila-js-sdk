@@ -16,11 +16,11 @@ const emit = defineEmits<{
 }>();
 
 const sessionName = computed(() => {
-  return props.session.name || props.session.sessionShowName || 'Unknown';
+  return props.session.sessionName || 'Unknown';
 });
 
 const lastMessageTime = computed(() => {
-  const time = props.session.lastMsgTime || props.session.updated;
+  const time = props.session.latestUpdate;
   if (!time) return '';
   
   const date = new Date(time);
@@ -39,7 +39,9 @@ const lastMessageTime = computed(() => {
 });
 
 const unreadCount = computed(() => {
-  return props.session.unread || 0;
+  const readMsgId = props.session.readMsgId || 0;
+  const lastMsgId = props.session.lastMsgId || 0;
+  return Math.max(0, lastMsgId - readMsgId);
 });
 
 const sessionTypeLabel = computed(() => {
@@ -69,8 +71,8 @@ function handleClick() {
     <!-- Avatar -->
     <div class="avatar flex-shrink-0 w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
       <img
-        v-if="session.avatar"
-        :src="session.avatar"
+        v-if="session.sessionAvatar"
+        :src="session.sessionAvatar"
         :alt="sessionName"
         class="w-full h-full object-cover"
       />

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { computed, onMounted, onUnmounted, watch, shallowRef } from 'vue';
 import type { WeilaCore } from '@weilasdk/core';
 import type { WL_IDbSession } from '@weilasdk/core';
 import { useSessions } from '../../composables/useSessions';
@@ -18,7 +18,7 @@ const emit = defineEmits<{
   select: [session: WL_IDbSession];
 }>();
 
-const weilaCoreRef = ref(props.weilaCore);
+const weilaCoreRef = shallowRef(props.weilaCore);
 
 watch(() => props.weilaCore, (newVal) => {
   weilaCoreRef.value = newVal;
