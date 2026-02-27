@@ -875,7 +875,7 @@ export default class WLSessionModule {
         this.curBurstInfo.dbMsgData.created = Long.fromValue(rsp.created).toNumber();
         this.curBurstInfo.dbMsgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_SENT;
         await WeilaDB.getInstance().putMsgData(this.curBurstInfo.dbMsgData);
-      } catch (e) {
+      } catch (_e) {
         this.curBurstInfo.dbMsgData.msgId = -1;
         this.curBurstInfo.dbMsgData.created = new Date().getTime() / 1000;
         this.curBurstInfo.dbMsgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_UNSENT;

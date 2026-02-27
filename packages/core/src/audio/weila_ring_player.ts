@@ -25,12 +25,10 @@ class WeilaRingPlayer {
         audio.preload = 'auto';
         audio
           .play()
-          .then((value) => {
-            console.log('播放成功');
+          .then(() => {
             resolve(true);
           })
           .catch((reason) => {
-            console.log('播放失败', reason);
             reject('播放铃声失败');
           });
       });

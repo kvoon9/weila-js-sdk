@@ -324,7 +324,7 @@ class WeilaCore implements WL_CoreInterface {
   }
 
   private async prepareData(context: any, event: any): Promise<boolean> {
-    console.time('prepare data')
+
     const ind = {} as WL_DataPrepareInd
     ind.state = WL_DataPrepareState.PREPARE_PROGRESS_IND
     ind.msg = 'SDK.FriendInit'
@@ -339,7 +339,7 @@ class WeilaCore implements WL_CoreInterface {
     ind.msg = 'SDK.ExtensionInit'
     this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind)
     await this.loginModule.initExtension()
-    console.timeEnd('prepare data')
+
     ind.msg = 'SDK.Services'
     this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind)
     const sessionList = this.sessionModule.getSessionList()
@@ -362,7 +362,7 @@ class WeilaCore implements WL_CoreInterface {
   private async loginServer(context: any, event: any): Promise<WL_LoginResult> {
     const loginParam = context.loginParam as WL_LoginParam
     const loginResult = {} as WL_LoginResult
-    console.log('loginServer', context)
+
     loginResult.callback = loginParam.callback
     loginParam.retryCount++
     try {
@@ -616,8 +616,8 @@ class WeilaCore implements WL_CoreInterface {
    * @param audioMsgData 单条语音消息
    */
   public async weila_playSingle(audioMsgData: WL_IDbMsgData): Promise<boolean> {
-    console.log('weila_playSingle--------------->')
-    console.log('weila_playSingle', JSON.stringify(audioMsgData))
+
+
 
     if (
       audioMsgData.msgType !== WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE &&
@@ -646,10 +646,7 @@ class WeilaCore implements WL_CoreInterface {
           }
         } finally {
           await WeilaDB.getInstance().putMsgData(audioMsgData)
-          console.log(
-            'audioMsgData audioData is undefined ? ',
-            audioMsgData.audioData === undefined,
-          )
+
         }
 
         if (audioMsgData.status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR) {
@@ -657,7 +654,7 @@ class WeilaCore implements WL_CoreInterface {
         }
       }
     } else {
-      console.log('ptt消息体', JSON.stringify(audioMsgData))
+
       audioMsgData.msgType = WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE
       audioMsgData.audioData = {
         frameCount: audioMsgData.pttData.frameCount,

@@ -58,11 +58,6 @@ interface IConfigData {
   latestTime: number;
 }
 
-interface IOpusWasmInfo {
-  opus_wasm_url?: string;
-  wasm_data?: Uint8Array;
-  latestTime?: number;
-}
 
 interface IConfigItem {
   id: number;
@@ -130,9 +125,9 @@ class WLConfig {
             dbDataItem.id = item.id;
             resolve(dbDataItem);
           };
-          reader.onerror = () => {
+          reader.addEventListener('error', () => {
             reject('reading blog error');
-          };
+          });
           reader.readAsDataURL(responseData);
         });
       } else if (item.dataType === 'buffer') {
@@ -162,9 +157,9 @@ class WLConfig {
           reject(new Error('获取资源失败:' + xhr.statusText));
         }
       };
-      xhr.onerror = () => {
+      xhr.addEventListener('error', () => {
         reject('获取资源异常:' + xhr.statusText);
-      };
+      });
       xhr.send(null);
     });
   }

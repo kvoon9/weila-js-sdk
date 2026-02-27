@@ -16,7 +16,7 @@ import { getAppKeyAndId } from 'main/weila_utils';
 import { WL_ExtEventID, WL_bindAnswerInfo } from 'main/weila_external_data';
 
 const wllog = getLogger('MOD:login:info');
-const wlerr = getLogger('MOD:login:err');
+const _wlerr = getLogger('MOD:login:err');
 
 export default class WLLoginModule {
   private account: string;
