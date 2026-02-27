@@ -11,3 +11,6 @@ dist/
 #Volar generated files (should be in node_modules/.cache/)
 *.vue.js
 *.vue.d.ts
+
+*storybook.log
+storybook-static

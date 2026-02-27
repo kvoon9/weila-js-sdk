@@ -18,17 +18,15 @@ const fallbackText = () => {
 </script>
 
 <template>
-  <div class="wl-message-avatar flex-shrink-0 bg-neutral-100 ring-1 ring-gray-200 flex items-center justify-center overflow-hidden">
-    <div class="size-8 rounded-full">
-      <img
-        v-if="src"
-        :src="src"
-        alt=""
-        class="size-full object-cover"
-      />
-      <span v-else class="text-xs font-medium text-gray-500">
-        {{ fallbackText() }}
-      </span>
-    </div>
+  <div class="rounded-lg size-8 border inline-block bg-neutral-300 relative">
+    <img
+      v-if="src"
+      :src="src"
+      alt=""
+      class="size-full object-cover"
+    />
+    <span v-else class="text-xs text-center font-bold">
+      {{ fallbackText() }}
+    </span>
   </div>
 </template>

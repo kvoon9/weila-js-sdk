@@ -12,7 +12,7 @@
   - [ ] packages/ui: UI 组件库
     - [x] 搭建 tsdown + vue3 组件库环境
     - [ ] 常用组件
-      - [ ] 会话列表
+      - [x] 会话列表
       - [ ] 消息列表
       - [ ] 消息气泡（多种消息格式支持）
         - [ ] 文本 + emoji
@@ -21,7 +21,7 @@
         - [ ] 图片
         - [ ] ...
   - [ ] playground/vue3: 网页版 demo 用于测试 ui 组件功能
-    - [ ] storybook 测试组件
+    - [x] storybook 测试组件
 - [ ] 集成
   - [ ] weila-work 国内版
   - [ ] weila-work (h5)
@@ -84,11 +84,11 @@ SDK 使用 ESM (ECMAScript Modules) 格式导出，这是现代 JavaScript 的�
 
 ```typescript
 // ESM 导入 (推荐)
-import { WeilaCore, initLogger } from 'weilasdk';
+import { WeilaCore, initLogger } from 'weilasdk'
 
 // 动态导入
-const weilaModule = await import('weilasdk');
-const { WeilaCore, initLogger } = weilaModule;
+const weilaModule = await import('weilasdk')
+const { WeilaCore, initLogger } = weilaModule
 ```
 
 ### 类型与日志重导出
@@ -106,21 +106,21 @@ SDK 还从 `weilasdk_data` 导出了所有数据库相关的接口类型（`WL_I
 在 Vue 3 项目中，建议使用 `markRaw` 避免响应式代理干扰 SDK 内部逻辑。
 
 ```typescript
-import { markRaw } from 'vue';
-import { WeilaCore, initLogger } from 'weilasdk';
+import { markRaw } from 'vue'
+import { WeilaCore, initLogger } from 'weilasdk'
 
 // 初始化日志 (可选)
-initLogger('MOD:*, CORE:*, AUDIO:*, DB:*, NET:*');
+initLogger('MOD:*, CORE:*, AUDIO:*, DB:*, NET:*')
 
-const weila = markRaw(new WeilaCore());
+const weila = markRaw(new WeilaCore())
 ```
 
 ### 第二步：注册事件回调
 
 ```typescript
 weila.weila_onEvent((eventId, eventData) => {
-  console.log(`收到事件 [${eventId}]:`, eventData);
-});
+  console.log(`收到事件 [${eventId}]:`, eventData)
+})
 ```
 
 ### 第三步：配置服务器并登录
@@ -129,17 +129,17 @@ weila.weila_onEvent((eventId, eventData) => {
 async function startApp() {
   try {
     // 设置服务器地址与应用信息
-    weila.weila_setWebSock('wss://api.example.com/ws');
-    weila.weila_setAuthInfo('YOUR_APP_ID', 'YOUR_APP_KEY');
+    weila.weila_setWebSock('wss://api.example.com/ws')
+    weila.weila_setAuthInfo('YOUR_APP_ID', 'YOUR_APP_KEY')
 
     // 初始化资源
-    await weila.weila_init();
+    await weila.weila_init()
 
     // 登录 (countryCode '0' 为微喇号，'86' 为中国手机号)
-    const userInfo = await weila.weila_login('account', 'password', '86');
-    console.log('登录成功:', userInfo);
+    const userInfo = await weila.weila_login('account', 'password', '86')
+    console.log('登录成功:', userInfo)
   } catch (err) {
-    console.error('操作失败:', err);
+    console.error('操作失败:', err)
   }
 }
 ```
@@ -153,8 +153,8 @@ async function startApp() {
 
 <script setup>
   async function initAudio() {
-    await weila.weila_audioInit();
-    console.log('音频系统已就绪');
+    await weila.weila_audioInit()
+    console.log('音频系统已就绪')
   }
 </script>
 ```
@@ -180,7 +180,7 @@ SDK 依赖一些二进制资源（如 Opus 解码 WASM 和提示音）。默认�
 用于覆盖默认的资源 URL。
 
 ```typescript
-import { setConfigData, WL_ConfigID } from 'weilasdk';
+import { setConfigData, WL_ConfigID } from 'weilasdk'
 
 setConfigData([
   {
@@ -188,7 +188,7 @@ setConfigData([
     url: '/static/wasm/opuslibs.wasm',
     version: 1,
   },
-]);
+])
 ```
 
 ---
@@ -477,10 +477,10 @@ SDK 内部包含详细的调试日志。
 ### 日志初始化
 
 ```typescript
-import { initLogger } from 'weilasdk';
+import { initLogger } from 'weilasdk'
 
 // 开启所有核心模块的日志，排除底层的 socket-client 细节
-initLogger('MOD:*, CORE:*, FSM:*, AUDIO:*, DB:*, NET:*, -socket-client:*');
+initLogger('MOD:*, CORE:*, FSM:*, AUDIO:*, DB:*, NET:*, -socket-client:*')
 ```
 
 ### 模块前缀说明
