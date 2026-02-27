@@ -1,48 +1,44 @@
 <script setup lang="ts">
-import { ref, onMounted, shallowRef } from 'vue'
-import { SessionList } from '@weilasdk/ui'
-import { WeilaCore, initLogger, WL_IDbMsgDataType, setLoggerEnabled } from '@weilasdk/core'
-import { WL_ExtEventID } from '@weilasdk/core'
+import { ref, computed, onMounted, watch, watchEffect } from 'vue'
+import { useRouteQuery } from '@vueuse/router'
+import { SessionList, WlMessage, WlMessageAvatar, WlMessageContent } from '@weilasdk/ui'
+import type { WL_IDbMsgData, WL_IDbUserInfo } from '@weilasdk/core'
+import { WL_IDbMsgDataType } from '@weilasdk/core'
+import { weilaCore, userInfo, ensureWeilaCore } from './weilaCore'
 
-const weilaCore = shallowRef<WeilaCore>(null)
-const selectedSession = ref<any>(null)
+const selectedSessionId = useRouteQuery<string>('sessionId')
 const sessions = ref<any[]>([])
-const messages = ref<any[]>([])
+const messages = ref<WL_IDbMsgData[]>([])
+const senderInfos = ref<Map<number, WL_IDbUserInfo>>(new Map())
 const messageInput = ref('')
-const account = '12679166'
-const password = '30215594'
 
-onMounted(async () => {
-  // 初始化日志
-  initLogger('MOD:*, CORE:*, AUDIO:*, DB:, NET:*')
+watchEffect(() => {
+  console.log('userInfo.value',userInfo.value)
+  console.log('messages.value',messages.value)
+})
 
-  setLoggerEnabled(false)
+const selectedSession = computed(() => {
+  if (!selectedSessionId.value) return null
+  return sessions.value?.find(s => s.sessionId === selectedSessionId.value) ?? null
+})
 
-  // 直接创建实例
-  const core = new WeilaCore()
+// Auto-load messages when selectedSession changes
+watch(selectedSession, (session) => {
+  if (session) {
+    loadMessages(session)
+  } else {
+    messages.value = []
+  }
+})
 
-  core.weila_setWebSock('wss://wss.weila.hk:8999')
-  core.weila_setAuthInfo('102053', '968cd0664d239c02bafb214d16fea415')
-
-  // 注册事件监听 (必须在 init 和 login 之前)
-  core.weila_onEvent((eventId: WL_ExtEventID, eventData: any) => {
-    // 监听会话列表加载完成
-    if (eventId === WL_ExtEventID.WL_EXT_DATA_PREPARE_IND && eventData?.msg === 'SDK.SessionInit') {
-      const sessionList = core.weila_getSessions()
-      sessions.value = sessionList
-    }
+onMounted(() => {
+  ensureWeilaCore((sessionList) => {
+    sessions.value = sessionList
   })
-
-  await core.weila_init()
-
-  await core.weila_login(account, password, '0')
-
-  weilaCore.value = core
 })
 
 function handleSelectSession(session: any) {
-  selectedSession.value = session
-  loadMessages(session)
+  selectedSessionId.value = session.sessionId
 }
 
 async function loadMessages(session: any) {
@@ -57,6 +53,19 @@ async function loadMessages(session: any) {
       20
     )
     messages.value = msgs
+
+    // Load sender infos
+    const senderIds = [...new Set(msgs.map(m => m.senderId))]
+    const newSenderInfos = new Map(senderInfos.value)
+    for (const senderId of senderIds) {
+      if (!newSenderInfos.has(senderId)) {
+        const userInfo = await weilaCore.value.weila_getUserInfo(senderId)
+        if (userInfo) {
+          newSenderInfos.set(senderId, userInfo)
+        }
+      }
+    }
+    senderInfos.value = newSenderInfos
   } catch (err) {
     console.error('[Playground] Failed to load messages:', err)
     messages.value = []
@@ -103,12 +112,19 @@ async function sendMessage() {
         <h2 class="text-lg font-semibold mb-4">Session: {{ selectedSession.sessionName || selectedSession.sessionId }}</h2>
         
         <div v-if="messages.length > 0" class="space-y-3">
-          <div v-for="msg in messages" :key="msg.combo_id" class="p-3 bg-gray-50 rounded">
-            <div class="text-xs text-gray-500 mb-1">
-              Sender: {{ msg.senderId }} | Time: {{ new Date(msg.created * 1000).toLocaleString() }}
-            </div>
-            <div class="text-sm">
-              <span v-if="msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_TEXT_TYPE">{{ msg.textData }}</span>
+          <WlMessage
+            v-for="msg in messages"
+            :key="msg.combo_id"
+            :from="msg.senderId === userInfo.userId ? 'self' : 'other'"
+          >
+            <WlMessageAvatar
+              :src="senderInfos.get(msg.senderId)?.avatar"
+              :name="senderInfos.get(msg.senderId)?.nick || senderInfos.get(msg.senderId)?.weilaNum"
+            />
+            <WlMessageContent class="bg-neutral-100">
+              <template v-if="msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_TEXT_TYPE">
+                {{ msg.textData || '' }}
+              </template>
               <span v-else-if="msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE" class="text-blue-600">[Voice]</span>
               <span v-else-if="msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_PTT_TYPE" class="text-blue-600">[PTT]</span>
               <span v-else-if="msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_IMAGE_TYPE" class="text-green-600">[Image]</span>
@@ -120,8 +136,8 @@ async function sendMessage() {
               <span v-else-if="msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_SWITCH_TYPE" class="text-gray-600">[Switch]</span>
               <span v-else-if="msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_WITHDRAW_TYPE" class="text-gray-400">[Withdrawn]</span>
               <span v-else class="text-gray-400">[Unknown: {{ msg.msgType }}]</span>
-            </div>
-          </div>
+            </WlMessageContent>
+          </WlMessage>
         </div>
         <div v-else class="text-gray-400">No messages in this session</div>
         

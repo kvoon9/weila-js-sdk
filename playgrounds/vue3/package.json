@@ -8,10 +8,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@vueuse/core": "^14.2.1",
+    "@vueuse/router": "^14.1.0",
     "@weilasdk/core": "workspace:*",
     "@weilasdk/ui": "workspace:*",
     "md5": "^2.3.0",
-    "vue": "^3.5.13"
+    "vue": "^3.5.13",
+    "vue-router": "^4.6.4"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.18",

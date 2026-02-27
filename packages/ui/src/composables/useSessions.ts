@@ -1,6 +1,7 @@
 import { ref, computed, onMounted, onUnmounted, watch, type Ref } from 'vue';
 import type { WeilaCore } from '@weilasdk/core';
 import type { WL_IDbSession, WL_ExtEventCallback } from '@weilasdk/core';
+import { WL_ExtEventID } from '@weilasdk/core';
 
 /**
  * Session List Composable
@@ -14,8 +15,8 @@ export function useSessions(weilaCore: Ref<WeilaCore | undefined>) {
 
   const sortedSessions = computed(() => {
     return [...sessions.value].toSorted((a, b) => {
-      const aTime = a.lastMsgTime || a.updated || 0;
-      const bTime = b.lastMsgTime || b.updated || 0;
+      const aTime = a.latestUpdate || 0;
+      const bTime = b.latestUpdate || 0;
       return bTime - aTime;
     });
   });
@@ -48,12 +49,12 @@ export function useSessions(weilaCore: Ref<WeilaCore | undefined>) {
 
   const handleEvent: WL_ExtEventCallback = (eventId, _eventData) => {
     // WL_EXT_DATA_PREPARE_IND: initial data loaded - 登录后数据同步完成
-    if (eventId === 'WL_EXT_DATA_PREPARE_IND') {
+    if (eventId === WL_ExtEventID.WL_EXT_DATA_PREPARE_IND) {
       dataPrepared.value = true;
       void fetchSessions();
     }
     // WL_EXT_NEW_SESSION_OPEN_IND: new session created
-    else if (eventId === 'WL_EXT_NEW_SESSION_OPEN_IND') {
+    else if (eventId === WL_ExtEventID.WL_EXT_NEW_SESSION_OPEN_IND) {
       void fetchSessions();
     }
   };
