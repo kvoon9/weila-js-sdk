@@ -8,7 +8,7 @@ import Long from 'long';
 import { parsePbErrResult } from 'main/weila_utils';
 
 const wllog = getLogger('MOD:location:info');
-const wlerr = getLogger('MOD:location:err');
+const _wlerr = getLogger('MOD:location:err');
 
 export default class WLLocationModule {
   constructor(private coreInterface: WL_CoreInterface) {

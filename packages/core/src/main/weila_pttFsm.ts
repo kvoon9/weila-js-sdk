@@ -124,7 +124,6 @@ export default class WLPttFsm {
   // actions
   onIdle(context: any, event: any, actionMeta: any) {
     this.notifyPttDataReady().catch((reason) => {
-      console.log('获取数据异常', reason);
     });
   }
 
@@ -299,33 +298,33 @@ export default class WLPttFsm {
     wllog('进入了Waiting状态', event.type);
   }
 
-  feedData(context: any, event: any, actionMeta: any) {
+  feedData(_context: any, event: any, _actionMeta: any) {
     const audioItem = event.data as WL_PttAudioItem;
     wllog('喂PTT数据:', audioItem);
     this.feedAudioPayload(audioItem, audioItem.playerType);
   }
 
   // services
-  async startTalking(context: any, event: any): Promise<boolean> {
+  async startTalking(_context: any, event: any): Promise<boolean> {
     this.talkingInfo = event.data;
     await this.audioManager.openRecorder(16000, 20000);
     try {
       await WeilaRingPlayer.weila_playRing(WL_ConfigID.WL_RES_RING_START_RECORD_ID);
-    } catch (e) {
+    } catch (_e) {
       wlerr('播放铃声失败');
     }
 
     try {
       await this.audioManager.startRecord();
-    } catch (e) {
+    } catch (_e) {
       await this.audioManager.closeRecorder();
-      return Promise.reject(e);
+      return Promise.reject(_e);
     }
 
     return true;
   }
 
-  async stopTalk(context: any, event: any): Promise<boolean> {
+  async stopTalk(_context: any, event: any): Promise<boolean> {
     if (!this.talkingInfo.stopByErr) {
       this.packetLastPttMsg();
     }
@@ -334,34 +333,34 @@ export default class WLPttFsm {
     } finally {
       try {
         await WeilaRingPlayer.weila_playRing(WL_ConfigID.WL_RES_RING_STOP_RECORD_ID);
-      } catch (e) {
-        wlerr('播放结束铃声错误', e);
+      } catch (_e) {
+        wlerr('播放结束铣声错误', _e);
       }
       await this.audioManager.closeRecorder();
     }
     return true;
   }
 
-  async checkPttPlayingList(context: any, event: any): Promise<WL_PttAudioItem> {
+  async checkPttPlayingList(_context: any, event: any): Promise<WL_PttAudioItem> {
     return this.getNextPlayingItem();
   }
 
-  onHistoryPlaying(context: any, event: any, actionMeta: any) {
+  onHistoryPlaying(_context: any, event: any, _actionMeta: any) {
     if (event.type === fsmEvents.FSM_PLAY_HISTORY_EVT) {
       this.historyPttPlayIndex = 0;
       this.historyPttPlayItems = event.data;
-      context.historyPlayOrigin = event.type;
+      _context.historyPlayOrigin = event.type;
       this.audioManager
         .openPlayer(WLPlayerType.WL_PTT_HISTORY_PLAYER, 16000)
-        .then((openRet) => {
+        .then((_openRet) => {
           WeilaRingPlayer.weila_playRing(WL_ConfigID.WL_RES_RING_START_PLAY_ID)
-            .then((playRet) => {
+            .then((_playRet) => {
               wllog('播放铃声成功');
             })
             .finally(() => {
               if (!this.audioManager.isPlayerStarted(WLPlayerType.WL_PTT_HISTORY_PLAYER)) {
-                this.audioManager.startPlay(WLPlayerType.WL_PTT_HISTORY_PLAYER).then((startRet) => {
-                  wllog('播放器开始:', startRet);
+                this.audioManager.startPlay(WLPlayerType.WL_PTT_HISTORY_PLAYER).then((_startRet) => {
+                  wllog('播放器开始:', _startRet);
 
                   this.onPlayInd(
                     this.historyPttPlayItems[this.historyPttPlayIndex],
@@ -386,11 +385,11 @@ export default class WLPttFsm {
     }
   }
 
-  onPlayNextItem(context: any, event: any, actionMeta: any) {
+  onPlayNextItem(_context: any, event: any, _actionMeta: any) {
     wllog('onPlayNextItem', event.type);
   }
 
-  onPlayHistoryItemFinish(context: any, event: any, actionMeta: any) {
+  onPlayHistoryItemFinish(_context: any, event: any, _actionMeta: any) {
     if (this.historyPttPlayItems.length) {
       this.historyPttPlayItems.shift();
     }

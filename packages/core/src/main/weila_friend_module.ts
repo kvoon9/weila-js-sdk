@@ -93,7 +93,7 @@ export default class WLFriendModule {
         // 数据库删除好友后，发送通知告知客户端
         WeilaDB.getInstance()
           .delFriendInfos([ntfDeleteFriend.userId])
-          .then((value) => {
+          .then(() => {
             this.coreInterface.sendExtEvent(
               WL_ExtEventID.WL_EXT_FRIEND_DELETED_IND,
               ntfDeleteFriend.userId,
@@ -318,13 +318,15 @@ export default class WLFriendModule {
 
   public async deleteFriends(userIds: number[], subUserId?: number): Promise<boolean> {
     const deleteUserIds = [] as number[];
+    const sendPromises = [] as Promise<any>[];
     for (const userId of userIds) {
       const buildMsgRet = WeilaPbFriendWrapper.buildDeleteFriendReq(userId, subUserId);
       if (buildMsgRet.resultCode === 0) {
-        await this.coreInterface.sendPbMsg(buildMsgRet);
         deleteUserIds.push(userId);
+        sendPromises.push(this.coreInterface.sendPbMsg(buildMsgRet));
       }
     }
+    await Promise.all(sendPromises);
 
     if (subUserId === undefined) {
       await WeilaDB.getInstance().delFriendInfos(deleteUserIds);
@@ -359,6 +361,7 @@ export default class WLFriendModule {
     subUserId: number,
     detail: string,
   ): Promise<boolean> {
+    const sendPromises = [] as Promise<any>[];
     for (let inviteeId of inviteeIds) {
       const buildMsgRet = WeilaPbFriendWrapper.buildFriendInviteReq(
         inviteeId,
@@ -367,9 +370,10 @@ export default class WLFriendModule {
         subUserId,
       );
       if (buildMsgRet.resultCode === 0) {
-        await this.coreInterface.sendPbMsg(buildMsgRet);
+        sendPromises.push(this.coreInterface.sendPbMsg(buildMsgRet));
       }
     }
+    await Promise.all(sendPromises);
 
     return true;
   }

@@ -5,13 +5,11 @@ import { WLPlayerType } from 'audio/weila_audio_data';
 const loginProcedureFsm = {
   loginProcedure: {
     entry: (context, event) => {
-      console.log('onLoginProcedure', event);
     },
     initial: 'connecting',
     on: {
       FSM_NET_DISCONNECT_IND_EVT: {
         actions: (_, event) => {
-          console.log(event.type);
         },
         internal: true,
       },
@@ -22,7 +20,6 @@ const loginProcedureFsm = {
 
       FSM_LOGIN_PROCEDURE_FAIL_EVT: {
         actions: (_, event) => {
-          console.log('Login procedure fail..........................', event.type);
         },
         target: 'loginTry',
       },
@@ -37,7 +34,6 @@ const loginProcedureFsm = {
             actions: [
               send('FSM_LOGIN_PROCEDURE_FAIL_EVT'),
               (_, event) => {
-                console.log('FSM_LOGIN_PROCEDURE_FAIL_EVT..........................', event.type);
               },
             ],
           },
@@ -45,7 +41,6 @@ const loginProcedureFsm = {
         on: {
           FSM_NET_CONNECTED_IND_EVT: {
             actions: (_, event) => {
-              console.log('connecting', event.type);
             },
             target: 'logining',
             internal: true,
@@ -54,7 +49,6 @@ const loginProcedureFsm = {
             actions: [
               'onConnecting',
               (_, event) => {
-                console.log(event.type);
               },
             ],
             internal: true,
@@ -70,7 +64,6 @@ const loginProcedureFsm = {
       logining: {
         entry: [
           (_, event) => {
-            console.log('logining..............', event.type);
           },
           send('FSM_SYSTEM_WATCH_TIMEOUT_EVT'),
         ],

@@ -1,17 +1,13 @@
 import { WLBuildMsgRet, WLMsgHeader } from 'proto/weilapb_wrapper_data';
 import { WL_IDbUserInfo, WL_IDbMsgData } from 'db/weila_db_data';
 import { WLPlayerType } from 'audio/weila_audio_data';
-import { WL_ExtEventID, WL_PttAudioPlayState, WL_PttPlayIndData } from 'main/weila_external_data';
+import { WL_ExtEventID, WL_PttPlayIndData } from 'main/weila_external_data';
 
 interface WL_PromiseCallback {
   resolve(data: any): any;
   reject(reason: any): any;
 }
 
-interface WL_FsmServiceParams {
-  callback?: WL_PromiseCallback;
-  data?: any;
-}
 
 const default_user_logo =
   'https://weilaavatar.oss-cn-shenzhen.aliyuncs.com/default/user_avatar_default.png';

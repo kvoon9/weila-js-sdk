@@ -8,7 +8,7 @@ import { debug, Debugger } from 'debug';
  * @param modules
  */
 function initLogger(modules: string): void {
-  console.log('init logger:', modules);
+
   debug.enable(modules + ',-socket-client:*');
 }
 
@@ -23,4 +23,12 @@ function getLogger(loggerName: string): Debugger {
   return logger;
 }
 
-export { initLogger, getLogger };
+function setLoggerEnabled(enabled: boolean): void {
+  // Stub implementation
+}
+
+function isLoggerEnabled(): boolean {
+  return true;
+}
+
+export { initLogger, getLogger, setLoggerEnabled, isLoggerEnabled };

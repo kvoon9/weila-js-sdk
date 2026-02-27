@@ -258,7 +258,6 @@ class TextMsgDataParser {
             enc.Base64.stringify(enc.Utf8.parse(locationInfo.address));
           extendText += this.EXTEND_END_FLAG;
 
-          console.log('encode ', extendText);
         }
         break;
 
@@ -291,7 +290,6 @@ class TextMsgDataParser {
 
         return encrypted.toString();
       } catch (e) {
-        console.log(e);
       }
     }
 
@@ -328,7 +326,6 @@ class TextMsgDataParser {
     if (extendText === '') {
       return undefined;
     }
-    console.log('extendText', extendText);
 
     // 2. 判断是否是原始的文字
     if (this.EXTEND_MSG_PATTERN.test(extendText)) {

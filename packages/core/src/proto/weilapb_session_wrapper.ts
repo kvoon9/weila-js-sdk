@@ -201,14 +201,7 @@ class WeilaPBSessionWrapper {
           sessionMsg.reqMsg.msgData.pttData.monitor = 0;
           sessionMsg.reqMsg.msgData.pttData.source = WL.Session.AudioSourceType.PTT_SOURCE_APP;
 
-          console.log('------------------------------ ptt msg -----------------------------');
-          console.log('pttData', JSON.stringify(pttData, null, 4));
-          console.log('msgType', sessionMsg.reqMsg.msgData.msgType);
-          console.log(
-            'session info',
-            sessionMsg.reqMsg.msgData.sessionId,
-            sessionMsg.reqMsg.msgData.sessionType,
-          );
+
         }
         break;
 

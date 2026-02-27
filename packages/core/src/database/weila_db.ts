@@ -298,7 +298,7 @@ class WeilaDB extends Dexie {
         this.friends.where('userId').equals(parseInt(sessionId)).modify(setting);
       } else if (sessionType === WL_IDbSessionType.SESSION_SERVICE_TYPE) {
         //TODO: 服务类的会话暂时不支持设置到其他属性去
-        console.log('update setting of service session');
+
         setting.tts = true;
         setting.mute = false;
         setting.loactionShared = true;
@@ -836,18 +836,14 @@ class WeilaDB extends Dexie {
 
         case WL.Session.MessageType.MSG_TYPE_AUDIO:
           {
-            console.time('getAudio');
+
             msgData.msgType = WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE;
             msgData.audioData = {} as WL_IDbAudioData;
             msgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_NEW;
 
-            console.log('audio msg has audioData ? ', msgDataRaws[i].audioData === undefined);
+
             if (msgDataRaws[i].audioData) {
-              console.log(
-                'audioData is ',
-                msgDataRaws[i].audioData.payload,
-                msgDataRaws[i].audioData.url,
-              );
+
             }
 
             if (msgDataRaws[i].audioData.payload && msgDataRaws[i].audioData.payload.length > 0) {
@@ -862,7 +858,7 @@ class WeilaDB extends Dexie {
               msgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR;
             }
 
-            console.timeEnd('getAudio');
+
           }
           break;
 

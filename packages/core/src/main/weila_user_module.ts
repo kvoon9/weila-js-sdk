@@ -7,7 +7,7 @@ import TinyPinyin from 'tiny-pinyin';
 import { WL_IDbUserInfo } from 'db/weila_db_data';
 
 const wllog = getLogger('MOD:user:info');
-const wlerr = getLogger('MOD:user:err');
+const _wlerr = getLogger('MOD:user:err');
 
 export default class WLUserModule {
   constructor(private coreInterface: WL_CoreInterface) {

@@ -71,7 +71,6 @@ class AliOssHelper {
         method: 'GET',
       });
       const keyData: any = await response.json();
-      console.log('keyData:', keyData);
       if (keyData.errcode === 0) {
         wllog('关键数据:', keyData);
         this.expireTimeout = keyData.data.Expiration;

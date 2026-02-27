@@ -203,7 +203,7 @@ class WLAudio {
             },
           },
         );
-        this.playerWorkNode[playerType].port.onmessage = this.onPlayerMessage.bind(this);
+        this.playerWorkNode[playerType].port.addEventListener('message', this.onPlayerMessage.bind(this));
       }
 
       this.playSampleRate[playerType] = sampleRate;
@@ -494,7 +494,7 @@ class WLAudio {
             processorOptions: { wasmData: configData.resource_data },
           },
         );
-        this.recorderWorkNode.port.onmessage = this.onRecorderMessage.bind(this);
+        this.recorderWorkNode.port.addEventListener('message', this.onRecorderMessage.bind(this));
       }
 
       this.recordState = WLRecorderState.WL_RECORDER_OPENING;
