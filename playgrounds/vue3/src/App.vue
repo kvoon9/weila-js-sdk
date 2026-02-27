@@ -86,7 +86,7 @@ async function sendMessage() {
 <template>
   <div class="flex h-screen">
     <div class="w-80 border-r border-gray-200 overflow-hidden flex flex-col">
-      <div v-if="sessions.length > 0" class="flex-1 overflow-y-auto">
+      <div v-if="sessions?.length" class="flex-1 overflow-y-auto">
         <div v-for="session in sessions" :key="session.sessionId" 
              class="p-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50"
              :class="{ 'bg-blue-50': selectedSession?.sessionId === session.sessionId }"
