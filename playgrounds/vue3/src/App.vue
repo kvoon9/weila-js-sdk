@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, watchEffect } from 'vue'
+import { ref, computed, watch, watchEffect } from 'vue'
 import { useRouteQuery } from '@vueuse/router'
 import { SessionList, WlMessage, WlMessageAvatar, WlMessageContent } from '@weilasdk/ui'
-import type { WL_IDbMsgData, WL_IDbUserInfo } from '@weilasdk/core'
+import type { WL_IDbMsgData, WL_IDbUserInfo, WL_IDbSession } from '@weilasdk/core'
 import { WL_IDbMsgDataType } from '@weilasdk/core'
-import { weilaCore, userInfo, ensureWeilaCore } from './weilaCore'
+import { weilaCore, userInfo, sessions } from './weilaCore'
 
 function formatFileSize(bytes?: number): string {
   if (!bytes) return ''
@@ -24,7 +24,7 @@ function openLocation(location?: { latitude?: number; longitude?: number }) {
 }
 
 const selectedSessionId = useRouteQuery<string>('sessionId')
-const sessions = ref<any[]>([])
+
 const messages = ref<WL_IDbMsgData[]>([])
 const senderInfos = ref<Map<number, WL_IDbUserInfo>>(new Map())
 const messageInput = ref('')
@@ -49,17 +49,12 @@ watch(selectedSession, (session) => {
   }
 })
 
-onMounted(() => {
-  ensureWeilaCore((sessionList) => {
-    sessions.value = sessionList
-  })
-})
-
-function handleSelectSession(session: any) {
+function handleSelectSession(session: WL_IDbSession) {
+  console.log('session', session)
   selectedSessionId.value = session.sessionId
 }
 
-async function loadMessages(session: any) {
+async function loadMessages(session: WL_IDbSession) {
   if (!weilaCore.value) return
   const core = weilaCore.value
 

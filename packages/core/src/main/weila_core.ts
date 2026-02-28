@@ -262,7 +262,7 @@ class WeilaCore implements WL_CoreInterface {
     const netEvent = {} as WL_NetworkEvent
     netEvent.eventId = eventId
     netEvent.eventData = eventData
-    this.network.postMessage(netEvent, self.location.origin)
+    this.network.postMessage(netEvent)
   }
 
   private onNetworkMessage(event: any) {
