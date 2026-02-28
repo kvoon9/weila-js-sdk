@@ -1,6 +1,7 @@
 import { shallowRef } from 'vue'
+import { computedAsync } from '@vueuse/core'
 import { WeilaCore, initLogger, setLoggerEnabled, WL_ExtEventID } from '@weilasdk/core'
-import type { WL_IDbUserInfo } from '@weilasdk/core'
+import type { WL_IDbUserInfo, WL_IDbSession } from '@weilasdk/core'
 
 // ---- HMR 持久化：模块级单例 ----
 let _core: WeilaCore | null = null
@@ -18,26 +19,14 @@ if (import.meta.hot) {
 }
 
 // ---- 响应式状态 ----
-export const weilaCore = shallowRef<WeilaCore | null>(_core)
+export const sessions = shallowRef<WL_IDbSession[]>([])
 export const userInfo = shallowRef<WL_IDbUserInfo | null>(null)
 
-// 如果 HMR 恢复了实例，立即同步响应式
-if (_ready) {
-  _ready
-    .then((u) => {
-      userInfo.value = u
-    })
-    .catch(console.error)
-}
-
-/**
- * 初始化 WeilaCore（幂等，重复调用不会重建实例）
- */
-export async function ensureWeilaCore(onSessionsReady?: (list: any[]) => void) {
+export const weilaCore = computedAsync<WeilaCore | null>(async () => {
   if (_core) {
-    weilaCore.value = _core
+    // HMR 恢复：同步用户信息
     if (_ready) userInfo.value = await _ready
-    return
+    return _core
   }
 
   initLogger('MOD:*, CORE:*, AUDIO:*, DB:, NET:*')
@@ -49,7 +38,7 @@ export async function ensureWeilaCore(onSessionsReady?: (list: any[]) => void) {
 
   core.weila_onEvent((eventId: WL_ExtEventID, eventData: any) => {
     if (eventId === WL_ExtEventID.WL_EXT_DATA_PREPARE_IND && eventData?.msg === 'SDK.SessionInit') {
-      onSessionsReady?.(core.weila_getSessions())
+      sessions.value = core.weila_getSessions()
     }
   })
 
@@ -58,5 +47,10 @@ export async function ensureWeilaCore(onSessionsReady?: (list: any[]) => void) {
   userInfo.value = await _ready
 
   _core = core
-  weilaCore.value = core
+  return core
+}, null)
+
+// 如果 HMR 恢复了实例，立即同步 sessions
+if (_core) {
+  sessions.value = _core.weila_getSessions()
 }
