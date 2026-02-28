@@ -19,12 +19,7 @@ const fallbackText = () => {
 
 <template>
   <div class="rounded-lg size-8 border inline-block bg-neutral-300 relative">
-    <img
-      v-if="src"
-      :src="src"
-      alt=""
-      class="size-full object-cover"
-    />
+    <img v-if="src" :src="src" alt="" class="size-full object-cover" />
     <span v-else class="text-xs text-center font-bold">
       {{ fallbackText() }}
     </span>

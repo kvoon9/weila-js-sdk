@@ -9,27 +9,26 @@
   "files": [
     "dist"
   ],
+  "main": "dist/weilasdk.mjs",
+  "module": "dist/weilasdk.mjs",
+  "types": "dist/weilasdk.d.ts",
   "exports": {
     ".": {
-      "import": "dist/weilasdk.mjs",
-      "types": "dist/weilasdk.d.ts"
+      "types": "dist/weilasdk.d.ts",
+      "import": "dist/weilasdk.mjs"
     },
     "./data": {
-      "import": "dist/weilasdk_data.mjs",
-      "types": "dist/weilasdk_data.d.ts"
+      "types": "dist/weilasdk_data.d.ts",
+      "import": "dist/weilasdk_data.mjs"
     },
     "./log": {
-      "import": "dist/weilasdk_log.mjs",
-      "types": "dist/weilasdk_log.d.ts"
+      "types": "dist/weilasdk_log.d.ts",
+      "import": "dist/weilasdk_log.mjs"
     }
   },
-  "module": "dist/weilasdk.mjs",
-  "main": "dist/weilasdk.mjs",
-  "types": "dist/weilasdk.d.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "webpack --config webpack.config.js --progress --node-env production && tsc-alias -p tsconfig.json",
-    "build:dev": "webpack --config webpack.config.js --progress --node-env development && tsc-alias -p tsconfig.json",
     "build:dev": "webpack --config webpack.config.js --progress --node-env development",
     "typecheck": "tsc --noEmit"
   },

@@ -23,10 +23,10 @@ cp -r public/assets/* static/weilasdk/
 创建 `src/utils/weila.js`：
 
 ```javascript
-import { WeilaCore, setConfigData, WL_ConfigID, initLogger } from 'weilasdk';
+import { WeilaCore, setConfigData, WL_ConfigID, initLogger } from 'weilasdk'
 
 // 资源路径（根据实际部署路径调整）
-const STATIC_BASE = '/static/weilasdk/';
+const STATIC_BASE = '/static/weilasdk/'
 
 // 配置资源路径
 function configResources() {
@@ -56,43 +56,43 @@ function configResources() {
       url: STATIC_BASE + 'opuslibs.wasm',
       version: 1,
     },
-  ]);
+  ])
 }
 
-let weilaInstance = null;
+let weilaInstance = null
 
 export function initWeila() {
   if (weilaInstance) {
-    return weilaInstance;
+    return weilaInstance
   }
 
   // 先配置资源路径
-  configResources();
+  configResources()
 
-  weilaInstance = new WeilaCore();
+  weilaInstance = new WeilaCore()
 
   // 初始化日志
-  initLogger('MOD:*, CORE:*, FSM:*, AUDIO:*, DB:*, NET:*');
+  initLogger('MOD:*, CORE:*, FSM:*, AUDIO:*, DB:*, NET:*')
 
   // 设置服务器
   // #ifdef H5
-  weilaInstance.weila_setWebSock('wss://your-server.com');
-  weilaInstance.weila_setAuthInfo('your-app-id', 'your-app-key');
+  weilaInstance.weila_setWebSock('wss://your-server.com')
+  weilaInstance.weila_setAuthInfo('your-app-id', 'your-app-key')
   // #endif
 
   // 注册事件
   weilaInstance.weila_onEvent((eventId, data) => {
-    console.log('[Weila]', eventId, data);
-  });
+    console.log('[Weila]', eventId, data)
+  })
 
-  return weilaInstance;
+  return weilaInstance
 }
 
 export function getWeila() {
   if (!weilaInstance) {
-    throw new Error('Weila SDK 未初始化');
+    throw new Error('Weila SDK 未初始化')
   }
-  return weilaInstance;
+  return weilaInstance
 }
 ```
 
@@ -101,9 +101,9 @@ export function getWeila() {
 创建 `src/utils/weila.ts`：
 
 ```typescript
-import { WeilaCore, setConfigData, WL_ConfigID, initLogger } from 'weilasdk';
+import { WeilaCore, setConfigData, WL_ConfigID, initLogger } from 'weilasdk'
 
-const STATIC_BASE = '/static/weilasdk/';
+const STATIC_BASE = '/static/weilasdk/'
 
 function configResources() {
   setConfigData([
@@ -124,36 +124,36 @@ function configResources() {
       version: 1,
     },
     { id: WL_ConfigID.WL_RES_DATA_OPUS_WASM_ID, url: STATIC_BASE + 'opuslibs.wasm', version: 1 },
-  ]);
+  ])
 }
 
-let weilaInstance: WeilaCore | null = null;
+let weilaInstance: WeilaCore | null = null
 
 export function initWeila() {
-  if (weilaInstance) return weilaInstance;
+  if (weilaInstance) return weilaInstance
 
-  configResources();
-  weilaInstance = new WeilaCore();
+  configResources()
+  weilaInstance = new WeilaCore()
 
-  initLogger('MOD:*, CORE:*, FSM:*, AUDIO:*, DB:*, NET:*');
+  initLogger('MOD:*, CORE:*, FSM:*, AUDIO:*, DB:*, NET:*')
 
   // #ifdef H5
-  weilaInstance.weila_setWebSock('wss://your-server.com');
-  weilaInstance.weila_setAuthInfo('your-app-id', 'your-app-key');
+  weilaInstance.weila_setWebSock('wss://your-server.com')
+  weilaInstance.weila_setAuthInfo('your-app-id', 'your-app-key')
   // #endif
 
   weilaInstance.weila_onEvent((eventId, data) => {
-    console.log('[Weila]', eventId, data);
-  });
+    console.log('[Weila]', eventId, data)
+  })
 
-  return weilaInstance;
+  return weilaInstance
 }
 
 export function getWeila(): WeilaCore {
   if (!weilaInstance) {
-    throw new Error('Weila SDK 未初始化');
+    throw new Error('Weila SDK 未初始化')
   }
-  return weilaInstance;
+  return weilaInstance
 }
 ```
 
@@ -171,9 +171,9 @@ module.exports = {
     config.module
       .rule('wasm')
       .test(/\.wasm$/)
-      .type('asset/resource');
+      .type('asset/resource')
   },
-};
+}
 ```
 
 ## 使用示例
@@ -186,29 +186,29 @@ module.exports = {
 </template>
 
 <script>
-import { initWeila, getWeila } from '@/utils/weila';
+import { initWeila, getWeila } from '@/utils/weila'
 
 export default {
   onLoad() {
     // 初始化 SDK
-    const weila = initWeila();
+    const weila = initWeila()
     weila.weila_init().then(() => {
-      console.log('SDK 初始化完成');
-    });
+      console.log('SDK 初始化完成')
+    })
   },
   methods: {
     async handleLogin() {
-      const weila = getWeila();
+      const weila = getWeila()
 
       // 音频初始化必须在用户点击事件中
-      await weila.weila_audioInit();
+      await weila.weila_audioInit()
 
       // 登录
-      const userInfo = await weila.weila_login('13800138000', 'password', '86');
-      console.log('登录成功', userInfo);
+      const userInfo = await weila.weila_login('13800138000', 'password', '86')
+      console.log('登录成功', userInfo)
     },
   },
-};
+}
 </script>
 ```
 
@@ -220,12 +220,12 @@ UniApp 是跨平台框架，Weila SDK 只能在 H5 环境中使用：
 
 ```javascript
 // #ifdef H5
-weilaInstance.weila_setWebSock('wss://your-server.com');
-weilaInstance.weila_setAuthInfo('app-id', 'app-key');
+weilaInstance.weila_setWebSock('wss://your-server.com')
+weilaInstance.weila_setAuthInfo('app-id', 'app-key')
 // #endif
 
 // #ifndef H5
-console.warn('Weila SDK 仅支持 H5 平台');
+console.warn('Weila SDK 仅支持 H5 平台')
 // #endif
 ```
 
@@ -245,5 +245,5 @@ weila.weila_onEvent((eventId, data) => {
     // 处理播放事件
     // 可以使用 uni.createInnerAudioContext() 播放
   }
-});
+})
 ```

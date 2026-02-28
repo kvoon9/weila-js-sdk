@@ -11,58 +11,58 @@ npm install weilasdk
 创建 `src/plugins/weila.js`：
 
 ```javascript
-import { WeilaCore, initLogger } from 'weilasdk';
+import { WeilaCore, initLogger } from 'weilasdk'
 
-let weilaInstance = null;
+let weilaInstance = null
 
 export function initWeilaSDK() {
   if (weilaInstance) {
-    return weilaInstance;
+    return weilaInstance
   }
 
   // 创建实例
-  weilaInstance = new WeilaCore();
+  weilaInstance = new WeilaCore()
 
   // 初始化日志
-  initLogger('MOD:*, CORE:*, FSM:*, AUDIO:*, DB:*, NET:*');
+  initLogger('MOD:*, CORE:*, FSM:*, AUDIO:*, DB:*, NET:*')
 
   // 设置服务器（使用 Vue 2 的语法获取环境变量）
-  weilaInstance.weila_setWebSock(process.env.WS_URL);
-  weilaInstance.weila_setAuthInfo(process.env.APP_ID, process.env.APP_KEY);
+  weilaInstance.weila_setWebSock(process.env.WS_URL)
+  weilaInstance.weila_setAuthInfo(process.env.APP_ID, process.env.APP_KEY)
 
   // 注册事件
   weilaInstance.weila_onEvent((eventId, data) => {
-    console.log('[Weila]', eventId, data);
-  });
+    console.log('[Weila]', eventId, data)
+  })
 
-  return weilaInstance;
+  return weilaInstance
 }
 
 export function getWeila() {
   if (!weilaInstance) {
-    throw new Error('Weila SDK 未初始化');
+    throw new Error('Weila SDK 未初始化')
   }
-  return weilaInstance;
+  return weilaInstance
 }
 ```
 
 在 `main.js` 中使用：
 
 ```javascript
-import Vue from 'vue';
-import App from './App.vue';
-import { initWeilaSDK } from './plugins/weila';
+import Vue from 'vue'
+import App from './App.vue'
+import { initWeilaSDK } from './plugins/weila'
 
-const weila = initWeilaSDK();
+const weila = initWeilaSDK()
 
 // 初始化 SDK
 weila.weila_init().then(() => {
-  console.log('Weila SDK 初始化完成');
+  console.log('Weila SDK 初始化完成')
 
   new Vue({
     render: (h) => h(App),
-  }).$mount('#app');
-});
+  }).$mount('#app')
+})
 ```
 
 ## 组件中使用
@@ -75,23 +75,23 @@ weila.weila_init().then(() => {
 </template>
 
 <script>
-import { getWeila } from '@/plugins/weila';
+import { getWeila } from '@/plugins/weila'
 
 export default {
   name: 'App',
   methods: {
     async handleLogin() {
-      const weila = getWeila();
+      const weila = getWeila()
 
       // 音频初始化必须在用户点击事件中调用
-      await weila.weila_audioInit();
+      await weila.weila_audioInit()
 
       // 登录
-      const userInfo = await weila.weila_login('13800138000', 'password', '86');
-      console.log('登录成功', userInfo);
+      const userInfo = await weila.weila_login('13800138000', 'password', '86')
+      console.log('登录成功', userInfo)
     },
   },
-};
+}
 </script>
 ```
 
@@ -141,13 +141,13 @@ APP_KEY=your-app-key
 module.exports = {
   chainWebpack: (config) => {
     config.plugin('define').tap((args) => {
-      args[0]['process.env'].WS_URL = JSON.stringify(process.env.WS_URL);
-      args[0]['process.env'].APP_ID = JSON.stringify(process.env.APP_ID);
-      args[0]['process.env'].APP_KEY = JSON.stringify(process.env.APP_KEY);
-      return args;
-    });
+      args[0]['process.env'].WS_URL = JSON.stringify(process.env.WS_URL)
+      args[0]['process.env'].APP_ID = JSON.stringify(process.env.APP_ID)
+      args[0]['process.env'].APP_KEY = JSON.stringify(process.env.APP_KEY)
+      return args
+    })
   },
-};
+}
 ```
 
 ### 登录后获取用户信息

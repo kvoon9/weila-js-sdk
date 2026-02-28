@@ -1,6 +1,6 @@
-import { WL } from './weilapb';
-import { WLBuildMsgRet } from './weilapb_wrapper_data';
-import WeilaMsgHeader from './weilapb_msg_header';
+import { WL } from './weilapb'
+import { WLBuildMsgRet } from './weilapb_wrapper_data'
+import WeilaMsgHeader from './weilapb_msg_header'
 
 class BuildWeilaMsg {
   public static buildWeilaMsgReq(
@@ -10,8 +10,8 @@ class BuildWeilaMsg {
     msgInstance: any,
     subUserId?: number,
   ): WLBuildMsgRet {
-    const weilaMsgHeader = WeilaMsgHeader.buildWeilaMsgHeader(serviceId, commandId, 0);
-    const buildRet: WLBuildMsgRet = { resultCode: 0 };
+    const weilaMsgHeader = WeilaMsgHeader.buildWeilaMsgHeader(serviceId, commandId, 0)
+    const buildRet: WLBuildMsgRet = { resultCode: 0 }
     const serviceMsg = new WL.Service.ServiceMessage({
       serviceHead: {
         commandId: commandId,
@@ -19,84 +19,84 @@ class BuildWeilaMsg {
         serviceId: serviceId,
         seq: weilaMsgHeader.value.seqNum,
       },
-    });
+    })
 
     if (subUserId) {
-      serviceMsg.serviceHead!.subUserId = subUserId;
+      serviceMsg.serviceHead!.subUserId = subUserId
     }
 
     switch (serviceId) {
       case WL.Service.ServiceID.SERVICE_USER:
         {
-          serviceMsg.userMessage = msgInstance;
+          serviceMsg.userMessage = msgInstance
         }
-        break;
+        break
 
       case WL.Service.ServiceID.SERVICE_BUSINESS:
         {
-          serviceMsg.businessMessage = msgInstance;
+          serviceMsg.businessMessage = msgInstance
         }
-        break;
+        break
 
       case WL.Service.ServiceID.SERVICE_FRIEND:
         {
-          serviceMsg.friendMessage = msgInstance;
+          serviceMsg.friendMessage = msgInstance
         }
-        break;
+        break
 
       case WL.Service.ServiceID.SERVICE_GROUP:
         {
-          serviceMsg.groupMessage = msgInstance;
+          serviceMsg.groupMessage = msgInstance
         }
-        break;
+        break
 
       case WL.Service.ServiceID.SERVICE_LOCATION:
         {
-          serviceMsg.locationMessage = msgInstance;
+          serviceMsg.locationMessage = msgInstance
         }
-        break;
+        break
 
       case WL.Service.ServiceID.SERVICE_SESSION:
         {
-          serviceMsg.sessionMessage = msgInstance;
+          serviceMsg.sessionMessage = msgInstance
         }
-        break;
+        break
 
       case WL.Service.ServiceID.SERVICE_LOGIN:
         {
-          serviceMsg.loginMessage = msgInstance;
+          serviceMsg.loginMessage = msgInstance
         }
-        break;
+        break
 
       case WL.Service.ServiceID.SERVICE_SYSTEM:
         {
-          serviceMsg.systemMessage = msgInstance;
+          serviceMsg.systemMessage = msgInstance
         }
-        break;
+        break
 
       default: {
-        buildRet.resultCode = -1;
-        return buildRet;
+        buildRet.resultCode = -1
+        return buildRet
       }
     }
 
-    const serviceMsgBuffer = WL.Service.ServiceMessage.encode(serviceMsg).finish().slice();
-    let offset = 0;
-    weilaMsgHeader.value.length = WeilaMsgHeader.msgHeaderLen + serviceMsgBuffer.length;
-    buildRet.reqData = new Uint8Array(weilaMsgHeader.value.length);
-    buildRet.weilaMsgHeader = weilaMsgHeader.getValue();
+    const serviceMsgBuffer = WL.Service.ServiceMessage.encode(serviceMsg).finish().slice()
+    let offset = 0
+    weilaMsgHeader.value.length = WeilaMsgHeader.msgHeaderLen + serviceMsgBuffer.length
+    buildRet.reqData = new Uint8Array(weilaMsgHeader.value.length)
+    buildRet.weilaMsgHeader = weilaMsgHeader.getValue()
 
-    const weilaMsgHeaderBuf = weilaMsgHeader.serializeToBuffer();
+    const weilaMsgHeaderBuf = weilaMsgHeader.serializeToBuffer()
     for (offset = 0; offset < weilaMsgHeader.value.length; offset++) {
       if (offset < WeilaMsgHeader.msgHeaderLen) {
-        buildRet.reqData[offset] = weilaMsgHeaderBuf[offset];
+        buildRet.reqData[offset] = weilaMsgHeaderBuf[offset]
       } else {
-        buildRet.reqData[offset] = serviceMsgBuffer[offset - WeilaMsgHeader.msgHeaderLen];
+        buildRet.reqData[offset] = serviceMsgBuffer[offset - WeilaMsgHeader.msgHeaderLen]
       }
     }
 
-    return buildRet;
+    return buildRet
   }
 }
 
-export { BuildWeilaMsg };
+export { BuildWeilaMsg }

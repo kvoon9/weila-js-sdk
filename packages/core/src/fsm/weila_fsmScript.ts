@@ -1,16 +1,14 @@
-import { assign, createMachine, send } from 'xstate';
-import { WL_LoginParam } from 'main/weila_internal_data';
-import { WLPlayerType } from 'audio/weila_audio_data';
+import { assign, createMachine, send } from 'xstate'
+import { WL_LoginParam } from 'main/weila_internal_data'
+import { WLPlayerType } from 'audio/weila_audio_data'
 
 const loginProcedureFsm = {
   loginProcedure: {
-    entry: (context, event) => {
-    },
+    entry: (_context, _event) => {},
     initial: 'connecting',
     on: {
       FSM_NET_DISCONNECT_IND_EVT: {
-        actions: (_, event) => {
-        },
+        actions: (_context, _event) => {},
         internal: true,
       },
 
@@ -19,8 +17,7 @@ const loginProcedureFsm = {
       },
 
       FSM_LOGIN_PROCEDURE_FAIL_EVT: {
-        actions: (_, event) => {
-        },
+        actions: (_context, _event) => {},
         target: 'loginTry',
       },
     },
@@ -31,26 +28,17 @@ const loginProcedureFsm = {
         description: '一旦进入此状态，首先执行连接网络',
         after: {
           '10000': {
-            actions: [
-              send('FSM_LOGIN_PROCEDURE_FAIL_EVT'),
-              (_, event) => {
-              },
-            ],
+            actions: [send('FSM_LOGIN_PROCEDURE_FAIL_EVT'), (_context, _event) => {}],
           },
         },
         on: {
           FSM_NET_CONNECTED_IND_EVT: {
-            actions: (_, event) => {
-            },
+            actions: (_context, _event) => {},
             target: 'logining',
             internal: true,
           },
           FSM_NET_CONNECTING_IND_EVT: {
-            actions: [
-              'onConnecting',
-              (_, event) => {
-              },
-            ],
+            actions: ['onConnecting', (_context, _event) => {}],
             internal: true,
           },
           FSM_NET_EXCEPTION_IND_EVT: {
@@ -62,11 +50,7 @@ const loginProcedureFsm = {
         },
       },
       logining: {
-        entry: [
-          (_, event) => {
-          },
-          send('FSM_SYSTEM_WATCH_TIMEOUT_EVT'),
-        ],
+        entry: [(_context, _event) => {}, send('FSM_SYSTEM_WATCH_TIMEOUT_EVT')],
         on: {
           FSM_SYSTEM_WATCH_TIMEOUT_EVT: {
             actions: ['onSysTimeChecking'],
@@ -91,7 +75,7 @@ const loginProcedureFsm = {
       },
     },
   },
-};
+}
 
 const mainFsm = createMachine({
   id: 'main',
@@ -234,7 +218,7 @@ const mainFsm = createMachine({
       },
     },
   },
-});
+})
 
 const pttFsm = createMachine({
   id: 'PTTMachine',
@@ -466,7 +450,7 @@ const pttFsm = createMachine({
       },
     },
   },
-});
+})
 
 const fsmEvents = {
   FSM_LOAD_RESOURCE_EVT: 'FSM_LOAD_RESOURCE_EVT',
@@ -496,6 +480,6 @@ const fsmEvents = {
   FSM_PLAY_END_EVT: 'FSM_PLAY_END_EVT',
   FSM_STOP_EVT: 'FSM_STOP_EVT',
   FSM_REL_TALK_EVT: 'FSM_REL_TALK_EVT',
-};
+}
 
-export { mainFsm, loginProcedureFsm, pttFsm, fsmEvents };
+export { mainFsm, loginProcedureFsm, pttFsm, fsmEvents }

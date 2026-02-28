@@ -57,9 +57,9 @@ function getDevelopeProxy(): any {
         '^/ptt': '/ptt',
       },
     },
-  };
+  }
 }
 
 module.exports = {
   getDevelopeProxy: getDevelopeProxy,
-};
+}

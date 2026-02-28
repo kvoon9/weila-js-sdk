@@ -1,17 +1,16 @@
-import { WLBuildMsgRet, WLMsgHeader } from 'proto/weilapb_wrapper_data';
-import { WL_IDbUserInfo, WL_IDbMsgData } from 'db/weila_db_data';
-import { WLPlayerType } from 'audio/weila_audio_data';
-import { WL_ExtEventID, WL_PttPlayIndData } from 'main/weila_external_data';
+import { WLBuildMsgRet, WLMsgHeader } from 'proto/weilapb_wrapper_data'
+import { WL_IDbUserInfo, WL_IDbMsgData } from 'db/weila_db_data'
+import { WLPlayerType } from 'audio/weila_audio_data'
+import { WL_ExtEventID, WL_PttPlayIndData } from 'main/weila_external_data'
 
 interface WL_PromiseCallback {
-  resolve(data: any): any;
-  reject(reason: any): any;
+  resolve(data: any): any
+  reject(reason: any): any
 }
 
-
 const default_user_logo =
-  'https://weilaavatar.oss-cn-shenzhen.aliyuncs.com/default/user_avatar_default.png';
-const default_group_logo = 'https://weilaavatar.oss-cn-shenzhen.aliyuncs.com/default/session.png';
+  'https://weilaavatar.oss-cn-shenzhen.aliyuncs.com/default/user_avatar_default.png'
+const default_group_logo = 'https://weilaavatar.oss-cn-shenzhen.aliyuncs.com/default/session.png'
 
 enum WL_NetworkState {
   NET_CONNECTING_STATE,
@@ -31,57 +30,57 @@ enum WL_NetworkEventID {
 }
 
 interface WL_NetworkEvent {
-  eventId: WL_NetworkEventID;
-  eventData: any;
+  eventId: WL_NetworkEventID
+  eventData: any
 }
 
 interface WL_PbMsgData {
-  header: WLMsgHeader;
-  pbMsgData?: any;
+  header: WLMsgHeader
+  pbMsgData?: any
 }
 
 interface WL_PbMsgHandler {
-  (data: any): void;
+  (data: any): void
 }
 
 interface WL_LoginParam {
-  retryCount: number;
-  account: string;
-  password: string;
-  countryCode: string;
-  callback: WL_PromiseCallback;
+  retryCount: number
+  account: string
+  password: string
+  countryCode: string
+  callback: WL_PromiseCallback
 }
 
 interface WL_LoginResult {
-  callback: WL_PromiseCallback;
-  loginUserInfo?: WL_IDbUserInfo;
-  error?: any;
+  callback: WL_PromiseCallback
+  loginUserInfo?: WL_IDbUserInfo
+  error?: any
 }
 
 interface WL_CoreInterface {
-  sendExtEvent(event: WL_ExtEventID, data: any): void;
-  sendPbMsg(buildPbMsg: WLBuildMsgRet, timeout?: number): Promise<any>;
-  rspPbMsg(seq: number, resultCode: number, data: any): void;
-  registerPbMsgHandler(serviceId: number, handler: WL_PbMsgHandler): void;
-  executeCoreFunc(funcName: string, ...argvs: any[]): Promise<any>;
-  getLoginUserInfo(): WL_IDbUserInfo;
+  sendExtEvent(event: WL_ExtEventID, data: any): void
+  sendPbMsg(buildPbMsg: WLBuildMsgRet, timeout?: number): Promise<any>
+  rspPbMsg(seq: number, resultCode: number, data: any): void
+  registerPbMsgHandler(serviceId: number, handler: WL_PbMsgHandler): void
+  executeCoreFunc(funcName: string, ...argvs: any[]): Promise<any>
+  getLoginUserInfo(): WL_IDbUserInfo
 }
 
 interface WL_PttPayload {
-  frameCount: number;
-  data: Uint8Array;
+  frameCount: number
+  data: Uint8Array
 }
 
 interface WL_PttAudioItem {
-  id: string;
-  msgData: WL_IDbMsgData;
-  payloadList: WL_PttPayload[];
-  priority: number;
-  isCompleted: boolean;
-  recvWaitTimerId: any;
-  playIndex: number;
-  playerType: WLPlayerType;
-  shouldSave: boolean;
+  id: string
+  msgData: WL_IDbMsgData
+  payloadList: WL_PttPayload[]
+  priority: number
+  isCompleted: boolean
+  recvWaitTimerId: any
+  playIndex: number
+  playerType: WLPlayerType
+  shouldSave: boolean
 }
 
 enum WL_PttPackType {
@@ -92,17 +91,17 @@ enum WL_PttPackType {
 }
 
 interface WL_PttPacket {
-  seq: number;
-  seqInPackage: number;
-  sourceType: number;
-  frameCount: number;
-  mark: WL_PttPackType;
-  data: Uint8Array;
+  seq: number
+  seqInPackage: number
+  sourceType: number
+  frameCount: number
+  mark: WL_PttPackType
+  data: Uint8Array
 }
 
 interface WL_PttFsmListener {
-  onPlayInd(audioItem: WL_PttAudioItem | null, playIndData: WL_PttPlayIndData): void;
-  onRecordPttPacketInd(pttPacket: WL_PttPacket): void;
+  onPlayInd(audioItem: WL_PttAudioItem | null, playIndData: WL_PttPlayIndData): void
+  onRecordPttPacketInd(pttPacket: WL_PttPacket): void
 }
 
 export {
@@ -122,4 +121,4 @@ export {
   WL_PttPacket,
   WL_PttFsmListener,
   WL_PttPackType,
-};
+}

@@ -1,5 +1,6 @@
-import type { Preview } from '@storybook/vue3-vite';
-import '../src/style.postcss.css';
+import type { Preview } from '@storybook/vue3-vite'
+// eslint-disable-next-line import/no-unassigned-import
+import '../src/style.postcss.css'
 
 const preview: Preview = {
   parameters: {
@@ -10,9 +11,9 @@ const preview: Preview = {
       },
     },
     a11y: {
-      test: 'todo'
-    }
+      test: 'todo',
+    },
   },
-};
+}
 
-export default preview;
+export default preview

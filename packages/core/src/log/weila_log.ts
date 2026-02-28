@@ -1,4 +1,4 @@
-import { debug, Debugger } from 'debug';
+import { debug, Debugger } from 'debug'
 
 //DB:*, FSM:*, AUDIO:*
 
@@ -8,8 +8,7 @@ import { debug, Debugger } from 'debug';
  * @param modules
  */
 function initLogger(modules: string): void {
-
-  debug.enable(modules + ',-socket-client:*');
+  debug.enable(modules + ',-socket-client:*')
 }
 
 /**
@@ -18,17 +17,17 @@ function initLogger(modules: string): void {
  * @param loggerName
  */
 function getLogger(loggerName: string): Debugger {
-  const logger = debug(loggerName);
-  logger.log = console.log.bind(console);
-  return logger;
+  const logger = debug(loggerName)
+  logger.log = console.log.bind(console)
+  return logger
 }
 
-function setLoggerEnabled(enabled: boolean): void {
+function setLoggerEnabled(_enabled: boolean): void {
   // Stub implementation
 }
 
 function isLoggerEnabled(): boolean {
-  return true;
+  return true
 }
 
-export { initLogger, getLogger, setLoggerEnabled, isLoggerEnabled };
+export { initLogger, getLogger, setLoggerEnabled, isLoggerEnabled }

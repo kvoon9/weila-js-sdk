@@ -32,7 +32,7 @@ module.exports = {
       },
     },
   },
-};
+}
 ```
 
 ### Webpack 5 (webpack.config.js)
@@ -64,14 +64,14 @@ module.exports = {
       },
     },
   },
-};
+}
 ```
 
 ### Vite (vite.config.ts)
 
 ```typescript
-import { defineConfig } from 'vite';
-import vue from '@vitejs/plugin-vue';
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
 
 export default defineConfig({
   plugins: [vue()],
@@ -100,7 +100,7 @@ export default defineConfig({
       },
     },
   },
-});
+})
 ```
 
 ### UniApp (uni.config.js)
@@ -133,7 +133,7 @@ module.exports = {
       },
     },
   },
-};
+}
 ```
 
 ## 服务器端点说明
