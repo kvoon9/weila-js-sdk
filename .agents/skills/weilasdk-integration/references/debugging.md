@@ -5,22 +5,22 @@
 ### 全部日志
 
 ```typescript
-import { initLogger } from 'weilasdk';
+import { initLogger } from 'weilasdk'
 
-initLogger('*');
+initLogger('*')
 ```
 
 ### 按模块日志
 
 ```typescript
 // 只显示核心模块日志
-initLogger('CORE:*');
+initLogger('CORE:*')
 
 // 显示多个模块
-initLogger('MOD:*, CORE:*, FSM:*, AUDIO:*, DB:*, NET:*');
+initLogger('MOD:*, CORE:*, FSM:*, AUDIO:*, DB:*, NET:*')
 
 // 排除特定模块
-initLogger('*,-socket-client:*');
+initLogger('*,-socket-client:*')
 ```
 
 ### 日志模块前缀
@@ -68,19 +68,19 @@ useEffect(() => {
 
 ```typescript
 // 开发环境
-weila.weila_setWebSock('wss://your-dev-server.com');
+weila.weila_setWebSock('wss://your-dev-server.com')
 
 // 生产环境
-weila.weila_setWebSock('wss://your-prod-server.com');
+weila.weila_setWebSock('wss://your-prod-server.com')
 ```
 
 2. 检查网络是否可达
 
 ```javascript
 // 在浏览器控制台测试
-const ws = new WebSocket('wss://your-server.com');
-ws.onopen = () => console.log('连接成功');
-ws.onerror = (e) => console.error('连接失败', e);
+const ws = new WebSocket('wss://your-server.com')
+ws.onopen = () => console.log('连接成功')
+ws.onerror = (e) => console.error('连接失败', e)
 ```
 
 3. 检查代理配置（开发环境）
@@ -103,12 +103,12 @@ ws.onerror = (e) => console.error('连接失败', e);
 
 ```typescript
 try {
-  const userInfo = await weila.weila_login(account, password, countryCode);
+  const userInfo = await weila.weila_login(account, password, countryCode)
 } catch (error) {
-  console.error('登录失败:', error);
+  console.error('登录失败:', error)
   // 使用 getErrorMsg 解析错误
-  const msg = getErrorMsg(error.message);
-  console.log('错误信息:', msg);
+  const msg = getErrorMsg(error.message)
+  console.log('错误信息:', msg)
 }
 ```
 
@@ -121,7 +121,7 @@ try {
 1. 检查登录状态
 
 ```typescript
-console.log('isLoginReady:', weila.isLoginReady);
+console.log('isLoginReady:', weila.isLoginReady)
 ```
 
 2. 检查网络状态
@@ -129,9 +129,9 @@ console.log('isLoginReady:', weila.isLoginReady);
 ```typescript
 weila.weila_onEvent((eventId, data) => {
   if (eventId === 'WL_EXT_SYSTEM_EXCEPTION_IND') {
-    console.log('系统异常:', data);
+    console.log('系统异常:', data)
   }
-});
+})
 ```
 
 3. 检查消息状态
@@ -139,9 +139,9 @@ weila.weila_onEvent((eventId, data) => {
 ```typescript
 weila.weila_onEvent((eventId, data) => {
   if (eventId === 'WL_EXT_MSG_SEND_IND') {
-    console.log('消息状态:', data.status);
+    console.log('消息状态:', data.status)
   }
-});
+})
 ```
 
 ### 5. PTT 对讲问题
@@ -156,7 +156,7 @@ weila.weila_onEvent((eventId, data) => {
 navigator.mediaDevices
   .getUserMedia({ audio: true })
   .then((stream) => console.log('麦克风权限已授予'))
-  .catch((err) => console.error('麦克风权限被拒绝', err));
+  .catch((err) => console.error('麦克风权限被拒绝', err))
 ```
 
 2. 检查 PTT 事件
@@ -164,17 +164,17 @@ navigator.mediaDevices
 ```typescript
 weila.weila_onEvent((eventId, data) => {
   if (eventId === 'WL_EXT_PTT_RECORD_IND') {
-    console.log('PTT 录音状态:', data.state);
+    console.log('PTT 录音状态:', data.state)
   }
-});
+})
 ```
 
 3. 检查是否被禁言
 
 ```typescript
 // 尝试获取群信息
-const group = await weila.weila_getGroup(groupId);
-console.log('群信息:', group);
+const group = await weila.weila_getGroup(groupId)
+console.log('群信息:', group)
 ```
 
 ### 6. 资源加载失败
@@ -187,7 +187,7 @@ console.log('群信息:', group);
 
 ```typescript
 // 在 setConfigData 之前打印
-console.log('资源路径:', STATIC_BASE + 'opuslibs.wasm');
+console.log('资源路径:', STATIC_BASE + 'opuslibs.wasm')
 ```
 
 2. 检查文件是否存在于正确位置
@@ -205,7 +205,7 @@ console.log('资源路径:', STATIC_BASE + 'opuslibs.wasm');
 
 ```javascript
 // 检查浏览器是否支持 WebAssembly
-console.log('WebAssembly supported:', typeof WebAssembly === 'object');
+console.log('WebAssembly supported:', typeof WebAssembly === 'object')
 ```
 
 ## 调试技巧
@@ -216,10 +216,10 @@ console.log('WebAssembly supported:', typeof WebAssembly === 'object');
 
 ```typescript
 // 登录前
-const userInfo = await weila.weila_login(account, password, countryCode);
+const userInfo = await weila.weila_login(account, password, countryCode)
 
 // 消息发送后
-await weila.weila_sendTextMsg(sessionId, sessionType, text);
+await weila.weila_sendTextMsg(sessionId, sessionType, text)
 ```
 
 ### 2. 事件监听
@@ -228,8 +228,8 @@ await weila.weila_sendTextMsg(sessionId, sessionType, text);
 
 ```typescript
 weila.weila_onEvent((eventId, data) => {
-  console.log(`事件: ${eventId}`, JSON.stringify(data, null, 2));
-});
+  console.log(`事件: ${eventId}`, JSON.stringify(data, null, 2))
+})
 ```
 
 ### 3. 网络抓包

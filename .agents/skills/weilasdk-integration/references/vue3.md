@@ -13,52 +13,52 @@ npm install weilasdk
 创建 `src/plugins/weila.ts`：
 
 ```typescript
-import { WeilaCore, setConfigData, WL_ConfigID, initLogger } from 'weilasdk';
-import { App } from 'vue';
+import { WeilaCore, setConfigData, WL_ConfigID, initLogger } from 'weilasdk'
+import { App } from 'vue'
 
-let weilaInstance: WeilaCore | null = null;
+let weilaInstance: WeilaCore | null = null
 
 export function initWeilaSDK(app: App) {
   // 创建实例，使用 markRaw 避免 Vue 响应式代理
-  weilaInstance = new WeilaCore();
+  weilaInstance = new WeilaCore()
 
   // 初始化日志
-  initLogger('MOD:*, CORE:*, FSM:*, AUDIO:*, DB:*, NET:*, -socket-client:*');
+  initLogger('MOD:*, CORE:*, FSM:*, AUDIO:*, DB:*, NET:*, -socket-client:*')
 
   // 设置服务器
-  weilaInstance.weila_setWebSock(import.meta.env.VITE_WS_URL);
-  weilaInstance.weila_setAuthInfo(import.meta.env.VITE_APP_ID, import.meta.env.VITE_APP_KEY);
+  weilaInstance.weila_setWebSock(import.meta.env.VITE_WS_URL)
+  weilaInstance.weila_setAuthInfo(import.meta.env.VITE_APP_ID, import.meta.env.VITE_APP_KEY)
 
   // 注册事件
   weilaInstance.weila_onEvent((eventId, data) => {
-    console.log('[Weila]', eventId, data);
-  });
+    console.log('[Weila]', eventId, data)
+  })
 
   // 提供给全局
-  app.config.globalProperties.$weila = weilaInstance;
+  app.config.globalProperties.$weila = weilaInstance
 
-  return weilaInstance;
+  return weilaInstance
 }
 
 export function getWeila(): WeilaCore {
   if (!weilaInstance) {
-    throw new Error('Weila SDK 未初始化');
+    throw new Error('Weila SDK 未初始化')
   }
-  return weilaInstance;
+  return weilaInstance
 }
 ```
 
 在 `main.ts` 中使用：
 
 ```typescript
-import { createApp } from 'vue';
-import App from './App.vue';
-import { initWeilaSDK } from './plugins/weila';
+import { createApp } from 'vue'
+import App from './App.vue'
+import { initWeilaSDK } from './plugins/weila'
 
-const app = createApp(App);
-const weila = initWeilaSDK(app);
+const app = createApp(App)
+const weila = initWeilaSDK(app)
 
-app.mount('#app');
+app.mount('#app')
 ```
 
 ### 方法二：Composable
@@ -66,49 +66,49 @@ app.mount('#app');
 创建 `src/composables/useWeila.ts`：
 
 ```typescript
-import { ref, shallowRef, onMounted } from 'vue';
-import { WeilaCore, initLogger } from 'weilasdk';
+import { ref, shallowRef, onMounted } from 'vue'
+import { WeilaCore, initLogger } from 'weilasdk'
 
-const weila = shallowRef<WeilaCore | null>(null);
-const isReady = ref(false);
-const isLoginReady = ref(false);
+const weila = shallowRef<WeilaCore | null>(null)
+const isReady = ref(false)
+const isLoginReady = ref(false)
 
 export function useWeila() {
   const init = async () => {
-    if (weila.value) return;
+    if (weila.value) return
 
     // 使用 shallowRef 避免深度响应式
-    weila.value = new WeilaCore();
+    weila.value = new WeilaCore()
 
-    initLogger('MOD:*, CORE:*, FSM:*, AUDIO:*, DB:*, NET:*');
+    initLogger('MOD:*, CORE:*, FSM:*, AUDIO:*, DB:*, NET:*')
 
     // 设置配置
-    weila.value.weila_setWebSock(import.meta.env.VITE_WS_URL);
-    weila.value.weila_setAuthInfo(import.meta.env.VITE_APP_ID, import.meta.env.VITE_APP_KEY);
+    weila.value.weila_setWebSock(import.meta.env.VITE_WS_URL)
+    weila.value.weila_setAuthInfo(import.meta.env.VITE_APP_ID, import.meta.env.VITE_APP_KEY)
 
     // 监听事件
     weila.value.weila_onEvent((eventId, data) => {
-      console.log('[Weila]', eventId, data);
+      console.log('[Weila]', eventId, data)
 
       // 处理登录就绪
       if (eventId === 'WL_EXT_DATA_PREPARE_IND' && data?.state === 'PREPARE_SUCC_END') {
-        isReady.value = true;
+        isReady.value = true
       }
-    });
+    })
 
     // 初始化
-    await weila.value.weila_init();
-  };
+    await weila.value.weila_init()
+  }
 
   const initAudio = async () => {
-    if (!weila.value) return;
-    await weila.value.weila_audioInit();
-  };
+    if (!weila.value) return
+    await weila.value.weila_audioInit()
+  }
 
   const login = async (account: string, password: string, countryCode: string) => {
-    if (!weila.value) return;
-    return await weila.value.weila_login(account, password, countryCode);
-  };
+    if (!weila.value) return
+    return await weila.value.weila_login(account, password, countryCode)
+  }
 
   return {
     weila,
@@ -117,7 +117,7 @@ export function useWeila() {
     init,
     initAudio,
     login,
-  };
+  }
 }
 ```
 
@@ -129,19 +129,19 @@ export function useWeila() {
 </template>
 
 <script setup lang="ts">
-import { useWeila } from '@/composables/useWeila';
+import { useWeila } from '@/composables/useWeila'
 
-const { init, initAudio, login } = useWeila();
+const { init, initAudio, login } = useWeila()
 
 onMounted(async () => {
-  await init();
-});
+  await init()
+})
 
 const handleLogin = async () => {
   // 音频必须在用户点击事件中初始化
-  await initAudio();
-  await login('13800138000', 'password', '86');
-};
+  await initAudio()
+  await login('13800138000', 'password', '86')
+}
 </script>
 ```
 
@@ -160,9 +160,9 @@ Vue 的响应式系统会对对象进行深层代理，这会导致：
 2. 或使用 `shallowRef()` 代替 `ref()`
 
 ```typescript
-import { markRaw } from 'vue';
+import { markRaw } from 'vue'
 
-const weila = markRaw(new WeilaCore());
+const weila = markRaw(new WeilaCore())
 ```
 
 ### 环境变量
@@ -180,11 +180,11 @@ VITE_APP_KEY=your-app-key
 如需 TypeScript 支持，在 `src/types/weila.d.ts` 中：
 
 ```typescript
-import type { WeilaCore } from 'weilasdk';
+import type { WeilaCore } from 'weilasdk'
 
 declare module '@vue/runtime-core' {
   interface ComponentCustomProperties {
-    $weila: WeilaCore;
+    $weila: WeilaCore
   }
 }
 ```

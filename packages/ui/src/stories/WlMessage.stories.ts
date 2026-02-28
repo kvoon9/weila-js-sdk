@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/vue3';
-import { WlMessage } from '../index';
+import type { Meta, StoryObj } from '@storybook/vue3'
+import { WlMessage } from '../index'
 
 const meta: Meta<typeof WlMessage> = {
   title: 'Components/WlMessage',
@@ -14,10 +14,10 @@ const meta: Meta<typeof WlMessage> = {
   args: {
     from: 'other',
   },
-};
+}
 
-export default meta;
-type Story = StoryObj<typeof WlMessage>;
+export default meta
+type Story = StoryObj<typeof WlMessage>
 
 export const Other: Story = {
   args: {
@@ -26,7 +26,7 @@ export const Other: Story = {
   render: (args) => ({
     components: { WlMessage },
     setup() {
-      return { args };
+      return { args }
     },
     template: `
       <WlMessage v-bind="args">
@@ -34,7 +34,7 @@ export const Other: Story = {
       </WlMessage>
     `,
   }),
-};
+}
 
 export const Self: Story = {
   args: {
@@ -43,7 +43,7 @@ export const Self: Story = {
   render: (args) => ({
     components: { WlMessage },
     setup() {
-      return { args };
+      return { args }
     },
     template: `
       <WlMessage v-bind="args">
@@ -51,4 +51,4 @@ export const Self: Story = {
       </WlMessage>
     `,
   }),
-};
+}

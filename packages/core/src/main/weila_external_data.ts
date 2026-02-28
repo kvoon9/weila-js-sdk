@@ -6,22 +6,20 @@ import {
   WL_IDbServiceSessionInfo,
   WL_IDbServiceStaffInfo,
   WL_IDbUserInfo,
-} from '../database/weila_db_data';
-import { WL } from 'proto/weilapb';
-import ServiceSession = WL.Business.ServiceSession;
+} from '../database/weila_db_data'
 
 interface WL_ExtEventCallback {
-  (eventId: WL_ExtEventID, eventData: any): void;
+  (eventId: WL_ExtEventID, eventData: any): void
 }
 
 interface WL_PbMsgErrorInfo {
-  resultCode: number;
-  errorMsg: string;
+  resultCode: number
+  errorMsg: string
 }
 
 interface WL_DataPrepareInd {
-  state: WL_DataPrepareState;
-  msg: string;
+  state: WL_DataPrepareState
+  msg: string
 }
 
 enum WL_DataPrepareState {
@@ -44,13 +42,13 @@ enum WL_PttAudioPlaySource {
 }
 
 interface WL_PttPlayIndData {
-  source: WL_PttAudioPlaySource;
-  state: WL_PttAudioPlayState;
+  source: WL_PttAudioPlaySource
+  state: WL_PttAudioPlayState
 }
 
 interface WL_PttPlayInd {
-  msgData: WL_IDbMsgData;
-  indData: WL_PttPlayIndData;
+  msgData: WL_IDbMsgData
+  indData: WL_PttPlayIndData
 }
 
 enum WL_PttRecordState {
@@ -60,8 +58,8 @@ enum WL_PttRecordState {
 }
 
 interface WL_PttRecordInd {
-  msgData: WL_IDbMsgData;
-  state: WL_PttRecordState;
+  msgData: WL_IDbMsgData
+  state: WL_PttRecordState
 }
 
 enum WL_ExtEventID {
@@ -128,85 +126,85 @@ enum WL_AnswerStatus {
 }
 
 interface WL_FriendInviteInfo {
-  inviterUserInfo: WL_IDbUserInfo | undefined;
-  inviteDetail: string;
-  createdTime: number;
-  status: WL_AnswerStatus;
+  inviterUserInfo: WL_IDbUserInfo | undefined
+  inviteDetail: string
+  createdTime: number
+  status: WL_AnswerStatus
 }
 
 interface WL_FriendAnswerInviteInfo {
-  inviteeUserInfo: WL_IDbUserInfo | undefined;
-  status: WL_AnswerStatus;
+  inviteeUserInfo: WL_IDbUserInfo | undefined
+  status: WL_AnswerStatus
 }
 
 interface WL_GroupInviteInfo {
-  groupInfo: WL_IDbGroup | undefined;
-  invitorUserInfo: WL_IDbUserInfo | undefined;
-  status: WL_AnswerStatus;
+  groupInfo: WL_IDbGroup | undefined
+  invitorUserInfo: WL_IDbUserInfo | undefined
+  status: WL_AnswerStatus
 }
 
 interface WL_GroupAnswerInviteInfo {
-  groupInfo: WL_IDbGroup | undefined;
-  invitorUserInfo: WL_IDbUserInfo | undefined;
-  inviteeUserInfo: WL_IDbUserInfo | undefined;
-  status: WL_AnswerStatus; // 应答结果, 0 未处理 1 接受 2 拒绝 3 忽略
-  updated: number;
+  groupInfo: WL_IDbGroup | undefined
+  invitorUserInfo: WL_IDbUserInfo | undefined
+  inviteeUserInfo: WL_IDbUserInfo | undefined
+  status: WL_AnswerStatus // 应答结果, 0 未处理 1 接受 2 拒绝 3 忽略
+  updated: number
 }
 
 interface WL_GroupJoinInfo {
-  groupInfo: WL_IDbGroup | undefined;
-  joinUserInfo: WL_IDbUserInfo | undefined;
-  status: WL_AnswerStatus;
-  detail: string;
+  groupInfo: WL_IDbGroup | undefined
+  joinUserInfo: WL_IDbUserInfo | undefined
+  status: WL_AnswerStatus
+  detail: string
 }
 
 interface WL_GroupAnswerJoinInfo {
-  groupInfo: WL_IDbGroup | undefined;
-  joinUserInfo: WL_IDbUserInfo | undefined;
-  answerUserInfo: WL_IDbUserInfo | undefined;
-  status: WL_AnswerStatus;
-  updated: number;
+  groupInfo: WL_IDbGroup | undefined
+  joinUserInfo: WL_IDbUserInfo | undefined
+  answerUserInfo: WL_IDbUserInfo | undefined
+  status: WL_AnswerStatus
+  updated: number
 }
 
 interface WL_GroupMemberDeleteInfo {
-  groupId: string;
-  initiatorId: number;
-  userIdList: number[];
+  groupId: string
+  initiatorId: number
+  userIdList: number[]
 }
 
 interface WL_StaffInvite {
-  service: WL_IDbService;
-  invitorInfo: WL_IDbServiceStaffInfo;
-  content?: string;
+  service: WL_IDbService
+  invitorInfo: WL_IDbServiceStaffInfo
+  content?: string
 }
 
 interface WL_CommonAnswerStaffInvite {
-  serviceId: number;
-  userId: number;
-  status: WL_AnswerStatus;
+  serviceId: number
+  userId: number
+  status: WL_AnswerStatus
 }
 
 interface WL_StaffSessionInfo {
-  sessionId: string;
-  staffId: number;
+  sessionId: string
+  staffId: number
 }
 
 interface WL_ServiceSessionInvite {
-  session: WL_IDbServiceSessionInfo;
-  content?: string;
+  session: WL_IDbServiceSessionInfo
+  content?: string
 }
 
 interface WL_StaffAnswerSessionInvite {
-  sessionId: string;
-  invitee: WL_IDbServiceStaffInfo;
-  status: WL_AnswerStatus;
+  sessionId: string
+  invitee: WL_IDbServiceStaffInfo
+  status: WL_AnswerStatus
 }
 
 interface WL_bindAnswerInfo {
-  status: WL_AnswerStatus;
-  deviceInfo: WL_IDbExtensionInfo;
-  verifyCode: string;
-  userInfo: WL_IDbUserInfo;
+  status: WL_AnswerStatus
+  deviceInfo: WL_IDbExtensionInfo
+  verifyCode: string
+  userInfo: WL_IDbUserInfo
 }
 
 export {
@@ -235,4 +233,4 @@ export {
   WL_StaffAnswerSessionInvite,
   WL_bindAnswerInfo,
   WL_GroupMemberDeleteInfo,
-};
+}

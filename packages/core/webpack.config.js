@@ -1,5 +1,5 @@
-const path = require('path');
-const DotEnv = require('dotenv-webpack');
+const path = require('path')
+const DotEnv = require('dotenv-webpack')
 
 module.exports = (env) => {
   return {
@@ -131,5 +131,5 @@ module.exports = (env) => {
         expand: true,
       }),
     ],
-  };
-};
+  }
+}

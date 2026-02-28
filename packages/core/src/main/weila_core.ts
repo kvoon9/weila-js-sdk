@@ -233,7 +233,7 @@ class WeilaCore implements WL_CoreInterface {
       this.waitingTimeoutChecking,
     )
     if (this.sendingPbMsgList.length > 0) {
-      const shouldCheck = this.waitingRspMap.size === 0
+      const _shouldCheck = this.waitingRspMap.size === 0
       const sendingItem = this.sendingPbMsgList.shift()!
       const waitingItem = {} as WL_WaitingRspPbMsgInfo
       waitingItem.resolve = sendingItem.resolve
@@ -262,7 +262,7 @@ class WeilaCore implements WL_CoreInterface {
     const netEvent = {} as WL_NetworkEvent
     netEvent.eventId = eventId
     netEvent.eventData = eventData
-    this.network.postMessage(netEvent)
+    this.network.postMessage(netEvent, self.location.origin)
   }
 
   private onNetworkMessage(event: any) {
@@ -323,8 +323,7 @@ class WeilaCore implements WL_CoreInterface {
     return true
   }
 
-  private async prepareData(context: any, event: any): Promise<boolean> {
-
+  private async prepareData(_context: any, _event: any): Promise<boolean> {
     const ind = {} as WL_DataPrepareInd
     ind.state = WL_DataPrepareState.PREPARE_PROGRESS_IND
     ind.msg = 'SDK.FriendInit'
@@ -355,11 +354,11 @@ class WeilaCore implements WL_CoreInterface {
     return true
   }
 
-  private async logout(context: any, event: any): Promise<boolean> {
+  private async logout(_context: any, _event: any): Promise<boolean> {
     return this.loginModule.logoutReq()
   }
 
-  private async loginServer(context: any, event: any): Promise<WL_LoginResult> {
+  private async loginServer(context: any, _event: any): Promise<WL_LoginResult> {
     const loginParam = context.loginParam as WL_LoginParam
     const loginResult = {} as WL_LoginResult
 
@@ -381,19 +380,19 @@ class WeilaCore implements WL_CoreInterface {
     }
   }
 
-  private onResourceLoadFail(context: any, event: any, actionMeta: any) {
+  private onResourceLoadFail(_context: any, event: any, _actionMeta: any) {
     wlerr('初始加载数据出错', event.data)
   }
 
-  private onLoadingResource(context: any, event: any, actionMeta: any) {
+  private onLoadingResource(_context: any, _event: any, _actionMeta: any) {
     wllog('加载数据成功')
   }
 
-  private onException(context: any, event: any, actionMeta: any) {
+  private onException(_context: any, event: any, _actionMeta: any) {
     this.sendExtEvent(WL_ExtEventID.WL_EXT_SYSTEM_EXCEPTION_IND, event.data)
   }
 
-  private onDataInit(context: any, event: any, actionMeta: any) {
+  private onDataInit(_context: any, _event: any, _actionMeta: any) {
     // 对外发出正在准备数据中.
     const ind = {} as WL_DataPrepareInd
     ind.state = WL_DataPrepareState.START_PREPARING
@@ -401,7 +400,7 @@ class WeilaCore implements WL_CoreInterface {
     this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind)
   }
 
-  private onDataInited(context: any, event: any, actionMeta: any) {
+  private onDataInited(_context: any, _event: any, _actionMeta: any) {
     // 对外通知数据已经准备好
     const ind = {} as WL_DataPrepareInd
     ind.state = WL_DataPrepareState.PREPARE_SUCC_END
@@ -409,9 +408,9 @@ class WeilaCore implements WL_CoreInterface {
     this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind)
   }
 
-  private onDataPrepareFail(context: any, event: any, actionMeta: any) {
+  private onDataPrepareFail(_context: any, _event: any, _actionMeta: any) {
     // 因为数据准备失败，登出系统
-    this.weila_logout().then((value) => {})
+    this.weila_logout().then((_value) => {})
 
     //通知外部，出现异常，并告知异常信息
     const ind = {} as WL_DataPrepareInd
@@ -420,13 +419,13 @@ class WeilaCore implements WL_CoreInterface {
     this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind)
   }
 
-  private onLoginFail(context: any, event: any, actionMeta: any) {
+  private onLoginFail(_context: any, event: any, _actionMeta: any) {
     wllog('onLoginFail:', event)
     this.sendNetworkEvent(WL_NetworkEventID.NET_DISCONNECT_EVT, null)
     this.mainFsmService.send('FSM_LOGIN_PROCEDURE_FAIL_EVT', { data: event.data })
   }
 
-  private onLoginSucc(context: any, event: any, actionMeta: any) {
+  private onLoginSucc(_context: any, event: any, _actionMeta: any) {
     const loginResult = event.data as WL_LoginResult
     wllog('onLogin:', event)
     this.loginUserInfo = loginResult.loginUserInfo
@@ -436,7 +435,7 @@ class WeilaCore implements WL_CoreInterface {
     this.mainFsmService.send('FSM_LOGIN_PROCEDURE_SUCC_EVT', { data: event.data })
   }
 
-  private onSysTimeChecking(context: any, event: any, actionMeta: any) {
+  private onSysTimeChecking(_context: any, _event: any, _actionMeta: any) {
     wllog(
       '--------->onSysTimeChecking',
       event,
@@ -474,13 +473,13 @@ class WeilaCore implements WL_CoreInterface {
     }
   }
 
-  private onReadyEntry(context: any, event: any, actionMeta: any) {
+  private onReadyEntry(_context: any, _event: any, _actionMeta: any) {
     wllog('系统已经准备好，可以接受任何消息')
     this.isLoginReady = true
     this.heartbeatTimerId = setInterval(() => {
       this.loginModule
         .sendHeartbeat()
-        .then((value) => {
+        .then((_value) => {
           wllog('发送心跳成功')
         })
         .catch((reason) => {
@@ -491,7 +490,7 @@ class WeilaCore implements WL_CoreInterface {
     this.refreshTokenTimerId = setInterval(() => {
       this.loginModule
         .refreshToken()
-        .then((value) => {
+        .then((_value) => {
           wllog('刷新token成功')
         })
         .catch((reason) => {
@@ -500,7 +499,7 @@ class WeilaCore implements WL_CoreInterface {
     }, 3600000)
   }
 
-  private onReadyExit(context: any, event: any, actionMeta: any) {
+  private onReadyExit(_context: any, _event: any, _actionMeta: any) {
     wllog('系统没有准备好')
     this.isLoginReady = false
 
@@ -511,7 +510,7 @@ class WeilaCore implements WL_CoreInterface {
     this.refreshTokenTimerId = null
   }
 
-  private onLoginTryEntry(context: any, event: any, actionMeta: any) {
+  private onLoginTryEntry(_context: any, event: any, _actionMeta: any) {
     wllog('onLoginTryEntry', event.data, event.type)
     if (event.data && event.data.error) {
       const index = event.data.error.message.search(/.*-MESSAGE:.*:END/)
@@ -522,18 +521,18 @@ class WeilaCore implements WL_CoreInterface {
     }
   }
 
-  private canRetry(context: any, event: any): boolean {
+  private canRetry(context: any, _event: any): boolean {
     const loginParams = context.loginParam as WL_LoginParam
     wllog('canRetry', loginParams)
     return loginParams.retryCount < this.maxRetryLoginTimes
   }
 
-  private isLoginSucc(context: any, event: any): boolean {
+  private isLoginSucc(_context: any, event: any): boolean {
     const loginResult = event.data.loginResult as WL_LoginResult
     return loginResult.loginUserInfo !== undefined
   }
 
-  private connectServer(context: any, event: any, actionMeta: any) {
+  private connectServer(_context: any, _event: any, _actionMeta: any) {
     this.sendNetworkEvent(WL_NetworkEventID.NET_CONNECT_EVT, null)
   }
 
@@ -541,11 +540,11 @@ class WeilaCore implements WL_CoreInterface {
     wllog('onConnecting:', context, event, actionMeta.state.value)
   }
 
-  private onDisconnectInReadyState(context: any, event: any, actionMeta: any) {
-    const loginParam = context.loginParam as WL_LoginParam
+  private onDisconnectInReadyState(_context: any, _event: any, _actionMeta: any) {
+    // const loginParam = _context.loginParam as WL_LoginParam
   }
 
-  private onLoginRetryFail(context: any, event: any, actionMeta: any) {
+  private onLoginRetryFail(context: any, event: any, _actionMeta: any) {
     wllog('onLoginRetryFail', event.data)
     const loginParam = context.loginParam as WL_LoginParam
     if (event.data && event.data.error) {
@@ -616,9 +615,6 @@ class WeilaCore implements WL_CoreInterface {
    * @param audioMsgData 单条语音消息
    */
   public async weila_playSingle(audioMsgData: WL_IDbMsgData): Promise<boolean> {
-
-
-
     if (
       audioMsgData.msgType !== WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE &&
       audioMsgData.msgType !== WL_IDbMsgDataType.WL_DB_MSG_DATA_PTT_TYPE
@@ -638,7 +634,7 @@ class WeilaCore implements WL_CoreInterface {
               frameCount: 0,
             }
           }
-        } catch (e) {
+        } catch (_e) {
           audioMsgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR
           audioMsgData.audioData = {
             audioUrl: audioUrl,
@@ -646,7 +642,6 @@ class WeilaCore implements WL_CoreInterface {
           }
         } finally {
           await WeilaDB.getInstance().putMsgData(audioMsgData)
-
         }
 
         if (audioMsgData.status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR) {
@@ -654,7 +649,6 @@ class WeilaCore implements WL_CoreInterface {
         }
       }
     } else {
-
       audioMsgData.msgType = WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE
       audioMsgData.audioData = {
         frameCount: audioMsgData.pttData.frameCount,

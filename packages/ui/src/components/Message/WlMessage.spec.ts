@@ -9,10 +9,10 @@ describe('WlMessage 组件测试', () => {
     const wrapper = mount(WlMessage, {
       props: { from: 'self' },
       slots: {
-        default: '测试消息内容'
-      }
+        default: '测试消息内容',
+      },
     })
-    
+
     expect(wrapper.classes()).toContain('justify-end')
     expect(wrapper.text()).toContain('测试消息内容')
   })
@@ -21,10 +21,10 @@ describe('WlMessage 组件测试', () => {
     const wrapper = mount(WlMessage, {
       props: { from: 'other' },
       slots: {
-        default: '对方消息'
-      }
+        default: '对方消息',
+      },
     })
-    
+
     expect(wrapper.classes()).toContain('flex-row-reverse')
   })
 })
@@ -32,18 +32,18 @@ describe('WlMessage 组件测试', () => {
 describe('WlMessageContent 组件测试', () => {
   it('contained 变体渲染正确', () => {
     const wrapper = mount(WlMessageContent, {
-      props: { variant: 'contained' }
+      props: { variant: 'contained' },
     })
-    
+
     expect(wrapper.classes()).toContain('max-w-[80%]')
     expect(wrapper.classes()).toContain('px-4')
   })
 
   it('flat 变体渲染正确', () => {
     const wrapper = mount(WlMessageContent, {
-      props: { variant: 'flat' }
+      props: { variant: 'flat' },
     })
-    
+
     // flat 变体没有 contained 的样式
     expect(wrapper.classes()).toContain('wl-message-content')
   })
@@ -54,10 +54,10 @@ describe('WlMessage 组合测试', () => {
     const wrapper = mount(WlMessage, {
       props: { from: 'self' },
       slots: {
-        default: WlMessageContent
-      }
+        default: WlMessageContent,
+      },
     })
-    
+
     expect(wrapper.findComponent(WlMessageContent).exists()).toBe(true)
   })
 
@@ -65,10 +65,10 @@ describe('WlMessage 组合测试', () => {
     const wrapper = mount(WlMessage, {
       props: { from: 'other' },
       slots: {
-        default: [WlMessageAvatar, WlMessageContent]
-      }
+        default: [WlMessageAvatar, WlMessageContent],
+      },
     })
-    
+
     expect(wrapper.findComponent(WlMessage).exists()).toBe(true)
     expect(wrapper.findComponent(WlMessageAvatar).exists()).toBe(true)
     expect(wrapper.findComponent(WlMessageContent).exists()).toBe(true)

@@ -120,33 +120,33 @@
 ### 会话类型
 
 ```typescript
-WL_IDbSessionType.SESSION_INDIVIDUAL_TYPE; // 个人
-WL_IDbSessionType.SESSION_GROUP_TYPE; // 群组
-WL_IDbSessionType.SESSION_SERVICE_TYPE; // 服务号
+WL_IDbSessionType.SESSION_INDIVIDUAL_TYPE // 个人
+WL_IDbSessionType.SESSION_GROUP_TYPE // 群组
+WL_IDbSessionType.SESSION_SERVICE_TYPE // 服务号
 ```
 
 ### 消息类型
 
 ```typescript
-WL_IDbMsgDataType.WL_DB_MSG_DATA_TEXT_TYPE; // 文本
-WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE; // 音频
-WL_IDbMsgDataType.WL_DB_MSG_DATA_IMAGE_TYPE; // 图片
-WL_IDbMsgDataType.WL_DB_MSG_DATA_VIDEO_TYPE; // 视频
-WL_IDbMsgDataType.WL_DB_MSG_DATA_FILE_TYPE; // 文件
-WL_IDbMsgDataType.WL_DB_MSG_DATA_LOCATION_TYPE; // 位置
-WL_IDbMsgDataType.WL_DB_MSG_DATA_PTT_TYPE; // PTT
+WL_IDbMsgDataType.WL_DB_MSG_DATA_TEXT_TYPE // 文本
+WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE // 音频
+WL_IDbMsgDataType.WL_DB_MSG_DATA_IMAGE_TYPE // 图片
+WL_IDbMsgDataType.WL_DB_MSG_DATA_VIDEO_TYPE // 视频
+WL_IDbMsgDataType.WL_DB_MSG_DATA_FILE_TYPE // 文件
+WL_IDbMsgDataType.WL_DB_MSG_DATA_LOCATION_TYPE // 位置
+WL_IDbMsgDataType.WL_DB_MSG_DATA_PTT_TYPE // PTT
 ```
 
 ### 群组类型
 
 ```typescript
-WL_IDbGroupType.GROUP_NORMAL; // 普通群
-WL_IDbGroupType.GROUP_TEMP; // 临时群
+WL_IDbGroupType.GROUP_NORMAL // 普通群
+WL_IDbGroupType.GROUP_TEMP // 临时群
 ```
 
 ### 成员类型
 
 ```typescript
-WL_IDbMemberType.NORMAL_MEMBER_TYPE; // 普通成员
-WL_IDbMemberType.ADMIN_MEMBER_TYPE; // 管理员
+WL_IDbMemberType.NORMAL_MEMBER_TYPE // 普通成员
+WL_IDbMemberType.ADMIN_MEMBER_TYPE // 管理员
 ```

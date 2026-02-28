@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/vue3';
-import { WlMessageContent } from '../index';
+import type { Meta, StoryObj } from '@storybook/vue3'
+import { WlMessageContent } from '../index'
 
 const meta: Meta<typeof WlMessageContent> = {
   title: 'Components/WlMessageContent',
@@ -14,10 +14,10 @@ const meta: Meta<typeof WlMessageContent> = {
   args: {
     variant: 'contained',
   },
-};
+}
 
-export default meta;
-type Story = StoryObj<typeof WlMessageContent>;
+export default meta
+type Story = StoryObj<typeof WlMessageContent>
 
 export const Contained: Story = {
   args: {
@@ -26,7 +26,7 @@ export const Contained: Story = {
   render: (args) => ({
     components: { WlMessageContent },
     setup() {
-      return { args };
+      return { args }
     },
     template: `
       <WlMessageContent v-bind="args">
@@ -34,7 +34,7 @@ export const Contained: Story = {
       </WlMessageContent>
     `,
   }),
-};
+}
 
 export const Flat: Story = {
   args: {
@@ -43,7 +43,7 @@ export const Flat: Story = {
   render: (args) => ({
     components: { WlMessageContent },
     setup() {
-      return { args };
+      return { args }
     },
     template: `
       <WlMessageContent v-bind="args">
@@ -51,4 +51,4 @@ export const Flat: Story = {
       </WlMessageContent>
     `,
   }),
-};
+}

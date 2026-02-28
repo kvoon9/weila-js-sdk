@@ -104,15 +104,15 @@ Example:
 
 ```typescript
 // External libraries
-import { interpret } from 'xstate';
-import Long from 'long';
+import { interpret } from 'xstate'
+import Long from 'long'
 
 // Internal types
-import { WL_CoreInterface, WL_LoginParam, WL_LoginResult } from 'main/weila_internal_data';
+import { WL_CoreInterface, WL_LoginParam, WL_LoginResult } from 'main/weila_internal_data'
 
 // Internal modules
-import { getLogger } from 'log/weila_log';
-import { WLConfig } from 'main/weila_config';
+import { getLogger } from 'log/weila_log'
+import { WLConfig } from 'main/weila_config'
 ```
 
 ### TypeScript Style
@@ -155,11 +155,11 @@ Example:
 
 ```typescript
 try {
-  await WLConfig.loadResource();
-  callback.resolve(true);
+  await WLConfig.loadResource()
+  callback.resolve(true)
 } catch (e) {
-  wlerr('加载数据失败', e);
-  callback.reject(e);
+  wlerr('加载数据失败', e)
+  callback.reject(e)
 }
 ```
 

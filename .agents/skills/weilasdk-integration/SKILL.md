@@ -21,37 +21,37 @@ pnpm add weilasdk
 ### 2. 基础初始化
 
 ```typescript
-import { WeilaCore, setConfigData, WL_ConfigID, initLogger } from 'weilasdk';
+import { WeilaCore, setConfigData, WL_ConfigID, initLogger } from 'weilasdk'
 
 // 创建实例
-const weila = new WeilaCore();
+const weila = new WeilaCore()
 
 // 初始化日志
-initLogger('MOD:*, CORE:*, FSM:*, AUDIO:*, DB:*, NET:*, -socket-client:*');
+initLogger('MOD:*, CORE:*, FSM:*, AUDIO:*, DB:*, NET:*, -socket-client:*')
 
 // 设置服务器地址（尽早调用）
-weila.weila_setWebSock('wss://your-server.com');
+weila.weila_setWebSock('wss://your-server.com')
 
 // 设置 App 认证（尽早调用）
-weila.weila_setAuthInfo('your-app-id', 'your-app-key');
+weila.weila_setAuthInfo('your-app-id', 'your-app-key')
 
 // 注册事件回调
 weila.weila_onEvent((eventId, data) => {
-  console.log('事件:', eventId, data);
-});
+  console.log('事件:', eventId, data)
+})
 
 // 初始化
-await weila.weila_init();
+await weila.weila_init()
 
 // 音频初始化（在用户点击事件中调用）
-await weila.weila_audioInit();
+await weila.weila_audioInit()
 ```
 
 ### 3. 用户登录
 
 ```typescript
 // 登录（微喇号或手机号）
-const userInfo = await weila.weila_login('13800138000', 'password', '86');
+const userInfo = await weila.weila_login('13800138000', 'password', '86')
 ```
 
 ## 框架集成
@@ -98,7 +98,7 @@ setConfigData([
     url: 'https://cdn.example.com/opuslibs.wasm',
     version: 1,
   },
-]);
+])
 ```
 
 ### 代理配置
@@ -118,18 +118,18 @@ setConfigData([
 
 ```typescript
 // 文本
-await weila.weila_sendTextMsg(sessionId, sessionType, '你好');
+await weila.weila_sendTextMsg(sessionId, sessionType, '你好')
 
 // 图片
-await weila.weila_sendImage(sessionId, sessionType, 'photo.jpg', imageFile);
+await weila.weila_sendImage(sessionId, sessionType, 'photo.jpg', imageFile)
 ```
 
 ### 音频播放
 
 ```typescript
 // 播放语音
-await weila.weila_playSingle(audioMsgData);
-weila.weila_stopSingle();
+await weila.weila_playSingle(audioMsgData)
+weila.weila_stopSingle()
 ```
 
 ### 群组操作
@@ -139,10 +139,10 @@ weila.weila_stopSingle();
 const group = await weila.weila_createGroup('群名', WL_IDbGroupType.GROUP_NORMAL, null, 0, [
   userId1,
   userId2,
-]);
+])
 
 // 获取群列表
-const groups = await weila.weila_getAllGroups();
+const groups = await weila.weila_getAllGroups()
 ```
 
 完整 API 参考：[api-quickref.md](references/api-quickref.md)
@@ -173,7 +173,7 @@ npm run "build development"
 ### 启用完整日志
 
 ```typescript
-initLogger('*');
+initLogger('*')
 ```
 
 ### 常见问题

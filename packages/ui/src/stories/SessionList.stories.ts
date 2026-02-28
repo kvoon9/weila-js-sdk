@@ -1,12 +1,12 @@
-import type { Meta, StoryObj } from '@storybook/vue3';
-import { SessionList } from '../index';
-import type { WL_IDbSession } from '@weilasdk/core';
+import type { Meta, StoryObj } from '@storybook/vue3'
+import { SessionList } from '../index'
+import type { WL_IDbSession } from '@weilasdk/core'
 
-// Note: SessionList requires a WeilaCore instance. 
+// Note: SessionList requires a WeilaCore instance.
 // For storybook, we create a mock that shows the UI states.
 // The actual integration with WeilaCore should be tested in integration tests.
 
-const mockSessions: WL_IDbSession[] = [
+const _mockSessions: WL_IDbSession[] = [
   {
     sessionId: '1001',
     sessionType: 0x01,
@@ -34,7 +34,7 @@ const mockSessions: WL_IDbSession[] = [
     readMsgId: 10,
     latestUpdate: Date.now() - 1000 * 60 * 60 * 24,
   } as WL_IDbSession,
-];
+]
 
 const meta: Meta<typeof SessionList> = {
   title: 'Components/SessionList',
@@ -62,21 +62,21 @@ const meta: Meta<typeof SessionList> = {
   args: {
     filter: 'all',
   },
-};
+}
 
-export default meta;
-type Story = StoryObj<typeof SessionList>;
+export default meta
+type Story = StoryObj<typeof SessionList>
 
-export const Default: Story = {};
+export const Default: Story = {}
 
 export const FilterPersonal: Story = {
   args: {
     filter: 'personal',
   },
-};
+}
 
 export const FilterGroup: Story = {
   args: {
     filter: 'group',
   },
-};
+}

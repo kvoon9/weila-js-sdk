@@ -35,8 +35,8 @@ pnpm --filter @weilasdk/ui run typecheck
 
 ```vue
 <script setup lang="ts">
-import { WlStatusIndicator } from '@weilasdk/ui';
-import '@weilasdk/ui/dist/index.css';
+import { WlStatusIndicator } from '@weilasdk/ui'
+import '@weilasdk/ui/dist/index.css'
 </script>
 
 <template>

@@ -9,8 +9,8 @@ enum WL_IDbSettingID {
 }
 
 interface WL_IDbSetting {
-  id: WL_IDbSettingID;
-  data: any;
+  id: WL_IDbSettingID
+  data: any
 }
 
 // 会话相关，后续所有的好友，群都需要创建一个deactivate的会话。
@@ -30,48 +30,48 @@ enum WL_IDbSessionType {
 }
 
 interface WL_IDbSession {
-  combo_id_type: string;
-  sessionId: string;
-  sessionType: WL_IDbSessionType;
-  sessionName: string;
-  sessionAvatar: string;
-  readMsgId: number;
-  lastMsgId: number;
-  latestUpdate: number;
-  status: WL_IDbSessionStatus;
-  extra?: any;
+  combo_id_type: string
+  sessionId: string
+  sessionType: WL_IDbSessionType
+  sessionName: string
+  sessionAvatar: string
+  readMsgId: number
+  lastMsgId: number
+  latestUpdate: number
+  status: WL_IDbSessionStatus
+  extra?: any
 }
 
 interface WL_IDbSessionSettingParams {
-  tts?: boolean;
-  mute?: boolean;
-  loactionShared?: boolean;
+  tts?: boolean
+  mute?: boolean
+  loactionShared?: boolean
 }
 
 interface WL_IDbSessionSetting {
-  combo_id_type: string;
-  sessionId: string;
-  sessionType: number;
-  tts: boolean;
-  mute: boolean;
-  loactionShared: boolean;
+  combo_id_type: string
+  sessionId: string
+  sessionType: number
+  tts: boolean
+  mute: boolean
+  loactionShared: boolean
 }
 
 // 用户信息
 interface WL_IDbUserInfo {
-  userId: number;
-  weilaNum: string;
-  sex: number;
-  nick: string;
-  pinyinName: string;
-  avatar: string;
-  email?: string;
-  phone?: string;
-  countryCode?: string;
-  status: number;
-  signature?: string;
-  userType: number;
-  created: number;
+  userId: number
+  weilaNum: string
+  sex: number
+  nick: string
+  pinyinName: string
+  avatar: string
+  email?: string
+  phone?: string
+  countryCode?: string
+  status: number
+  signature?: string
+  userType: number
+  created: number
 }
 
 // 群信息
@@ -100,28 +100,28 @@ enum WL_IDbMemberType {
 }
 
 interface WL_IDbGroup {
-  groupId: string;
-  name: string;
-  pinyinName: string;
-  avatar: string;
-  groupNum: string;
-  ownerId: number;
-  groupType: WL_IDbGroupType;
-  desc?: string;
-  publicType: WL_IDbGroupPublicType;
-  authType: WL_IDbGroupAuthType;
-  groupClass: number;
-  audioQuality: number;
-  speechEnable: boolean;
-  home?: string;
-  latitude?: string;
-  longitude?: string;
-  burstType: number;
-  memberLimit: number;
-  memberCount: number;
-  memberVersion: number;
-  version: number;
-  created: number;
+  groupId: string
+  name: string
+  pinyinName: string
+  avatar: string
+  groupNum: string
+  ownerId: number
+  groupType: WL_IDbGroupType
+  desc?: string
+  publicType: WL_IDbGroupPublicType
+  authType: WL_IDbGroupAuthType
+  groupClass: number
+  audioQuality: number
+  speechEnable: boolean
+  home?: string
+  latitude?: string
+  longitude?: string
+  burstType: number
+  memberLimit: number
+  memberCount: number
+  memberVersion: number
+  version: number
+  created: number
 }
 
 enum WL_IDbMemberStatus {
@@ -130,24 +130,24 @@ enum WL_IDbMemberStatus {
 }
 
 interface WL_IDbMemberInfo {
-  combo_gid_uid: string;
-  groupId: string;
-  userId: number;
-  status: WL_IDbMemberStatus;
-  memberType: WL_IDbMemberType;
-  remark?: string;
-  priority: number;
-  speechEnable: boolean;
-  speechDisableTimeout: number;
-  blockedStatus: boolean;
-  tts: boolean;
-  locationShared: boolean;
-  created: number;
+  combo_gid_uid: string
+  groupId: string
+  userId: number
+  status: WL_IDbMemberStatus
+  memberType: WL_IDbMemberType
+  remark?: string
+  priority: number
+  speechEnable: boolean
+  speechDisableTimeout: number
+  blockedStatus: boolean
+  tts: boolean
+  locationShared: boolean
+  created: number
 }
 
 interface WL_IDbGroupMember {
-  memberInfo: WL_IDbMemberInfo;
-  userInfo?: WL_IDbUserInfo;
+  memberInfo: WL_IDbMemberInfo
+  userInfo?: WL_IDbUserInfo
 }
 
 // 好友信息
@@ -157,20 +157,20 @@ enum WL_IDbFriendStatus {
 }
 
 interface WL_IDbFriendInfo {
-  userId: number;
-  status: WL_IDbFriendStatus;
-  remark?: string;
-  label?: string;
-  desc?: string;
-  blockedStatus: boolean;
-  tts: boolean;
-  locationShared: boolean;
-  extension?: string;
+  userId: number
+  status: WL_IDbFriendStatus
+  remark?: string
+  label?: string
+  desc?: string
+  blockedStatus: boolean
+  tts: boolean
+  locationShared: boolean
+  extension?: string
 }
 
 interface WL_IDbFriend {
-  friendInfo: WL_IDbFriendInfo;
-  userInfo: WL_IDbUserInfo | null;
+  friendInfo: WL_IDbFriendInfo
+  userInfo: WL_IDbUserInfo | null
 }
 
 // 会话消息
@@ -200,71 +200,71 @@ enum WL_IDbMsgDataStatus {
 }
 
 interface WL_IDbAudioData {
-  frameCount: number;
-  data?: Uint8Array;
-  audioUrl?: string;
+  frameCount: number
+  data?: Uint8Array
+  audioUrl?: string
 }
 
 interface WL_IDbFileData {
-  fileSize: number;
-  fileName?: string;
-  fileUrl?: string;
-  fileThumbnail?: string;
+  fileSize: number
+  fileName?: string
+  fileUrl?: string
+  fileThumbnail?: string
 }
 
 interface WL_IDbLocationShared {
-  locationType: string;
-  latitude: number;
-  longitude: number;
-  title?: string;
-  name?: string;
-  address?: string;
-  mapUrl?: string;
+  locationType: string
+  latitude: number
+  longitude: number
+  title?: string
+  name?: string
+  address?: string
+  mapUrl?: string
 }
 
 interface WL_IDbPttData {
-  seq: number;
-  seqInPackage: number;
-  sourceType: number;
-  frameCount: number;
-  mark: number;
-  data: Uint8Array;
+  seq: number
+  seqInPackage: number
+  sourceType: number
+  frameCount: number
+  mark: number
+  data: Uint8Array
 }
 
 interface WL_IDbMsgData {
-  combo_id: string;
-  senderId: number;
-  sessionId: string;
-  sessionType: number;
-  msgId: number;
-  msgType: WL_IDbMsgDataType;
-  created: number;
-  autoReply: number;
-  status: WL_IDbMsgDataStatus;
-  tag?: string;
-  textData?: string;
-  audioData?: WL_IDbAudioData;
-  fileInfo?: WL_IDbFileData;
-  command?: string;
-  location?: WL_IDbLocationShared;
-  switchData?: string;
-  serviceData?: string;
-  withdrawMsgId?: number;
-  pttData?: WL_IDbPttData;
+  combo_id: string
+  senderId: number
+  sessionId: string
+  sessionType: number
+  msgId: number
+  msgType: WL_IDbMsgDataType
+  created: number
+  autoReply: number
+  status: WL_IDbMsgDataStatus
+  tag?: string
+  textData?: string
+  audioData?: WL_IDbAudioData
+  fileInfo?: WL_IDbFileData
+  command?: string
+  location?: WL_IDbLocationShared
+  switchData?: string
+  serviceData?: string
+  withdrawMsgId?: number
+  pttData?: WL_IDbPttData
 }
 
 // 位置相关
 interface WL_IDbLocationInfo {
-  userId: number;
-  clientType: number;
-  locationType: number;
-  latitude: number;
-  longitude: number;
-  speed: number;
-  altitude: number;
-  radius: number;
-  timestamp: number;
-  direction: number;
+  userId: number
+  clientType: number
+  locationType: number
+  latitude: number
+  longitude: number
+  speed: number
+  altitude: number
+  radius: number
+  timestamp: number
+  direction: number
 }
 
 // 通知相关的信息
@@ -278,10 +278,10 @@ enum WL_IDbNotificationType {
 }
 
 interface WL_IDbNotification {
-  id: number;
-  notificationType: WL_IDbNotificationType;
-  data: any;
-  createTime: number;
+  id: number
+  notificationType: WL_IDbNotificationType
+  data: any
+  createTime: number
 }
 
 enum WL_IDbExtensionState {
@@ -297,53 +297,53 @@ enum WL_IDbExtensionType {
 }
 
 interface WL_IDbExtension {
-  info: WL_IDbExtensionInfo;
-  userInfo: WL_IDbUserInfo;
-  supervisor: WL_IDbUserInfo;
+  info: WL_IDbExtensionInfo
+  userInfo: WL_IDbUserInfo
+  supervisor: WL_IDbUserInfo
 }
 
 interface WL_IDbExtensionInfo {
-  imei: string;
-  state: WL_IDbExtensionState;
-  productName: string;
-  extensionType: WL_IDbExtensionType;
-  userId: number;
-  supervisorId: number;
-  status: number;
-  version: string;
-  config: string;
-  groupLimit: number;
-  groupCount: number;
-  activeTime: number;
-  warrant: number;
-  createdTime: number;
+  imei: string
+  state: WL_IDbExtensionState
+  productName: string
+  extensionType: WL_IDbExtensionType
+  userId: number
+  supervisorId: number
+  status: number
+  version: string
+  config: string
+  groupLimit: number
+  groupCount: number
+  activeTime: number
+  warrant: number
+  createdTime: number
 }
 
 // business
 interface WL_IDbService {
-  serviceId: number;
-  serviceNum: string;
-  serviceType: number;
-  serviceClass: number;
-  name: string;
-  avatar: string;
-  intro: string;
-  url: string;
-  createdTime: number;
+  serviceId: number
+  serviceNum: string
+  serviceType: number
+  serviceClass: number
+  name: string
+  avatar: string
+  intro: string
+  url: string
+  createdTime: number
 }
 
 interface WL_IDbServiceStaff {
-  userId: number;
-  staffType: number;
-  admin: number;
-  staffClass: number;
-  isOperator: boolean;
-  createdTime: number;
+  userId: number
+  staffType: number
+  admin: number
+  staffClass: number
+  isOperator: boolean
+  createdTime: number
 }
 
 interface WL_IDbServiceStaffInfo {
-  staff: WL_IDbServiceStaff;
-  userData: WL_IDbUserInfo;
+  staff: WL_IDbServiceStaff
+  userData: WL_IDbUserInfo
 }
 
 enum WL_ServiceStatus {
@@ -357,19 +357,19 @@ enum WL_ServiceStatus {
 }
 
 interface WL_IDbServiceSession {
-  serviceId: number;
-  customerId: number;
-  staffIds: number[];
-  serviceStatus: WL_ServiceStatus;
-  createdTime: number;
-  updatedTime: number;
+  serviceId: number
+  customerId: number
+  staffIds: number[]
+  serviceStatus: WL_ServiceStatus
+  createdTime: number
+  updatedTime: number
 }
 
 interface WL_IDbServiceSessionInfo {
-  service: WL_IDbService;
-  customer: WL_IDbUserInfo | undefined;
-  staffs: WL_IDbServiceStaffInfo[];
-  serviceSession: WL_IDbServiceSession;
+  service: WL_IDbService
+  customer: WL_IDbUserInfo | undefined
+  staffs: WL_IDbServiceStaffInfo[]
+  serviceSession: WL_IDbServiceSession
 }
 
 export {
@@ -412,4 +412,4 @@ export {
   WL_IDbServiceStaffInfo,
   WL_IDbServiceSessionInfo,
   WL_IDbExtensionType,
-};
+}

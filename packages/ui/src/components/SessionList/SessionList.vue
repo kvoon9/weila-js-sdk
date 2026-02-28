@@ -1,51 +1,48 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, watch, shallowRef } from 'vue';
-import type { WeilaCore } from '@weilasdk/core';
-import type { WL_IDbSession } from '@weilasdk/core';
-import { useSessions } from '../../composables/useSessions';
-import SessionListItem from './SessionListItem.vue';
+import { computed, onMounted, onUnmounted, watch, shallowRef } from 'vue'
+import type { WeilaCore } from '@weilasdk/core'
+import type { WL_IDbSession } from '@weilasdk/core'
+import { useSessions } from '../../composables/useSessions'
+import SessionListItem from './SessionListItem.vue'
 
 interface Props {
-  weilaCore: WeilaCore;
-  filter?: 'all' | 'personal' | 'group';
+  weilaCore: WeilaCore
+  filter?: 'all' | 'personal' | 'group'
 }
 
 const props = withDefaults(defineProps<Props>(), {
   filter: 'all',
-});
+})
 
 const emit = defineEmits<{
-  select: [session: WL_IDbSession];
-}>();
+  select: [session: WL_IDbSession]
+}>()
 
-const weilaCoreRef = shallowRef(props.weilaCore);
+const weilaCoreRef = shallowRef(props.weilaCore)
 
-watch(() => props.weilaCore, (newVal) => {
-  weilaCoreRef.value = newVal;
-});
+watch(
+  () => props.weilaCore,
+  (newVal) => {
+    weilaCoreRef.value = newVal
+  },
+)
 
-const { 
-  sessions, 
-  personalSessions, 
-  groupSessions, 
-  loading, 
-  error, 
-  refresh 
-} = useSessions(weilaCoreRef);
+const { sessions, personalSessions, groupSessions, loading, error, refresh } =
+  useSessions(weilaCoreRef)
 
 const filteredSessions = computed(() => {
   switch (props.filter) {
     case 'personal':
-      return personalSessions.value;
+      return personalSessions.value
     case 'group':
-      return groupSessions.value;
+      return groupSessions.value
     default:
-      return sessions.value;
+      return sessions.value
   }
-});
+})
 
 function handleSelect(session: WL_IDbSession) {
-  emit('select', session);
+  emit('select', session)
 }
 </script>
 
@@ -54,13 +51,24 @@ function handleSelect(session: WL_IDbSession) {
     <!-- Header -->
     <div class="header flex items-center justify-between px-4 py-3 border-b border-gray-200">
       <h3 class="font-semibold text-gray-900">Sessions</h3>
-      <button 
+      <button
         @click="refresh"
         class="p-1.5 rounded hover:bg-gray-200 transition-colors"
         title="Refresh"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5 text-gray-500"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+          />
         </svg>
       </button>
     </div>
@@ -74,7 +82,7 @@ function handleSelect(session: WL_IDbSession) {
     <div v-else-if="error" class="flex-1 flex flex-col items-center justify-center py-8 px-4">
       <p class="text-red-500 mb-2">Failed to load sessions</p>
       <p class="text-sm text-gray-500">{{ error.message }}</p>
-      <button 
+      <button
         @click="refresh"
         class="mt-3 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
       >
@@ -83,7 +91,10 @@ function handleSelect(session: WL_IDbSession) {
     </div>
 
     <!-- Empty State -->
-    <div v-else-if="filteredSessions.length === 0" class="flex-1 flex items-center justify-center py-8">
+    <div
+      v-else-if="filteredSessions.length === 0"
+      class="flex-1 flex items-center justify-center py-8"
+    >
       <p class="text-gray-500">No sessions found</p>
     </div>
 

@@ -1,64 +1,64 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-import type { WL_IDbSession } from '@weilasdk/core';
+import { computed } from 'vue'
+import type { WL_IDbSession } from '@weilasdk/core'
 
 interface Props {
-  session: WL_IDbSession;
-  active?: boolean;
+  session: WL_IDbSession
+  active?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   active: false,
-});
+})
 
 const emit = defineEmits<{
-  click: [session: WL_IDbSession];
-}>();
+  click: [session: WL_IDbSession]
+}>()
 
 const sessionName = computed(() => {
-  return props.session.sessionName || 'Unknown';
-});
+  return props.session.sessionName || 'Unknown'
+})
 
 const lastMessageTime = computed(() => {
-  const time = props.session.latestUpdate;
-  if (!time) return '';
-  
-  const date = new Date(time);
-  const now = new Date();
-  const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-  
+  const time = props.session.latestUpdate
+  if (!time) return ''
+
+  const date = new Date(time)
+  const now = new Date()
+  const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
+
   if (diffDays === 0) {
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   } else if (diffDays === 1) {
-    return 'Yesterday';
+    return 'Yesterday'
   } else if (diffDays < 7) {
-    return date.toLocaleDateString([], { weekday: 'short' });
+    return date.toLocaleDateString([], { weekday: 'short' })
   } else {
-    return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    return date.toLocaleDateString([], { month: 'short', day: 'numeric' })
   }
-});
+})
 
 const unreadCount = computed(() => {
-  const readMsgId = props.session.readMsgId || 0;
-  const lastMsgId = props.session.lastMsgId || 0;
-  return Math.max(0, lastMsgId - readMsgId);
-});
+  const readMsgId = props.session.readMsgId || 0
+  const lastMsgId = props.session.lastMsgId || 0
+  return Math.max(0, lastMsgId - readMsgId)
+})
 
 const sessionTypeLabel = computed(() => {
   switch (props.session.sessionType) {
     case 0x01:
-      return 'Personal';
+      return 'Personal'
     case 0x02:
-      return 'Group';
+      return 'Group'
     case 0x08:
-      return 'Service';
+      return 'Service'
     default:
-      return '';
+      return ''
   }
-});
+})
 
 function handleClick() {
-  emit('click', props.session);
+  emit('click', props.session)
 }
 </script>
 
@@ -69,7 +69,9 @@ function handleClick() {
     @click="handleClick"
   >
     <!-- Avatar -->
-    <div class="avatar flex-shrink-0 w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+    <div
+      class="avatar flex-shrink-0 w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden"
+    >
       <img
         v-if="session.sessionAvatar"
         :src="session.sessionAvatar"
@@ -91,7 +93,7 @@ function handleClick() {
           {{ lastMessageTime }}
         </span>
       </div>
-      
+
       <div class="flex items-center justify-between mt-0.5">
         <span class="text-sm text-gray-500 truncate">
           {{ sessionTypeLabel }}

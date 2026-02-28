@@ -41,4 +41,4 @@ enum WLPlayerType {
   WL_PTT_PLAYER_NUM,
 }
 
-export { WLAudioPlayerEvent, WLAudioRecorderEvent, WLAudioEvent, WLPlayerType };
+export { WLAudioPlayerEvent, WLAudioRecorderEvent, WLAudioEvent, WLPlayerType }

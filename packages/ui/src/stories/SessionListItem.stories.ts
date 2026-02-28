@@ -1,6 +1,6 @@
-import type { Meta, StoryObj } from '@storybook/vue3';
-import { SessionListItem } from '../index';
-import type { WL_IDbSession } from '@weilasdk/core';
+import type { Meta, StoryObj } from '@storybook/vue3'
+import { SessionListItem } from '../index'
+import type { WL_IDbSession } from '@weilasdk/core'
 
 const mockSessions: WL_IDbSession[] = [
   {
@@ -30,7 +30,7 @@ const mockSessions: WL_IDbSession[] = [
     readMsgId: 10,
     latestUpdate: Date.now() - 1000 * 60 * 60 * 24,
   } as WL_IDbSession,
-];
+]
 
 const meta: Meta<typeof SessionListItem> = {
   title: 'Components/SessionListItem',
@@ -45,42 +45,42 @@ const meta: Meta<typeof SessionListItem> = {
     session: mockSessions[0],
     active: false,
   },
-};
+}
 
-export default meta;
-type Story = StoryObj<typeof SessionListItem>;
+export default meta
+type Story = StoryObj<typeof SessionListItem>
 
 export const Default: Story = {
   args: {
     session: mockSessions[0],
   },
-};
+}
 
 export const Active: Story = {
   args: {
     session: mockSessions[0],
     active: true,
   },
-};
+}
 
 export const GroupChat: Story = {
   args: {
     session: mockSessions[1],
   },
-};
+}
 
 export const WithUnread: Story = {
   args: {
     session: mockSessions[1],
     active: false,
   },
-};
+}
 
 export const NoUnread: Story = {
   args: {
     session: mockSessions[2],
   },
-};
+}
 
 export const LongName: Story = {
   args: {
@@ -89,4 +89,4 @@ export const LongName: Story = {
       sessionName: 'This is a very long session name that should be truncated',
     } as WL_IDbSession,
   },
-};
+}
