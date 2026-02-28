@@ -4,6 +4,7 @@ import type { WL_IDbSession } from '@weilasdk/core'
 
 const mockSessions: WL_IDbSession[] = [
   {
+    combo_id_type: '1001_1',
     sessionId: '1001',
     sessionType: 0x01,
     sessionName: 'Alice',
@@ -11,17 +12,21 @@ const mockSessions: WL_IDbSession[] = [
     lastMsgId: 105,
     readMsgId: 100,
     latestUpdate: Date.now() - 1000 * 60 * 5,
-  } as WL_IDbSession,
+    status: 0,
+  },
   {
+    combo_id_type: '1002_2',
     sessionId: '1002',
     sessionType: 0x02,
     sessionName: 'Team Chat',
-    sessionAvatar: undefined,
+    sessionAvatar: '',
     lastMsgId: 50,
     readMsgId: 30,
     latestUpdate: Date.now() - 1000 * 60 * 60 * 2,
-  } as WL_IDbSession,
+    status: 0,
+  },
   {
+    combo_id_type: '1003_8',
     sessionId: '1003',
     sessionType: 0x08,
     sessionName: 'Support',
@@ -29,7 +34,8 @@ const mockSessions: WL_IDbSession[] = [
     lastMsgId: 10,
     readMsgId: 10,
     latestUpdate: Date.now() - 1000 * 60 * 60 * 24,
-  } as WL_IDbSession,
+    status: 0,
+  },
 ]
 
 const meta: Meta<typeof SessionListItem> = {
@@ -87,6 +93,6 @@ export const LongName: Story = {
     session: {
       ...mockSessions[0],
       sessionName: 'This is a very long session name that should be truncated',
-    } as WL_IDbSession,
+    },
   },
 }

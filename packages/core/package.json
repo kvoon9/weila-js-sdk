@@ -14,16 +14,16 @@
   "types": "dist/weilasdk.d.ts",
   "exports": {
     ".": {
-      "types": "dist/weilasdk.d.ts",
-      "import": "dist/weilasdk.mjs"
+      "types": "./dist/weilasdk.d.ts",
+      "import": "./dist/weilasdk.mjs"
     },
     "./data": {
-      "types": "dist/weilasdk_data.d.ts",
-      "import": "dist/weilasdk_data.mjs"
+      "types": "./dist/weilasdk_data.d.ts",
+      "import": "./dist/weilasdk_data.mjs"
     },
     "./log": {
-      "types": "dist/weilasdk_log.d.ts",
-      "import": "dist/weilasdk_log.mjs"
+      "types": "./dist/weilasdk_log.d.ts",
+      "import": "./dist/weilasdk_log.mjs"
     }
   },
   "scripts": {

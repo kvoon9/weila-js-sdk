@@ -1,7 +1,7 @@
 import { ref, computed, onMounted, onUnmounted, watch, type Ref } from 'vue'
 import type { WeilaCore } from '@weilasdk/core'
 import type { WL_IDbSession, WL_ExtEventCallback } from '@weilasdk/core'
-import { WL_ExtEventID } from '@weilasdk/core'
+import { WL_ExtEventID, WL_IDbSessionType } from '@weilasdk/core'
 
 /**
  * Session List Composable
@@ -22,10 +22,12 @@ export function useSessions(weilaCore: Ref<WeilaCore | undefined>) {
   })
 
   const personalSessions = computed(() =>
-    sortedSessions.value.filter((s) => s.sessionType === 0x01),
+    sortedSessions.value.filter((s) => s.sessionType === WL_IDbSessionType.SESSION_INDIVIDUAL_TYPE),
   )
 
-  const groupSessions = computed(() => sortedSessions.value.filter((s) => s.sessionType === 0x02))
+  const groupSessions = computed(() =>
+    sortedSessions.value.filter((s) => s.sessionType === WL_IDbSessionType.SESSION_GROUP_TYPE),
+  )
 
   async function fetchSessions() {
     if (!weilaCore.value) {

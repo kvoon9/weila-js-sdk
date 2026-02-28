@@ -2,6 +2,7 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "baseUrl": "src",
+    "strict": false,
     "outDir": "dist",
     "paths": {
       "fsm/*": ["fsm/*"],

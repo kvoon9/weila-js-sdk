@@ -3,7 +3,7 @@ import { WeilaCore, initLogger, setLoggerEnabled, WL_ExtEventID } from '@weilasd
 import type { WL_IDbUserInfo } from '@weilasdk/core'
 
 // ---- HMR 持久化：模块级单例 ----
-let _core: WeilaCore = null
+let _core: WeilaCore | null = null
 let _ready: Promise<WL_IDbUserInfo> | null = null
 
 if (import.meta.hot) {
@@ -18,8 +18,8 @@ if (import.meta.hot) {
 }
 
 // ---- 响应式状态 ----
-export const weilaCore = shallowRef<WeilaCore>(_core)
-export const userInfo = shallowRef<WL_IDbUserInfo>(null)
+export const weilaCore = shallowRef<WeilaCore | null>(_core)
+export const userInfo = shallowRef<WL_IDbUserInfo | null>(null)
 
 // 如果 HMR 恢复了实例，立即同步响应式
 if (_ready) {

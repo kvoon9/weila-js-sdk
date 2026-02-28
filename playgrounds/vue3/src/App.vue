@@ -61,26 +61,22 @@ function handleSelectSession(session: any) {
 
 async function loadMessages(session: any) {
   if (!weilaCore.value) return
+  const core = weilaCore.value
 
   try {
     // 从最新消息往后取20条
-    const msgs = await weilaCore.value.weila_getMsgDatas(
-      session.sessionId,
-      session.sessionType,
-      0,
-      20,
-    )
+    const msgs = await core.weila_getMsgDatas(session.sessionId, session.sessionType, 0, 20)
     messages.value = msgs
 
     // Load sender infos
     const senderIds = [...new Set(msgs.map((m) => m.senderId))]
     const newSenderInfos = new Map(senderInfos.value)
-    for (const senderId of senderIds) {
-      if (!newSenderInfos.has(senderId)) {
-        const userInfo = await weilaCore.value.weila_getUserInfo(senderId)
-        if (userInfo) {
-          newSenderInfos.set(senderId, userInfo)
-        }
+    const missingIds = senderIds.filter((id) => !newSenderInfos.has(id))
+    const results = await Promise.all(missingIds.map((id) => core.weila_getUserInfo(id)))
+    for (let i = 0; i < missingIds.length; i++) {
+      const info = results[i]
+      if (info) {
+        newSenderInfos.set(missingIds[i], info)
       }
     }
     senderInfos.value = newSenderInfos
@@ -138,7 +134,7 @@ async function sendMessage() {
           <WlMessage
             v-for="msg in messages"
             :key="msg.combo_id"
-            :from="msg.senderId === userInfo.userId ? 'self' : 'other'"
+            :from="msg.senderId === userInfo?.userId ? 'self' : 'other'"
           >
             <WlMessageAvatar
               :src="senderInfos.get(msg.senderId)?.avatar"
