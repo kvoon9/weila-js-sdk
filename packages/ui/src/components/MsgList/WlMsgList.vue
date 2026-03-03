@@ -1,6 +1,9 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import type { WL_IDbMsgData, WL_IDbUserInfo } from '@weilasdk/core'
 import { WL_IDbMsgDataType } from '@weilasdk/core'
+import WlAudioBubble from '../Message/WlAudioBubble.vue'
+import { framesToDuration } from '../../composables/useAudio'
 
 export interface WlMsgListProps {
   /** 消息列表 */
@@ -22,7 +25,14 @@ defineEmits<{
   'location-click': [location: { latitude: number; longitude: number }]
   /** 点击文件 */
   'file-click': [url: string]
+  /** 播放音频消息 */
+  'audio-play': [msg: WL_IDbMsgData]
+  /** 暂停音频消息 */
+  'audio-pause': [msg: WL_IDbMsgData]
 }>()
+
+/** 当前正在播放的音频消息 combo_id */
+const playingAudioId = ref<string | null>(null)
 
 function getSender(msg: WL_IDbMsgData) {
   return props.senderInfos.get(msg.senderId)
@@ -33,10 +43,23 @@ function isSelf(msg: WL_IDbMsgData) {
 }
 
 const isText = (msg: WL_IDbMsgData) => msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_TEXT_TYPE
+const isAudio = (msg: WL_IDbMsgData) => msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE
 const isImage = (msg: WL_IDbMsgData) => msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_IMAGE_TYPE
 const isLocation = (msg: WL_IDbMsgData) =>
   msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_LOCATION_TYPE
 const isFile = (msg: WL_IDbMsgData) => msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_FILE_TYPE
+
+function getAudioDuration(msg: WL_IDbMsgData): number {
+  return framesToDuration(msg.audioData?.frameCount ?? 0)
+}
+
+function handleAudioPlay(msg: WL_IDbMsgData) {
+  playingAudioId.value = msg.combo_id
+}
+
+function handleAudioPause() {
+  playingAudioId.value = null
+}
 
 function formatFileSize(bytes?: number): string {
   if (!bytes) return ''
@@ -75,6 +98,22 @@ function formatFileSize(bytes?: number): string {
       >
         {{ msg.textData || '' }}
       </div>
+
+      <!-- Audio Message -->
+      <WlAudioBubble
+        v-else-if="isAudio(msg)"
+        :duration="getAudioDuration(msg)"
+        :is-self="isSelf(msg)"
+        :playing="playingAudioId === msg.combo_id"
+        @play="
+          handleAudioPlay(msg)
+          $emit('audio-play', msg)
+        "
+        @pause="
+          handleAudioPause()
+          $emit('audio-pause', msg)
+        "
+      />
 
       <!-- Image Message -->
       <div
