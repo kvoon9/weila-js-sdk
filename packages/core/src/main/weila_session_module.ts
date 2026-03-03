@@ -61,7 +61,7 @@ interface WL_BurstInfo {
 }
 
 export default class WLSessionModule {
-  private sessionList: WL_IDbSession[]
+  private sessionList: WL_IDbSession[] = []
   private token: string | null
   private pttFsm: WLPttFsm | null
   private curBurstInfo: WL_BurstInfo | null

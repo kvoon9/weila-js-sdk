@@ -1,27 +1,17 @@
 <script setup lang="ts">
-import { ref, computed, watch, watchEffect } from 'vue'
+import { ref, computed, watch, triggerRef } from 'vue'
 import { useRouteQuery } from '@vueuse/router'
-import { SessionList, WlMessage, WlMessageAvatar, WlMessageContent } from '@weilasdk/ui'
+import { SessionList, WlMessageList } from '@weilasdk/ui'
 import type { WL_IDbMsgData, WL_IDbUserInfo, WL_IDbSession } from '@weilasdk/core'
-import { WL_IDbMsgDataType } from '@weilasdk/core'
-import { weilaCore, userInfo, sessions } from './weilaCore'
+import { WL_ExtEventID } from '@weilasdk/core'
+import type { WL_ExtEventCallback } from '@weilasdk/core'
+import { useWeilaStore } from './stores/weila'
+import { useSessions } from './queries/sessions'
+import { storeToRefs } from 'pinia'
 
-function formatFileSize(bytes?: number): string {
-  if (!bytes) return ''
-  if (bytes < 1024) return bytes + ' B'
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
-  return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
-}
-
-function openUrl(url?: string) {
-  if (url) window.open(url)
-}
-
-function openLocation(location?: { latitude?: number; longitude?: number }) {
-  if (location?.latitude && location?.longitude) {
-    window.open(`https://maps.google.com/?q=${location.latitude},${location.longitude}`)
-  }
-}
+const weila = useWeilaStore()
+const { core: weilaCore, userInfo } = storeToRefs(weila)
+const { data: sessions, refetch: refetchSessions } = useSessions()
 
 const selectedSessionId = useRouteQuery<string>('sessionId')
 
@@ -29,10 +19,8 @@ const messages = ref<WL_IDbMsgData[]>([])
 const senderInfos = ref<Map<number, WL_IDbUserInfo>>(new Map())
 const messageInput = ref('')
 
-watchEffect(() => {
-  console.log('sessions.value', sessions.value)
-  console.log('userInfo.value', userInfo.value)
-  console.log('messages.value', messages.value)
+weila.init().then(() => {
+  console.log('inited')
 })
 
 const selectedSession = computed(() => {
@@ -40,45 +28,90 @@ const selectedSession = computed(() => {
   return sessions.value?.find((s) => s.sessionId === selectedSessionId.value) ?? null
 })
 
-// Auto-load messages when selectedSession changes
-watch(selectedSession, (session) => {
-  if (session) {
-    loadMessages(session)
-  } else {
-    messages.value = []
+// ---- 消息辅助：加载 sender 信息 ----
+async function ensureSenderInfo(senderId: number) {
+  if (senderInfos.value.has(senderId) || !weilaCore.value) return
+  const info = await weilaCore.value.weila_getUserInfo(senderId)
+  if (info) {
+    const updated = new Map(senderInfos.value)
+    updated.set(senderId, info)
+    senderInfos.value = updated
   }
-})
+}
+
+// ---- 消息事件监听 ----
+const handleMessageEvent: WL_ExtEventCallback = (eventId, eventData) => {
+  if (
+    eventId !== WL_ExtEventID.WL_EXT_NEW_MSG_RECV_IND &&
+    eventId !== WL_ExtEventID.WL_EXT_MSG_SEND_IND
+  )
+    return
+
+  const msgData = eventData as WL_IDbMsgData
+  const session = selectedSession.value
+  if (
+    !session ||
+    msgData.sessionId !== session.sessionId ||
+    msgData.sessionType !== session.sessionType
+  )
+    return
+
+  // 去重：避免 immediately 加载的消息与事件重复
+  if (messages.value.some((m) => m.combo_id === msgData.combo_id)) return
+
+  messages.value = [...messages.value, msgData]
+  void ensureSenderInfo(msgData.senderId)
+}
+
+// ---- 切换 session 时加载消息 ----
+watch(
+  selectedSession,
+  async (session) => {
+    messages.value = []
+    senderInfos.value = new Map()
+
+    if (!session || !weilaCore.value) return
+
+    // 从 DB 拉取历史消息
+    const history = await weilaCore.value.weila_getMsgDatas(
+      session.sessionId,
+      session.sessionType,
+      0,
+      20,
+    )
+    messages.value = history
+
+    // 预加载所有 sender 信息
+    const senderIds = [...new Set(history.map((m) => m.senderId))]
+    await Promise.all(senderIds.map(ensureSenderInfo))
+  },
+  { immediate: true },
+)
+
+// 注册全局事件监听（消息追加）
+watch(
+  weilaCore,
+  (core, _oldCore, onCleanup) => {
+    if (!core) return
+    core.weila_onEvent(handleMessageEvent)
+    // weila_onEvent 是 additive 的，目前 SDK 没有 offEvent API
+    // 所以这里不需要手动 cleanup（组件销毁后 handler 引用的 ref 不再被 UI 消费）
+  },
+  { immediate: true },
+)
+
+function openUrl(url: string) {
+  window.open(url)
+}
+
+function openLocation(location: { latitude: number; longitude: number }) {
+  window.open(`https://maps.google.com/?q=${location.latitude},${location.longitude}`)
+}
 
 function handleSelectSession(session: WL_IDbSession) {
   console.log('session', session)
   selectedSessionId.value = session.sessionId
-}
-
-async function loadMessages(session: WL_IDbSession) {
-  if (!weilaCore.value) return
-  const core = weilaCore.value
-
-  try {
-    // 从最新消息往后取20条
-    const msgs = await core.weila_getMsgDatas(session.sessionId, session.sessionType, 0, 20)
-    messages.value = msgs
-
-    // Load sender infos
-    const senderIds = [...new Set(msgs.map((m) => m.senderId))]
-    const newSenderInfos = new Map(senderInfos.value)
-    const missingIds = senderIds.filter((id) => !newSenderInfos.has(id))
-    const results = await Promise.all(missingIds.map((id) => core.weila_getUserInfo(id)))
-    for (let i = 0; i < missingIds.length; i++) {
-      const info = results[i]
-      if (info) {
-        newSenderInfos.set(missingIds[i], info)
-      }
-    }
-    senderInfos.value = newSenderInfos
-  } catch (err) {
-    console.error('[Playground] Failed to load messages:', err)
-    messages.value = []
-  }
+  triggerRef(selectedSessionId)
 }
 
 async function sendMessage() {
@@ -93,8 +126,7 @@ async function sendMessage() {
       selectedSession.value.sessionType,
       text,
     )
-    // Reload messages after sending
-    loadMessages(selectedSession.value)
+    // 消息会通过 onEvent → handleMessageEvent 自动追加到列表
   } catch (err) {
     console.error('[Playground] Failed to send message:', err)
   }
@@ -116,7 +148,12 @@ async function sendMessage() {
           <div class="text-sm text-gray-500">{{ session.sessionId }}</div>
         </div>
       </div>
-      <SessionList v-else-if="weilaCore" :weila-core="weilaCore" @select="handleSelectSession" />
+      <SessionList
+        v-else-if="weilaCore"
+        :sessions="sessions ?? []"
+        @select="handleSelectSession"
+        @refresh="refetchSessions"
+      />
       <div v-else class="flex items-center justify-center h-full text-gray-500">Loading SDK...</div>
     </div>
     <div class="flex-1 p-4 overflow-y-auto">
@@ -125,99 +162,14 @@ async function sendMessage() {
           Session: {{ selectedSession.sessionName || selectedSession.sessionId }}
         </h2>
 
-        <div v-if="messages.length > 0" class="space-y-3">
-          <WlMessage
-            v-for="msg in messages"
-            :key="msg.combo_id"
-            :from="msg.senderId === userInfo?.userId ? 'self' : 'other'"
-          >
-            <WlMessageAvatar
-              :src="senderInfos.get(msg.senderId)?.avatar"
-              :name="senderInfos.get(msg.senderId)?.nick || senderInfos.get(msg.senderId)?.weilaNum"
-            />
-            <WlMessageContent class="bg-neutral-100">
-              <template v-if="msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_TEXT_TYPE">
-                {{ msg.textData || '' }}
-              </template>
-              <span
-                v-else-if="msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE"
-                class="text-blue-600"
-                >[Voice]</span
-              >
-              <span
-                v-else-if="msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_PTT_TYPE"
-                class="text-blue-600"
-                >[PTT]</span
-              >
-              <template v-else-if="msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_IMAGE_TYPE">
-                <img
-                  v-if="msg.fileInfo?.fileUrl"
-                  :src="msg.fileInfo.fileUrl"
-                  class="max-w-[200px] max-h-[200px] rounded object-cover cursor-pointer"
-                  alt="image"
-                  @click="openUrl(msg.fileInfo?.fileUrl)"
-                />
-              </template>
-              <template v-else-if="msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_FILE_TYPE">
-                <div
-                  v-if="msg.fileInfo?.fileUrl"
-                  class="flex items-center gap-2 p-2 rounded bg-white border border-gray-200 cursor-pointer min-w-[180px]"
-                  @click="openUrl(msg.fileInfo?.fileUrl)"
-                >
-                  <img
-                    v-if="msg.fileInfo?.fileThumbnail"
-                    :src="msg.fileInfo.fileThumbnail"
-                    class="w-10 h-10 object-contain"
-                    alt="file"
-                  />
-                  <div
-                    v-else
-                    class="w-10 h-10 bg-gray-100 rounded flex items-center justify-center text-gray-400"
-                  >
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                      />
-                    </svg>
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <div class="text-sm font-medium text-gray-900 truncate">
-                      {{ msg.fileInfo?.fileName || 'File' }}
-                    </div>
-                    <div class="text-xs text-gray-500">
-                      {{ formatFileSize(msg.fileInfo?.fileSize) }}
-                    </div>
-                  </div>
-                </div>
-              </template>
-              <template v-else-if="msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_LOCATION_TYPE">
-                <div
-                  v-if="msg.location?.mapUrl"
-                  class="max-w-[240px] cursor-pointer"
-                  @click="openLocation(msg.location)"
-                >
-                  <img
-                    :src="msg.location.mapUrl"
-                    class="w-full h-[120px] object-cover rounded-t"
-                    alt="location"
-                  />
-                  <div class="p-2 bg-white border border-t-0 border-gray-200 rounded-b">
-                    <div v-if="msg.location?.name" class="text-sm font-medium text-gray-900">
-                      {{ msg.location.name }}
-                    </div>
-                    <div v-if="msg.location?.address" class="text-xs text-gray-500 truncate">
-                      {{ msg.location.address }}
-                    </div>
-                  </div>
-                </div>
-              </template>
-            </WlMessageContent>
-          </WlMessage>
-        </div>
-        <div v-else class="text-gray-400">No messages in this session</div>
+        <WlMessageList
+          :messages="messages"
+          :current-user-id="userInfo?.userId ?? 0"
+          :sender-infos="senderInfos"
+          @image-click="openUrl"
+          @file-click="openUrl"
+          @location-click="openLocation"
+        />
 
         <!-- Message Input -->
         <div class="mt-4 flex gap-2">
@@ -242,3 +194,5 @@ async function sendMessage() {
     </div>
   </div>
 </template>
+
+<style></style>

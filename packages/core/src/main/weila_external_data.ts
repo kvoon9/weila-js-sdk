@@ -7,6 +7,7 @@ import {
   WL_IDbServiceStaffInfo,
   WL_IDbUserInfo,
 } from '../database/weila_db_data'
+import type { WL_IDbSession } from '../database/weila_db_data'
 
 interface WL_ExtEventCallback {
   (eventId: WL_ExtEventID, eventData: any): void
@@ -116,6 +117,45 @@ enum WL_ExtEventID {
   WL_EXT_STAFF_REMOVED_SESSION_IND,
   /*! 设备绑定应答通知 WL_UnbindAnswerInfo */
   WL_EXT_DEVICE_BINDING_ANSWER_IND,
+}
+
+/** 可订阅的数据主题 */
+type WL_SubscribeTopic = 'sessionList' | 'messages'
+
+/** sessionList 订阅的回调签名 */
+interface WL_SessionListCallback {
+  (sessions: WL_IDbSession[]): void
+}
+
+/** messages 订阅的筛选条件 */
+interface WL_MessagesFilter {
+  sessionId: string
+  sessionType: number
+}
+
+/** messages 订阅的回调签名 */
+interface WL_MessagesCallback {
+  (msgData: WL_IDbMsgData): void
+}
+
+/** 订阅选项 */
+interface WL_SubscribeOptions<F = undefined> {
+  /** 筛选条件（仅部分主题需要） */
+  filter?: F
+  /** 订阅后立即触发一次回调 */
+  immediately?: boolean
+}
+
+/** weila_subscribe 的参数重载映射 */
+interface WL_SubscribeMap {
+  sessionList: {
+    callback: WL_SessionListCallback
+    options?: WL_SubscribeOptions
+  }
+  messages: {
+    callback: WL_MessagesCallback
+    options: WL_SubscribeOptions<WL_MessagesFilter>
+  }
 }
 
 enum WL_AnswerStatus {
@@ -233,4 +273,10 @@ export {
   WL_StaffAnswerSessionInvite,
   WL_bindAnswerInfo,
   WL_GroupMemberDeleteInfo,
+  WL_SubscribeTopic,
+  WL_SessionListCallback,
+  WL_MessagesFilter,
+  WL_MessagesCallback,
+  WL_SubscribeOptions,
+  WL_SubscribeMap,
 }

@@ -1,48 +1,43 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, watch, shallowRef } from 'vue'
-import type { WeilaCore } from '@weilasdk/core'
+import { computed } from 'vue'
 import type { WL_IDbSession } from '@weilasdk/core'
-import { useSessions } from '../../composables/useSessions'
 import SessionListItem from './SessionListItem.vue'
 
 interface Props {
-  weilaCore: WeilaCore
+  sessions: WL_IDbSession[]
+  loading?: boolean
+  error?: Error | null
   filter?: 'all' | 'personal' | 'group'
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  loading: false,
+  error: null,
   filter: 'all',
 })
 
 const emit = defineEmits<{
   select: [session: WL_IDbSession]
+  refresh: []
 }>()
-
-const weilaCoreRef = shallowRef(props.weilaCore)
-
-watch(
-  () => props.weilaCore,
-  (newVal) => {
-    weilaCoreRef.value = newVal
-  },
-)
-
-const { sessions, personalSessions, groupSessions, loading, error, refresh } =
-  useSessions(weilaCoreRef)
 
 const filteredSessions = computed(() => {
   switch (props.filter) {
     case 'personal':
-      return personalSessions.value
+      return props.sessions.filter((s) => s.sessionType === 0x01)
     case 'group':
-      return groupSessions.value
+      return props.sessions.filter((s) => s.sessionType === 0x02)
     default:
-      return sessions.value
+      return props.sessions
   }
 })
 
 function handleSelect(session: WL_IDbSession) {
   emit('select', session)
+}
+
+function handleRefresh() {
+  emit('refresh')
 }
 </script>
 
@@ -52,7 +47,7 @@ function handleSelect(session: WL_IDbSession) {
     <div class="header flex items-center justify-between px-4 py-3 border-b border-gray-200">
       <h3 class="font-semibold text-gray-900">Sessions</h3>
       <button
-        @click="refresh"
+        @click="handleRefresh"
         class="p-1.5 rounded hover:bg-gray-200 transition-colors"
         title="Refresh"
       >
@@ -83,7 +78,7 @@ function handleSelect(session: WL_IDbSession) {
       <p class="text-red-500 mb-2">Failed to load sessions</p>
       <p class="text-sm text-gray-500">{{ error.message }}</p>
       <button
-        @click="refresh"
+        @click="handleRefresh"
         class="mt-3 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
       >
         Retry

@@ -63,6 +63,10 @@ import {
   WL_DataPrepareState,
   WL_ExtEventCallback,
   WL_ExtEventID,
+  WL_SubscribeOptions,
+  WL_MessagesFilter,
+  WL_SubscribeMap,
+  WL_SubscribeTopic,
 } from 'main/weila_external_data'
 import { AliOssHelper, WL_UploadResult } from 'main/weila_ali_oss'
 import { TextMsgDataParser } from 'proto/weilapb_textmsg_parser'
@@ -1735,6 +1739,88 @@ class WeilaCore implements WL_CoreInterface {
       WL_IDbSettingID.SETTING_LOGIN_TOKEN,
     )
     return tokenItem.data
+  }
+
+  /**
+   * 移除通过 weila_onEvent 注册的事件回调函数
+   * @param callback 之前注册的事件回调函数引用
+   */
+  public weila_offEvent(callback: WL_ExtEventCallback): void {
+    this.emitter.off('ext_event', callback)
+  }
+
+  /**
+   * 订阅 SDK 内部数据变化，返回取消订阅函数
+   * @param topic 订阅主题: 'sessionList' | 'messages'
+   * @param callback 订阅回调函数
+   * @param options 订阅选项（筛选条件、是否立即触发等）
+   * @returns 取消订阅函数
+   */
+  public weila_subscribe<T extends WL_SubscribeTopic>(
+    topic: T,
+    callback: WL_SubscribeMap[T]['callback'],
+    options?: WL_SubscribeMap[T]['options'],
+  ): () => void {
+    if (topic === 'sessionList') {
+      const cb = callback as WL_SubscribeMap['sessionList']['callback']
+      const opts = options as WL_SubscribeOptions | undefined
+      const handler: WL_ExtEventCallback = (eventId: WL_ExtEventID, eventData: any) => {
+        if (
+          eventId === WL_ExtEventID.WL_EXT_DATA_PREPARE_IND &&
+          eventData?.state === WL_DataPrepareState.PREPARE_SUCC_END
+        ) {
+          cb(this.weila_getSessions())
+        } else if (
+          eventId === WL_ExtEventID.WL_EXT_NEW_SESSION_OPEN_IND ||
+          eventId === WL_ExtEventID.WL_EXT_NEW_MSG_RECV_IND ||
+          eventId === WL_ExtEventID.WL_EXT_MSG_SEND_IND
+        ) {
+          cb(this.weila_getSessions())
+        }
+      }
+      this.emitter.on('ext_event', handler)
+      // immediately: 立即使用当前内存中的会话列表触发回调
+      if (opts?.immediately) {
+        cb(this.weila_getSessions())
+      }
+      return () => {
+        this.emitter.off('ext_event', handler)
+      }
+    } else if (topic === 'messages') {
+      const opts = options as WL_SubscribeOptions<WL_MessagesFilter>
+      const cb = callback as WL_SubscribeMap['messages']['callback']
+      const handler: WL_ExtEventCallback = (eventId: WL_ExtEventID, eventData: any) => {
+        if (
+          eventId === WL_ExtEventID.WL_EXT_NEW_MSG_RECV_IND ||
+          eventId === WL_ExtEventID.WL_EXT_MSG_SEND_IND
+        ) {
+          const msgData = eventData as WL_IDbMsgData
+          if (
+            msgData &&
+            msgData.sessionId === opts.filter.sessionId &&
+            msgData.sessionType === opts.filter.sessionType
+          ) {
+            cb(msgData)
+          }
+        }
+      }
+      this.emitter.on('ext_event', handler)
+      // immediately: 从数据库加载历史消息并逐条触发回调
+      if (opts?.immediately) {
+        this.weila_getMsgDatas(opts.filter.sessionId, opts.filter.sessionType, 0, 20).then(
+          (msgs) => {
+            for (const msg of msgs) {
+              cb(msg)
+            }
+          },
+        )
+      }
+      return () => {
+        this.emitter.off('ext_event', handler)
+      }
+    }
+    wlerr(`weila_subscribe: unknown topic '${topic}'`)
+    return () => {}
   }
 }
 
