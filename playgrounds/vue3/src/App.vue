@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, watch, triggerRef } from 'vue'
+import { ref, computed, watch, triggerRef, watchEffect } from 'vue'
 import { useRouteQuery } from '@vueuse/router'
-import { SessionList, WlMessageList } from '@weilasdk/ui'
+import { SessionList, WlMsgList } from '@weilasdk/ui'
 import type { WL_IDbMsgData, WL_IDbUserInfo, WL_IDbSession } from '@weilasdk/core'
 import { WL_ExtEventID } from '@weilasdk/core'
 import type { WL_ExtEventCallback } from '@weilasdk/core'
@@ -16,11 +16,17 @@ const { data: sessions, refetch: refetchSessions } = useSessions()
 const selectedSessionId = useRouteQuery<string>('sessionId')
 
 const messages = ref<WL_IDbMsgData[]>([])
+
+watchEffect(() => {
+  console.log('messages.value', messages.value)
+})
+
 const senderInfos = ref<Map<number, WL_IDbUserInfo>>(new Map())
 const messageInput = ref('')
 
 weila.init().then(() => {
   console.log('inited')
+  console.log('userInfo.value?.userId', userInfo.value?.userId)
 })
 
 const selectedSession = computed(() => {
@@ -162,7 +168,8 @@ async function sendMessage() {
           Session: {{ selectedSession.sessionName || selectedSession.sessionId }}
         </h2>
 
-        <WlMessageList
+        <WlMsgList
+          class="bg-neutral-100"
           :messages="messages"
           :current-user-id="userInfo?.userId ?? 0"
           :sender-infos="senderInfos"
