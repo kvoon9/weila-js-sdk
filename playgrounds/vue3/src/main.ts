@@ -4,7 +4,6 @@ import { PiniaColada } from '@pinia/colada'
 import { RouterView } from 'vue-router'
 // eslint-disable-next-line import/no-unassigned-import
 import './style.css'
-// eslint-disable-next-line import/no-unassigned-import
 import '@weilasdk/ui/dist/index.css'
 import router from './router'
 
