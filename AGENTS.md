@@ -68,6 +68,42 @@ The primary TypeScript SDK for the Weila communication platform. It handles WebS
 
 Vue 3 component library built with tsdown and unplugin-vue. Outputs ESM/CJS bundles with extracted CSS and full TypeScript declarations. See `packages/ui/README.md` for details.
 
+## Icon System
+
+The UI package uses **Iconify** with the **Tailwind CSS 4** plugin for icons — pure CSS, zero runtime JS.
+
+- **Plugin**: `@iconify/tailwind4` — configured via `@plugin` directive in `src/style.postcss.css`
+- **Icon Set**: `@iconify-json/carbon` (IBM Carbon Design, 2000+ icons)
+- **Usage**: Tailwind utility classes with `icon-[carbon--{name}]` syntax
+
+```html
+<!-- Basic usage -->
+<span class="icon-[carbon--user] size-6"></span>
+
+<!-- With color and size -->
+<span class="icon-[carbon--settings] size-5 text-gray-500"></span>
+```
+
+### Icon Name Reference (commonly used)
+
+| Use Case        | Class                               |
+| --------------- | ----------------------------------- |
+| Audio/Voice     | `icon-[carbon--volume-up]`          |
+| Microphone/PTT  | `icon-[carbon--microphone]`         |
+| Video Play      | `icon-[carbon--play-filled]`        |
+| Document/File   | `icon-[carbon--document]`           |
+| Loading Spinner | `icon-[carbon--renew] animate-spin` |
+
+Browse all Carbon icons: https://icon-sets.iconify.design/carbon/
+
+### Adding New Icon Sets
+
+```bash
+pnpm --filter @weilasdk/ui add -D @iconify-json/{set-name}
+```
+
+No additional config needed — `@iconify/tailwind4` auto-discovers installed `@iconify-json/*` packages.
+
 ### @weilasdk/playground-vue3
 
 A development environment using Vue 3.5 and Vite 6. It includes pre-configured proxy settings for Weila API endpoints (V1, Audio, Avatar, and PTT).
