@@ -7,6 +7,8 @@ export { default as SessionListItem } from './components/SessionList/SessionList
 export { default as WlMessage } from './components/Message/WlMessage.vue'
 export { default as WlMessageAvatar } from './components/Message/WlMessageAvatar.vue'
 export { default as WlMessageContent } from './components/Message/WlMessageContent.vue'
+export { default as WlMessageList } from './components/MessageList/WlMessageList.vue'
+export { default as WlMessageListItem } from './components/MessageList/WlMessageListItem.vue'
 
 // Composables
 export { useSessions } from './composables/useSessions'
@@ -16,3 +18,5 @@ export type { WlStatusIndicatorProps } from './components/WlStatusIndicator.vue'
 export type { WlMessageProps } from './components/Message/WlMessage.vue'
 export type { WlMessageAvatarProps } from './components/Message/WlMessageAvatar.vue'
 export type { WlMessageContentProps } from './components/Message/WlMessageContent.vue'
+export type { WlMessageListProps } from './components/MessageList/WlMessageList.vue'
+export type { WlMessageListItemProps } from './components/MessageList/WlMessageListItem.vue'
