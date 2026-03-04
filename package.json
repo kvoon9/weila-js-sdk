@@ -8,6 +8,7 @@
     "dev": "pnpm --filter @weilasdk/playground-vue3 run dev",
     "dev:ui": "pnpm --filter @weilasdk/ui run dev",
     "story": "pnpm --filter @weilasdk/ui run story",
+    "up": "npx taze -I major",
     "build:story": "pnpm --filter @weilasdk/ui run build:story",
     "typecheck": "pnpm -r run typecheck",
     "lint": "oxlint --type-aware",
@@ -16,10 +17,11 @@
     "fmt:check": "oxfmt --check"
   },
   "devDependencies": {
-    "lint-staged": "^16.2.7",
-    "oxfmt": "^0.28.0",
-    "oxlint": "^1.39.0",
-    "oxlint-tsgolint": "^0.15.0",
+    "@antfu/ni": "^28.2.0",
+    "lint-staged": "^16.3.2",
+    "oxfmt": "^0.36.0",
+    "oxlint": "^1.51.0",
+    "oxlint-tsgolint": "^0.16.0",
     "simple-git-hooks": "^2.13.1"
   },
   "simple-git-hooks": {
@@ -35,5 +37,5 @@
     "node": ">=18",
     "pnpm": ">=9"
   },
-  "packageManager": "pnpm@9.15.4"
+  "packageManager": "pnpm@10.30.3"
 }
