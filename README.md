@@ -22,6 +22,7 @@
         - [ ] ...
   - [ ] playground/vue3: 网页版 demo 用于测试 ui 组件功能
     - [x] storybook 测试组件
+    - [ ] storybook 使用 vue spa 测试代码
 - [ ] 集成
   - [ ] weila-work 国内版
   - [ ] weila-work (h5)
