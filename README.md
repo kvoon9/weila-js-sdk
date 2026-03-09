@@ -1,32 +1,5 @@
 # Weila JS SDK Monorepo
 
-## To-dos
-
-- [ ] 搭建 weila sdk monorepo
-  - [x] packages/core：当前 wl_js_new_sdk
-    - [x] 跑通 webpack 打包流程
-    - [x] 使用 pnpm 管理依赖
-    - [ ] 整理生成 sdk 使用文档
-    - [ ] 升级老旧依赖?
-    - [ ] 将 webpack 打包迁移至 tsdown/vite 打包? 减少打包配置、整理模块、减少类型报错
-  - [ ] packages/ui: UI 组件库
-    - [x] 搭建 tsdown + vue3 组件库环境
-    - [ ] 常用组件
-      - [x] 会话列表
-      - [x] 消息列表
-      - [ ] 消息气泡（多种消息格式支持）
-        - [ ] 文本 + emoji
-        - [ ] 语音
-        - [ ] 位置
-        - [x] 图片
-        - [ ] ...
-  - [ ] playground/vue3: 网页版 demo 用于测试 ui 组件功能
-    - [x] storybook 测试组件
-    - [ ] storybook 使用 vue spa 测试代码
-- [ ] 集成
-  - [ ] weila-work 国内版
-  - [ ] weila-work (h5)
-
 ## 1. 概述
 
 微喇网页SDK (Weila Web SDK) 是一款基于 TypeScript 开发的通信平台软件开发工具包。它为 Web 应用提供了强大的实时通信能力，涵盖了 WebSocket 组网、音视频流处理、Protobuf 协议消息交互以及基于 IndexedDB 的本地存储方案。
