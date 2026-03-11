@@ -226,7 +226,7 @@ class WLAudio {
       callback.waitRspTimer = setTimeout(
         (cb) => {
           if (cb.reject) {
-            cb.reject(new Error('请求超时'))
+            cb.reject(new Error('请求超时 1'))
           }
         },
         5000,

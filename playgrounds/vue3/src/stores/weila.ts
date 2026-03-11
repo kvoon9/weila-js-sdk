@@ -1,6 +1,6 @@
 import { shallowRef } from 'vue'
 import { defineStore, acceptHMRUpdate } from 'pinia'
-import { WeilaCore, initLogger, setLoggerEnabled } from '@weilasdk/core'
+import { WeilaCore, initLogger, setLoggerEnabled, setConfigData, WL_ConfigID } from '@weilasdk/core'
 import type { WL_IDbUserInfo } from '@weilasdk/core'
 
 export const useWeilaStore = defineStore('weila', () => {
@@ -12,6 +12,15 @@ export const useWeilaStore = defineStore('weila', () => {
 
     initLogger('MOD:*, CORE:*, AUDIO:*, DB:, NET:*')
     setLoggerEnabled(false)
+
+    // 配置 WASM 资源路径（Vite 开发模式需要）
+    setConfigData([
+      {
+        id: WL_ConfigID.WL_RES_DATA_OPUS_WASM_ID,
+        url: '/opuslibs.wasm',
+        version: 1,
+      },
+    ])
 
     const instance = new WeilaCore()
     instance.weila_setWebSock('wss://wss.weila.hk:8999')
