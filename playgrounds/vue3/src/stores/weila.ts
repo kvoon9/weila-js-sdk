@@ -18,7 +18,7 @@ export const useWeilaStore = defineStore('weila', () => {
       {
         id: WL_ConfigID.WL_RES_DATA_OPUS_WASM_ID,
         url: '/opuslibs.wasm',
-        version: 1,
+        version: 2,
       },
     ])
 
