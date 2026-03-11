@@ -1,3 +1,6 @@
+// NOTE: This plugin is not registered in vite.config.ts and is currently unused.
+// The monkey-patch in src/main.ts handles AudioWorklet loading instead.
+
 // vite-plugin-weila-sdk.ts
 import type { Plugin, ViteDevServer } from 'vite'
 

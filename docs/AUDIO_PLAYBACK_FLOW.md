@@ -374,10 +374,24 @@ case WLAudioPlayerEvent.WL_WORKLET_NODE_OPEN_REQ:
 **解决方案**:
 
 1. 使用 public 目录中的 IIFE 文件
-2. Monkey patch `AudioWorklet.addModule`:
+2. Monkey patch `AudioWorklet.addModule` to redirect blob: URLs to IIFE files:
+
    ```typescript
-   const originalAddModule = window.AudioContext.prototype.addModule
-   window.AudioContext.prototype.addModule = async function (moduleURL) {
+   const originalAddModule = window.AudioWorklet.prototype.addModule
+   let workletCallCount = 0
+   window.AudioWorklet.prototype.addModule = async function (moduleURL) {
+     // webpack worklet-loader creates blob: URLs (e.g., blob:https://localhost:5173/{uuid})
+     // Blob URLs have no base path context, so relative ES module imports fail silently
+     // Solution: redirect blob URLs to pre-built IIFE versions in public/
+     if (moduleURL.startsWith('blob:')) {
+       const workletList = [
+         '/weila_player.worklet.iife.js', // First call
+         '/weila_recorder.worklet.iife.js', // Second call
+       ]
+       const iifePath = workletList[workletCallCount++] || moduleURL
+       return originalAddModule.call(this, iifePath)
+     }
+     // Non-blob URLs: filename-based routing (fallback for compatibility)
      const workletMap = {
        'weila_player.worklet.js': '/weila_player.worklet.iife.js',
        'weila_recorder.worklet.js': '/weila_recorder.worklet.iife.js',
@@ -389,6 +403,8 @@ case WLAudioPlayerEvent.WL_WORKLET_NODE_OPEN_REQ:
      return originalAddModule.call(this, moduleURL)
    }
    ```
+
+   **Why blob URLs are problematic**: webpack's `worklet-loader` (with `inline: true`) generates blob: URLs that carry no base URL context. When the worklet code tries to execute relative imports like `import opus from './opus'`, the browser cannot resolve them relative to a blob origin, and the import fails silently. By redirecting to pre-built IIFE versions in `public/`, all dependencies are inlined and the worklet initializes correctly.
 
 ---
 
