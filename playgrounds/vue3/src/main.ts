@@ -46,6 +46,23 @@ AudioWorklet.prototype.addModule = async function (moduleURL: string, ...args: a
   return originalAddModule.call(this, moduleURL, ...args)
 }
 
+// Monkey-patch AudioWorkletNode to call port.start() after creation.
+// The SDK uses port.addEventListener('message', ...) to receive worklet responses,
+// but MessagePort requires an explicit port.start() call to begin message delivery
+// when using addEventListener. The onmessage= setter auto-starts the port, but
+// addEventListener does NOT. Without port.start(), OPEN_RSP never arrives and
+// the 5-second timeout ('请求超时 1') fires.
+// eslint-disable-next-line no-extend-native
+const OrigAudioWorkletNode = window.AudioWorkletNode
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+window.AudioWorkletNode = function AudioWorkletNode(ctx: AudioContext, name: string, opts?: any) {
+  const node = new OrigAudioWorkletNode(ctx, name, opts)
+  // Start the port so addEventListener('message') receives events
+  node.port.start()
+  return node
+} as unknown as typeof AudioWorkletNode
+window.AudioWorkletNode.prototype = OrigAudioWorkletNode.prototype
+
 const app = createApp(RouterView)
 const pinia = createPinia()
 app.use(pinia)
