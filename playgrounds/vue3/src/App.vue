@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, triggerRef, watchEffect } from 'vue'
+import { ref, computed, watch, triggerRef, watchEffect, toRaw } from 'vue'
 import { useRouteQuery } from '@vueuse/router'
 import { SessionList, WlMsgList } from '@weilasdk/ui'
 import type { WL_IDbMsgData, WL_IDbUserInfo, WL_IDbSession } from '@weilasdk/core'
@@ -28,6 +28,36 @@ weila.init().then(() => {
   console.log('inited')
   console.log('userInfo.value?.userId', userInfo.value?.userId)
 })
+
+// ---- 音频播放控制 ----
+async function handleAudioPlay(msg: WL_IDbMsgData) {
+  console.log('[Audio] Playing:', msg.combo_id)
+
+  // 确保音频系统已初始化（必须在用户交互事件中调用）
+  if (weilaCore.value) {
+    try {
+      await weilaCore.value.weila_audioInit()
+      console.log('[Audio] audioInit completed')
+    } catch (e) {
+      console.warn('[Audio] audioInit failed (may already be inited):', e)
+    }
+  }
+
+  try {
+    // 将 Vue 响应式对象转换为普通对象，否则无法存入 IndexedDB
+    const plainMsg = toRaw(msg)
+    console.log('[Audio] Calling playSingle...')
+    await weilaCore.value?.weila_playSingle(plainMsg)
+    console.log('[Audio] playSingle completed')
+  } catch (err) {
+    console.error('[Audio] Play failed:', err)
+  }
+}
+
+function handleAudioPause() {
+  console.log('[Audio] Paused')
+  weilaCore.value?.weila_stopSingle()
+}
 
 const selectedSession = computed(() => {
   if (!selectedSessionId.value) return null
@@ -176,6 +206,8 @@ async function sendMessage() {
           @image-click="openUrl"
           @file-click="openUrl"
           @location-click="openLocation"
+          @audio-play="handleAudioPlay"
+          @audio-pause="handleAudioPause"
         />
 
         <!-- Message Input -->
