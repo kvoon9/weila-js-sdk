@@ -4,6 +4,7 @@ import type { WL_IDbMsgData, WL_IDbUserInfo } from '@weilasdk/core'
 import { WL_IDbMsgDataType } from '@weilasdk/core'
 import WlAudioBubble from '../Message/WlAudioBubble.vue'
 import { framesToDuration } from '../../composables/useAudio'
+import { isValidLocation } from '../../utils'
 
 export interface WlMsgListProps {
   /** 消息列表 */
@@ -139,11 +140,15 @@ function formatFileSize(bytes?: number): string {
         class="max-w-[240px] rounded-xl overflow-hidden cursor-pointer"
         :class="isSelf(msg) ? 'bg-blue-500' : 'bg-white'"
         @click="
-          () =>
-            emit('location-click', {
+          () => {
+            const location = {
               latitude: msg.location!.latitude,
               longitude: msg.location!.longitude,
-            })
+            }
+            if (isValidLocation(location)) {
+              emit('location-click', location)
+            }
+          }
         "
       >
         <img
