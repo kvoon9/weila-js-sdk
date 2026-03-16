@@ -12,6 +12,9 @@ export { default as WlPttButton } from './components/PttButton/WlPttButton.vue'
 export { useSessions } from './composables/useSessions'
 export { framesToDuration } from './composables/useAudio'
 
+// Utils
+export { isValidLocation } from './utils'
+
 // Re-export component prop types
 export type { WlStatusIndicatorProps } from './components/WlStatusIndicator.vue'
 export type { WlMsgListProps } from './components/MsgList/WlMsgList.vue'
