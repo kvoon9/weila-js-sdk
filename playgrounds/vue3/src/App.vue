@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, triggerRef, watchEffect, toRaw } from 'vue'
 import { useRouteQuery } from '@vueuse/router'
-import { SessionList, WlMsgList } from '@weilasdk/ui'
+import { SessionList, WlMsgList, WlPttButton } from '@weilasdk/ui'
 import type { WL_IDbMsgData, WL_IDbUserInfo, WL_IDbSession } from '@weilasdk/core'
 import { WL_ExtEventID } from '@weilasdk/core'
 import type { WL_ExtEventCallback } from '@weilasdk/core'
@@ -23,6 +23,7 @@ watchEffect(() => {
 
 const senderInfos = ref<Map<number, WL_IDbUserInfo>>(new Map())
 const messageInput = ref('')
+const pttStatus = ref<'idle' | 'recording' | 'processing'>('idle')
 
 weila.init().then(() => {
   console.log('inited')
@@ -167,6 +168,52 @@ async function sendMessage() {
     console.error('[Playground] Failed to send message:', err)
   }
 }
+
+// ---- PTT 对讲控制 ----
+async function handlePttStart() {
+  if (!weilaCore.value || !selectedSession.value) {
+    console.warn('[PTT] No session selected')
+    return
+  }
+
+  pttStatus.value = 'processing'
+
+  try {
+    // 确保音频系统已初始化
+    await weilaCore.value.weila_audioInit()
+    // 申请话权
+    const success = await weilaCore.value.weila_requestTalk(
+      selectedSession.value.sessionId,
+      selectedSession.value.sessionType,
+    )
+
+    if (success) {
+      pttStatus.value = 'recording'
+      console.log('[PTT] Recording started')
+    } else {
+      pttStatus.value = 'idle'
+      console.warn('[PTT] Failed to start recording')
+    }
+  } catch (err) {
+    pttStatus.value = 'idle'
+    console.error('[PTT] Error:', err)
+  }
+}
+
+async function handlePttStop() {
+  if (!weilaCore.value || pttStatus.value !== 'recording') return
+
+  pttStatus.value = 'processing'
+
+  try {
+    await weilaCore.value.weila_releaseTalk()
+    console.log('[PTT] Recording stopped, data sent')
+  } catch (err) {
+    console.error('[PTT] Error stopping:', err)
+  } finally {
+    pttStatus.value = 'idle'
+  }
+}
 </script>
 
 <template>
@@ -211,7 +258,7 @@ async function sendMessage() {
         />
 
         <!-- Message Input -->
-        <div class="mt-4 flex gap-2">
+        <div class="mt-4 flex gap-2 items-center">
           <input
             v-model="messageInput"
             type="text"
@@ -225,6 +272,15 @@ async function sendMessage() {
           >
             Send
           </button>
+          <!-- PTT Button -->
+          <WlPttButton
+            v-if="selectedSession"
+            :status="pttStatus"
+            size="md"
+            :disabled="!selectedSession"
+            @start="handlePttStart"
+            @stop="handlePttStop"
+          />
         </div>
       </div>
       <div v-else class="flex items-center justify-center h-full text-gray-400">
