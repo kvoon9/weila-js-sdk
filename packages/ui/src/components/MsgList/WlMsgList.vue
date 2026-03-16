@@ -3,8 +3,12 @@ import { ref } from 'vue'
 import type { WL_IDbMsgData, WL_IDbUserInfo } from '@weilasdk/core'
 import { WL_IDbMsgDataType } from '@weilasdk/core'
 import WlAudioBubble from '../Message/WlAudioBubble.vue'
+import WlTextBubble from '../Message/WlTextBubble.vue'
+import WlImageBubble from '../Message/WlImageBubble.vue'
+import WlLocationBubble from '../Message/WlLocationBubble.vue'
+import WlFileBubble from '../Message/WlFileBubble.vue'
+import WlUnknownBubble from '../Message/WlUnknownBubble.vue'
 import { framesToDuration } from '../../composables/useAudio'
-import { isValidLocation } from '../../utils'
 
 export interface WlMsgListProps {
   /** 消息列表 */
@@ -20,12 +24,6 @@ const props = withDefaults(defineProps<WlMsgListProps>(), {
 })
 
 const emit = defineEmits<{
-  /** 点击图片 */
-  'image-click': [url: string]
-  /** 点击位置 */
-  'location-click': [location: { latitude: number; longitude: number }]
-  /** 点击文件 */
-  'file-click': [url: string]
   /** 播放音频消息 */
   'audio-play': [msg: WL_IDbMsgData]
   /** 暂停音频消息 */
@@ -61,13 +59,6 @@ function handleAudioPlay(msg: WL_IDbMsgData) {
 function handleAudioPause() {
   playingAudioId.value = null
 }
-
-function formatFileSize(bytes?: number): string {
-  if (!bytes) return ''
-  if (bytes < 1024) return bytes + ' B'
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
-  return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
-}
 </script>
 
 <template>
@@ -92,131 +83,80 @@ function formatFileSize(bytes?: number): string {
       </div>
 
       <!-- Text Message -->
-      <div
-        v-if="isText(msg)"
-        class="max-w-[70%] rounded-xl px-3 py-2 text-sm break-all whitespace-pre-wrap overflow-hidden"
-        :class="isSelf(msg) ? 'bg-blue-500 text-white' : 'bg-white text-neutral-900'"
-      >
-        {{ msg.textData || '' }}
-      </div>
+      <template v-if="isText(msg)">
+        <slot name="text" :msg="msg" :is-self="isSelf(msg)" :sender="getSender(msg)">
+          <WlTextBubble :msg="msg" :is-self="isSelf(msg)" :sender="getSender(msg)" />
+        </slot>
+      </template>
 
       <!-- Audio Message -->
-      <WlAudioBubble
-        v-else-if="isAudio(msg)"
-        :duration="getAudioDuration(msg)"
-        :is-self="isSelf(msg)"
-        :playing="playingAudioId === msg.combo_id"
-        @play="
-          () => {
-            handleAudioPlay(msg)
-            $emit('audio-play', msg)
-          }
-        "
-        @pause="
-          () => {
-            handleAudioPause()
-            $emit('audio-pause', msg)
-          }
-        "
-      />
+      <template v-else-if="isAudio(msg)">
+        <slot
+          name="audio"
+          :msg="msg"
+          :is-self="isSelf(msg)"
+          :sender="getSender(msg)"
+          :playing="playingAudioId === msg.combo_id"
+          :on-play="
+            () => {
+              handleAudioPlay(msg)
+              $emit('audio-play', msg)
+            }
+          "
+          :on-pause="
+            () => {
+              handleAudioPause()
+              $emit('audio-pause', msg)
+            }
+          "
+        >
+          <WlAudioBubble
+            :duration="getAudioDuration(msg)"
+            :is-self="isSelf(msg)"
+            :playing="playingAudioId === msg.combo_id"
+            @play="
+              () => {
+                handleAudioPlay(msg)
+                $emit('audio-play', msg)
+              }
+            "
+            @pause="
+              () => {
+                handleAudioPause()
+                $emit('audio-pause', msg)
+              }
+            "
+          />
+        </slot>
+      </template>
 
       <!-- Image Message -->
-      <div
-        v-else-if="isImage(msg) && msg.fileInfo?.fileUrl"
-        class="max-w-[70%] rounded-xl overflow-hidden"
-        :class="isSelf(msg) ? 'bg-blue-500' : 'bg-white'"
-      >
-        <img
-          :src="msg.fileInfo.fileThumbnail || msg.fileInfo.fileUrl"
-          class="max-w-[200px] max-h-[200px] rounded-xl object-cover cursor-pointer"
-          alt="image"
-          @click="emit('image-click', msg.fileInfo.fileUrl)"
-        />
-      </div>
+      <template v-else-if="isImage(msg) && msg.fileInfo?.fileUrl">
+        <slot name="image" :msg="msg" :is-self="isSelf(msg)" :sender="getSender(msg)">
+          <WlImageBubble :msg="msg" :is-self="isSelf(msg)" :sender="getSender(msg)" />
+        </slot>
+      </template>
 
       <!-- Location Message -->
-      <div
-        v-else-if="isLocation(msg) && msg.location"
-        class="max-w-[240px] rounded-xl overflow-hidden cursor-pointer"
-        :class="isSelf(msg) ? 'bg-blue-500' : 'bg-white'"
-        @click="
-          () => {
-            const location = {
-              latitude: msg.location!.latitude,
-              longitude: msg.location!.longitude,
-            }
-            if (isValidLocation(location)) {
-              emit('location-click', location)
-            }
-          }
-        "
-      >
-        <img
-          v-if="msg.location.mapUrl"
-          :src="msg.location.mapUrl"
-          class="w-full h-[120px] object-cover"
-          alt="location"
-        />
-        <div class="px-3 py-2">
-          <div
-            v-if="msg.location.name"
-            class="text-sm font-medium truncate"
-            :class="isSelf(msg) ? 'text-white' : 'text-neutral-900'"
-          >
-            {{ msg.location.name }}
-          </div>
-          <div
-            v-if="msg.location.address"
-            class="text-xs truncate"
-            :class="isSelf(msg) ? 'text-blue-100' : 'text-neutral-500'"
-          >
-            {{ msg.location.address }}
-          </div>
-        </div>
-      </div>
+      <template v-else-if="isLocation(msg) && msg.location">
+        <slot name="location" :msg="msg" :is-self="isSelf(msg)" :sender="getSender(msg)">
+          <WlLocationBubble :msg="msg" :is-self="isSelf(msg)" :sender="getSender(msg)" />
+        </slot>
+      </template>
 
       <!-- File Message -->
-      <div
-        v-else-if="isFile(msg) && msg.fileInfo?.fileUrl"
-        class="max-w-[70%] rounded-xl overflow-hidden cursor-pointer"
-        :class="isSelf(msg) ? 'bg-blue-500' : 'bg-white'"
-        @click="emit('file-click', msg.fileInfo.fileUrl)"
-      >
-        <div class="flex items-center gap-2.5 px-3 py-2.5">
-          <img
-            v-if="msg.fileInfo.fileThumbnail"
-            :src="msg.fileInfo.fileThumbnail"
-            class="size-10 object-contain shrink-0"
-            alt=""
-          />
-          <div
-            v-else
-            class="size-10 shrink-0 rounded bg-neutral-100 flex items-center justify-center"
-          >
-            <span class="icon-[carbon--document] size-5 text-neutral-400" />
-          </div>
-          <div class="min-w-0 flex-1">
-            <div
-              class="text-sm font-medium truncate"
-              :class="isSelf(msg) ? 'text-white' : 'text-neutral-900'"
-            >
-              {{ msg.fileInfo.fileName || '文件' }}
-            </div>
-            <div class="text-xs mt-0.5" :class="isSelf(msg) ? 'text-blue-200' : 'text-neutral-400'">
-              {{ formatFileSize(msg.fileInfo.fileSize) }}
-            </div>
-          </div>
-        </div>
-      </div>
+      <template v-else-if="isFile(msg) && msg.fileInfo?.fileUrl">
+        <slot name="file" :msg="msg" :is-self="isSelf(msg)" :sender="getSender(msg)">
+          <WlFileBubble :msg="msg" :is-self="isSelf(msg)" :sender="getSender(msg)" />
+        </slot>
+      </template>
 
       <!-- Unsupported Message Type -->
-      <div
-        v-else
-        class="max-w-[70%] rounded-xl px-3 py-2 text-sm overflow-hidden break-all"
-        :class="isSelf(msg) ? 'bg-blue-500 text-blue-200' : 'bg-white text-neutral-400'"
-      >
-        [不支持的消息类型] {{ msg }}
-      </div>
+      <template v-else>
+        <slot name="unknown" :msg="msg" :is-self="isSelf(msg)" :sender="getSender(msg)">
+          <WlUnknownBubble :msg="msg" :is-self="isSelf(msg)" :sender="getSender(msg)" />
+        </slot>
+      </template>
     </div>
   </div>
 </template>

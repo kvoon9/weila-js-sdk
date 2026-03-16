@@ -1,7 +1,18 @@
 <script setup lang="ts">
 import { ref, computed, watch, triggerRef, watchEffect, toRaw } from 'vue'
 import { useRouteQuery } from '@vueuse/router'
-import { SessionList, WlMsgList, WlPttButton } from '@weilasdk/ui'
+import {
+  SessionList,
+  WlMsgList,
+  WlPttButton,
+  WlTextBubble,
+  WlImageBubble,
+  WlAudioBubble,
+  WlLocationBubble,
+  WlFileBubble,
+  WlUnknownBubble,
+  framesToDuration,
+} from '@weilasdk/ui'
 import type { WL_IDbMsgData, WL_IDbUserInfo, WL_IDbSession } from '@weilasdk/core'
 import { WL_ExtEventID } from '@weilasdk/core'
 import type { WL_ExtEventCallback } from '@weilasdk/core'
@@ -250,12 +261,43 @@ async function handlePttStop() {
           :messages="messages"
           :current-user-id="userInfo?.userId ?? 0"
           :sender-infos="senderInfos"
-          @image-click="openUrl"
-          @file-click="openUrl"
-          @location-click="openLocation"
-          @audio-play="handleAudioPlay"
-          @audio-pause="handleAudioPause"
-        />
+        >
+          <!-- 使用 slot 自定义文本消息渲染 -->
+          <template #text="{ msg, isSelf, sender }">
+            <WlTextBubble :msg="msg" :is-self="isSelf" :sender="sender" />
+          </template>
+
+          <!-- 使用 slot 自定义图片消息渲染 -->
+          <template #image="{ msg, isSelf, sender }">
+            <WlImageBubble :msg="msg" :is-self="isSelf" :sender="sender" @click="openUrl" />
+          </template>
+
+          <!-- 使用 slot 自定义音频消息渲染 -->
+          <template #audio="{ msg, isSelf, playing, onPlay, onPause }">
+            <WlAudioBubble
+              :duration="framesToDuration(msg.audioData?.frameCount ?? 0)"
+              :is-self="isSelf"
+              :playing="playing"
+              @play="onPlay"
+              @pause="onPause"
+            />
+          </template>
+
+          <!-- 使用 slot 自定义位置消息渲染 -->
+          <template #location="{ msg, isSelf, sender }">
+            <WlLocationBubble :msg="msg" :is-self="isSelf" :sender="sender" @click="openLocation" />
+          </template>
+
+          <!-- 使用 slot 自定义文件消息渲染 -->
+          <template #file="{ msg, isSelf, sender }">
+            <WlFileBubble :msg="msg" :is-self="isSelf" :sender="sender" @click="openUrl" />
+          </template>
+
+          <!-- 使用 slot 自定义未知消息渲染 -->
+          <template #unknown="{ msg, isSelf, sender }">
+            <WlUnknownBubble :msg="msg" :is-self="isSelf" :sender="sender" />
+          </template>
+        </WlMsgList>
 
         <!-- Message Input -->
         <div class="mt-4 flex gap-2 items-center">
