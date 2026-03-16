@@ -106,12 +106,16 @@ function formatFileSize(bytes?: number): string {
         :is-self="isSelf(msg)"
         :playing="playingAudioId === msg.combo_id"
         @play="
-          handleAudioPlay(msg)
-          $emit('audio-play', msg)
+          () => {
+            handleAudioPlay(msg)
+            $emit('audio-play', msg)
+          }
         "
         @pause="
-          handleAudioPause()
-          $emit('audio-pause', msg)
+          () => {
+            handleAudioPause()
+            $emit('audio-pause', msg)
+          }
         "
       />
 

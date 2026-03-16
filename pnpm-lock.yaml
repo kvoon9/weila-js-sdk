@@ -237,7 +237,7 @@ importers:
         specifier: ^2.2.0
         version: 2.2.12(typescript@5.9.3)
 
-  playgrounds/vue3-webpack:
+  playgrounds/vue3-rspack:
     dependencies:
       vue:
         specifier: ^3.5.26
@@ -7016,7 +7016,7 @@ snapshots:
 
   compressible@2.0.18:
     dependencies:
-      mime-db: 1.52.0
+      mime-db: 1.54.0
 
   compression@1.8.1:
     dependencies:
