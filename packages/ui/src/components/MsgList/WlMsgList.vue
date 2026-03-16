@@ -18,7 +18,7 @@ const props = withDefaults(defineProps<WlMsgListProps>(), {
   senderInfos: () => new Map(),
 })
 
-defineEmits<{
+const emit = defineEmits<{
   /** 点击图片 */
   'image-click': [url: string]
   /** 点击位置 */
@@ -129,7 +129,7 @@ function formatFileSize(bytes?: number): string {
           :src="msg.fileInfo.fileThumbnail || msg.fileInfo.fileUrl"
           class="max-w-[200px] max-h-[200px] rounded-xl object-cover cursor-pointer"
           alt="image"
-          @click="$emit('image-click', msg.fileInfo.fileUrl)"
+          @click="emit('image-click', msg.fileInfo.fileUrl)"
         />
       </div>
 
@@ -139,10 +139,11 @@ function formatFileSize(bytes?: number): string {
         class="max-w-[240px] rounded-xl overflow-hidden cursor-pointer"
         :class="isSelf(msg) ? 'bg-blue-500' : 'bg-white'"
         @click="
-          $emit('location-click', {
-            latitude: msg.location.latitude,
-            longitude: msg.location.longitude,
-          })
+          () =>
+            emit('location-click', {
+              latitude: msg.location!.latitude,
+              longitude: msg.location!.longitude,
+            })
         "
       >
         <img
@@ -174,7 +175,7 @@ function formatFileSize(bytes?: number): string {
         v-else-if="isFile(msg) && msg.fileInfo?.fileUrl"
         class="max-w-[70%] rounded-xl overflow-hidden cursor-pointer"
         :class="isSelf(msg) ? 'bg-blue-500' : 'bg-white'"
-        @click="$emit('file-click', msg.fileInfo.fileUrl)"
+        @click="emit('file-click', msg.fileInfo.fileUrl)"
       >
         <div class="flex items-center gap-2.5 px-3 py-2.5">
           <img
