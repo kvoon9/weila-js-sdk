@@ -14,8 +14,8 @@ import {
   framesToDuration,
 } from '@weilasdk/ui'
 import type { WL_IDbMsgData, WL_IDbSession } from '@weilasdk/core'
-import { WL_ExtEventID } from '@weilasdk/core'
-import type { WL_ExtEventCallback } from '@weilasdk/core'
+import { WL_ExtEventID, WL_PttAudioPlayState } from '@weilasdk/core'
+import type { WL_ExtEventCallback, WL_PttPlayInd } from '@weilasdk/core'
 import { useWeilaStore } from './stores/weila'
 import { useSessions } from './queries/sessions'
 import { useMessageHistory } from './composables/useMessageHistory'
@@ -90,12 +90,24 @@ const handleMessageEvent: WL_ExtEventCallback = (eventId, eventData) => {
   void ensureSenderInfo(msgData.senderId)
 }
 
-// 注册全局事件监听（消息追加）
+// ---- 音频播放结束监听 ----
+const handleAudioPlayEnd = (indData: { state: WL_PttAudioPlayState }) => {
+  if (indData.state === WL_PttAudioPlayState.PTT_AUDIO_PLAYING_END) {
+    wlMsgListRef.value?.resetPlaying()
+  }
+}
+
+// 注册全局事件监听（消息追加 + 音频播放结束）
 watch(
   weilaCore,
   (core, _oldCore, onCleanup) => {
     if (!core) return
     core.weila_onEvent(handleMessageEvent)
+    core.weila_onEvent((eventId, eventData) => {
+      if (eventId === WL_ExtEventID.WL_EXT_PTT_PLAY_IND) {
+        handleAudioPlayEnd((eventData as WL_PttPlayInd).indData)
+      }
+    })
     // weila_onEvent 是 additive 的，目前 SDK 没有 offEvent API
     // 所以这里不需要手动 cleanup（组件销毁后 handler 引用的 ref 不再被 UI 消费）
   },

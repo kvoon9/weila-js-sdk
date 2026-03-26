@@ -67,36 +67,25 @@ function handleAudioPlay(msg: WL_IDbMsgData) {
 function handleAudioPause() {
   playingAudioId.value = null
 }
+
+defineExpose({
+  resetPlaying: handleAudioPause,
+})
 </script>
 
 <template>
   <div class="flex flex-col h-full bg-neutral-100 overflow-y-auto px-4 py-3">
     <!-- Load more banner -->
-    <div
-      v-if="hasMore || loading"
-      class="flex justify-center py-2 cursor-pointer"
-      @click="emit('load-more')"
-    >
+    <div v-if="hasMore || loading" class="flex justify-center py-2 cursor-pointer" @click="emit('load-more')">
       <span v-if="loading" class="icon-[carbon--loading] size-5 text-neutral-400 animate-spin" />
       <span v-else class="text-sm text-blue-500 hover:text-blue-600">加载更多</span>
     </div>
 
-    <div
-      v-for="msg in messages"
-      :key="msg.combo_id"
-      class="flex items-start gap-2 py-1.5"
-      :class="isSelf(msg) ? 'flex-row-reverse' : ''"
-    >
+    <div v-for="msg in messages" :key="msg.combo_id" class="flex items-start gap-2 py-1.5"
+      :class="isSelf(msg) ? 'flex-row-reverse' : ''">
       <!-- Avatar -->
-      <div
-        class="shrink-0 size-9 rounded-lg overflow-hidden bg-neutral-300 flex items-center justify-center"
-      >
-        <img
-          v-if="getSender(msg)?.avatar"
-          :src="getSender(msg)!.avatar"
-          class="size-full object-cover"
-          alt=""
-        />
+      <div class="shrink-0 size-9 rounded-lg overflow-hidden bg-neutral-300 flex items-center justify-center">
+        <img v-if="getSender(msg)?.avatar" :src="getSender(msg)!.avatar" class="size-full object-cover" alt="" />
         <span v-else class="icon-[carbon--user-avatar-filled] size-6 text-neutral-500" />
       </div>
 
@@ -109,42 +98,28 @@ function handleAudioPause() {
 
       <!-- Audio Message -->
       <template v-else-if="isAudio(msg)">
-        <slot
-          name="audio"
-          :msg="msg"
-          :is-self="isSelf(msg)"
-          :sender="getSender(msg)"
-          :playing="playingAudioId === msg.combo_id"
-          :on-play="
-            () => {
+        <slot name="audio" :msg="msg" :is-self="isSelf(msg)" :sender="getSender(msg)"
+          :playing="playingAudioId === msg.combo_id" :on-play="() => {
               handleAudioPlay(msg)
               $emit('audio-play', msg)
             }
-          "
-          :on-pause="
-            () => {
+            " :on-pause="() => {
               handleAudioPause()
               $emit('audio-pause', msg)
             }
-          "
-        >
-          <WlAudioBubble
-            :duration="getAudioDuration(msg)"
-            :is-self="isSelf(msg)"
-            :playing="playingAudioId === msg.combo_id"
-            @play="
+            ">
+          <WlAudioBubble :duration="getAudioDuration(msg)" :is-self="isSelf(msg)"
+            :playing="playingAudioId === msg.combo_id" @play="
               () => {
                 handleAudioPlay(msg)
                 $emit('audio-play', msg)
               }
-            "
-            @pause="
+            " @pause="
               () => {
                 handleAudioPause()
                 $emit('audio-pause', msg)
               }
-            "
-          />
+            " />
         </slot>
       </template>
 
