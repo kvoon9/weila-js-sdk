@@ -261,6 +261,8 @@ async function handlePttStop() {
           :messages="messages"
           :current-user-id="userInfo?.userId ?? 0"
           :sender-infos="senderInfos"
+          @audio-play="handleAudioPlay"
+          @audio-pause="handleAudioPause"
         >
           <!-- 使用 slot 自定义文本消息渲染 -->
           <template #text="{ msg, isSelf, sender }">
