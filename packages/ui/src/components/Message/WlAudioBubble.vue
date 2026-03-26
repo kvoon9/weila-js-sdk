@@ -34,7 +34,7 @@ const bubbleStyle = computed(() => {
   const clampedDuration = Math.min(Math.max(props.duration, 1), 60)
   const percentage = (clampedDuration / 60) * 100
   return {
-    width: `clamp(5rem, ${percentage}%, 16rem)`,
+    width: `clamp(6rem, ${percentage}%, 16rem)`,
   }
 })
 </script>
