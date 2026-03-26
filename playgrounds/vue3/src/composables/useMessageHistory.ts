@@ -10,7 +10,7 @@ export function useMessageHistory(
   const messages = ref<WL_IDbMsgData[]>([])
 
   watchEffect(() => {
-    console.log('messages.value',messages.value)
+    console.log('messages.value', messages.value)
   })
 
   const senderInfos = ref<Map<number, WL_IDbUserInfo>>(new Map())
@@ -41,7 +41,7 @@ export function useMessageHistory(
       )
 
       hasMore.value = result.length === 20
-      console.log('result.length',result.length)
+      console.log('result.length', result.length)
 
       if (cursorMsgId === 0) {
         messages.value = result

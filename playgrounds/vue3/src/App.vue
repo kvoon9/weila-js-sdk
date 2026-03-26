@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, triggerRef, watchEffect, toRaw } from 'vue'
+import { ref, computed, watch, triggerRef, watchEffect, toRaw, nextTick, useTemplateRef } from 'vue'
 import { useRouteQuery } from '@vueuse/router'
 import {
   SessionList,
@@ -29,6 +29,7 @@ const selectedSessionId = useRouteQuery<string>('sessionId')
 
 const messageInput = ref('')
 const pttStatus = ref<'idle' | 'recording' | 'processing'>('idle')
+const wlMsgListRef = useTemplateRef('wlMsgListRef')
 
 weila.init().then(() => {
   console.log('inited')
@@ -127,11 +128,26 @@ async function sendMessage() {
       selectedSession.value.sessionType,
       text,
     )
-    // 消息会通过 onEvent → handleMessageEvent 自动追加到列表
   } catch (err) {
     console.error('[Playground] Failed to send message:', err)
   }
 }
+
+function scrollToBottom() {
+  if (!wlMsgListRef.value) return
+  wlMsgListRef.value.$el.scrollTo({
+    top: wlMsgListRef.value.$el.scrollHeight,
+    behavior: 'smooth',
+  })
+}
+
+watch(messages, () => {
+  if (!wlMsgListRef.value) return
+  wlMsgListRef.value.$el.scrollTo({
+    top: wlMsgListRef.value.$el.scrollHeight,
+    behavior: 'smooth',
+  })
+})
 
 // ---- PTT 对讲控制 ----
 async function handlePttStart() {
@@ -182,23 +198,16 @@ async function handlePttStop() {
   <div class="flex h-screen">
     <div class="w-80 border-r border-gray-200 overflow-hidden flex flex-col">
       <div v-if="sessions?.length" class="flex-1 overflow-y-auto">
-        <div
-          v-for="session in sessions"
-          :key="session.sessionId"
+        <div v-for="session in sessions" :key="session.sessionId"
           class="p-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50"
           :class="{ 'bg-blue-50': selectedSession?.sessionId === session.sessionId }"
-          @click="handleSelectSession(session)"
-        >
+          @click="handleSelectSession(session)">
           <div class="font-medium">{{ session.sessionName || session.sessionId }}</div>
           <div class="text-sm text-gray-500">{{ session.sessionId }}</div>
         </div>
       </div>
-      <SessionList
-        v-else-if="weilaCore"
-        :sessions="sessions ?? []"
-        @select="handleSelectSession"
-        @refresh="refetchSessions"
-      />
+      <SessionList v-else-if="weilaCore" :sessions="sessions ?? []" @select="handleSelectSession"
+        @refresh="refetchSessions" />
       <div v-else class="flex items-center justify-center h-full text-gray-500">Loading SDK...</div>
     </div>
     <div class="flex-1 p-4 overflow-y-auto">
@@ -207,18 +216,10 @@ async function handlePttStop() {
           Session: {{ selectedSession.sessionName || selectedSession.sessionId }}
         </h2>
 
-        <div class="h-100 overflow-y-hidden">
-          <WlMsgList
-            class="bg-neutral-100"
-            :messages="messages"
-            :current-user-id="userInfo?.userId ?? 0"
-            :sender-infos="senderInfos"
-            :has-more="hasMore"
-            :loading="loading"
-            @audio-play="handleAudioPlay"
-            @audio-pause="handleAudioPause"
-            @load-more="loadMore(messages[0]?.msgId - 1)"
-          >
+        <div class="relative">
+          <WlMsgList ref="wlMsgListRef" style="height: 400px" class="bg-neutral-100" :messages="messages"
+            :current-user-id="userInfo?.userId ?? 0" :sender-infos="senderInfos" :has-more="hasMore" :loading="loading"
+            @audio-play="handleAudioPlay" @audio-pause="handleAudioPause" @load-more="loadMore(messages[0]?.msgId - 1)">
             <!-- 使用 slot 自定义文本消息渲染 -->
             <template #text="{ msg, isSelf, sender }">
               <WlTextBubble :msg="msg" :is-self="isSelf" :sender="sender" />
@@ -231,13 +232,8 @@ async function handlePttStop() {
 
             <!-- 使用 slot 自定义音频消息渲染 -->
             <template #audio="{ msg, isSelf, playing, onPlay, onPause }">
-              <WlAudioBubble
-                :duration="framesToDuration(msg.audioData?.frameCount ?? 0)"
-                :is-self="isSelf"
-                :playing="playing"
-                @play="onPlay"
-                @pause="onPause"
-              />
+              <WlAudioBubble :duration="framesToDuration(msg.audioData?.frameCount ?? 0)" :is-self="isSelf"
+                :playing="playing" @play="onPlay" @pause="onPause" />
             </template>
 
             <!-- 使用 slot 自定义位置消息渲染 -->
@@ -255,32 +251,26 @@ async function handlePttStop() {
               <WlUnknownBubble :msg="msg" :is-self="isSelf" :sender="sender" />
             </template>
           </WlMsgList>
+          <!-- 滚动到底部按钮 -->
+          <button
+            class="absolute bottom-4 right-4 w-10 h-10 bg-blue-500 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-600"
+            @click="scrollToBottom">
+            ↓
+          </button>
         </div>
 
         <!-- Message Input -->
         <div class="mt-4 flex gap-2 items-center">
-          <input
-            v-model="messageInput"
-            type="text"
-            placeholder="Type a message..."
+          <input v-model="messageInput" type="text" placeholder="Type a message..."
             class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            @keyup.enter="sendMessage"
-          />
-          <button
-            @click="sendMessage"
-            class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none"
-          >
+            @keyup.enter="sendMessage" />
+          <button @click="sendMessage"
+            class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none">
             Send
           </button>
           <!-- PTT Button -->
-          <WlPttButton
-            v-if="selectedSession"
-            :status="pttStatus"
-            size="md"
-            :disabled="!selectedSession"
-            @start="handlePttStart"
-            @stop="handlePttStop"
-          />
+          <WlPttButton v-if="selectedSession" :status="pttStatus" size="md" :disabled="!selectedSession"
+            @start="handlePttStart" @stop="handlePttStop" />
         </div>
       </div>
       <div v-else class="flex items-center justify-center h-full text-gray-400">
