@@ -13,11 +13,12 @@ import {
   WlUnknownBubble,
   framesToDuration,
 } from '@weilasdk/ui'
-import type { WL_IDbMsgData, WL_IDbUserInfo, WL_IDbSession } from '@weilasdk/core'
+import type { WL_IDbMsgData, WL_IDbSession } from '@weilasdk/core'
 import { WL_ExtEventID } from '@weilasdk/core'
 import type { WL_ExtEventCallback } from '@weilasdk/core'
 import { useWeilaStore } from './stores/weila'
 import { useSessions } from './queries/sessions'
+import { useMessageHistory } from './composables/useMessageHistory'
 import { storeToRefs } from 'pinia'
 
 const weila = useWeilaStore()
@@ -26,13 +27,6 @@ const { data: sessions, refetch: refetchSessions } = useSessions()
 
 const selectedSessionId = useRouteQuery<string>('sessionId')
 
-const messages = ref<WL_IDbMsgData[]>([])
-
-watchEffect(() => {
-  console.log('messages.value', messages.value)
-})
-
-const senderInfos = ref<Map<number, WL_IDbUserInfo>>(new Map())
 const messageInput = ref('')
 const pttStatus = ref<'idle' | 'recording' | 'processing'>('idle')
 
@@ -66,16 +60,10 @@ const selectedSession = computed(() => {
   return sessions.value?.find((s) => s.sessionId === selectedSessionId.value) ?? null
 })
 
-// ---- 消息辅助：加载 sender 信息 ----
-async function ensureSenderInfo(senderId: number) {
-  if (senderInfos.value.has(senderId) || !weilaCore.value) return
-  const info = await weilaCore.value.weila_getUserInfo(senderId)
-  if (info) {
-    const updated = new Map(senderInfos.value)
-    updated.set(senderId, info)
-    senderInfos.value = updated
-  }
-}
+const { messages, senderInfos, hasMore, loading, ensureSenderInfo, loadMore } = useMessageHistory(
+  weilaCore,
+  selectedSession,
+)
 
 // ---- 消息事件监听 ----
 const handleMessageEvent: WL_ExtEventCallback = (eventId, eventData) => {
@@ -100,31 +88,6 @@ const handleMessageEvent: WL_ExtEventCallback = (eventId, eventData) => {
   messages.value = [...messages.value, msgData]
   void ensureSenderInfo(msgData.senderId)
 }
-
-// ---- 切换 session 时加载消息 ----
-watch(
-  selectedSession,
-  async (session) => {
-    messages.value = []
-    senderInfos.value = new Map()
-
-    if (!session || !weilaCore.value) return
-
-    // 从 DB 拉取历史消息
-    const history = await weilaCore.value.weila_getMsgDatas(
-      session.sessionId,
-      session.sessionType,
-      0,
-      20,
-    )
-    messages.value = history
-
-    // 预加载所有 sender 信息
-    const senderIds = [...new Set(history.map((m) => m.senderId))]
-    await Promise.all(senderIds.map(ensureSenderInfo))
-  },
-  { immediate: true },
-)
 
 // 注册全局事件监听（消息追加）
 watch(
@@ -244,50 +207,55 @@ async function handlePttStop() {
           Session: {{ selectedSession.sessionName || selectedSession.sessionId }}
         </h2>
 
-        <WlMsgList
-          class="bg-neutral-100"
-          :messages="messages"
-          :current-user-id="userInfo?.userId ?? 0"
-          :sender-infos="senderInfos"
-          @audio-play="handleAudioPlay"
-          @audio-pause="handleAudioPause"
-        >
-          <!-- 使用 slot 自定义文本消息渲染 -->
-          <template #text="{ msg, isSelf, sender }">
-            <WlTextBubble :msg="msg" :is-self="isSelf" :sender="sender" />
-          </template>
+        <div class="h-100 overflow-y-hidden">
+          <WlMsgList
+            class="bg-neutral-100"
+            :messages="messages"
+            :current-user-id="userInfo?.userId ?? 0"
+            :sender-infos="senderInfos"
+            :has-more="hasMore"
+            :loading="loading"
+            @audio-play="handleAudioPlay"
+            @audio-pause="handleAudioPause"
+            @load-more="loadMore(messages[0]?.msgId - 1)"
+          >
+            <!-- 使用 slot 自定义文本消息渲染 -->
+            <template #text="{ msg, isSelf, sender }">
+              <WlTextBubble :msg="msg" :is-self="isSelf" :sender="sender" />
+            </template>
 
-          <!-- 使用 slot 自定义图片消息渲染 -->
-          <template #image="{ msg, isSelf, sender }">
-            <WlImageBubble :msg="msg" :is-self="isSelf" :sender="sender" @click="openUrl" />
-          </template>
+            <!-- 使用 slot 自定义图片消息渲染 -->
+            <template #image="{ msg, isSelf, sender }">
+              <WlImageBubble :msg="msg" :is-self="isSelf" :sender="sender" @click="openUrl" />
+            </template>
 
-          <!-- 使用 slot 自定义音频消息渲染 -->
-          <template #audio="{ msg, isSelf, playing, onPlay, onPause }">
-            <WlAudioBubble
-              :duration="framesToDuration(msg.audioData?.frameCount ?? 0)"
-              :is-self="isSelf"
-              :playing="playing"
-              @play="onPlay"
-              @pause="onPause"
-            />
-          </template>
+            <!-- 使用 slot 自定义音频消息渲染 -->
+            <template #audio="{ msg, isSelf, playing, onPlay, onPause }">
+              <WlAudioBubble
+                :duration="framesToDuration(msg.audioData?.frameCount ?? 0)"
+                :is-self="isSelf"
+                :playing="playing"
+                @play="onPlay"
+                @pause="onPause"
+              />
+            </template>
 
-          <!-- 使用 slot 自定义位置消息渲染 -->
-          <template #location="{ msg, isSelf, sender }">
-            <WlLocationBubble :msg="msg" :is-self="isSelf" :sender="sender" @click="openLocation" />
-          </template>
+            <!-- 使用 slot 自定义位置消息渲染 -->
+            <template #location="{ msg, isSelf, sender }">
+              <WlLocationBubble :msg="msg" :is-self="isSelf" :sender="sender" @click="openLocation" />
+            </template>
 
-          <!-- 使用 slot 自定义文件消息渲染 -->
-          <template #file="{ msg, isSelf, sender }">
-            <WlFileBubble :msg="msg" :is-self="isSelf" :sender="sender" @click="openUrl" />
-          </template>
+            <!-- 使用 slot 自定义文件消息渲染 -->
+            <template #file="{ msg, isSelf, sender }">
+              <WlFileBubble :msg="msg" :is-self="isSelf" :sender="sender" @click="openUrl" />
+            </template>
 
-          <!-- 使用 slot 自定义未知消息渲染 -->
-          <template #unknown="{ msg, isSelf, sender }">
-            <WlUnknownBubble :msg="msg" :is-self="isSelf" :sender="sender" />
-          </template>
-        </WlMsgList>
+            <!-- 使用 slot 自定义未知消息渲染 -->
+            <template #unknown="{ msg, isSelf, sender }">
+              <WlUnknownBubble :msg="msg" :is-self="isSelf" :sender="sender" />
+            </template>
+          </WlMsgList>
+        </div>
 
         <!-- Message Input -->
         <div class="mt-4 flex gap-2 items-center">

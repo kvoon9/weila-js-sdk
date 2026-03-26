@@ -17,10 +17,16 @@ export interface WlMsgListProps {
   currentUserId: number
   /** 发送者信息 Map，key 为 userId */
   senderInfos?: Map<number, WL_IDbUserInfo>
+  /** 是否有更多消息可加载 */
+  hasMore?: boolean
+  /** 加载状态 */
+  loading?: boolean
 }
 
 const props = withDefaults(defineProps<WlMsgListProps>(), {
   senderInfos: () => new Map(),
+  hasMore: false,
+  loading: false,
 })
 
 const emit = defineEmits<{
@@ -28,6 +34,8 @@ const emit = defineEmits<{
   'audio-play': [msg: WL_IDbMsgData]
   /** 暂停音频消息 */
   'audio-pause': [msg: WL_IDbMsgData]
+  /** 加载更多消息 */
+  'load-more': []
 }>()
 
 /** 当前正在播放的音频消息 combo_id */
@@ -63,6 +71,16 @@ function handleAudioPause() {
 
 <template>
   <div class="flex flex-col h-full bg-neutral-100 overflow-y-auto px-4 py-3">
+    <!-- Load more banner -->
+    <div
+      v-if="hasMore || loading"
+      class="flex justify-center py-2 cursor-pointer"
+      @click="emit('load-more')"
+    >
+      <span v-if="loading" class="icon-[carbon--loading] size-5 text-neutral-400 animate-spin" />
+      <span v-else class="text-sm text-blue-500 hover:text-blue-600">加载更多</span>
+    </div>
+
     <div
       v-for="msg in messages"
       :key="msg.combo_id"
