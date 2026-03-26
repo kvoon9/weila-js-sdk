@@ -817,6 +817,9 @@ export default class WLPttFsm {
       return false
     }
 
+    // 确保音频系统已初始化（initAudio 内部有 isInited flag，重复调用无副作用）
+    await this.initAudio()
+
     const audioItem = {} as WL_PttAudioItem
     audioItem.msgData = msgData
     audioItem.id = msgData.combo_id
@@ -857,6 +860,9 @@ export default class WLPttFsm {
   }
 
   async requestTalk(): Promise<boolean> {
+    // 确保音频系统已初始化（initAudio 内部有 isInited flag，重复调用无副作用）
+    await this.initAudio()
+
     return new Promise<boolean>((resolve, reject) => {
       const talkingInfo = {} as WL_TalkingInfo
       talkingInfo.callback = {} as WL_PromiseCallback

@@ -45,16 +45,6 @@ weila.init().then(() => {
 async function handleAudioPlay(msg: WL_IDbMsgData) {
   console.log('[Audio] Playing:', msg.combo_id)
 
-  // 确保音频系统已初始化（必须在用户交互事件中调用）
-  if (weilaCore.value) {
-    try {
-      await weilaCore.value.weila_audioInit()
-      console.log('[Audio] audioInit completed')
-    } catch (e) {
-      console.warn('[Audio] audioInit failed (may already be inited):', e)
-    }
-  }
-
   try {
     // 将 Vue 响应式对象转换为普通对象，否则无法存入 IndexedDB
     const plainMsg = toRaw(msg)
@@ -190,9 +180,7 @@ async function handlePttStart() {
   pttStatus.value = 'processing'
 
   try {
-    // 确保音频系统已初始化
-    await weilaCore.value.weila_audioInit()
-    // 申请话权
+    // 申请话权（SDK 内部会自动确保音频系统已初始化）
     const success = await weilaCore.value.weila_requestTalk(
       selectedSession.value.sessionId,
       selectedSession.value.sessionType,
