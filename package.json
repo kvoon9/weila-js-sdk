@@ -17,13 +17,13 @@
     "fmt:check": "oxfmt --check"
   },
   "devDependencies": {
-    "@antfu/ni": "^30.0.0",
-    "lint-staged": "^16.4.0",
-    "oxfmt": "^0.42.0",
-    "oxlint": "^1.57.0",
-    "oxlint-tsgolint": "^0.17.4",
-    "simple-git-hooks": "^2.13.1",
-    "taze": "^19.10.0"
+    "@antfu/ni": "catalog:",
+    "lint-staged": "catalog:",
+    "oxfmt": "catalog:",
+    "oxlint": "catalog:",
+    "oxlint-tsgolint": "catalog:",
+    "simple-git-hooks": "catalog:",
+    "taze": "catalog:"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm exec lint-staged"

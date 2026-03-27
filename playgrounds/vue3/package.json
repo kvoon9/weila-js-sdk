@@ -8,23 +8,23 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@pinia/colada": "^1.0.0",
-    "@vueuse/core": "^14.2.1",
-    "@vueuse/router": "^14.2.1",
+    "@pinia/colada": "catalog:",
+    "@vueuse/core": "catalog:",
+    "@vueuse/router": "catalog:",
     "@weilasdk/core": "workspace:*",
     "@weilasdk/ui": "workspace:*",
-    "md5": "^2.3.0",
-    "pinia": "^3.0.4",
-    "vue": "^3.5.31",
-    "vue-router": "^5.0.4"
+    "md5": "catalog:",
+    "pinia": "catalog:",
+    "vue": "catalog:",
+    "vue-router": "catalog:"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.2.2",
-    "@types/md5": "^2.3.6",
-    "@vitejs/plugin-vue": "^6.0.5",
-    "tailwindcss": "^4.2.2",
+    "@tailwindcss/vite": "catalog:",
+    "@types/md5": "catalog:",
+    "@vitejs/plugin-vue": "catalog:",
+    "tailwindcss": "catalog:",
     "typescript": "^6.0.2",
-    "vite": "^8.0.3",
-    "vue-tsc": "^3.2.6"
+    "vite": "catalog:",
+    "vue-tsc": "catalog:"
   }
 }
