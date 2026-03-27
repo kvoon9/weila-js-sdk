@@ -16,6 +16,8 @@ export default defineConfig({
       execSync(
         'cat dist/tailwind.css dist/index.css > dist/merged.css && mv dist/merged.css dist/index.css && rm dist/tailwind.css',
       )
+      // 复制 emoji 资源到 dist
+      execSync('cp -r src/components/Emoji/assets dist/')
     },
   },
 })

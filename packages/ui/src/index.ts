@@ -12,6 +12,7 @@ export { default as WlLocationBubble } from './components/Message/WlLocationBubb
 export { default as WlFileBubble } from './components/Message/WlFileBubble.vue'
 export { default as WlUnknownBubble } from './components/Message/WlUnknownBubble.vue'
 export { default as WlPttButton } from './components/PttButton/WlPttButton.vue'
+export { default as WLEmoji } from './components/Emoji/WLEmoji.vue'
 
 // Composables
 export { useSessions } from './composables/useSessions'
