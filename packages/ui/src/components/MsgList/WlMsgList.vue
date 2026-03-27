@@ -11,6 +11,7 @@ import WlUnknownBubble from '../Message/WlUnknownBubble.vue'
 import { framesToDuration } from '../../composables/useAudio'
 
 const showScrollButton = ref(false)
+const hasLoadedMessages = ref(false)
 
 export interface WlMsgListProps {
   /** 消息列表 */
@@ -82,6 +83,9 @@ function handleAudioPause() {
 defineExpose({
   resetPlaying: handleAudioPause,
   scrollToBottom,
+  resetScrollState: () => {
+    hasLoadedMessages.value = false
+  },
 })
 
 function handleImageClick(url: string) {
@@ -115,7 +119,8 @@ function onScroll() {
 watch(
   () => props.messages.length,
   (newLen, oldLen) => {
-    if (oldLen === 0 && newLen > 0) {
+    if (oldLen === 0 && newLen > 0 && !hasLoadedMessages.value) {
+      hasLoadedMessages.value = true
       nextTick(() => scrollToBottom())
     }
   },

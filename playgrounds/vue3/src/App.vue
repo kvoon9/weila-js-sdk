@@ -59,6 +59,11 @@ const selectedSession = computed(() => {
 
 const wlMsgListRef = ref<InstanceType<typeof WlMsgList>>()
 
+// 切换 session 时重置滚动状态
+watch(selectedSession, () => {
+  wlMsgListRef.value?.resetScrollState()
+})
+
 const { messages, senderInfos, hasMore, loading, ensureSenderInfo, loadMore } = useMessageHistory(
   weilaCore,
   selectedSession,
