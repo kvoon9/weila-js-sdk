@@ -111,16 +111,15 @@ function onScroll() {
   showScrollButton.value = scrollHeight - scrollTop - clientHeight > 100
 }
 
-// Auto scroll to bottom when messages first appear or change
+// 首次加载完 messages 后滚动到底部
 watch(
   () => props.messages.length,
   (newLen, oldLen) => {
-    if (newLen > (oldLen ?? 0)) {
+    if (oldLen === 0 && newLen > 0) {
       nextTick(() => scrollToBottom())
     }
   },
-)
-</script>
+)</script>
 
 <template>
   <div ref="listRef" class="flex flex-col h-full bg-neutral-100 overflow-y-auto px-4 py-3" @scroll="onScroll">

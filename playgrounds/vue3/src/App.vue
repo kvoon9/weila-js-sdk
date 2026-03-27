@@ -57,6 +57,8 @@ const selectedSession = computed(() => {
   return sessions.value?.find((s) => s.sessionId === selectedSessionId.value) ?? null
 })
 
+const wlMsgListRef = ref<InstanceType<typeof WlMsgList>>()
+
 const { messages, senderInfos, hasMore, loading, ensureSenderInfo, loadMore } = useMessageHistory(
   weilaCore,
   selectedSession,
@@ -136,6 +138,7 @@ async function sendMessage() {
       selectedSession.value.sessionType,
       text,
     )
+    nextTick(() => wlMsgListRef.value?.scrollToBottom())
   } catch (err) {
     console.error('[Playground] Failed to send message:', err)
   }
@@ -211,7 +214,7 @@ async function handlePttStop() {
         </h2>
 
         <div class="relative">
-          <WlMsgList style="height: 400px" class="bg-neutral-100" :messages="messages"
+          <WlMsgList ref="wlMsgListRef" style="height: 400px" class="bg-neutral-100" :messages="messages"
             :current-user-id="userInfo?.userId ?? 0" :sender-infos="senderInfos" :has-more="hasMore" :loading="loading"
             @audio-play="handleAudioPlay" @audio-pause="handleAudioPause" @load-more="loadMore(messages[0]?.msgId - 1)"
             @image-click="openUrl" @file-click="openUrl" @location-click="openLocation" />
