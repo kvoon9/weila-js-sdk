@@ -91,11 +91,11 @@ function handleLocationClick(location: { latitude: number; longitude: number }) 
   emit('location-click', location)
 }
 
-function scrollToBottom() {
+function scrollToBottom(behavior: ScrollBehavior = 'smooth') {
   if (!listRef.value) return
   listRef.value.scrollTo({
     top: listRef.value.scrollHeight,
-    behavior: 'smooth',
+    behavior
   })
 }
 
@@ -112,7 +112,7 @@ watch(
   (newLen, oldLen) => {
     if (oldLen === 0 && newLen > 0 && !hasLoadedMessages.value) {
       hasLoadedMessages.value = true
-      nextTick(() => scrollToBottom())
+      nextTick(() => scrollToBottom('instant'))
     }
   },
 )</script>
@@ -158,7 +158,7 @@ watch(
 
     <button v-if="showScrollButton"
       class="absolute bottom-4 right-4 w-10 h-10 bg-blue-500 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-600"
-      @click="scrollToBottom">
+      @click="() => scrollToBottom()">
       ↓
     </button>
   </div>
