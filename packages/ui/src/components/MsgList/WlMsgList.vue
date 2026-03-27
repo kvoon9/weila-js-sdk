@@ -138,7 +138,7 @@ watch(
 
       <!-- Audio Message -->
       <WlAudioBubble v-else-if="isAudio(msg)" :duration="getAudioDuration(msg)" :is-self="isSelf(msg)"
-        :playing="props.playingAudioId === msg.combo_id" @play="emit('audio-play', msg)" @pause="emit('audio-pause', msg)" />
+        :playing="playingAudioId === msg.combo_id" @play="emit('audio-play', msg)" @pause="emit('audio-pause', msg)" />
 
       <!-- Image Message -->
       <WlImageBubble v-else-if="isImage(msg) && msg.fileInfo?.fileUrl" :msg="msg" :is-self="isSelf(msg)"
