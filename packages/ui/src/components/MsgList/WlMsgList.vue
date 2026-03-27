@@ -125,39 +125,42 @@ watch(
       <span v-else class="text-sm text-blue-500 hover:text-blue-600">加载更多</span>
     </div>
 
-    <div v-for="msg in messages" :key="msg.combo_id" class="flex items-start gap-2 py-1.5"
-      :class="isSelf(msg) ? 'flex-row-reverse' : ''">
-      <!-- Avatar -->
-      <div class="shrink-0 size-9 rounded-lg overflow-hidden bg-neutral-300 flex items-center justify-center">
-        <img v-if="getSender(msg)?.avatar" :src="getSender(msg)!.avatar" class="size-full object-cover" alt="" />
-        <span v-else class="icon-[carbon--user-avatar-filled] size-6 text-neutral-500" />
+    <div class="flex flex-col gap-4">
+      <div v-for="msg in messages" :key="msg.combo_id" class="flex items-start gap-2 py-1.5"
+        :class="isSelf(msg) ? 'flex-row-reverse' : ''">
+        <!-- Avatar -->
+        <div class="shrink-0 size-9 rounded-lg overflow-hidden bg-neutral-300 flex items-center justify-center">
+          <img v-if="getSender(msg)?.avatar" :src="getSender(msg)!.avatar" class="size-full object-cover" alt="" />
+          <span v-else class="icon-[carbon--user-avatar-filled] size-6 text-neutral-500" />
+        </div>
+
+        <!-- Text Message -->
+        <WlTextBubble v-if="isText(msg)" :msg="msg" :is-self="isSelf(msg)" :sender="getSender(msg)" />
+
+        <!-- Audio Message -->
+        <WlAudioBubble v-else-if="isAudio(msg)" :duration="getAudioDuration(msg)" :is-self="isSelf(msg)"
+          :playing="playingAudioId === msg.combo_id" @play="emit('audio-play', msg)"
+          @pause="emit('audio-pause', msg)" />
+
+        <!-- Image Message -->
+        <WlImageBubble v-else-if="isImage(msg) && msg.fileInfo?.fileUrl" :msg="msg" :is-self="isSelf(msg)"
+          :sender="getSender(msg)" @click="handleImageClick" />
+
+        <!-- Location Message -->
+        <WlLocationBubble v-else-if="isLocation(msg) && msg.location" :msg="msg" :is-self="isSelf(msg)"
+          :sender="getSender(msg)" @click="handleLocationClick" />
+
+        <!-- File Message -->
+        <WlFileBubble v-else-if="isFile(msg)" :msg="msg" :is-self="isSelf(msg)" :sender="getSender(msg)"
+          @click="handleFileClick" />
+
+        <!-- Unsupported Message Type -->
+        <WlUnknownBubble v-else :msg="msg" :is-self="isSelf(msg)" :sender="getSender(msg)" />
       </div>
-
-      <!-- Text Message -->
-      <WlTextBubble v-if="isText(msg)" :msg="msg" :is-self="isSelf(msg)" :sender="getSender(msg)" />
-
-      <!-- Audio Message -->
-      <WlAudioBubble v-else-if="isAudio(msg)" :duration="getAudioDuration(msg)" :is-self="isSelf(msg)"
-        :playing="playingAudioId === msg.combo_id" @play="emit('audio-play', msg)" @pause="emit('audio-pause', msg)" />
-
-      <!-- Image Message -->
-      <WlImageBubble v-else-if="isImage(msg) && msg.fileInfo?.fileUrl" :msg="msg" :is-self="isSelf(msg)"
-        :sender="getSender(msg)" @click="handleImageClick" />
-
-      <!-- Location Message -->
-      <WlLocationBubble v-else-if="isLocation(msg) && msg.location" :msg="msg" :is-self="isSelf(msg)"
-        :sender="getSender(msg)" @click="handleLocationClick" />
-
-      <!-- File Message -->
-      <WlFileBubble v-else-if="isFile(msg)" :msg="msg" :is-self="isSelf(msg)"
-        :sender="getSender(msg)" @click="handleFileClick" />
-
-      <!-- Unsupported Message Type -->
-      <WlUnknownBubble v-else :msg="msg" :is-self="isSelf(msg)" :sender="getSender(msg)" />
     </div>
 
     <button v-if="showScrollButton"
-      class="absolute bottom-4 right-4 w-10 h-10 bg-blue-500 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-600"
+      class="absolute overflow-hidden bottom-4 right-4 w-10 h-10 bg-blue-500 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-600"
       @click="() => scrollToBottom()">
       ↓
     </button>
