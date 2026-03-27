@@ -8,7 +8,7 @@
     "dev": "pnpm --filter @weilasdk/playground-vue3 run dev",
     "dev:ui": "pnpm --filter @weilasdk/ui run dev",
     "story": "pnpm --filter @weilasdk/ui run story",
-    "up": "npx taze -I major",
+    "up": "pnpm dlx taze -Ir major",
     "build:story": "pnpm --filter @weilasdk/ui run build:story",
     "typecheck": "pnpm -r run typecheck",
     "lint": "oxlint --type-aware",
@@ -22,7 +22,8 @@
     "oxfmt": "^0.36.0",
     "oxlint": "^1.51.0",
     "oxlint-tsgolint": "^0.16.0",
-    "simple-git-hooks": "^2.13.1"
+    "simple-git-hooks": "^2.13.1",
+    "taze": "^19.10.0"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm exec lint-staged"
