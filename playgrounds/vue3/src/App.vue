@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, triggerRef, watchEffect, toRaw, nextTick } from 'vue'
+import { ref, computed, watch, triggerRef, toRaw, nextTick } from 'vue'
 import { useRouteQuery } from '@vueuse/router'
 import {
   SessionList,
@@ -103,7 +103,7 @@ const handleAudioPlayEnd = (indData: { state: WL_PttAudioPlayState }) => {
 // 注册全局事件监听（消息追加 + 音频播放结束）
 watch(
   weilaCore,
-  (core, _oldCore, onCleanup) => {
+  (core, _oldCore) => {
     if (!core) return
     core.weila_onEvent(handleMessageEvent)
     core.weila_onEvent((eventId, eventData) => {
