@@ -9,9 +9,9 @@ import {
 import type { WL_IDbMsgData, WL_IDbSession } from '@weilasdk/core'
 import { WL_ExtEventID, WL_PttAudioPlayState } from '@weilasdk/core'
 import type { WL_ExtEventCallback, WL_PttPlayInd } from '@weilasdk/core'
-import { useWeilaStore } from './stores/weila'
-import { useSessions } from './queries/sessions'
-import { useMessageHistory } from './composables/useMessageHistory'
+import { useWeilaStore } from '../stores/weila'
+import { useSessions } from '../queries/sessions'
+import { useMessageHistory } from '../composables/useMessageHistory'
 import { storeToRefs } from 'pinia'
 
 const weila = useWeilaStore()

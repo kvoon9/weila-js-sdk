@@ -38,6 +38,6 @@ export const useWeilaStore = defineStore('weila', () => {
 })
 
 // Pinia HMR —— 替代手动 import.meta.hot.dispose/data 模式
-if (import.meta.hot) {
-  import.meta.hot.accept(acceptHMRUpdate(useWeilaStore, import.meta.hot))
-}
+// if (import.meta.hot) {
+//   import.meta.hot.accept(acceptHMRUpdate(useWeilaStore, import.meta.hot))
+// }
