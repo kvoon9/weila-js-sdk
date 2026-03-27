@@ -44,10 +44,7 @@ const bubbleStyle = computed(() => {
     class="relative flex items-center gap-2 rounded-xl px-3 py-2 text-sm cursor-pointer select-none transition-colors group overflow-hidden"
     :class="[
       isSelf ? 'bg-blue-500 text-white flex-row-reverse' : 'bg-white text-neutral-900 flex-row',
-    ]"
-    :style="bubbleStyle"
-    @click="handleClick"
-  >
+    ]" :style="bubbleStyle" @click="handleClick">
     <!-- Play/Pause Icon -->
     <div class="shrink-0 flex items-center justify-center">
       <span v-if="playing" class="icon-[carbon--pause-filled] size-5"></span>
@@ -55,30 +52,19 @@ const bubbleStyle = computed(() => {
     </div>
 
     <!-- Wave Animation -->
-    <div
-      class="flex items-center gap-0.75 grow h-4"
-      :class="isSelf ? 'justify-end' : 'justify-start'"
-    >
-      <div
-        class="wl-audio-bar"
+    <div class="flex items-center gap-0.75 grow h-4" :class="isSelf ? 'justify-end' : 'justify-start'">
+      <div class="wl-audio-bar"
         :class="{ 'wl-audio-bar-playing': playing, 'bg-white': isSelf, 'bg-neutral-900': !isSelf }"
-        style="--wl-delay: 0s"
-      ></div>
-      <div
-        class="wl-audio-bar"
+        style="--wl-delay: 0s"></div>
+      <div class="wl-audio-bar"
         :class="{ 'wl-audio-bar-playing': playing, 'bg-white': isSelf, 'bg-neutral-900': !isSelf }"
-        style="--wl-delay: -0.2s"
-      ></div>
-      <div
-        class="wl-audio-bar"
+        style="--wl-delay: -0.2s"></div>
+      <div class="wl-audio-bar"
         :class="{ 'wl-audio-bar-playing': playing, 'bg-white': isSelf, 'bg-neutral-900': !isSelf }"
-        style="--wl-delay: -0.4s"
-      ></div>
-      <div
-        class="wl-audio-bar"
+        style="--wl-delay: -0.4s"></div>
+      <div class="wl-audio-bar"
         :class="{ 'wl-audio-bar-playing': playing, 'bg-white': isSelf, 'bg-neutral-900': !isSelf }"
-        style="--wl-delay: -0.6s"
-      ></div>
+        style="--wl-delay: -0.6s"></div>
     </div>
 
     <!-- Duration -->
@@ -102,10 +88,12 @@ const bubbleStyle = computed(() => {
 }
 
 @keyframes wl-audio-wave {
+
   0%,
   100% {
     height: 4px;
   }
+
   50% {
     height: 14px;
   }
