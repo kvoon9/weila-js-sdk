@@ -41,6 +41,10 @@ async function handleAudioPlay(msg: WL_IDbMsgData) {
   console.log('[Audio] Playing:', msg.combo_id)
 
   try {
+    // 先停止当前正在播放的语音，等待完全停止后再播放新的
+    console.log('[Audio] Stopping current playback...')
+    await weilaCore.value?.weila_stopSingle()
+
     // 将 Vue 响应式对象转换为普通对象，否则无法存入 IndexedDB
     const plainMsg = toRaw(msg)
     console.log('[Audio] Calling playSingle...')

@@ -793,8 +793,28 @@ export default class WLSessionModule {
     return this.pttFsm.playHistory(msgDatas)
   }
 
-  public stopPlayAudio() {
-    return this.pttFsm.stopPlayAudio()
+  public isPttFsmIdle(): boolean {
+    return this.pttFsm?.pttFsmService?.state?.matches('idle') ?? true
+  }
+
+  public stopPlayAudio(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.pttFsm.stopPlayAudio()
+      const maxWaitTime = 5000
+      const checkInterval = 50
+      let elapsed = 0
+
+      const timer = setInterval(() => {
+        elapsed += checkInterval
+        if (this.isPttFsmIdle()) {
+          clearInterval(timer)
+          resolve()
+        } else if (elapsed >= maxWaitTime) {
+          clearInterval(timer)
+          reject(new Error('stopPlayAudio timeout'))
+        }
+      }, checkInterval)
+    })
   }
 
   private async onPttPlayInd(

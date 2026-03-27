@@ -671,7 +671,7 @@ class WeilaCore implements WL_CoreInterface {
   /**
    * 停止单条语音的播放
    */
-  public weila_stopSingle() {
+  public weila_stopSingle(): Promise<void> {
     return this.sessionModule.stopPlayAudio()
   }
 
