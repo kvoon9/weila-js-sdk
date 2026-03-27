@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, useTemplateRef } from 'vue'
 import type { WL_IDbMsgData, WL_IDbUserInfo } from '@weilasdk/core'
 import { WL_IDbMsgDataType } from '@weilasdk/core'
 import WlAudioBubble from '../Message/WlAudioBubble.vue'
@@ -47,6 +47,9 @@ const emit = defineEmits<{
 /** 当前正在播放的音频消息 combo_id */
 const playingAudioId = ref<string | null>(null)
 
+/** 列表容器 ref */
+const listRef = useTemplateRef<HTMLElement>('listRef')
+
 function getSender(msg: WL_IDbMsgData) {
   return props.senderInfos.get(msg.senderId)
 }
@@ -76,6 +79,7 @@ function handleAudioPause() {
 
 defineExpose({
   resetPlaying: handleAudioPause,
+  scrollToBottom,
 })
 
 function handleImageClick(url: string) {
@@ -89,10 +93,18 @@ function handleFileClick(url: string) {
 function handleLocationClick(location: { latitude: number; longitude: number }) {
   emit('location-click', location)
 }
+
+function scrollToBottom() {
+  if (!listRef.value) return
+  listRef.value.scrollTo({
+    top: listRef.value.scrollHeight,
+    behavior: 'smooth',
+  })
+}
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-neutral-100 overflow-y-auto px-4 py-3">
+  <div ref="listRef" class="flex flex-col h-full bg-neutral-100 overflow-y-auto px-4 py-3">
     <!-- Load more banner -->
     <div v-if="hasMore || loading" class="flex justify-center py-2 cursor-pointer" @click="emit('load-more')">
       <span v-if="loading" class="icon-[carbon--loading] size-5 text-neutral-400 animate-spin" />

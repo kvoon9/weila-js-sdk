@@ -144,10 +144,7 @@ async function sendMessage() {
 
 function scrollToBottom() {
   if (!wlMsgListRef.value) return
-  wlMsgListRef.value.$el.scrollTo({
-    top: wlMsgListRef.value.$el.scrollHeight,
-    behavior: 'smooth',
-  })
+  wlMsgListRef.value.scrollToBottom()
 }
 
 watch(messages, () => {
