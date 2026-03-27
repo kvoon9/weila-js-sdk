@@ -121,7 +121,7 @@ watch(
   <div ref="listRef" class="flex flex-col h-full bg-neutral-100 overflow-y-auto px-4 py-3" @scroll="onScroll">
     <!-- Load more banner -->
     <div v-if="hasMore || loading" class="flex justify-center py-2 cursor-pointer" @click="emit('load-more')">
-      <span v-if="loading" class="icon-[carbon--loading] size-5 text-neutral-400 animate-spin" />
+      <span v-if="loading" class="icon-[carbon--rotate] size-5 text-neutral-400 animate-spin" />
       <span v-else class="text-sm text-blue-500 hover:text-blue-600">加载更多</span>
     </div>
 
