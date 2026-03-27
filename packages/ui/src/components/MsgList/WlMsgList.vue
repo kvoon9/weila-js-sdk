@@ -24,12 +24,15 @@ export interface WlMsgListProps {
   hasMore?: boolean
   /** 加载状态 */
   loading?: boolean
+  /** 当前正在播放的音频消息 combo_id */
+  playingAudioId?: string | null
 }
 
 const props = withDefaults(defineProps<WlMsgListProps>(), {
   senderInfos: () => new Map(),
   hasMore: false,
   loading: false,
+  playingAudioId: null,
 })
 
 const emit = defineEmits<{
@@ -46,9 +49,6 @@ const emit = defineEmits<{
   /** 位置点击 */
   'location-click': [location: { latitude: number; longitude: number }]
 }>()
-
-/** 当前正在播放的音频消息 combo_id */
-const playingAudioId = ref<string | null>(null)
 
 /** 列表容器 ref */
 const listRef = useTemplateRef<HTMLElement>('listRef')
@@ -72,16 +72,7 @@ function getAudioDuration(msg: WL_IDbMsgData): number {
   return framesToDuration(msg.audioData?.frameCount ?? 0)
 }
 
-function handleAudioPlay(msg: WL_IDbMsgData) {
-  playingAudioId.value = msg.combo_id
-}
-
-function handleAudioPause() {
-  playingAudioId.value = null
-}
-
 defineExpose({
-  resetPlaying: handleAudioPause,
   scrollToBottom,
   resetScrollState: () => {
     hasLoadedMessages.value = false
@@ -147,13 +138,7 @@ watch(
 
       <!-- Audio Message -->
       <WlAudioBubble v-else-if="isAudio(msg)" :duration="getAudioDuration(msg)" :is-self="isSelf(msg)"
-        :playing="playingAudioId === msg.combo_id" @play="() => {
-          handleAudioPlay(msg)
-          emit('audio-play', msg)
-        }" @pause="() => {
-          handleAudioPause()
-          emit('audio-pause', msg)
-        }" />
+        :playing="props.playingAudioId === msg.combo_id" @play="emit('audio-play', msg)" @pause="emit('audio-pause', msg)" />
 
       <!-- Image Message -->
       <WlImageBubble v-else-if="isImage(msg) && msg.fileInfo?.fileUrl" :msg="msg" :is-self="isSelf(msg)"

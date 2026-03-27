@@ -22,6 +22,7 @@ const selectedSessionId = useRouteQuery<string>('sessionId')
 
 const messageInput = ref('')
 const pttStatus = ref<'idle' | 'recording' | 'processing'>('idle')
+const playingAudioId = ref<string | null>(null)
 
 weila.init().then(() => {
   console.log('inited')
@@ -42,6 +43,8 @@ async function handleAudioPlay(msg: WL_IDbMsgData) {
     console.log('[Audio] Calling playSingle...')
     await weilaCore.value?.weila_playSingle(plainMsg)
     console.log('[Audio] playSingle completed')
+    // 只有在音频真正开始播放后才设置 playingAudioId
+    playingAudioId.value = msg.combo_id
   } catch (err) {
     console.error('[Audio] Play failed:', err)
   }
@@ -49,6 +52,7 @@ async function handleAudioPlay(msg: WL_IDbMsgData) {
 
 function handleAudioPause() {
   console.log('[Audio] Paused')
+  playingAudioId.value = null
   weilaCore.value?.weila_stopSingle()
 }
 
@@ -96,7 +100,7 @@ const handleMessageEvent: WL_ExtEventCallback = (eventId, eventData) => {
 // ---- 音频播放结束监听 ----
 const handleAudioPlayEnd = (indData: { state: WL_PttAudioPlayState }) => {
   if (indData.state === WL_PttAudioPlayState.PTT_AUDIO_PLAYING_END) {
-    wlMsgListRef.value?.resetPlaying()
+    playingAudioId.value = null
   }
 }
 
@@ -221,8 +225,9 @@ async function handlePttStop() {
         <div class="relative">
           <WlMsgList ref="wlMsgListRef" style="height: 400px" class="bg-neutral-100" :messages="messages"
             :current-user-id="userInfo?.userId ?? 0" :sender-infos="senderInfos" :has-more="hasMore" :loading="loading"
-            @audio-play="handleAudioPlay" @audio-pause="handleAudioPause" @load-more="loadMore(messages[0]?.msgId - 1)"
-            @image-click="openUrl" @file-click="openUrl" @location-click="openLocation" />
+            :playing-audio-id="playingAudioId" @audio-play="handleAudioPlay" @audio-pause="handleAudioPause"
+            @load-more="loadMore(messages[0]?.msgId - 1)" @image-click="openUrl" @file-click="openUrl"
+            @location-click="openLocation" />
         </div>
 
         <!-- Message Input -->
