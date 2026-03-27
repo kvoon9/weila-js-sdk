@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, triggerRef, watchEffect, toRaw, nextTick, useTemplateRef } from 'vue'
+import { ref, computed, watch, triggerRef, watchEffect, toRaw, nextTick } from 'vue'
 import { useRouteQuery } from '@vueuse/router'
 import {
   SessionList,
@@ -22,7 +22,6 @@ const selectedSessionId = useRouteQuery<string>('sessionId')
 
 const messageInput = ref('')
 const pttStatus = ref<'idle' | 'recording' | 'processing'>('idle')
-const wlMsgListRef = useTemplateRef('wlMsgListRef')
 
 weila.init().then(() => {
   console.log('inited')
@@ -142,18 +141,7 @@ async function sendMessage() {
   }
 }
 
-function scrollToBottom() {
-  if (!wlMsgListRef.value) return
-  wlMsgListRef.value.scrollToBottom()
-}
 
-watch(messages, () => {
-  if (!wlMsgListRef.value) return
-  wlMsgListRef.value.$el.scrollTo({
-    top: wlMsgListRef.value.$el.scrollHeight,
-    behavior: 'smooth',
-  })
-})
 
 // ---- PTT 对讲控制 ----
 async function handlePttStart() {
@@ -223,16 +211,10 @@ async function handlePttStop() {
         </h2>
 
         <div class="relative">
-          <WlMsgList ref="wlMsgListRef" style="height: 400px" class="bg-neutral-100" :messages="messages"
+          <WlMsgList style="height: 400px" class="bg-neutral-100" :messages="messages"
             :current-user-id="userInfo?.userId ?? 0" :sender-infos="senderInfos" :has-more="hasMore" :loading="loading"
             @audio-play="handleAudioPlay" @audio-pause="handleAudioPause" @load-more="loadMore(messages[0]?.msgId - 1)"
             @image-click="openUrl" @file-click="openUrl" @location-click="openLocation" />
-          <!-- 滚动到底部按钮 -->
-          <button
-            class="absolute bottom-4 right-4 w-10 h-10 bg-blue-500 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-600"
-            @click="scrollToBottom">
-            ↓
-          </button>
         </div>
 
         <!-- Message Input -->

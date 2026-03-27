@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, useTemplateRef } from 'vue'
+import { ref, useTemplateRef, watch, nextTick } from 'vue'
 import type { WL_IDbMsgData, WL_IDbUserInfo } from '@weilasdk/core'
 import { WL_IDbMsgDataType } from '@weilasdk/core'
 import WlAudioBubble from '../Message/WlAudioBubble.vue'
@@ -101,6 +101,16 @@ function scrollToBottom() {
     behavior: 'smooth',
   })
 }
+
+// Auto scroll to bottom when messages first appear or change
+watch(
+  () => props.messages.length,
+  (newLen, oldLen) => {
+    if (newLen > (oldLen ?? 0)) {
+      nextTick(() => scrollToBottom())
+    }
+  },
+)
 </script>
 
 <template>
