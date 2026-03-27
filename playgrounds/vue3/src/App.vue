@@ -5,13 +5,6 @@ import {
   SessionList,
   WlMsgList,
   WlPttButton,
-  WlTextBubble,
-  WlImageBubble,
-  WlAudioBubble,
-  WlLocationBubble,
-  WlFileBubble,
-  WlUnknownBubble,
-  framesToDuration,
 } from '@weilasdk/ui'
 import type { WL_IDbMsgData, WL_IDbSession } from '@weilasdk/core'
 import { WL_ExtEventID, WL_PttAudioPlayState } from '@weilasdk/core'
@@ -235,38 +228,8 @@ async function handlePttStop() {
         <div class="relative">
           <WlMsgList ref="wlMsgListRef" style="height: 400px" class="bg-neutral-100" :messages="messages"
             :current-user-id="userInfo?.userId ?? 0" :sender-infos="senderInfos" :has-more="hasMore" :loading="loading"
-            @audio-play="handleAudioPlay" @audio-pause="handleAudioPause" @load-more="loadMore(messages[0]?.msgId - 1)">
-            <!-- 使用 slot 自定义文本消息渲染 -->
-            <template #text="{ msg, isSelf, sender }">
-              <WlTextBubble :msg="msg" :is-self="isSelf" :sender="sender" />
-            </template>
-
-            <!-- 使用 slot 自定义图片消息渲染 -->
-            <template #image="{ msg, isSelf, sender }">
-              <WlImageBubble :msg="msg" :is-self="isSelf" :sender="sender" @click="openUrl" />
-            </template>
-
-            <!-- 使用 slot 自定义音频消息渲染 -->
-            <template #audio="{ msg, isSelf, playing, onPlay, onPause }">
-              <WlAudioBubble :duration="framesToDuration(msg.audioData?.frameCount ?? 0)" :is-self="isSelf"
-                :playing="playing" @play="onPlay" @pause="onPause" />
-            </template>
-
-            <!-- 使用 slot 自定义位置消息渲染 -->
-            <template #location="{ msg, isSelf, sender }">
-              <WlLocationBubble :msg="msg" :is-self="isSelf" :sender="sender" @click="openLocation" />
-            </template>
-
-            <!-- 使用 slot 自定义文件消息渲染 -->
-            <template #file="{ msg, isSelf, sender }">
-              <WlFileBubble :msg="msg" :is-self="isSelf" :sender="sender" @click="openUrl" />
-            </template>
-
-            <!-- 使用 slot 自定义未知消息渲染 -->
-            <template #unknown="{ msg, isSelf, sender }">
-              <WlUnknownBubble :msg="msg" :is-self="isSelf" :sender="sender" />
-            </template>
-          </WlMsgList>
+            @audio-play="handleAudioPlay" @audio-pause="handleAudioPause" @load-more="loadMore(messages[0]?.msgId - 1)"
+            @image-click="openUrl" @file-click="openUrl" @location-click="openLocation" />
           <!-- 滚动到底部按钮 -->
           <button
             class="absolute bottom-4 right-4 w-10 h-10 bg-blue-500 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-600"

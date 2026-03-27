@@ -36,6 +36,12 @@ const emit = defineEmits<{
   'audio-pause': [msg: WL_IDbMsgData]
   /** 加载更多消息 */
   'load-more': []
+  /** 图片点击 */
+  'image-click': [url: string]
+  /** 文件点击 */
+  'file-click': [url: string]
+  /** 位置点击 */
+  'location-click': [location: { latitude: number; longitude: number }]
 }>()
 
 /** 当前正在播放的音频消息 combo_id */
@@ -71,6 +77,18 @@ function handleAudioPause() {
 defineExpose({
   resetPlaying: handleAudioPause,
 })
+
+function handleImageClick(url: string) {
+  emit('image-click', url)
+}
+
+function handleFileClick(url: string) {
+  emit('file-click', url)
+}
+
+function handleLocationClick(location: { latitude: number; longitude: number }) {
+  emit('location-click', location)
+}
 </script>
 
 <template>
@@ -90,66 +108,32 @@ defineExpose({
       </div>
 
       <!-- Text Message -->
-      <template v-if="isText(msg)">
-        <slot name="text" :msg="msg" :is-self="isSelf(msg)" :sender="getSender(msg)">
-          <WlTextBubble :msg="msg" :is-self="isSelf(msg)" :sender="getSender(msg)" />
-        </slot>
-      </template>
+      <WlTextBubble v-if="isText(msg)" :msg="msg" :is-self="isSelf(msg)" :sender="getSender(msg)" />
 
       <!-- Audio Message -->
-      <template v-else-if="isAudio(msg)">
-        <slot name="audio" :msg="msg" :is-self="isSelf(msg)" :sender="getSender(msg)"
-          :playing="playingAudioId === msg.combo_id" :on-play="() => {
-              handleAudioPlay(msg)
-              $emit('audio-play', msg)
-            }
-            " :on-pause="() => {
-              handleAudioPause()
-              $emit('audio-pause', msg)
-            }
-            ">
-          <WlAudioBubble :duration="getAudioDuration(msg)" :is-self="isSelf(msg)"
-            :playing="playingAudioId === msg.combo_id" @play="
-              () => {
-                handleAudioPlay(msg)
-                $emit('audio-play', msg)
-              }
-            " @pause="
-              () => {
-                handleAudioPause()
-                $emit('audio-pause', msg)
-              }
-            " />
-        </slot>
-      </template>
+      <WlAudioBubble v-else-if="isAudio(msg)" :duration="getAudioDuration(msg)" :is-self="isSelf(msg)"
+        :playing="playingAudioId === msg.combo_id" @play="() => {
+          handleAudioPlay(msg)
+          emit('audio-play', msg)
+        }" @pause="() => {
+          handleAudioPause()
+          emit('audio-pause', msg)
+        }" />
 
       <!-- Image Message -->
-      <template v-else-if="isImage(msg) && msg.fileInfo?.fileUrl">
-        <slot name="image" :msg="msg" :is-self="isSelf(msg)" :sender="getSender(msg)">
-          <WlImageBubble :msg="msg" :is-self="isSelf(msg)" :sender="getSender(msg)" />
-        </slot>
-      </template>
+      <WlImageBubble v-else-if="isImage(msg) && msg.fileInfo?.fileUrl" :msg="msg" :is-self="isSelf(msg)"
+        :sender="getSender(msg)" @click="handleImageClick" />
 
       <!-- Location Message -->
-      <template v-else-if="isLocation(msg) && msg.location">
-        <slot name="location" :msg="msg" :is-self="isSelf(msg)" :sender="getSender(msg)">
-          <WlLocationBubble :msg="msg" :is-self="isSelf(msg)" :sender="getSender(msg)" />
-        </slot>
-      </template>
+      <WlLocationBubble v-else-if="isLocation(msg) && msg.location" :msg="msg" :is-self="isSelf(msg)"
+        :sender="getSender(msg)" @click="handleLocationClick" />
 
       <!-- File Message -->
-      <template v-else-if="isFile(msg) && msg.fileInfo?.fileUrl">
-        <slot name="file" :msg="msg" :is-self="isSelf(msg)" :sender="getSender(msg)">
-          <WlFileBubble :msg="msg" :is-self="isSelf(msg)" :sender="getSender(msg)" />
-        </slot>
-      </template>
+      <WlFileBubble v-else-if="isFile(msg) && msg.fileInfo?.fileUrl" :msg="msg" :is-self="isSelf(msg)"
+        :sender="getSender(msg)" @click="handleFileClick" />
 
       <!-- Unsupported Message Type -->
-      <template v-else>
-        <slot name="unknown" :msg="msg" :is-self="isSelf(msg)" :sender="getSender(msg)">
-          <WlUnknownBubble :msg="msg" :is-self="isSelf(msg)" :sender="getSender(msg)" />
-        </slot>
-      </template>
+      <WlUnknownBubble v-else :msg="msg" :is-self="isSelf(msg)" :sender="getSender(msg)" />
     </div>
   </div>
 </template>
