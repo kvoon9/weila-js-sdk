@@ -28,10 +28,13 @@ function formatFileSize(bytes?: number): string {
 
 <template>
   <div
-    v-if="msg.fileInfo?.fileUrl"
-    class="max-w-[70%] rounded-xl overflow-hidden cursor-pointer"
-    :class="isSelf ? 'bg-blue-500' : 'bg-white'"
-    @click="emit('click', msg.fileInfo!.fileUrl)"
+    v-if="msg.fileInfo?.fileName"
+    class="max-w-[70%] rounded-xl overflow-hidden"
+    :class="[
+      isSelf ? 'bg-blue-500' : 'bg-white',
+      msg.fileInfo?.fileUrl ? 'cursor-pointer' : 'opacity-60'
+    ]"
+    @click="msg.fileInfo?.fileUrl && emit('click', msg.fileInfo!.fileUrl)"
   >
     <div class="flex items-center gap-2.5 px-3 py-2.5">
       <img
@@ -51,7 +54,7 @@ function formatFileSize(bytes?: number): string {
           {{ msg.fileInfo.fileName || '文件' }}
         </div>
         <div class="text-xs mt-0.5" :class="isSelf ? 'text-blue-200' : 'text-neutral-400'">
-          {{ formatFileSize(msg.fileInfo.fileSize) }}
+          {{ msg.fileInfo?.fileUrl ? formatFileSize(msg.fileInfo.fileSize) : '上传中...' }}
         </div>
       </div>
     </div>

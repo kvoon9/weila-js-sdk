@@ -149,7 +149,7 @@ watch(
         :sender="getSender(msg)" @click="handleLocationClick" />
 
       <!-- File Message -->
-      <WlFileBubble v-else-if="isFile(msg) && msg.fileInfo?.fileUrl" :msg="msg" :is-self="isSelf(msg)"
+      <WlFileBubble v-else-if="isFile(msg)" :msg="msg" :is-self="isSelf(msg)"
         :sender="getSender(msg)" @click="handleFileClick" />
 
       <!-- Unsupported Message Type -->

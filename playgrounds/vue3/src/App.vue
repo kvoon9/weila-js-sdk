@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, triggerRef, toRaw, nextTick } from 'vue'
+import { ref, computed, watch, triggerRef, toRaw, nextTick, useTemplateRef } from 'vue'
 import { useRouteQuery } from '@vueuse/router'
 import {
   SessionList,
@@ -23,6 +23,9 @@ const selectedSessionId = useRouteQuery<string>('sessionId')
 const messageInput = ref('')
 const pttStatus = ref<'idle' | 'recording' | 'processing'>('idle')
 const playingAudioId = ref<string | null>(null)
+const showMediaPanel = ref(false)
+const imageInputRef = useTemplateRef<HTMLInputElement>('imageInput')
+const fileInputRef = useTemplateRef<HTMLInputElement>('fileInput')
 
 weila.init().then(() => {
   console.log('inited')
@@ -153,6 +156,49 @@ async function sendMessage() {
   }
 }
 
+function triggerImagePicker() {
+  showMediaPanel.value = false
+  imageInputRef.value?.click()
+}
+
+function triggerFilePicker() {
+  showMediaPanel.value = false
+  fileInputRef.value?.click()
+}
+
+async function handleImageSelected(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (!file || !selectedSession.value) return
+  try {
+    await weilaCore.value?.weila_sendImage(
+      selectedSession.value.sessionId,
+      selectedSession.value.sessionType,
+      file.name,
+      file,
+    )
+    nextTick(() => wlMsgListRef.value?.scrollToBottom())
+  } catch (err) {
+    console.error('[Playground] Failed to send image:', err)
+  }
+}
+
+async function handleFileSelected(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (!file || !selectedSession.value) return
+  try {
+    console.log('file', file)
+    await weilaCore.value?.weila_sendFile(
+      selectedSession.value.sessionId,
+      selectedSession.value.sessionType,
+      file.name,
+      file,
+    )
+    nextTick(() => wlMsgListRef.value?.scrollToBottom())
+  } catch (err) {
+    console.error('[Playground] Failed to send file:', err)
+  }
+}
+
 
 
 // ---- PTT 对讲控制 ----
@@ -231,10 +277,26 @@ async function handlePttStop() {
         </div>
 
         <!-- Message Input -->
-        <div class="mt-4 flex gap-2 items-center">
+        <div class="mt-4 flex gap-2 items-center relative">
           <input v-model="messageInput" type="text" placeholder="Type a message..."
             class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             @keyup.enter="sendMessage" />
+          <!-- Media Panel -->
+          <div v-if="showMediaPanel"
+            class="absolute bottom-full mb-2 left-0 bg-white shadow-lg rounded-lg border py-1 min-w-32 z-10">
+            <button @click="triggerImagePicker"
+              class="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2">
+              <span class="icon-[carbon--image]"></span> Send Image
+            </button>
+            <button @click="triggerFilePicker"
+              class="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2">
+              <span class="icon-[carbon--document]"></span> Send File
+            </button>
+          </div>
+          <!-- Plus Button -->
+          <button @click="showMediaPanel = !showMediaPanel" class="p-2 rounded-lg hover:bg-gray-100">
+            <span class="icon-[carbon--add] text-xl"></span>
+          </button>
           <button @click="sendMessage"
             class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none">
             Send
@@ -242,6 +304,9 @@ async function handlePttStop() {
           <!-- PTT Button -->
           <WlPttButton v-if="selectedSession" :status="pttStatus" size="md" :disabled="!selectedSession"
             @start="handlePttStart" @stop="handlePttStop" />
+          <!-- Hidden file inputs -->
+          <input ref="imageInput" type="file" accept="image/*" class="hidden" @change="handleImageSelected" />
+          <input ref="fileInput" type="file" class="hidden" @change="handleFileSelected" />
         </div>
       </div>
       <div v-else class="flex items-center justify-center h-full text-gray-400">

@@ -21,12 +21,8 @@ const emit = defineEmits<{
 
 <template>
   <div class="max-w-[70%] rounded-xl overflow-hidden" :class="isSelf ? 'bg-blue-500' : 'bg-white'">
-    <img
-      v-if="msg.fileInfo?.fileUrl"
-      :src="msg.fileInfo.fileThumbnail || msg.fileInfo.fileUrl"
-      class="max-w-[200px] max-h-[200px] rounded-xl object-cover cursor-pointer"
-      alt="image"
-      @click="emit('click', msg.fileInfo!.fileUrl)"
-    />
+    <img v-if="msg.fileInfo?.fileUrl" :src="msg.fileInfo.fileUrl"
+      class="max-w-[200px] max-h-[200px] rounded-xl object-cover cursor-pointer" alt="image"
+      @click="emit('click', msg.fileInfo!.fileUrl)" />
   </div>
 </template>
