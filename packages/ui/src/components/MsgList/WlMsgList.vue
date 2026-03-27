@@ -10,6 +10,8 @@ import WlFileBubble from '../Message/WlFileBubble.vue'
 import WlUnknownBubble from '../Message/WlUnknownBubble.vue'
 import { framesToDuration } from '../../composables/useAudio'
 
+const showScrollButton = ref(false)
+
 export interface WlMsgListProps {
   /** 消息列表 */
   messages: WL_IDbMsgData[]
@@ -102,6 +104,13 @@ function scrollToBottom() {
   })
 }
 
+function onScroll() {
+  if (!listRef.value) return
+  const { scrollTop, scrollHeight, clientHeight } = listRef.value
+  // Show button when user has scrolled up (not at bottom)
+  showScrollButton.value = scrollHeight - scrollTop - clientHeight > 100
+}
+
 // Auto scroll to bottom when messages first appear or change
 watch(
   () => props.messages.length,
@@ -114,7 +123,7 @@ watch(
 </script>
 
 <template>
-  <div ref="listRef" class="flex flex-col h-full bg-neutral-100 overflow-y-auto px-4 py-3">
+  <div ref="listRef" class="flex flex-col h-full bg-neutral-100 overflow-y-auto px-4 py-3" @scroll="onScroll">
     <!-- Load more banner -->
     <div v-if="hasMore || loading" class="flex justify-center py-2 cursor-pointer" @click="emit('load-more')">
       <span v-if="loading" class="icon-[carbon--loading] size-5 text-neutral-400 animate-spin" />
@@ -157,5 +166,11 @@ watch(
       <!-- Unsupported Message Type -->
       <WlUnknownBubble v-else :msg="msg" :is-self="isSelf(msg)" :sender="getSender(msg)" />
     </div>
+
+    <button v-if="showScrollButton"
+      class="absolute bottom-4 right-4 w-10 h-10 bg-blue-500 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-600"
+      @click="scrollToBottom">
+      ↓
+    </button>
   </div>
 </template>
