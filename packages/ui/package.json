@@ -24,7 +24,7 @@
     "build": "tsdown",
     "dev": "tsdown --watch",
     "typecheck": "vue-tsc --noEmit",
-    "story": "storybook dev",
+    "story": "storybook dev -p 6006",
     "build:story": "storybook build"
   },
   "dependencies": {
