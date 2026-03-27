@@ -278,9 +278,6 @@ async function handlePttStop() {
 
         <!-- Message Input -->
         <div class="mt-4 flex gap-2 items-center relative">
-          <input v-model="messageInput" type="text" placeholder="Type a message..."
-            class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            @keyup.enter="sendMessage" />
           <!-- Media Panel -->
           <div v-if="showMediaPanel"
             class="absolute bottom-full mb-2 left-0 bg-white shadow-lg rounded-lg border py-1 min-w-32 z-10">
@@ -297,6 +294,9 @@ async function handlePttStop() {
           <button @click="showMediaPanel = !showMediaPanel" class="p-2 rounded-lg hover:bg-gray-100">
             <span class="icon-[carbon--add] text-xl"></span>
           </button>
+          <input v-model="messageInput" type="text" placeholder="Type a message..."
+            class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            @keyup.enter="sendMessage" />
           <button @click="sendMessage"
             class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none">
             Send
