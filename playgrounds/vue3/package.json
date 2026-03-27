@@ -19,10 +19,11 @@
     "vue-router": "^5.0.4"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.2.2",
     "@types/md5": "^2.3.6",
+    "@unocss/preset-attributify": "^66.1.2",
+    "@unocss/preset-wind": "^66.1.2",
     "@vitejs/plugin-vue": "^6.0.5",
-    "tailwindcss": "^4.2.2",
+    "unocss": "^66.1.2",
     "typescript": "^6.0.2",
     "vite": "^8.0.3",
     "vue-tsc": "^3.2.6"

@@ -2,7 +2,7 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import path from 'path'
-import tailwindcss from '@tailwindcss/vite'
+import UnoCSS from 'unocss/vite'
 import { fileURLToPath } from 'node:url'
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin'
 import { playwright } from '@vitest/browser-playwright'
@@ -12,7 +12,7 @@ const dirname =
 
 // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
 export default defineConfig({
-  plugins: [vue(), tailwindcss()],
+  plugins: [vue(), UnoCSS()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),
