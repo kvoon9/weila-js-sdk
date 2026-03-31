@@ -15,12 +15,11 @@ export default defineConfig({
   external: ['vue', '@weilasdk/core'],
   hooks: {
     'build:done'() {
-      // 生成 Tailwind CSS 并合并到 tsdown 产出的 index.css
       execSync('pnpm exec postcss src/style.postcss.css -o dist/tailwind.css')
-      // 复制 floating-vue CSS
+      execSync('cat dist/tailwind.css dist/index.css > dist/merged.css')
+      execSync('mv dist/merged.css dist/index.css && rm dist/tailwind.css')
       const fvCss = resolve(__dirname, 'node_modules/floating-vue/dist/style.css')
-      execSync(`cat dist/tailwind.css dist/index.css ${fvCss} > dist/merged.css && mv dist/merged.css dist/index.css && rm dist/tailwind.css`)
-      // 复制 emoji 资源到 dist
+      execSync(`cat ${fvCss} >> dist/index.css`)
       execSync('cp -r src/components/Emoji/assets dist/')
     },
   },
