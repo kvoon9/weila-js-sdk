@@ -49,7 +49,7 @@
 | Playground 串联：会话列表 → 消息列表 → 发送文本 | 高     | [x]  |
 | 消息已读/未读状态 UI                            | 中     | [ ]  |
 | WlImageBubble 图片消息 (缩略图 + 点击放大)      | 高     | [ ]  |
-| WlAudioBubble 完善 + WlAudioPlayer (进度、时长) | 高     | [ ]  |
+| WlAudioBubble 完善 + WlAudioPlayer (进度、时长) | 高     | [x]  |
 
 **里程碑**：可演示「登录 → 选会话 → 查看历史 → 发送文本」，图片/音频消息可展示
 
@@ -59,7 +59,7 @@
 
 | 任务                                         | 优先级 | 状态 |
 | -------------------------------------------- | ------ | ---- |
-| WlFileBubble 文件消息 (文件名、大小、下载)   | 中     | [ ]  |
+| WlFileBubble 文件消息 (文件名、大小、下载)   | 中     | [x]  |
 | WlVideoBubble 视频消息 (封面 + 播放)         | 中     | [ ]  |
 | WlEmojiPicker 表情选择器 + 集成到 WlMsgInput | 中     | [ ]  |
 | WlLocationBubble 位置消息                    | 中     | [ ]  |
