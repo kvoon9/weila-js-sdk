@@ -5,6 +5,7 @@ import {
   SessionList,
   WlMsgList,
   WlPttButton,
+  WLEmojiPicker,
 } from '@weilasdk/ui'
 import type { WL_IDbMsgData, WL_IDbSession } from '@weilasdk/core'
 import { WL_ExtEventID, WL_PttAudioPlayState } from '@weilasdk/core'
@@ -166,6 +167,10 @@ function triggerFilePicker() {
   fileInputRef.value?.click()
 }
 
+function handleEmojiSelect(emoji: string) {
+  messageInput.value += emoji
+}
+
 async function handleImageSelected(e: Event) {
   const file = (e.target as HTMLInputElement).files?.[0]
   if (!file || !selectedSession.value) return
@@ -290,6 +295,8 @@ async function handlePttStop() {
               <span class="icon-[carbon--document]"></span> Send File
             </button>
           </div>
+          <!-- Emoji Picker -->
+          <WLEmojiPicker @select="handleEmojiSelect" />
           <!-- Plus Button -->
           <button @click="showMediaPanel = !showMediaPanel" class="p-2 rounded-lg hover:bg-gray-100">
             <span class="icon-[carbon--add] text-xl"></span>
