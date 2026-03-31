@@ -60,6 +60,9 @@ catalogs:
     autoprefixer:
       specifier: ^10.4.27
       version: 10.4.27
+    floating-vue:
+      specifier: ^5.2.2
+      version: 5.2.2
     jsdom:
       specifier: ^29.0.1
       version: 29.0.1
@@ -234,6 +237,9 @@ importers:
       '@weilasdk/core':
         specifier: workspace:*
         version: link:../core
+      floating-vue:
+        specifier: ^5.1.1
+        version: 5.2.2(vue@3.5.31(typescript@6.0.2))
     devDependencies:
       '@iconify-json/carbon':
         specifier: 'catalog:'
@@ -645,6 +651,15 @@ packages:
     peerDependenciesMeta:
       '@noble/hashes':
         optional: true
+
+  '@floating-ui/core@1.7.5':
+    resolution: {integrity: sha512-1Ih4WTWyw0+lKyFMcBHGbb5U5FtuHJuujoyyr5zTaWS5EYMeT6Jb2AuDeftsCsEuchO+mM2ij5+q9crhydzLhQ==}
+
+  '@floating-ui/dom@1.1.1':
+    resolution: {integrity: sha512-TpIO93+DIujg3g7SykEAGZMDtbJRrmnYRCNYSjJlvIbGhBjRSNTLVbNeDQBrzy9qDgUbiWdc7KA0uZHZ2tJmiw==}
+
+  '@floating-ui/utils@0.2.11':
+    resolution: {integrity: sha512-RiB/yIh78pcIxl6lLMG0CgBXAZ2Y0eVHqMPYugu+9U0AeT6YBeiJpf7lbdJNIugFP5SIjwNRgo4DhR1Qxi26Gg==}
 
   '@henrygd/queue@1.2.0':
     resolution: {integrity: sha512-jW/BLSTpcvExDhqJGxtIPgGr2O0IFF8XUNDwEbfCfhrXT8a4xztQ9Lv6U/vbYzYC0xVWn+3zv6YnLUh3bEFUKA==}
@@ -2606,6 +2621,15 @@ packages:
     resolution: {integrity: sha512-b6suED+5/3rTpUBdG1gupIl8MPFCAMA0QXwmljLhvCUKcUvdE4gWky9zpuGCcXHOsz4J9wPGNWq6OKpmIzz3hQ==}
     hasBin: true
 
+  floating-vue@5.2.2:
+    resolution: {integrity: sha512-afW+h2CFafo+7Y9Lvw/xsqjaQlKLdJV7h1fCHfcYQ1C4SVMlu7OAekqWgu5d4SgvkBVU0pVpLlVsrSTBURFRkg==}
+    peerDependencies:
+      '@nuxt/kit': ^3.2.0
+      vue: ^3.2.0
+    peerDependenciesMeta:
+      '@nuxt/kit':
+        optional: true
+
   foreground-child@3.3.1:
     resolution: {integrity: sha512-gIXjKqtFuWEgzFRJA9WCQeSJLZDjgJUOMCMzxtvFq/37KojM1BFGufqsCy0r4qSQmYLsZYMeyRqzIWOMup03sw==}
     engines: {node: '>=14'}
@@ -4231,6 +4255,11 @@ packages:
     peerDependencies:
       vue: '>=2'
 
+  vue-resize@2.0.0-alpha.1:
+    resolution: {integrity: sha512-7+iqOueLU7uc9NrMfrzbG8hwMqchfVfSzpVlCMeJQe4pyibqyoifDNbKTZvwxZKDvGkB+PdFeKvnGZMoEb8esg==}
+    peerDependencies:
+      vue: ^3.0.0
+
   vue-router@5.0.4:
     resolution: {integrity: sha512-lCqDLCI2+fKVRl2OzXuzdSWmxXFLQRxQbmHugnRpTMyYiT+hNaycV0faqG5FBHDXoYrZ6MQcX87BvbY8mQ20Bg==}
     peerDependencies:
@@ -4628,6 +4657,16 @@ snapshots:
     optional: true
 
   '@exodus/bytes@1.15.0': {}
+
+  '@floating-ui/core@1.7.5':
+    dependencies:
+      '@floating-ui/utils': 0.2.11
+
+  '@floating-ui/dom@1.1.1':
+    dependencies:
+      '@floating-ui/core': 1.7.5
+
+  '@floating-ui/utils@0.2.11': {}
 
   '@henrygd/queue@1.2.0': {}
 
@@ -6366,6 +6405,12 @@ snapshots:
 
   flat@5.0.2: {}
 
+  floating-vue@5.2.2(vue@3.5.31(typescript@6.0.2)):
+    dependencies:
+      '@floating-ui/dom': 1.1.1
+      vue: 3.5.31(typescript@6.0.2)
+      vue-resize: 2.0.0-alpha.1(vue@3.5.31(typescript@6.0.2))
+
   foreground-child@3.3.1:
     dependencies:
       cross-spawn: 7.0.6
@@ -8038,6 +8083,10 @@ snapshots:
       vue-inbrowser-compiler-independent-utils: 4.71.1(vue@3.5.31(typescript@6.0.2))
 
   vue-inbrowser-compiler-independent-utils@4.71.1(vue@3.5.31(typescript@6.0.2)):
+    dependencies:
+      vue: 3.5.31(typescript@6.0.2)
+
+  vue-resize@2.0.0-alpha.1(vue@3.5.31(typescript@6.0.2)):
     dependencies:
       vue: 3.5.31(typescript@6.0.2)
 

@@ -1,5 +1,7 @@
 import type { Preview } from '@storybook/vue3-vite'
 // eslint-disable-next-line import/no-unassigned-import
+import 'floating-vue/dist/style.css'
+// eslint-disable-next-line import/no-unassigned-import
 import '../src/style.postcss.css'
 
 const preview: Preview = {

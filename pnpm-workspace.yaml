@@ -21,6 +21,7 @@ catalog:
   "@vueuse/core": ^14.2.1
   "@vueuse/router": ^14.2.1
   autoprefixer: ^10.4.27
+  floating-vue: ^5.2.2
   jsdom: ^29.0.1
   lint-staged: ^16.4.0
   md5: ^2.3.0
