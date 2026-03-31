@@ -6,6 +6,7 @@ import {
   WlMsgList,
   WlPttButton,
   WLEmojiPicker,
+  WlImagePreview,
 } from '@weilasdk/ui'
 import type { WL_IDbMsgData, WL_IDbSession } from '@weilasdk/core'
 import { WL_ExtEventID, WL_PttAudioPlayState } from '@weilasdk/core'
@@ -27,6 +28,8 @@ const playingAudioId = ref<string | null>(null)
 const showMediaPanel = ref(false)
 const imageInputRef = useTemplateRef<HTMLInputElement>('imageInput')
 const fileInputRef = useTemplateRef<HTMLInputElement>('fileInput')
+const previewImage = ref<string | null>(null)
+const previewOpen = ref(false)
 
 weila.init().then(() => {
   console.log('inited')
@@ -127,6 +130,11 @@ watch(
 
 function openUrl(url: string) {
   window.open(url)
+}
+
+function handleImageClick(url: string) {
+  previewImage.value = url
+  previewOpen.value = true
 }
 
 function openLocation(location: { latitude: number; longitude: number }) {
@@ -277,7 +285,7 @@ async function handlePttStop() {
           <WlMsgList ref="wlMsgListRef" style="height: 400px" class="bg-neutral-100" :messages="messages"
             :current-user-id="userInfo?.userId ?? 0" :sender-infos="senderInfos" :has-more="hasMore" :loading="loading"
             :playing-audio-id="playingAudioId" @audio-play="handleAudioPlay" @audio-pause="handleAudioPause"
-            @load-more="loadMore(messages[0]?.msgId - 1)" @image-click="openUrl" @file-click="openUrl"
+            @load-more="loadMore(messages[0]?.msgId - 1)" @image-click="handleImageClick" @file-click="openUrl"
             @location-click="openLocation" />
         </div>
 
@@ -321,6 +329,7 @@ async function handlePttStop() {
       </div>
     </div>
   </div>
+  <WlImagePreview v-if="previewImage" v-model:open="previewOpen" :src="previewImage" />
 </template>
 
 <style></style>
