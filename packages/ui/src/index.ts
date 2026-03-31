@@ -14,6 +14,7 @@ export { default as WlUnknownBubble } from './components/Message/WlUnknownBubble
 export { default as WlPttButton } from './components/PttButton/WlPttButton.vue'
 export { default as WLEmoji } from './components/Emoji/WLEmoji.vue'
 export { default as WLEmojiPicker } from './components/Emoji/WLEmojiPicker.vue'
+export { default as WlImagePreview } from './components/ImagePreview/WlImagePreview.vue'
 
 // Composables
 export { useSessions } from './composables/useSessions'
@@ -32,3 +33,4 @@ export type { WlLocationBubbleProps } from './components/Message/WlLocationBubbl
 export type { WlFileBubbleProps } from './components/Message/WlFileBubble.vue'
 export type { WlUnknownBubbleProps } from './components/Message/WlUnknownBubble.vue'
 export type { WlPttButtonProps } from './components/PttButton/WlPttButton.vue'
+export type { WlImagePreviewProps } from './components/ImagePreview/WlImagePreview.vue'
