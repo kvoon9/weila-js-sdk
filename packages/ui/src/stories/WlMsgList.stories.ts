@@ -737,6 +737,24 @@ const realMessages: WL_IDbMsgData[] = [
       frameCount: 25,
     },
   },
+  {
+    created: 1772600000,
+    msgId: 173623491,
+    senderId: 1600000,
+    sessionId: '396588',
+    sessionType: 2,
+    autoReply: 0,
+    tag: '',
+    status: 1,
+    msgType: 3,
+    combo_id: '396588_2_173623491_0',
+    fileInfo: {
+      fileUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
+      fileName: 'butterfly.mp4',
+      fileSize: 1234567,
+      fileThumbnail: 'https://picsum.photos/200/150',
+    },
+  },
 ]
 
 const SELF_ID = 1541034

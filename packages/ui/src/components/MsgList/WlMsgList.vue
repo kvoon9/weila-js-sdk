@@ -5,6 +5,7 @@ import { WL_IDbMsgDataType } from '@weilasdk/core'
 import WlAudioBubble from '../Message/WlAudioBubble.vue'
 import WlTextBubble from '../Message/WlTextBubble.vue'
 import WlImageBubble from '../Message/WlImageBubble.vue'
+import WlVideoBubble from '../Message/WlVideoBubble.vue'
 import WlLocationBubble from '../Message/WlLocationBubble.vue'
 import WlFileBubble from '../Message/WlFileBubble.vue'
 import WlUnknownBubble from '../Message/WlUnknownBubble.vue'
@@ -46,6 +47,8 @@ const emit = defineEmits<{
   'image-click': [url: string]
   /** 文件点击 */
   'file-click': [url: string]
+  /** 视频点击 */
+  'video-click': [url: string]
   /** 位置点击 */
   'location-click': [location: { latitude: number; longitude: number }]
 }>()
@@ -67,6 +70,7 @@ const isImage = (msg: WL_IDbMsgData) => msg.msgType === WL_IDbMsgDataType.WL_DB_
 const isLocation = (msg: WL_IDbMsgData) =>
   msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_LOCATION_TYPE
 const isFile = (msg: WL_IDbMsgData) => msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_FILE_TYPE
+const isVideo = (msg: WL_IDbMsgData) => msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_VIDEO_TYPE
 
 function getAudioDuration(msg: WL_IDbMsgData): number {
   return framesToDuration(msg.audioData?.frameCount ?? 0)
@@ -85,6 +89,10 @@ function handleImageClick(url: string) {
 
 function handleFileClick(url: string) {
   emit('file-click', url)
+}
+
+function handleVideoClick(url: string) {
+  emit('video-click', url)
 }
 
 function handleLocationClick(location: { latitude: number; longitude: number }) {
@@ -151,6 +159,10 @@ watch(
       <!-- File Message -->
       <WlFileBubble v-else-if="isFile(msg)" :msg="msg" :is-self="isSelf(msg)" :sender="getSender(msg)"
         @click="handleFileClick" />
+
+      <!-- Video Message -->
+      <WlVideoBubble v-else-if="isVideo(msg) && msg.fileInfo?.fileUrl" :msg="msg" :is-self="isSelf(msg)"
+        :sender="getSender(msg)" @click="handleVideoClick" />
 
       <!-- Unsupported Message Type -->
       <WlUnknownBubble v-else :msg="msg" :is-self="isSelf(msg)" :sender="getSender(msg)" />
