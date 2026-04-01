@@ -1,5 +1,5 @@
 <template>
-  <img v-if="src" :src="src" :alt="name" :width="size" :height="size" />
+  <img v-if="src" :src="src" :alt="name" :width="size" :height="size" style="display: inline; vertical-align: middle" />
 </template>
 
 <script setup lang="ts">
