@@ -30,7 +30,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "webpack --config webpack.config.js --progress --node-env production && tsc-alias -p tsconfig.json",
     "build:dev": "webpack --config webpack.config.js --progress --node-env development",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "postinstall": "pnpm build"
   },
   "dependencies": {
     "ali-oss": "^6.16.0",
