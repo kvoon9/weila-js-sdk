@@ -7,6 +7,7 @@ import {
   WlPttButton,
   WLEmojiPicker,
   WlImagePreview,
+  WlVideoPreview,
 } from '@weilasdk/ui'
 import type { WL_IDbMsgData, WL_IDbSession } from '@weilasdk/core'
 import { WL_ExtEventID, WL_PttAudioPlayState } from '@weilasdk/core'
@@ -28,8 +29,11 @@ const playingAudioId = ref<string | null>(null)
 const showMediaPanel = ref(false)
 const imageInputRef = useTemplateRef<HTMLInputElement>('imageInput')
 const fileInputRef = useTemplateRef<HTMLInputElement>('fileInput')
+const videoInputRef = useTemplateRef<HTMLInputElement>('videoInput')
 const previewImage = ref<string | null>(null)
 const previewOpen = ref(false)
+const previewVideo = ref<string | null>(null)
+const previewVideoOpen = ref(false)
 
 weila.init().then(() => {
   console.log('inited')
@@ -137,6 +141,11 @@ function handleImageClick(url: string) {
   previewOpen.value = true
 }
 
+function handleVideoClick(url: string) {
+  previewVideo.value = url
+  previewVideoOpen.value = true
+}
+
 function openLocation(location: { latitude: number; longitude: number }) {
   window.open(`https://maps.google.com/?q=${location.latitude},${location.longitude}`)
 }
@@ -175,6 +184,11 @@ function triggerFilePicker() {
   fileInputRef.value?.click()
 }
 
+function triggerVideoPicker() {
+  showMediaPanel.value = false
+  videoInputRef.value?.click()
+}
+
 function handleEmojiSelect(emoji: string) {
   messageInput.value += emoji
 }
@@ -209,6 +223,23 @@ async function handleFileSelected(e: Event) {
     nextTick(() => wlMsgListRef.value?.scrollToBottom())
   } catch (err) {
     console.error('[Playground] Failed to send file:', err)
+  }
+}
+
+async function handleVideoSelected(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (!file || !selectedSession.value) return
+  try {
+    console.log('video', file)
+    await weilaCore.value?.weila_sendVideo(
+      selectedSession.value.sessionId,
+      selectedSession.value.sessionType,
+      file.name,
+      file,
+    )
+    nextTick(() => wlMsgListRef.value?.scrollToBottom())
+  } catch (err) {
+    console.error('[Playground] Failed to send video:', err)
   }
 }
 
@@ -285,7 +316,7 @@ async function handlePttStop() {
           <WlMsgList ref="wlMsgListRef" style="height: 400px" class="bg-neutral-100" :messages="messages"
             :current-user-id="userInfo?.userId ?? 0" :sender-infos="senderInfos" :has-more="hasMore" :loading="loading"
             :playing-audio-id="playingAudioId" @audio-play="handleAudioPlay" @audio-pause="handleAudioPause"
-            @load-more="loadMore(messages[0]?.msgId - 1)" @image-click="handleImageClick" @file-click="openUrl"
+            @load-more="loadMore(messages[0]?.msgId - 1)" @image-click="handleImageClick" @file-click="openUrl" @video-click="handleVideoClick"
             @location-click="openLocation" />
         </div>
 
@@ -301,6 +332,10 @@ async function handlePttStop() {
             <button @click="triggerFilePicker"
               class="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2">
               <span class="icon-[carbon--document]"></span> Send File
+            </button>
+            <button @click="triggerVideoPicker"
+              class="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2">
+              <span class="icon-[carbon--video]"></span> Send Video
             </button>
           </div>
           <!-- Emoji Picker -->
@@ -322,6 +357,7 @@ async function handlePttStop() {
           <!-- Hidden file inputs -->
           <input ref="imageInput" type="file" accept="image/*" class="hidden" @change="handleImageSelected" />
           <input ref="fileInput" type="file" class="hidden" @change="handleFileSelected" />
+          <input ref="videoInput" type="file" accept="video/*" class="hidden" @change="handleVideoSelected" />
         </div>
       </div>
       <div v-else class="flex items-center justify-center h-full text-gray-400">
@@ -330,6 +366,7 @@ async function handlePttStop() {
     </div>
   </div>
   <WlImagePreview v-if="previewImage" v-model:open="previewOpen" :src="previewImage" />
+  <WlVideoPreview v-if="previewVideo" v-model:open="previewVideoOpen" :src="previewVideo" />
 </template>
 
 <style></style>
