@@ -23,11 +23,18 @@ export const useWeilaStore = defineStore('weila', () => {
     ])
 
     const instance = new WeilaCore()
-    instance.weila_setWebSock('wss://wss.weila.hk:8999')
-    instance.weila_setAuthInfo('102053', '968cd0664d239c02bafb214d16fea415')
+    instance.weila_setWebSock(import.meta.env.VITE_WEILA_WSS)
+    instance.weila_setAuthInfo(
+      import.meta.env.VITE_WEILA_APP_ID,
+      import.meta.env.VITE_WEILA_APP_KEY,
+    )
 
     await instance.weila_init()
-    userInfo.value = await instance.weila_login('12679166', '30215594', '0')
+    userInfo.value = await instance.weila_login(
+      import.meta.env.VITE_WEILA_USER_ACCOUNT,
+      import.meta.env.VITE_WEILA_USER_PASSWORD,
+      '0',
+    )
 
     core.value = instance
 
