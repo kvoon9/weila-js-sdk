@@ -19,7 +19,8 @@ const meta: Meta<typeof WlTextBubble> = {
 export default meta
 type Story = StoryObj<typeof WlTextBubble>
 
-const msg = (textData: string) => ({ textData }) as any
+const msg = (textData: string, created = Math.floor(Date.now() / 1000)) =>
+  ({ textData, created }) as any
 
 /** 普通文本消息 */
 export const PlainText: Story = {
