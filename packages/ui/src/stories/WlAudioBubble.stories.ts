@@ -12,9 +12,6 @@ const meta: Meta<typeof WlAudioBubble> = {
     }),
   ],
   argTypes: {
-    duration: {
-      control: { type: 'range', min: 1, max: 60, step: 1 },
-    },
     isSelf: { control: 'boolean' },
     playing: { control: 'boolean' },
   },
@@ -23,10 +20,17 @@ const meta: Meta<typeof WlAudioBubble> = {
 export default meta
 type Story = StoryObj<typeof WlAudioBubble>
 
+// Helper to create audio message with frameCount (frames = seconds * 8)
+const createAudioMsg = (seconds: number, extra = {}) => ({
+  audioData: { frameCount: seconds * 8 },
+  created: Date.now() / 1000,
+  ...extra,
+})
+
 /** 接收方音频消息（左侧） */
 export const Received: Story = {
   args: {
-    duration: 3,
+    msg: createAudioMsg(3),
     isSelf: false,
     playing: false,
   },
@@ -35,7 +39,7 @@ export const Received: Story = {
 /** 发送方音频消息（右侧） */
 export const Sent: Story = {
   args: {
-    duration: 8,
+    msg: createAudioMsg(8, { status: 2 }),
     isSelf: true,
     playing: false,
   },
@@ -44,7 +48,7 @@ export const Sent: Story = {
 /** 正在播放 */
 export const Playing: Story = {
   args: {
-    duration: 15,
+    msg: createAudioMsg(15),
     isSelf: false,
     playing: true,
   },
@@ -53,7 +57,7 @@ export const Playing: Story = {
 /** 长语音消息（接近最大宽度） */
 export const LongDuration: Story = {
   args: {
-    duration: 55,
+    msg: createAudioMsg(55, { status: 2 }),
     isSelf: true,
     playing: false,
   },
@@ -62,7 +66,7 @@ export const LongDuration: Story = {
 /** 短语音消息（最小宽度） */
 export const ShortDuration: Story = {
   args: {
-    duration: 1,
+    msg: createAudioMsg(1),
     isSelf: false,
     playing: false,
   },
@@ -75,18 +79,26 @@ export const InChatContext: Story = {
     template: `
       <div class="flex flex-col gap-3 w-[400px]">
         <div class="flex justify-start">
-          <WlAudioBubble :duration="3" :is-self="false" />
+          <WlAudioBubble :msg="msg1" :is-self="false" />
         </div>
         <div class="flex justify-end">
-          <WlAudioBubble :duration="12" :is-self="true" />
+          <WlAudioBubble :msg="msg2" :is-self="true" />
         </div>
         <div class="flex justify-start">
-          <WlAudioBubble :duration="25" :is-self="false" :playing="true" />
+          <WlAudioBubble :msg="msg3" :is-self="false" :playing="true" />
         </div>
         <div class="flex justify-end">
-          <WlAudioBubble :duration="1" :is-self="true" />
+          <WlAudioBubble :msg="msg4" :is-self="true" />
         </div>
       </div>
     `,
+    data() {
+      return {
+        msg1: createAudioMsg(3),
+        msg2: createAudioMsg(12, { status: 2 }),
+        msg3: createAudioMsg(25),
+        msg4: createAudioMsg(1, { status: 2 }),
+      }
+    },
   }),
 }

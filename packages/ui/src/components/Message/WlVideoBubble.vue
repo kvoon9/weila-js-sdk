@@ -1,5 +1,8 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { WL_IDbMsgData, WL_IDbUserInfo } from '@weilasdk/core'
+import { WL_IDbMsgDataStatus } from '@weilasdk/core'
+import { formatMsgTime } from '@/utils'
 
 export interface WlVideoBubbleProps {
   /** 消息数据 */
@@ -10,13 +13,26 @@ export interface WlVideoBubbleProps {
   sender?: WL_IDbUserInfo
 }
 
-withDefaults(defineProps<WlVideoBubbleProps>(), {
+const props = withDefaults(defineProps<WlVideoBubbleProps>(), {
   isSelf: false,
 })
 
 const emit = defineEmits<{
   (e: 'click', url: string): void
 }>()
+
+const formattedTime = computed(() => formatMsgTime(props.msg.created))
+
+const statusIcon = computed(() => {
+  if (!props.isSelf) return null
+  const status = props.msg.status
+  if (status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_SENDING) return 'sending'
+  if (status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_UNSENT) return 'unsent'
+  if (status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR) return 'error'
+  if (status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_READ) return 'read'
+  if (status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_SENT || status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_NEW) return 'sent'
+  return null
+})
 </script>
 
 <template>
@@ -58,6 +74,15 @@ const emit = defineEmits<{
         <div class="text-xs text-white truncate">
           {{ msg.fileInfo.fileName }}
         </div>
+      </div>
+
+      <!-- Time and Status -->
+      <div class="absolute top-1 right-1 flex items-center gap-1 bg-black/40 rounded px-1.5 py-0.5">
+        <span class="text-xs text-white opacity-80">{{ formattedTime }}</span>
+        <span v-if="statusIcon === 'sending'" class="icon-[carbon--rotate] size-3 animate-spin text-white opacity-80" />
+        <span v-else-if="statusIcon === 'unsent' || statusIcon === 'error'" class="icon-[carbon--warning] size-3 text-orange-300" />
+        <span v-else-if="statusIcon === 'read'" class="icon-[carbon--checkmark] size-3 text-green-300" />
+        <span v-else-if="statusIcon === 'sent'" class="icon-[carbon--checkmark] size-3 text-white opacity-80" />
       </div>
     </div>
   </div>

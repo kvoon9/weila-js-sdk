@@ -9,7 +9,6 @@ import WlVideoBubble from '../Message/WlVideoBubble.vue'
 import WlLocationBubble from '../Message/WlLocationBubble.vue'
 import WlFileBubble from '../Message/WlFileBubble.vue'
 import WlUnknownBubble from '../Message/WlUnknownBubble.vue'
-import { framesToDuration } from '../../composables/useAudio'
 
 const showScrollButton = ref(false)
 const hasLoadedMessages = ref(false)
@@ -71,10 +70,6 @@ const isLocation = (msg: WL_IDbMsgData) =>
   msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_LOCATION_TYPE
 const isFile = (msg: WL_IDbMsgData) => msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_FILE_TYPE
 const isVideo = (msg: WL_IDbMsgData) => msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_VIDEO_TYPE
-
-function getAudioDuration(msg: WL_IDbMsgData): number {
-  return framesToDuration(msg.audioData?.frameCount ?? 0)
-}
 
 defineExpose({
   scrollToBottom,
@@ -145,7 +140,7 @@ watch(
       <WlTextBubble v-if="isText(msg)" :msg="msg" :is-self="isSelf(msg)" :sender="getSender(msg)" />
 
       <!-- Audio Message -->
-      <WlAudioBubble v-else-if="isAudio(msg)" :duration="getAudioDuration(msg)" :is-self="isSelf(msg)"
+      <WlAudioBubble v-else-if="isAudio(msg)" :msg="msg" :is-self="isSelf(msg)"
         :playing="playingAudioId === msg.combo_id" @play="emit('audio-play', msg)" @pause="emit('audio-pause', msg)" />
 
       <!-- Image Message -->

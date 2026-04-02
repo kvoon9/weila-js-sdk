@@ -1,5 +1,8 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { WL_IDbMsgData, WL_IDbUserInfo } from '@weilasdk/core'
+import { WL_IDbMsgDataStatus } from '@weilasdk/core'
+import { formatMsgTime } from '@/utils'
 
 export interface WlImageBubbleProps {
   /** 消息数据 */
@@ -10,13 +13,26 @@ export interface WlImageBubbleProps {
   sender?: WL_IDbUserInfo
 }
 
-withDefaults(defineProps<WlImageBubbleProps>(), {
+const props = withDefaults(defineProps<WlImageBubbleProps>(), {
   isSelf: false,
 })
 
 const emit = defineEmits<{
   (e: 'click', url: string): void
 }>()
+
+const formattedTime = computed(() => formatMsgTime(props.msg.created))
+
+const statusIcon = computed(() => {
+  if (!props.isSelf) return null
+  const status = props.msg.status
+  if (status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_SENDING) return 'sending'
+  if (status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_UNSENT) return 'unsent'
+  if (status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR) return 'error'
+  if (status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_READ) return 'read'
+  if (status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_SENT || status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_NEW) return 'sent'
+  return null
+})
 </script>
 
 <template>
@@ -24,5 +40,12 @@ const emit = defineEmits<{
     <img v-if="msg.fileInfo?.fileUrl" :src="msg.fileInfo.fileUrl"
       class="max-w-[200px] max-h-[200px] rounded-xl object-cover cursor-pointer" alt="image"
       @click="emit('click', msg.fileInfo!.fileUrl)" />
+    <div class="flex items-center justify-end gap-1 p-1.5">
+      <span class="text-xs opacity-60" :class="isSelf ? 'text-white' : 'text-neutral-600'">{{ formattedTime }}</span>
+      <span v-if="statusIcon === 'sending'" class="icon-[carbon--rotate] size-3 animate-spin opacity-60" :class="isSelf ? 'text-white' : 'text-neutral-600'" />
+      <span v-else-if="statusIcon === 'unsent' || statusIcon === 'error'" class="icon-[carbon--warning] size-3 text-orange-300" />
+      <span v-else-if="statusIcon === 'read'" class="icon-[carbon--checkmark] size-3 text-green-300" />
+      <span v-else-if="statusIcon === 'sent'" class="icon-[carbon--checkmark] size-3 opacity-60" :class="isSelf ? 'text-white' : 'text-neutral-600'" />
+    </div>
   </div>
 </template>
