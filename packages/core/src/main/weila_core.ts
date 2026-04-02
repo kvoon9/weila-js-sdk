@@ -927,7 +927,17 @@ class WeilaCore implements WL_CoreInterface {
    * 从数据库中获取所有会话信息
    */
   public async weila_getSessionsFromDb(): Promise<WL_IDbSession[]> {
-    return WeilaDB.getInstance().getSessions()
+    const sessions = await WeilaDB.getInstance().getSessions()
+    // Fill in lastMsgData for sessions that don't have it
+    for (const session of sessions) {
+      if (!session.lastMsgData) {
+        const lastMsg = await WeilaDB.getInstance().getLastMsgData(session.sessionId, session.sessionType)
+        if (lastMsg) {
+          session.lastMsgData = lastMsg
+        }
+      }
+    }
+    return sessions
   }
 
   /**
@@ -947,6 +957,16 @@ class WeilaCore implements WL_CoreInterface {
    */
   public async weila_deleteSession(sessionId: string, sessionType: number): Promise<boolean> {
     return this.sessionModule.deleteSession(sessionId, sessionType)
+  }
+
+  /**
+   * 设置会话已读，清除未读数
+   * @param sessionId 会话id
+   * @param sessionType 会话类型
+   * @param msgId 已读消息ID
+   */
+  public async weila_setSessionMsgRead(sessionId: string, sessionType: number, msgId: number): Promise<boolean> {
+    return this.sessionModule.setSessionMsgRead(sessionId, sessionType, msgId)
   }
 
   /**

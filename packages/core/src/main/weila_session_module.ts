@@ -136,6 +136,7 @@ export default class WLSessionModule {
         session = await WeilaDB.getInstance().fillSessionInfo(session)
       }
       session.lastMsgId = msgData.msgId
+      session.lastMsgData = msgData
       session.latestUpdate = new Date().getTime() / 1000
       session.combo_id_type = session.sessionId + '_' + session.sessionType
       await WeilaDB.getInstance().putSession(session)
@@ -144,6 +145,7 @@ export default class WLSessionModule {
       this.coreInterface.sendExtEvent(WL_ExtEventID.WL_EXT_NEW_SESSION_OPEN_IND, session)
     } else {
       this.sessionList[index].lastMsgId = msgData.msgId
+      this.sessionList[index].lastMsgData = msgData
       this.sessionList[index].latestUpdate = new Date().getTime() / 1000
       await WeilaDB.getInstance().putSession(this.sessionList[index])
     }
@@ -513,6 +515,16 @@ export default class WLSessionModule {
     if (buildResult.resultCode === 0) {
       const rsp = await this.coreInterface.sendPbMsg(buildResult)
       wllog('设已读的响应结果', rsp)
+
+      // Update local session's readMsgId
+      const index = this.sessionList.findIndex(
+        (s) => s.sessionId === sessionId && s.sessionType === sessionType,
+      )
+      if (index !== -1) {
+        this.sessionList[index].readMsgId = msgId
+        await WeilaDB.getInstance().putSession(this.sessionList[index])
+      }
+
       return true
     }
 
@@ -702,6 +714,8 @@ export default class WLSessionModule {
         dbMsgData.combo_id = getMsgDataIdByCombo(dbMsgData, 0)
         if (index !== -1) {
           this.sessionList[index].lastMsgId = dbMsgData.msgId
+          this.sessionList[index].lastMsgData = dbMsgData
+          this.sessionList[index].readMsgId = dbMsgData.msgId
           this.sessionList[index].latestUpdate = new Date().getTime() / 1000
           wllog('session:', this.sessionList)
           await WeilaDB.getInstance().putSession(this.sessionList[index])

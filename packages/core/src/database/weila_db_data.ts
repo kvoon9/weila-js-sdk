@@ -40,6 +40,7 @@ interface WL_IDbSession {
   latestUpdate: number
   status: WL_IDbSessionStatus
   extra?: any
+  lastMsgData?: WL_IDbMsgData
 }
 
 interface WL_IDbSessionSettingParams {
