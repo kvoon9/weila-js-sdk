@@ -5,12 +5,14 @@ import SessionListItem from './SessionListItem.vue'
 
 interface Props {
   sessions: WL_IDbSession[]
+  activeSessionId?: string
   loading?: boolean
   error?: Error | null
   filter?: 'all' | 'personal' | 'group'
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  activeSessionId: '',
   loading: false,
   error: null,
   filter: 'all',
@@ -99,6 +101,7 @@ function handleRefresh() {
         v-for="session in filteredSessions"
         :key="`${session.sessionId}-${session.sessionType}`"
         :session="session"
+        :active="session.sessionId === activeSessionId"
         @click="handleSelect"
       />
     </div>

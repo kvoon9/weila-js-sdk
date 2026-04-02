@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { WL_IDbSession } from '@weilasdk/core'
+import { WL_IDbMsgDataType } from '@weilasdk/core'
 
 interface Props {
   session: WL_IDbSession
@@ -23,7 +24,8 @@ const lastMessageTime = computed(() => {
   const time = props.session.latestUpdate
   if (!time) return ''
 
-  const date = new Date(time)
+  // latestUpdate is stored as Unix timestamp in seconds, convert to milliseconds
+  const date = new Date(time * 1000)
   const now = new Date()
   const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
 
@@ -57,6 +59,30 @@ const sessionTypeLabel = computed(() => {
   }
 })
 
+const messagePreview = computed(() => {
+  const msg = props.session.lastMsgData
+  if (!msg) return sessionTypeLabel.value
+
+  switch (msg.msgType) {
+    case WL_IDbMsgDataType.WL_DB_MSG_DATA_TEXT_TYPE:
+      return msg.textData || ''
+    case WL_IDbMsgDataType.WL_DB_MSG_DATA_IMAGE_TYPE:
+      return '[Image]'
+    case WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE:
+      return '[Voice Message]'
+    case WL_IDbMsgDataType.WL_DB_MSG_DATA_VIDEO_TYPE:
+      return '[Video]'
+    case WL_IDbMsgDataType.WL_DB_MSG_DATA_FILE_TYPE:
+      return `[File] ${msg.fileInfo?.fileName || ''}`
+    case WL_IDbMsgDataType.WL_DB_MSG_DATA_LOCATION_TYPE:
+      return '[Location]'
+    case WL_IDbMsgDataType.WL_DB_MSG_DATA_PTT_TYPE:
+      return '[PTT]'
+    default:
+      return sessionTypeLabel.value
+  }
+})
+
 function handleClick() {
   emit('click', props.session)
 }
@@ -65,7 +91,7 @@ function handleClick() {
 <template>
   <div
     class="session-list-item flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-100 transition-colors"
-    :class="{ 'bg-blue-50': active }"
+    :class="{ 'bg-neutral-200': active }"
     @click="handleClick"
   >
     <!-- Avatar -->
@@ -87,7 +113,7 @@ function handleClick() {
     <div class="flex-1 min-w-0">
       <div class="flex items-center justify-between">
         <span class="font-medium text-gray-900 truncate">
-          {{ sessionName }}
+          {{ sessionName }} 
         </span>
         <span class="text-xs text-gray-500 flex-shrink-0 ml-2">
           {{ lastMessageTime }}
@@ -96,7 +122,7 @@ function handleClick() {
 
       <div class="flex items-center justify-between mt-0.5">
         <span class="text-sm text-gray-500 truncate">
-          {{ sessionTypeLabel }}
+          {{ messagePreview }}
         </span>
         <span
           v-if="unreadCount > 0"

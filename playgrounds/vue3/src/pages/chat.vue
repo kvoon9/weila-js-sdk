@@ -150,10 +150,21 @@ function openLocation(location: { latitude: number; longitude: number }) {
   window.open(`https://maps.google.com/?q=${location.latitude},${location.longitude}`)
 }
 
-function handleSelectSession(session: WL_IDbSession) {
+async function handleSelectSession(session: WL_IDbSession) {
   console.log('session', session)
   selectedSessionId.value = session.sessionId
   triggerRef(selectedSessionId)
+
+  // Mark session as read to clear unread count
+  if (weilaCore.value && session.lastMsgId > 0) {
+    await weilaCore.value.weila_setSessionMsgRead(
+      session.sessionId,
+      session.sessionType,
+      session.lastMsgId,
+    )
+    // Refetch sessions to update unread count in UI
+    await refetchSessions()
+  }
 }
 
 async function sendMessage() {
@@ -293,17 +304,13 @@ async function handlePttStop() {
 <template>
   <div class="flex h-screen">
     <div class="w-80 border-r border-gray-200 overflow-hidden flex flex-col">
-      <div v-if="sessions?.length" class="flex-1 overflow-y-auto">
-        <div v-for="session in sessions" :key="session.sessionId"
-          class="p-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50"
-          :class="{ 'bg-blue-50': selectedSession?.sessionId === session.sessionId }"
-          @click="handleSelectSession(session)">
-          <div class="font-medium">{{ session.sessionName || session.sessionId }}</div>
-          <div class="text-sm text-gray-500">{{ session.sessionId }}</div>
-        </div>
-      </div>
-      <SessionList v-else-if="weilaCore" :sessions="sessions ?? []" @select="handleSelectSession"
-        @refresh="refetchSessions" />
+      <SessionList
+        v-if="weilaCore"
+        :sessions="sessions ?? []"
+        :active-session-id="selectedSessionId"
+        @select="handleSelectSession"
+        @refresh="refetchSessions"
+      />
       <div v-else class="flex items-center justify-center h-full text-gray-500">Loading SDK...</div>
     </div>
     <div class="flex-1 p-4 overflow-y-auto">
