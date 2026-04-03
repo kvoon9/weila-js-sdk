@@ -5,6 +5,7 @@ import { RouterView } from 'vue-router'
 // eslint-disable-next-line import/no-unassigned-import
 import './style.css'
 import '@weilasdk/ui/dist/index.css'
+import 'floating-vue/dist/style.css'
 import router from './router'
 
 // eslint-disable-next-line no-extend-native, typescript-eslint/unbound-method
