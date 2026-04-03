@@ -62,8 +62,8 @@
 | WlFileBubble 文件消息 (文件名、大小、下载)    | 中     | ✅   |
 | WlVideoBubble 视频消息 (封面 + 播放)         | 中     | ✅   |
 | WlEmojiPicker 表情选择器 + 集成到 WlMsgInput | 中     | ✅   |
-| WlLocationBubble 位置消息                     | 中     | ⬜   |
-| WlVoiceRecorder 语音录制 (波形 + 计时)       | 中     | ✅   |
+| WlLocationBubble 位置消息                     | 中     | ✅   |
+| WlVoiceRecorder 语音录制 (波形 + 计时)       | 中     | ⬜   |
 
 **里程碑**：支持文本/图片/音频/文件/视频/位置/表情 7 种消息类型
 
@@ -77,7 +77,7 @@
 | Playground vue-router：登录页 / 会话列表 / 聊天页 / PTT 测试页 | 高     | ⬜   |
 | 音频/PTT 完整联调：申请话权 → 录音 → 释放 → 播放              | 高     | ⬜   |
 | WlUserCard 用户信息卡片                                         | 中     | ⬜   |
-| WlContactList 联系人/好友列表                                   | 中     | ⬜   |
+| WlContactList 联系人/好友列表 (Playground ContactList panel 实现)   | 中     | ✅   |
 
 **里程碑**：Playground 具备完整路由、状态管理、PTT 可联调
 
@@ -106,6 +106,6 @@
 - ⬜ 消息全文搜索
 - ⬜ commitlint + CHANGELOG 自动生成
 - ⬜ CSS 导入优化 (支持 @weilasdk/ui/style.css)
-- ⬜ WlGroupInfo 群信息面板 + WlMemberList 群成员列表
+- ⬜/✅ WlGroupInfo 群信息面板 + WlMemberList 群成员列表 (Playground Groups panel 已实现)
 - ⬜ 集成 weila-work 国内版
 - ⬜ 集成 weila-work (h5)
