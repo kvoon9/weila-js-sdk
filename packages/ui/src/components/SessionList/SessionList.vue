@@ -46,16 +46,16 @@ function handleRefresh() {
 <template>
   <div class="session-list flex flex-col h-full">
     <!-- Header -->
-    <div class="header flex items-center justify-between px-4 py-3 border-b border-gray-200">
-      <h3 class="font-semibold text-gray-900">Sessions</h3>
+    <div class="header flex items-center justify-between px-4 py-3 border-b border-neutral-100">
+      <h3 class="font-semibold text-neutral-900">Sessions</h3>
       <button
         @click="handleRefresh"
-        class="p-1.5 rounded hover:bg-gray-200 transition-colors"
+        class="p-1.5 rounded hover:bg-neutral-100 transition-colors"
         title="Refresh"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          class="h-5 w-5 text-gray-500"
+          class="h-5 w-5 text-neutral-400"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -92,7 +92,7 @@ function handleRefresh() {
       v-else-if="filteredSessions.length === 0"
       class="flex-1 flex items-center justify-center py-8"
     >
-      <p class="text-gray-500">No sessions found</p>
+      <p class="text-neutral-500">No sessions found</p>
     </div>
 
     <!-- Session List -->
