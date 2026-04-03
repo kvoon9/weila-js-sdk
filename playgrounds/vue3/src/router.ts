@@ -10,8 +10,20 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/chat',
     name: 'chat',
-    component: () => import('./pages/chat.vue'),
+    component: () => import('./layouts/DashboardLayout.vue'),
     meta: { title: 'Chat' },
+    children: [
+      {
+        path: '',
+        name: 'chat-panel',
+        component: () => import('./components/dashboard/ChatPanel.vue'),
+      },
+      {
+        path: 'contacts',
+        name: 'contacts-panel',
+        component: () => import('./components/dashboard/ContactPanel.vue'),
+      },
+    ],
   },
 ]
 
