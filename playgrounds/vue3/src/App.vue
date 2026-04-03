@@ -27,8 +27,8 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div v-if="!initialized" class="flex items-center justify-center h-screen bg-gray-50">
-    <p class="text-gray-500">Initializing...</p>
+  <div v-if="!initialized" class="flex items-center justify-center h-screen bg-neutral-50">
+    <p class="text-neutral-500">Initializing...</p>
   </div>
   <RouterView v-else />
 </template>

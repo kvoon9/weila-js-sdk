@@ -15,7 +15,7 @@ async function handleSelectChat(userId: string) {
   try {
     await weilaCore.value.weila_startNewSession(userId, WL_IDbSessionType.SESSION_INDIVIDUAL_TYPE)
     console.log('[ContactPanel] Opening chat with user:', userId)
-    router.push({ name: 'chat-panel', query: { sessionId: userId } })
+    router.push({ name: 'chat-index', query: { sessionId: userId } })
   } catch (err) {
     console.error('[ContactPanel] Failed to open chat:', err)
   }

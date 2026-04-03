@@ -81,29 +81,29 @@ onMounted(() => {
 <template>
   <div class="h-full overflow-y-auto">
     <div class="max-w-2xl mx-auto p-6">
-      <h1 class="text-2xl font-semibold text-gray-800 mb-6">Settings</h1>
+      <h1 class="text-2xl font-semibold text-neutral-800 mb-6">Settings</h1>
 
       <!-- General Settings -->
       <section class="mb-8">
-        <h2 class="text-lg font-medium text-gray-700 mb-4 flex items-center gap-2">
+        <h2 class="text-lg font-medium text-neutral-700 mb-4 flex items-center gap-2">
           <span class="icon-[carbon--settings]"></span>
           General Settings
         </h2>
-        <div class="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
+        <div class="bg-white rounded-xl border border-neutral-200 divide-y divide-neutral-100">
           <!-- Do Not Disturb -->
           <div class="flex items-center justify-between px-4 py-3">
             <div class="flex items-center gap-3">
-              <span class="icon-[carbon--notification-off] text-gray-500"></span>
+              <span class="icon-[carbon--notification-off] text-neutral-500"></span>
               <div>
-                <div class="font-medium text-gray-800">Do Not Disturb</div>
-                <div class="text-sm text-gray-500">Mute all notifications</div>
+                <div class="font-medium text-neutral-800">Do Not Disturb</div>
+                <div class="text-sm text-neutral-500">Mute all notifications</div>
               </div>
             </div>
             <button
               @click="doNotDisturb = !doNotDisturb; updateGeneralSetting('dnd', doNotDisturb)"
               :class="[
                 'relative w-12 h-6 rounded-full transition-colors duration-200',
-                doNotDisturb ? 'bg-blue-500' : 'bg-gray-300'
+                doNotDisturb ? 'bg-blue-500' : 'bg-neutral-300'
               ]"
             >
               <span
@@ -118,17 +118,17 @@ onMounted(() => {
           <!-- TTS -->
           <div class="flex items-center justify-between px-4 py-3">
             <div class="flex items-center gap-3">
-              <span class="icon-[carbon--microphone] text-gray-500"></span>
+              <span class="icon-[carbon--microphone] text-neutral-500"></span>
               <div>
-                <div class="font-medium text-gray-800">Text-to-Speech</div>
-                <div class="text-sm text-gray-500">Enable voice synthesis</div>
+                <div class="font-medium text-neutral-800">Text-to-Speech</div>
+                <div class="text-sm text-neutral-500">Enable voice synthesis</div>
               </div>
             </div>
             <button
               @click="ttsEnabled = !ttsEnabled; updateGeneralSetting('tts', ttsEnabled)"
               :class="[
                 'relative w-12 h-6 rounded-full transition-colors duration-200',
-                ttsEnabled ? 'bg-blue-500' : 'bg-gray-300'
+                ttsEnabled ? 'bg-blue-500' : 'bg-neutral-300'
               ]"
             >
               <span
@@ -143,17 +143,17 @@ onMounted(() => {
           <!-- Location Sharing -->
           <div class="flex items-center justify-between px-4 py-3">
             <div class="flex items-center gap-3">
-              <span class="icon-[carbon--location] text-gray-500"></span>
+              <span class="icon-[carbon--location] text-neutral-500"></span>
               <div>
-                <div class="font-medium text-gray-800">Location Sharing</div>
-                <div class="text-sm text-gray-500">Share your location with contacts</div>
+                <div class="font-medium text-neutral-800">Location Sharing</div>
+                <div class="text-sm text-neutral-500">Share your location with contacts</div>
               </div>
             </div>
             <button
               @click="locationSharing = !locationSharing; updateGeneralSetting('location', locationSharing)"
               :class="[
                 'relative w-12 h-6 rounded-full transition-colors duration-200',
-                locationSharing ? 'bg-blue-500' : 'bg-gray-300'
+                locationSharing ? 'bg-blue-500' : 'bg-neutral-300'
               ]"
             >
               <span
@@ -169,12 +169,12 @@ onMounted(() => {
 
       <!-- Session Settings -->
       <section class="mb-8">
-        <h2 class="text-lg font-medium text-gray-700 mb-4 flex items-center gap-2">
+        <h2 class="text-lg font-medium text-neutral-700 mb-4 flex items-center gap-2">
           <span class="icon-[carbon--chat]"></span>
           Session Settings
         </h2>
-        <div class="bg-white rounded-xl border border-gray-200 p-4">
-          <p class="text-gray-500 text-sm">
+        <div class="bg-white rounded-xl border border-neutral-200 p-4">
+          <p class="text-neutral-500 text-sm">
             Session-specific settings will appear here when you select a conversation.
           </p>
           <!-- Future: Session selector and per-session settings -->
@@ -183,26 +183,26 @@ onMounted(() => {
 
       <!-- Account Info -->
       <section class="mb-8">
-        <h2 class="text-lg font-medium text-gray-700 mb-4 flex items-center gap-2">
+        <h2 class="text-lg font-medium text-neutral-700 mb-4 flex items-center gap-2">
           <span class="icon-[carbon--user]"></span>
           Account Info
         </h2>
-        <div class="bg-white rounded-xl border border-gray-200 p-4">
+        <div class="bg-white rounded-xl border border-neutral-200 p-4">
           <div class="flex items-center gap-4 mb-4">
             <img
               v-if="userInfo?.avatar"
               :src="userInfo.avatar"
               class="w-16 h-16 rounded-full"
             />
-            <div v-else class="w-16 h-16 rounded-full bg-gray-300 flex items-center justify-center">
-              <span class="text-xl text-gray-600">{{ userInfo?.nick?.[0] || 'U' }}</span>
+            <div v-else class="w-16 h-16 rounded-full bg-neutral-300 flex items-center justify-center">
+              <span class="text-xl text-neutral-600">{{ userInfo?.nick?.[0] || 'U' }}</span>
             </div>
             <div>
-              <div class="font-semibold text-lg text-gray-800">{{ userInfo?.nick || 'User' }}</div>
-              <div class="text-gray-500">Weila ID: {{ userInfo?.weilaNum || 'N/A' }}</div>
+              <div class="font-semibold text-lg text-neutral-800">{{ userInfo?.nick || 'User' }}</div>
+              <div class="text-neutral-500">Weila ID: {{ userInfo?.weilaNum || 'N/A' }}</div>
             </div>
           </div>
-          <div class="space-y-2 text-sm text-gray-600">
+          <div class="space-y-2 text-sm text-neutral-600">
             <div v-if="userInfo?.phone">Phone: {{ userInfo.phone }}</div>
             <div v-if="userInfo?.email">Email: {{ userInfo.email }}</div>
             <div>User ID: {{ userInfo?.userId || 'N/A' }}</div>
@@ -212,20 +212,20 @@ onMounted(() => {
 
       <!-- Device Management -->
       <section class="mb-8">
-        <h2 class="text-lg font-medium text-gray-700 mb-4 flex items-center gap-2">
+        <h2 class="text-lg font-medium text-neutral-700 mb-4 flex items-center gap-2">
           <span class="icon-[carbon--collaborate]"></span>
           Device Management
         </h2>
-        <div class="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
+        <div class="bg-white rounded-xl border border-neutral-200 divide-y divide-neutral-100">
           <div
             v-for="device in devices"
             :key="device.id"
             class="flex items-center gap-3 px-4 py-3"
           >
-            <span class="icon-[carbon--mobile] text-gray-500"></span>
+            <span class="icon-[carbon--mobile] text-neutral-500"></span>
             <div class="flex-1">
-              <div class="font-medium text-gray-800">{{ device.name || 'Unknown Device' }}</div>
-              <div class="text-sm text-gray-500">{{ device.type || 'Device' }}</div>
+              <div class="font-medium text-neutral-800">{{ device.name || 'Unknown Device' }}</div>
+              <div class="text-sm text-neutral-500">{{ device.type || 'Device' }}</div>
             </div>
             <span
               v-if="device.isCurrent"
@@ -234,7 +234,7 @@ onMounted(() => {
               Current
             </span>
           </div>
-          <div v-if="devices.length === 0" class="px-4 py-3 text-gray-500 text-sm">
+          <div v-if="devices.length === 0" class="px-4 py-3 text-neutral-500 text-sm">
             No linked devices found.
           </div>
         </div>
