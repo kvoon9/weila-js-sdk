@@ -5,8 +5,17 @@ import { useWeilaStore } from '../../stores/weila'
 import { useFriends } from '../../queries/friends'
 import { useFriendSearch } from '../../composables/useFriendSearch'
 
+interface ContactItem {
+  userId: string
+  name: string
+  avatar?: string
+  remark?: string
+  isOnline: boolean
+  lastMsgTime?: number
+}
+
 const emit = defineEmits<{
-  selectChat: [userId: string]
+  selectChat: [contact: ContactItem]
 }>()
 
 const weila = useWeilaStore()
@@ -155,8 +164,8 @@ async function handleDeleteFriend(userId: string) {
 }
 
 // Start private chat
-function handleContactClick(userId: string) {
-  emit('selectChat', userId)
+function handleContactClick(contact: ContactItem) {
+  emit('selectChat', contact)
 }
 
 // Get avatar initials
@@ -223,7 +232,7 @@ function getInitials(name: string): string {
           v-for="contact in displayedContacts"
           :key="contact.userId"
           class="flex items-center gap-3 p-3 hover:bg-neutral-50 cursor-pointer transition-colors"
-          @click="handleContactClick(contact.userId)"
+          @click="handleContactClick(contact)"
         >
           <!-- Avatar -->
           <div class="relative flex-shrink-0">
