@@ -7,6 +7,7 @@ const router = useRouter()
 const tabs = [
   { path: '/chat', label: 'Chat', icon: 'icon-[carbon--chat]' },
   { path: '/chat/contacts', label: 'Contacts', icon: 'icon-[carbon--user-multiple]' },
+  { path: '/chat/groups', label: 'Groups', icon: 'icon-[carbon--group]' },
 ]
 
 function isActive(path: string) {

@@ -23,6 +23,11 @@ const routes: RouteRecordRaw[] = [
         name: 'contacts-panel',
         component: () => import('./components/dashboard/ContactPanel.vue'),
       },
+      {
+        path: 'groups',
+        name: 'groups-panel',
+        component: () => import('./components/dashboard/GroupsPanel.vue'),
+      },
     ],
   },
 ]
