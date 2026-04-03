@@ -7,6 +7,7 @@ import './style.css'
 import '@weilasdk/ui/dist/index.css'
 import 'floating-vue/dist/style.css'
 import router from './router'
+import App from './App.vue'
 
 // eslint-disable-next-line no-extend-native, typescript-eslint/unbound-method
 // Monkey-patch AudioWorklet.addModule to redirect worklet loading
@@ -64,7 +65,7 @@ window.AudioWorkletNode = function AudioWorkletNode(ctx: AudioContext, name: str
 } as unknown as typeof AudioWorkletNode
 window.AudioWorkletNode.prototype = OrigAudioWorkletNode.prototype
 
-const app = createApp(RouterView)
+const app = createApp(App)
 const pinia = createPinia()
 app.use(pinia)
 app.use(PiniaColada)

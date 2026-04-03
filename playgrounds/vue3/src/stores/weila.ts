@@ -1,7 +1,37 @@
 import { shallowRef } from 'vue'
 import { defineStore } from 'pinia'
+import { useLocalStorage } from '@vueuse/core'
 import { WeilaCore, initLogger, setLoggerEnabled, setConfigData, WL_ConfigID } from '@weilasdk/core'
 import type { WL_IDbUserInfo } from '@weilasdk/core'
+import md5 from 'md5'
+
+// Encrypt with md5-based key derivation
+function encrypt(str: string): string {
+  return btoa(str)
+}
+
+function decrypt(encoded: string): string {
+  return atob(encoded)
+}
+
+// Encrypted credential storage
+const storedCredentials = useLocalStorage<{ account: string; password: string; countryCode: string } | null>(
+  'weila_credentials',
+  null,
+  {
+    serializer: {
+      read: (v) => {
+        if (!v) return null
+        try {
+          return JSON.parse(decrypt(v))
+        } catch {
+          return null
+        }
+      },
+      write: (v) => (v ? encrypt(JSON.stringify(v)) : ''),
+    },
+  },
+)
 
 export const useWeilaStore = defineStore('weila', () => {
   const core = shallowRef<WeilaCore | null>(null)
@@ -39,6 +69,8 @@ export const useWeilaStore = defineStore('weila', () => {
   async function login(account: string, password: string, countryCode: string = '0') {
     const instance = core.value || await init()
     userInfo.value = await instance.weila_login(account, password, countryCode)
+    // Save credentials for auto-login after refresh
+    storedCredentials.value = { account, password, countryCode }
     return userInfo.value
   }
 
@@ -48,9 +80,24 @@ export const useWeilaStore = defineStore('weila', () => {
     }
     core.value = null
     userInfo.value = null
+    storedCredentials.value = null
   }
 
-  return { core, userInfo, init, login, logout }
+  // Auto-login with stored credentials
+  async function autoLogin(): Promise<boolean> {
+    const creds = storedCredentials.value
+    if (!creds?.account || !creds?.password) return false
+
+    try {
+      await login(creds.account, creds.password, creds.countryCode)
+      return true
+    } catch {
+      storedCredentials.value = null
+      return false
+    }
+  }
+
+  return { core, userInfo, init, login, logout, autoLogin, storedCredentials }
 })
 
 // Pinia HMR —— 替代手动 import.meta.hot.dispose/data 模式
