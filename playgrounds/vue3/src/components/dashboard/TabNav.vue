@@ -8,6 +8,7 @@ const tabs = [
   { path: '/chat', label: 'Chat', icon: 'icon-[carbon--chat]' },
   { path: '/chat/contacts', label: 'Contacts', icon: 'icon-[carbon--user-multiple]' },
   { path: '/chat/groups', label: 'Groups', icon: 'icon-[carbon--group]' },
+  { path: '/chat/settings', label: 'Settings', icon: 'icon-[carbon--settings]' },
 ]
 
 function isActive(path: string) {

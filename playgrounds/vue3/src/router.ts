@@ -28,6 +28,11 @@ const routes: RouteRecordRaw[] = [
         name: 'groups-panel',
         component: () => import('./components/dashboard/GroupsPanel.vue'),
       },
+      {
+        path: 'settings',
+        name: 'settings-panel',
+        component: () => import('./components/dashboard/SettingsPanel.vue'),
+      },
     ],
   },
 ]
