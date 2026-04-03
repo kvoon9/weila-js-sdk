@@ -78,7 +78,7 @@ function handleRefresh() {
     <!-- Error State -->
     <div v-else-if="error" class="flex-1 flex flex-col items-center justify-center py-8 px-4">
       <p class="text-red-500 mb-2">Failed to load sessions</p>
-      <p class="text-sm text-gray-500">{{ error.message }}</p>
+      <p class="text-sm text-neutral-500">{{ error.message }}</p>
       <button
         @click="handleRefresh"
         class="mt-3 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"

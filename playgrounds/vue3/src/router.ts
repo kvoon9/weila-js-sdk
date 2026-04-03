@@ -3,35 +3,39 @@ import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
-    name: 'index',
+    name: 'login',
     component: () => import('./pages/index.vue'),
-    meta: { title: 'Weila SDK' },
+    meta: { title: 'Login' },
   },
   {
     path: '/chat',
     name: 'chat',
     component: () => import('./layouts/DashboardLayout.vue'),
-    meta: { title: 'Chat' },
+    meta: { title: 'Dashboard' },
     children: [
       {
         path: '',
-        name: 'chat-panel',
+        name: 'chat-index',
         component: () => import('./components/dashboard/ChatPanel.vue'),
+        meta: { title: 'Chats' },
       },
       {
         path: 'contacts',
-        name: 'contacts-panel',
+        name: 'chat-contacts',
         component: () => import('./components/dashboard/ContactPanel.vue'),
+        meta: { title: 'Contacts' },
       },
       {
         path: 'groups',
-        name: 'groups-panel',
+        name: 'chat-groups',
         component: () => import('./components/dashboard/GroupsPanel.vue'),
+        meta: { title: 'Groups' },
       },
       {
         path: 'settings',
-        name: 'settings-panel',
+        name: 'chat-settings',
         component: () => import('./components/dashboard/SettingsPanel.vue'),
+        meta: { title: 'Settings' },
       },
     ],
   },

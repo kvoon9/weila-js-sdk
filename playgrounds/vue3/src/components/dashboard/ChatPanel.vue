@@ -295,10 +295,10 @@ async function handlePttStop() {
 <template>
   <div class="flex flex-1 h-full overflow-hidden">
     <!-- Session List Sidebar -->
-    <div class="w-80 border-r border-gray-200 overflow-hidden flex flex-col bg-white">
+    <div class="w-80 border-r border-neutral-200 overflow-hidden flex flex-col bg-white">
       <SessionList v-if="weilaCore" :sessions="sessions ?? []" :active-session-id="selectedSessionId"
         @select="handleSelectSession" @refresh="refetchSessions" />
-      <div v-else class="flex items-center justify-center h-full text-gray-500">Loading SDK...</div>
+      <div v-else class="flex items-center justify-center h-full text-neutral-500">Loading SDK...</div>
     </div>
 
     <!-- Chat Content -->
@@ -321,21 +321,21 @@ async function handlePttStop() {
         <div class="mt-4 flex gap-2 items-center">
           <!-- Media Dropdown -->
           <Dropdown class="media-dropdown" :distance="8" placement="top-start">
-            <button class="p-2 rounded-lg hover:bg-gray-100">
+            <button class="p-2 rounded-lg hover:bg-neutral-100">
               <span class="icon-[carbon--add] text-xl"></span>
             </button>
             <template #popper="{ hide }">
               <div class="py-1 min-w-36">
                 <button @click="triggerImagePicker(); hide()"
-                  class="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2">
+                  class="w-full px-4 py-2 text-left hover:bg-neutral-50 flex items-center gap-2">
                   <span class="icon-[carbon--image]"></span> Send Image
                 </button>
                 <button @click="triggerFilePicker(); hide()"
-                  class="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2">
+                  class="w-full px-4 py-2 text-left hover:bg-neutral-50 flex items-center gap-2">
                   <span class="icon-[carbon--document]"></span> Send File
                 </button>
                 <button @click="triggerVideoPicker(); hide()"
-                  class="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2">
+                  class="w-full px-4 py-2 text-left hover:bg-neutral-50 flex items-center gap-2">
                   <span class="icon-[carbon--video]"></span> Send Video
                 </button>
               </div>
@@ -344,7 +344,7 @@ async function handlePttStop() {
           <!-- Emoji Picker -->
           <WLEmojiPicker @select="handleEmojiSelect" />
           <input v-model="messageInput" type="text" placeholder="Type a message..."
-            class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="flex-1 px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             @keyup.enter="sendMessage" />
           <button @click="sendMessage"
             class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none">
@@ -359,7 +359,7 @@ async function handlePttStop() {
           <input ref="videoInput" type="file" accept="video/*" class="hidden" @change="handleVideoSelected" />
         </div>
       </div>
-      <div v-else class="flex items-center justify-center h-full text-gray-400">
+      <div v-else class="flex items-center justify-center h-full text-neutral-400">
         <p>Select a session to start chatting</p>
       </div>
     </div>

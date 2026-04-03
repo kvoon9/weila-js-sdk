@@ -90,15 +90,15 @@ function handleClick() {
 
 <template>
   <div
-    class="session-list-item flex items-center gap-3 p-3 cursor-pointer transition-all duration-200"
+    class="session-list-item flex items-center gap-3 p-3 cursor-pointer rounded-lg transition-colors"
     :class="[
-      active ? 'bg-neutral-100' : 'opacity-75 hover:bg-neutral-50 hover:opacity-100'
+      active ? 'bg-neutral-100' : 'hover:bg-neutral-50'
     ]"
     @click="handleClick"
   >
     <!-- Avatar -->
     <div
-      class="avatar flex-shrink-0 w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden"
+      class="avatar flex-shrink-0 w-12 h-12 rounded-full bg-neutral-200 flex items-center justify-center overflow-hidden"
     >
       <img
         v-if="session.sessionAvatar"
@@ -114,7 +114,7 @@ function handleClick() {
     <!-- Content -->
     <div class="flex-1 min-w-0">
       <div class="flex items-center justify-between">
-        <span class="font-medium text-neutral-900 truncate">
+        <span class="text-sm font-medium text-neutral-900 truncate">
           {{ sessionName }}
         </span>
         <span class="text-xs text-neutral-500 flex-shrink-0 ml-2">
@@ -123,7 +123,7 @@ function handleClick() {
       </div>
 
       <div class="flex items-center justify-between mt-0.5">
-        <span class="text-sm text-neutral-500 truncate">
+        <span class="text-xs text-neutral-500 truncate">
           {{ messagePreview }}
         </span>
         <span
