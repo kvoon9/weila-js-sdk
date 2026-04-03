@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, watch, triggerRef, toRaw, nextTick, useTemplateRef } from 'vue'
 import { useRouteQuery } from '@vueuse/router'
+import { useRouter } from 'vue-router'
+import { Dropdown } from 'floating-vue'
+
+const router = useRouter()
 import {
   SessionList,
   WlMsgList,
@@ -26,7 +30,6 @@ const selectedSessionId = useRouteQuery<string>('sessionId')
 const messageInput = ref('')
 const pttStatus = ref<'idle' | 'recording' | 'processing'>('idle')
 const playingAudioId = ref<string | null>(null)
-const showMediaPanel = ref(false)
 const imageInputRef = useTemplateRef<HTMLInputElement>('imageInput')
 const fileInputRef = useTemplateRef<HTMLInputElement>('fileInput')
 const videoInputRef = useTemplateRef<HTMLInputElement>('videoInput')
@@ -35,10 +38,10 @@ const previewOpen = ref(false)
 const previewVideo = ref<string | null>(null)
 const previewVideoOpen = ref(false)
 
-weila.init().then(() => {
-  console.log('inited')
-  console.log('userInfo.value?.userId', userInfo.value?.userId)
-})
+async function handleLogout() {
+  await weila.logout()
+  router.push('/')
+}
 
 // ---- 音频播放控制 ----
 async function handleAudioPlay(msg: WL_IDbMsgData) {
@@ -186,17 +189,14 @@ async function sendMessage() {
 }
 
 function triggerImagePicker() {
-  showMediaPanel.value = false
   imageInputRef.value?.click()
 }
 
 function triggerFilePicker() {
-  showMediaPanel.value = false
   fileInputRef.value?.click()
 }
 
 function triggerVideoPicker() {
-  showMediaPanel.value = false
   videoInputRef.value?.click()
 }
 
@@ -302,78 +302,126 @@ async function handlePttStop() {
 </script>
 
 <template>
-  <div class="flex h-screen">
-    <div class="w-80 border-r border-gray-200 overflow-hidden flex flex-col">
-      <SessionList
-        v-if="weilaCore"
-        :sessions="sessions ?? []"
-        :active-session-id="selectedSessionId"
-        @select="handleSelectSession"
-        @refresh="refetchSessions"
-      />
-      <div v-else class="flex items-center justify-center h-full text-gray-500">Loading SDK...</div>
+  <div class="flex flex-col h-screen">
+    <!-- Header Bar -->
+    <div class="h-14 border-b border-gray-200 flex items-center justify-between px-4 bg-white shrink-0">
+      <div class="flex items-center gap-3">
+        <!-- User Avatar Dropdown -->
+        <Dropdown class="user-menu-dropdown" :distance="8" placement="bottom-start">
+          <button class="focus:outline-none">
+            <img v-if="userInfo?.avatar" :src="userInfo.avatar" class="w-8 h-8 rounded-full" />
+            <div v-else class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
+              <span class="text-sm text-gray-600">{{ userInfo?.nick?.[0] || 'U' }}</span>
+            </div>
+          </button>
+          <template #popper="{ hide }">
+            <div class="p-4 w-64">
+              <div class="flex items-center gap-3 mb-3">
+                <img v-if="userInfo?.avatar" :src="userInfo.avatar" class="w-12 h-12 rounded-full" />
+                <div v-else class="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center">
+                  <span class="text-lg text-gray-600">{{ userInfo?.nick?.[0] || 'U' }}</span>
+                </div>
+                <div>
+                  <div class="font-medium text-gray-800">{{ userInfo?.nick || 'User' }}</div>
+                  <div class="text-sm text-gray-500">{{ userInfo?.weilaNum || 'N/A' }}</div>
+                </div>
+              </div>
+              <div class="text-sm text-gray-600 space-y-1 mb-3">
+                <div v-if="userInfo?.phone">Phone: {{ userInfo.phone }}</div>
+                <div v-if="userInfo?.email">Email: {{ userInfo.email }}</div>
+                <div>User ID: {{ userInfo?.userId }}</div>
+              </div>
+              <button @click="handleLogout(); hide()"
+                class="w-full px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+                Logout
+              </button>
+            </div>
+          </template>
+        </Dropdown>
+        <span class="font-medium text-gray-800">{{ userInfo?.nick || 'User' }}</span>
+      </div>
     </div>
-    <div class="flex-1 p-4 overflow-y-auto">
-      <div v-if="selectedSession">
-        <h2 class="text-lg font-semibold mb-4">
-          Session: {{ selectedSession.sessionName || selectedSession.sessionId }}
-        </h2>
 
-        <div class="relative">
-          <WlMsgList ref="wlMsgListRef" style="height: 400px" class="bg-neutral-100" :messages="messages"
-            :current-user-id="userInfo?.userId ?? 0" :sender-infos="senderInfos" :has-more="hasMore" :loading="loading"
-            :playing-audio-id="playingAudioId" @audio-play="handleAudioPlay" @audio-pause="handleAudioPause"
-            @load-more="loadMore(messages[0]?.msgId - 1)" @image-click="handleImageClick" @file-click="openUrl" @video-click="handleVideoClick"
-            @location-click="openLocation" />
-        </div>
+    <!-- Main Content -->
+    <div class="flex flex-1 overflow-hidden">
+      <div class="w-80 border-r border-gray-200 overflow-hidden flex flex-col">
+        <SessionList v-if="weilaCore" :sessions="sessions ?? []" :active-session-id="selectedSessionId"
+          @select="handleSelectSession" @refresh="refetchSessions" />
+        <div v-else class="flex items-center justify-center h-full text-gray-500">Loading SDK...</div>
+      </div>
+      <div class="flex-1 p-4 overflow-y-auto">
+        <div v-if="selectedSession">
+          <h2 class="text-lg font-semibold mb-4">
+            Session: {{ selectedSession.sessionName || selectedSession.sessionId }}
+          </h2>
 
-        <!-- Message Input -->
-        <div class="mt-4 flex gap-2 items-center relative">
-          <!-- Media Panel -->
-          <div v-if="showMediaPanel"
-            class="absolute bottom-full mb-2 left-0 bg-white shadow-lg rounded-lg border py-1 min-w-32 z-10">
-            <button @click="triggerImagePicker"
-              class="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2">
-              <span class="icon-[carbon--image]"></span> Send Image
-            </button>
-            <button @click="triggerFilePicker"
-              class="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2">
-              <span class="icon-[carbon--document]"></span> Send File
-            </button>
-            <button @click="triggerVideoPicker"
-              class="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2">
-              <span class="icon-[carbon--video]"></span> Send Video
-            </button>
+          <div class="relative">
+            <WlMsgList ref="wlMsgListRef" style="height: 400px" class="bg-neutral-100" :messages="messages"
+              :current-user-id="userInfo?.userId ?? 0" :sender-infos="senderInfos" :has-more="hasMore"
+              :loading="loading" :playing-audio-id="playingAudioId" @audio-play="handleAudioPlay"
+              @audio-pause="handleAudioPause" @load-more="loadMore(messages[0]?.msgId - 1)"
+              @image-click="handleImageClick" @file-click="openUrl" @video-click="handleVideoClick"
+              @location-click="openLocation" />
           </div>
-          <!-- Emoji Picker -->
-          <WLEmojiPicker @select="handleEmojiSelect" />
-          <!-- Plus Button -->
-          <button @click="showMediaPanel = !showMediaPanel" class="p-2 rounded-lg hover:bg-gray-100">
-            <span class="icon-[carbon--add] text-xl"></span>
-          </button>
-          <input v-model="messageInput" type="text" placeholder="Type a message..."
-            class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            @keyup.enter="sendMessage" />
-          <button @click="sendMessage"
-            class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none">
-            Send
-          </button>
-          <!-- PTT Button -->
-          <WlPttButton v-if="selectedSession" :status="pttStatus" size="md" :disabled="!selectedSession"
-            @start="handlePttStart" @stop="handlePttStop" />
-          <!-- Hidden file inputs -->
-          <input ref="imageInput" type="file" accept="image/*" class="hidden" @change="handleImageSelected" />
-          <input ref="fileInput" type="file" class="hidden" @change="handleFileSelected" />
-          <input ref="videoInput" type="file" accept="video/*" class="hidden" @change="handleVideoSelected" />
+
+          <!-- Message Input -->
+          <div class="mt-4 flex gap-2 items-center">
+            <!-- Media Dropdown -->
+            <Dropdown class="media-dropdown" :distance="8" placement="top-start">
+              <button class="p-2 rounded-lg hover:bg-gray-100">
+                <span class="icon-[carbon--add] text-xl"></span>
+              </button>
+              <template #popper="{ hide }">
+                <div class="py-1 min-w-36">
+                  <button @click="triggerImagePicker(); hide()"
+                    class="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2">
+                    <span class="icon-[carbon--image]"></span> Send Image
+                  </button>
+                  <button @click="triggerFilePicker(); hide()"
+                    class="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2">
+                    <span class="icon-[carbon--document]"></span> Send File
+                  </button>
+                  <button @click="triggerVideoPicker(); hide()"
+                    class="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2">
+                    <span class="icon-[carbon--video]"></span> Send Video
+                  </button>
+                </div>
+              </template>
+            </Dropdown>
+            <!-- Emoji Picker -->
+            <WLEmojiPicker @select="handleEmojiSelect" />
+            <input v-model="messageInput" type="text" placeholder="Type a message..."
+              class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              @keyup.enter="sendMessage" />
+            <button @click="sendMessage"
+              class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none">
+              Send
+            </button>
+            <!-- PTT Button -->
+            <WlPttButton v-if="selectedSession" :status="pttStatus" size="md" :disabled="!selectedSession"
+              @start="handlePttStart" @stop="handlePttStop" />
+            <!-- Hidden file inputs -->
+            <input ref="imageInput" type="file" accept="image/*" class="hidden" @change="handleImageSelected" />
+            <input ref="fileInput" type="file" class="hidden" @change="handleFileSelected" />
+            <input ref="videoInput" type="file" accept="video/*" class="hidden" @change="handleVideoSelected" />
+          </div>
+        </div>
+        <div v-else class="flex items-center justify-center h-full text-gray-400">
+          <p>Select a session to start chatting</p>
         </div>
       </div>
-      <div v-else class="flex items-center justify-center h-full text-gray-400">
-        <p>Select a session to start chatting</p>
-      </div>
     </div>
+    <WlImagePreview v-if="previewImage" v-model:open="previewOpen" :src="previewImage" />
+    <WlVideoPreview v-if="previewVideo" v-model:open="previewVideoOpen" :src="previewVideo" />
   </div>
-  <WlImagePreview v-if="previewImage" v-model:open="previewOpen" :src="previewImage" />
-  <WlVideoPreview v-if="previewVideo" v-model:open="previewVideoOpen" :src="previewVideo" />
 </template>
 
-<style></style>
+<style>
+/* Hide arrows for dropdowns */
+.user-menu-dropdown .v-popper__arrow-inner,
+.user-menu-dropdown .v-popper__arrow-outer,
+.media-dropdown .v-popper__arrow-inner,
+.media-dropdown .v-popper__arrow-outer {
+  display: none;
+}
+</style>

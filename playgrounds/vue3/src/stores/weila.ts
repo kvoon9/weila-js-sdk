@@ -1,5 +1,5 @@
 import { shallowRef } from 'vue'
-import { defineStore, acceptHMRUpdate } from 'pinia'
+import { defineStore } from 'pinia'
 import { WeilaCore, initLogger, setLoggerEnabled, setConfigData, WL_ConfigID } from '@weilasdk/core'
 import type { WL_IDbUserInfo } from '@weilasdk/core'
 
@@ -30,18 +30,27 @@ export const useWeilaStore = defineStore('weila', () => {
     )
 
     await instance.weila_init()
-    userInfo.value = await instance.weila_login(
-      import.meta.env.VITE_WEILA_USER_ACCOUNT,
-      import.meta.env.VITE_WEILA_USER_PASSWORD,
-      '0',
-    )
 
     core.value = instance
 
     return instance
   }
 
-  return { core, userInfo, init }
+  async function login(account: string, password: string, countryCode: string = '0') {
+    const instance = core.value || await init()
+    userInfo.value = await instance.weila_login(account, password, countryCode)
+    return userInfo.value
+  }
+
+  async function logout() {
+    if (core.value) {
+      await core.value.weila_logout()
+    }
+    core.value = null
+    userInfo.value = null
+  }
+
+  return { core, userInfo, init, login, logout }
 })
 
 // Pinia HMR —— 替代手动 import.meta.hot.dispose/data 模式
