@@ -102,6 +102,15 @@ const handleMessageEvent: WL_ExtEventCallback = (eventId, eventData) => {
 
   messages.value = [...messages.value, msgData]
   void ensureSenderInfo(msgData.senderId)
+
+  // Auto-mark as read to prevent unread count increment
+  if (eventId === WL_ExtEventID.WL_EXT_NEW_MSG_RECV_IND) {
+    weilaCore.value?.weila_setSessionMsgRead(
+      msgData.sessionId,
+      msgData.sessionType,
+      msgData.msgId,
+    ).catch(console.error)
+  }
 }
 
 // ---- 音频播放结束监听 ----
