@@ -7,39 +7,39 @@ catalog:
   "@iconify-json/carbon": ^1.2.20
   "@iconify/tailwind4": ^1.2.3
   "@pinia/colada": ^1.1.0
-  "@storybook/addon-a11y": ^10.3.4
-  "@storybook/addon-docs": ^10.3.4
-  "@storybook/addon-onboarding": ^10.3.4
-  "@storybook/addon-vitest": ^10.3.4
-  "@storybook/vue3-vite": ^10.3.4
+  "@storybook/addon-a11y": ^10.3.5
+  "@storybook/addon-docs": ^10.3.5
+  "@storybook/addon-onboarding": ^10.3.5
+  "@storybook/addon-vitest": ^10.3.5
+  "@storybook/vue3-vite": ^10.3.5
   "@tailwindcss/postcss": ^4.2.2
   "@tailwindcss/vite": ^4.2.2
   "@types/md5": ^2.3.6
-  "@vitejs/plugin-vue": ^6.0.5
-  "@vitest/browser-playwright": ^4.1.2
+  "@vitejs/plugin-vue": ^6.0.6
+  "@vitest/browser-playwright": ^4.1.4
   "@vue/test-utils": ^2.4.6
   "@vueuse/core": ^14.2.1
   "@vueuse/router": ^14.2.1
-  autoprefixer: ^10.4.27
+  autoprefixer: ^10.5.0
   floating-vue: ^5.2.2
   jsdom: ^29.0.2
   lint-staged: ^16.4.0
   md5: ^2.3.0
-  oxfmt: ^0.44.0
-  oxlint: ^1.59.0
+  oxfmt: ^0.45.0
+  oxlint: ^1.60.0
   oxlint-tsgolint: ^0.20.0
   pinia: ^3.0.4
   playwright: ^1.59.1
-  postcss: ^8.5.8
+  postcss: ^8.5.9
   postcss-cli: ^11.0.1
   simple-git-hooks: ^2.13.1
-  storybook: ^10.3.4
+  storybook: ^10.3.5
   tailwindcss: ^4.2.2
   taze: ^19.11.0
   tsdown: 0.20.0-beta.3
   unplugin-vue: ^7.1.1
-  vite: ^8.0.5
-  vitest: ^4.1.2
+  vite: ^8.0.8
+  vitest: ^4.1.4
   vue: ^3.5.32
   vue-router: ^5.0.4
   vue-tsc: ^3.2.6
