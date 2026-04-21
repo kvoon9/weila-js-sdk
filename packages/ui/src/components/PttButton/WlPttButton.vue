@@ -38,31 +38,9 @@ const buttonClass = computed(() => [
   },
 ])
 
-const handleMouseDown = () => {
-  if (props.disabled || props.status !== 'idle') return
-  emit('start')
-}
-
-const handleMouseUp = () => {
-  if (props.disabled || props.status !== 'recording') return
-  emit('stop')
-}
-
-const handleMouseLeave = () => {
-  if (props.disabled || props.status !== 'recording') return
-  emit('stop')
-}
-
-const handleTouchStart = (e: TouchEvent) => {
-  e.preventDefault()
-  if (props.disabled || props.status !== 'idle') return
-  emit('start')
-}
-
-const handleTouchEnd = (e: TouchEvent) => {
-  e.preventDefault()
-  if (props.disabled || props.status !== 'recording') return
-  emit('stop')
+const handleClick = () => {
+  if (props.disabled || props.status === 'processing') return
+  emit(props.status === 'idle' ? 'start' : 'stop')
 }
 
 const handleContextMenu = (e: Event) => {
@@ -74,11 +52,7 @@ const handleContextMenu = (e: Event) => {
   <button
     :class="buttonClass"
     :disabled="disabled"
-    @mousedown="handleMouseDown"
-    @mouseup="handleMouseUp"
-    @mouseleave="handleMouseLeave"
-    @touchstart="handleTouchStart"
-    @touchend="handleTouchEnd"
+    @click="handleClick"
     @contextmenu="handleContextMenu"
   >
     <!-- Idle: Microphone Icon -->
