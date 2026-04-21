@@ -97,10 +97,23 @@ const handleMessageEvent: WL_ExtEventCallback = (eventId, eventData) => {
   )
     return
 
-  // 去重：避免 immediately 加载的消息与事件重复
-  if (messages.value.some((m) => m.combo_id === msgData.combo_id)) return
-
-  messages.value = [...messages.value, msgData]
+  // 同一个 combo_id 的后续 PTT chunks 应该更新现有消息（frameCount 等）
+  const existingIdx = messages.value.findIndex((m) => m.combo_id === msgData.combo_id)
+  if (existingIdx !== -1) {
+    const existing = messages.value[existingIdx]
+    const updated: WL_IDbMsgData = { ...existing }
+    if (msgData.pttData) {
+      updated.pttData = { ...existing.pttData, ...msgData.pttData }
+    }
+    if (msgData.audioData) {
+      updated.audioData = { ...existing.audioData, ...msgData.audioData }
+    }
+    const newMessages = [...messages.value]
+    newMessages[existingIdx] = updated
+    messages.value = newMessages
+  } else {
+    messages.value = [...messages.value, msgData]
+  }
   void ensureSenderInfo(msgData.senderId)
 }
 

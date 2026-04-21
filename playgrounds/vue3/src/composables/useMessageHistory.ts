@@ -1,4 +1,4 @@
-import { ref, watch, watchEffect } from 'vue'
+import { ref, watch } from 'vue'
 import type { Ref } from 'vue'
 import type { WL_IDbMsgData, WL_IDbSession, WL_IDbUserInfo } from '@weilasdk/core'
 import type { WeilaCore } from '@weilasdk/core'
@@ -8,11 +8,6 @@ export function useMessageHistory(
   selectedSession: Ref<WL_IDbSession | null>,
 ) {
   const messages = ref<WL_IDbMsgData[]>([])
-
-  watchEffect(() => {
-    console.log('messages.value', messages.value)
-  })
-
   const senderInfos = ref<Map<number, WL_IDbUserInfo>>(new Map())
   const hasMore = ref(false)
   const loading = ref(false)
@@ -57,11 +52,13 @@ export function useMessageHistory(
   }
 
   watch(
-    selectedSession,
-    async (session) => {
-      if (!session) return
-      messages.value = []
-      await loadMore(0)
+    () => selectedSession.value?.sessionId,
+    async (newSessionId, oldSessionId) => {
+      if (!newSessionId) return
+      if (newSessionId !== oldSessionId) {
+        messages.value = []
+        await loadMore(0)
+      }
     },
     { immediate: true },
   )
