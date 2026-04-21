@@ -101,16 +101,13 @@ const handleMessageEvent: WL_ExtEventCallback = (eventId, eventData) => {
   const existingIdx = messages.value.findIndex((m) => m.combo_id === msgData.combo_id)
   if (existingIdx !== -1) {
     const existing = messages.value[existingIdx]
-    const updated: WL_IDbMsgData = { ...existing }
     if (msgData.pttData) {
-      updated.pttData = { ...existing.pttData, ...msgData.pttData }
+      existing.pttData = { ...existing.pttData, ...msgData.pttData }
     }
     if (msgData.audioData) {
-      updated.audioData = { ...existing.audioData, ...msgData.audioData }
+      existing.audioData = { ...existing.audioData, ...msgData.audioData }
     }
-    const newMessages = [...messages.value]
-    newMessages[existingIdx] = updated
-    messages.value = newMessages
+    messages.value[existingIdx] = { ...existing }
   } else {
     messages.value = [...messages.value, msgData]
   }
