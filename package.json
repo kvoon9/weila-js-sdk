@@ -14,7 +14,8 @@
     "lint": "oxlint --type-aware",
     "lint:fix": "oxlint --type-aware --fix",
     "fmt": "oxfmt",
-    "fmt:check": "oxfmt --check"
+    "fmt:check": "oxfmt --check",
+    "preview": "pnpm --filter @weilasdk/playground-vue3 run build && pnpm --filter @weilasdk/playground-vue3 run preview"
   },
   "devDependencies": {
     "@antfu/ni": "catalog:",
