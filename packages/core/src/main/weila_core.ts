@@ -630,7 +630,7 @@ class WeilaCore implements WL_CoreInterface {
       if (!audioMsgData.audioData.data && audioMsgData.audioData.audioUrl) {
         const audioUrl = audioMsgData.audioData.audioUrl.replace(/^http(?!s)/, 'https')
         try {
-          audioMsgData.audioData = await this.weila_fetchAudioData(audioMsgData.audioData.audioUrl)
+          audioMsgData.audioData = await this.weila_fetchAudioData(audioUrl)
           if (!audioMsgData.audioData) {
             audioMsgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR
             audioMsgData.audioData = {
@@ -689,7 +689,8 @@ class WeilaCore implements WL_CoreInterface {
 
     for (let msgData of audioMsgDatas) {
       if (!msgData.audioData.data && msgData.audioData.audioUrl) {
-        msgData.audioData = await this.weila_fetchAudioData(msgData.audioData.audioUrl)
+        const audioUrl = msgData.audioData.audioUrl.replace(/^http(?!s)/, 'https')
+        msgData.audioData = await this.weila_fetchAudioData(audioUrl)
         if (!msgData.audioData) {
           msgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR
         }

@@ -40,6 +40,14 @@ export default defineConfig({
       },
     },
   },
+  preview: {
+    port: 4173,
+    host: true,
+    https: {
+      cert: './localhost.pem',
+      key: './localhost-key.pem',
+    },
+  },
   test: {
     projects: [
       {
