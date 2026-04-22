@@ -117,6 +117,13 @@ enum WL_ExtEventID {
   WL_EXT_STAFF_REMOVED_SESSION_IND,
   /*! 设备绑定应答通知 WL_UnbindAnswerInfo */
   WL_EXT_DEVICE_BINDING_ANSWER_IND,
+  /*! 被踢出通知 WL_KickoutInfo */
+  WL_EXT_KICKOUT_IND,
+}
+
+interface WL_KickoutInfo {
+  reason: number
+  reasonText: string
 }
 
 /** 可订阅的数据主题 */
@@ -273,6 +280,7 @@ export {
   WL_StaffAnswerSessionInvite,
   WL_bindAnswerInfo,
   WL_GroupMemberDeleteInfo,
+  WL_KickoutInfo,
   WL_SubscribeTopic,
   WL_SessionListCallback,
   WL_MessagesFilter,

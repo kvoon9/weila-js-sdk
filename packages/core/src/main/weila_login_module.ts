@@ -13,7 +13,7 @@ import {
 import Long from 'long'
 import { getLogger } from 'log/weila_log'
 import { getAppKeyAndId } from 'main/weila_utils'
-import { WL_ExtEventID, WL_bindAnswerInfo } from 'main/weila_external_data'
+import { WL_ExtEventID, WL_KickoutInfo, WL_bindAnswerInfo } from 'main/weila_external_data'
 
 const wllog = getLogger('MOD:login:info')
 const _wlerr = getLogger('MOD:login:err')
@@ -130,7 +130,33 @@ export default class WLLoginModule {
             })()
           }
           break
+
+        case WL.Login.LoginCommandId.LOGIN_COMMAND_KICKOUT:
+          {
+            const ntf = serverMessage.loginMessage.ntfKickout
+            const kickoutInfo: WL_KickoutInfo = {
+              reason: ntf.reason,
+              reasonText: this.getKickoutReasonText(ntf.reason),
+            }
+            this.coreInterface.sendExtEvent(WL_ExtEventID.WL_EXT_KICKOUT_IND, kickoutInfo)
+            // 踢出后主动登出，停止 SDK 工作
+            this.coreInterface.executeCoreFunc('weila_logout')
+          }
+          break
       }
+    }
+  }
+
+  private getKickoutReasonText(reason: number): string {
+    switch (reason) {
+      case WL.Login.KickoutReason.KICKOUT_REASON_LOCK:
+        return 'Account has been locked'
+      case WL.Login.KickoutReason.KICKOUT_REASON_DUPLICATE_CLIENT:
+        return 'Same client type logged in elsewhere'
+      case WL.Login.KickoutReason.KICKOUT_REASON_MOBILE_KICK:
+        return 'Kicked by mobile device'
+      default:
+        return 'Unknown reason'
     }
   }
 
