@@ -170,11 +170,6 @@ async function handleSelectSession(session: WL_IDbSession) {
   selectedSessionId.value = session.sessionId
   triggerRef(selectedSessionId)
 
-  // 借助用户点击会话的手势提前解锁音频系统，避免实时语音首播时再被浏览器拦截。
-  await weilaCore.value?.weila_audioInit().catch((err) => {
-    console.warn('[Audio] Init on session select failed:', err)
-  })
-
   // Mark session as read to clear unread count
   if (weilaCore.value && session.lastMsgId > 0) {
     await weilaCore.value.weila_setSessionMsgRead(
@@ -334,11 +329,10 @@ async function handlePttStop() {
 
         <div class="relative">
           <WlMsgList ref="wlMsgListRef" style="height: 400px" class="bg-neutral-100" :messages="messages"
-            :current-user-id="userInfo?.userId ?? 0" :sender-infos="senderInfos" :has-more="hasMore"
-            :loading="loading" :playing-audio-id="playingAudioId" @audio-play="handleAudioPlay"
-            @audio-pause="handleAudioPause" @load-more="loadMore(messages[0]?.msgId - 1)"
-            @image-click="handleImageClick" @file-click="openUrl" @video-click="handleVideoClick"
-            @location-click="openLocation" />
+            :current-user-id="userInfo?.userId ?? 0" :sender-infos="senderInfos" :has-more="hasMore" :loading="loading"
+            :playing-audio-id="playingAudioId" @audio-play="handleAudioPlay" @audio-pause="handleAudioPause"
+            @load-more="loadMore(messages[0]?.msgId - 1)" @image-click="handleImageClick" @file-click="openUrl"
+            @video-click="handleVideoClick" @location-click="openLocation" />
         </div>
 
         <!-- Message Input -->
