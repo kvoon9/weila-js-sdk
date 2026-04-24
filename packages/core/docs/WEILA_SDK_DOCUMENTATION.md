@@ -203,6 +203,12 @@ await weila.weila_deleteSession(sessionId, sessionType)
 
 // 清除会话中的所有消息
 await weila.weila_clearSession(sessionId, sessionType)
+
+// 进入聊天页时声明当前活跃会话，收到新消息时不增加未读
+await weila.weila_setActiveSession(sessionId, sessionType)
+
+// 离开聊天页时清除活跃会话
+weila.weila_clearActiveSession()
 ```
 
 ### 4.3 会话设置
@@ -681,6 +687,7 @@ weila.weila_onEvent((eventId, eventData) => {
 | `WL_EXT_MSG_SEND_IND`                | 消息发送结果       | `WL_IDbMsgData`               |
 | `WL_EXT_NEW_MSG_RECV_IND`            | 新消息通知         | `WL_IDbMsgData`               |
 | `WL_EXT_NEW_SESSION_OPEN_IND`        | 新会话自动创建     | `WL_IDbSession`               |
+| `WL_EXT_SESSION_UPDATED_IND`         | 会话状态更新       | `WL_IDbSession`               |
 | `WL_EXT_NEW_NOTIFICATION_IND`        | 新通知             | `WL_IDbNotification`          |
 | `WL_EXT_GROUP_MODIFIED_IND`          | 群属性变更         | -                             |
 | `WL_EXT_GROUP_MEMBERS_MODIFIED_IND`  | 群成员更新         | -                             |

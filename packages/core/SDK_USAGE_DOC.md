@@ -211,6 +211,7 @@ SDK 通过 `weila_onEvent` 方法提供统一的异步通知机制。
 | `WL_EXT_MSG_SEND_IND`                | 消息发送结果通知                     | `WL_IDbMsgData`               |
 | `WL_EXT_NEW_MSG_RECV_IND`            | 收到新消息通知                       | `WL_IDbMsgData`               |
 | `WL_EXT_NEW_SESSION_OPEN_IND`        | 自动创建了新会话                     | `WL_IDbSession`               |
+| `WL_EXT_SESSION_UPDATED_IND`         | 会话状态更新                         | `WL_IDbSession`               |
 | `WL_EXT_NEW_NOTIFICATION_IND`        | 收到新的好友或群通知                 | `WL_IDbNotification`          |
 | `WL_EXT_GROUP_MODIFIED_IND`          | 群属性发生变更                       | `WL_IDbGroup`                 |
 | `WL_EXT_GROUP_MEMBERS_MODIFIED_IND`  | 群成员列表有更新                     | `WL_IDbGroupMember[]`         |
@@ -252,8 +253,16 @@ SDK 通过 `weila_onEvent` 方法提供统一的异步通知机制。
 - **`weila_startNewSession(sessionId, sessionType, extra?): Promise<WL_IDbSession>`**: 创建或打开一个会话。
 - **`weila_deleteSession(sessionId, sessionType): Promise<boolean>`**: 从服务器、数据库和内存中彻底删除会话。
 - **`weila_clearSession(sessionId, sessionType): Promise<boolean>`**: 仅清除会话内的消息内容。
+- **`weila_setActiveSession(sessionId, sessionType): Promise<boolean>`**: 设置当前活跃会话，并立即同步清空该会话的本地未读数。
+- **`weila_clearActiveSession(): void`**: 清除当前活跃会话状态。
 - **`weila_getSessionSetting(sessionId, sessionType): Promise<WL_IDbSessionSetting|undefined>`**: 获取会话配置（如是否开启 TTS、禁音等）。
 - **`weila_updateSessionSetting(sessionId, sessionType, settingParam): Promise<boolean>`**: 更新会话配置项。
+
+### 活跃会话未读语义
+
+- 活跃会话是运行时内存状态，需要由接入方在进入聊天页面时显式调用 `weila_setActiveSession(...)`。
+- 当前活跃会话收到新消息时，SDK 会直接推进 `readMsgId`，因此 `lastMsgId - readMsgId` 不会增加。
+- 调用 `weila_logout()` 或重建 `WeilaCore` 后，活跃会话状态不会保留，需要重新设置。
 
 ---
 

@@ -60,15 +60,22 @@ interface WL_BurstInfo {
   created: number
 }
 
+interface WL_ActiveSessionInfo {
+  sessionId: string
+  sessionType: number
+}
+
 export default class WLSessionModule {
   private sessionList: WL_IDbSession[] = []
   private token: string | null
   private pttFsm: WLPttFsm | null
   private curBurstInfo: WL_BurstInfo | null
+  private activeSession: WL_ActiveSessionInfo | null
 
   constructor(private coreInterface: WL_CoreInterface) {
     this.token = null
     this.curBurstInfo = null
+    this.activeSession = null
     this.coreInterface.registerPbMsgHandler(
       WL.Service.ServiceID.SERVICE_SESSION,
       this.onPbMsgHandler.bind(this),
@@ -108,10 +115,78 @@ export default class WLSessionModule {
     return true
   }
 
-  private async updateSessionByNewMsgData(msgData: WL_IDbMsgData): Promise<void> {
-    const index = this.sessionList.findIndex((value) => {
-      return value.sessionId === msgData.sessionId && value.sessionType === msgData.sessionType
+  private findSessionIndex(sessionId: string, sessionType: number): number {
+    return this.sessionList.findIndex((value) => {
+      return value.sessionId === sessionId && value.sessionType === sessionType
     })
+  }
+
+  private isActiveSession(sessionId: string, sessionType: number): boolean {
+    return (
+      this.activeSession?.sessionId === sessionId && this.activeSession?.sessionType === sessionType
+    )
+  }
+
+  private async persistSessionUpdate(session: WL_IDbSession): Promise<void> {
+    await WeilaDB.getInstance().putSession(session)
+    this.coreInterface.sendExtEvent(WL_ExtEventID.WL_EXT_SESSION_UPDATED_IND, session)
+  }
+
+  private applySessionMsgData(
+    session: WL_IDbSession,
+    msgData: WL_IDbMsgData,
+    markRead: boolean,
+  ): void {
+    session.lastMsgId = msgData.msgId
+    session.lastMsgData = msgData
+    session.latestUpdate = new Date().getTime() / 1000
+    if (markRead && msgData.msgId > 0) {
+      session.readMsgId = Math.max(session.readMsgId || 0, msgData.msgId)
+    }
+  }
+
+  private async syncSessionReadAck(
+    sessionId: string,
+    sessionType: number,
+    readMsgId: number,
+  ): Promise<boolean> {
+    if (readMsgId <= 0) {
+      return true
+    }
+
+    const buildResult = WeilaPBSessionWrapper.buildMsgReadReq(
+      Long.fromValue(sessionId),
+      sessionType,
+      readMsgId,
+    )
+    if (buildResult.resultCode === 0) {
+      const rsp = await this.coreInterface.sendPbMsg(buildResult)
+      wllog('设已读的响应结果', rsp)
+      return true
+    }
+
+    return Promise.reject('创建读取消息异常:' + buildResult.resultCode)
+  }
+
+  private async updateSessionReadLocally(index: number, msgId: number): Promise<boolean> {
+    if (index === -1 || msgId <= 0) {
+      return false
+    }
+
+    const session = this.sessionList[index]
+    const nextReadMsgId = Math.max(session.readMsgId || 0, msgId)
+    if (nextReadMsgId <= (session.readMsgId || 0)) {
+      return false
+    }
+
+    session.readMsgId = nextReadMsgId
+    await this.persistSessionUpdate(session)
+    return true
+  }
+
+  private async updateSessionByNewMsgData(msgData: WL_IDbMsgData): Promise<void> {
+    const index = this.findSessionIndex(msgData.sessionId, msgData.sessionType)
+    const shouldMarkRead = this.isActiveSession(msgData.sessionId, msgData.sessionType)
 
     if (index === -1) {
       let session: WL_IDbSession = {} as WL_IDbSession
@@ -135,19 +210,26 @@ export default class WLSessionModule {
 
         session = await WeilaDB.getInstance().fillSessionInfo(session)
       }
-      session.lastMsgId = msgData.msgId
-      session.lastMsgData = msgData
-      session.latestUpdate = new Date().getTime() / 1000
+      this.applySessionMsgData(session, msgData, shouldMarkRead)
+      if (!shouldMarkRead) {
+        session.readMsgId = session.readMsgId || 0
+      }
       session.combo_id_type = session.sessionId + '_' + session.sessionType
       await WeilaDB.getInstance().putSession(session)
       this.sessionList.push(session)
       //发送有新的会话通知
       this.coreInterface.sendExtEvent(WL_ExtEventID.WL_EXT_NEW_SESSION_OPEN_IND, session)
     } else {
-      this.sessionList[index].lastMsgId = msgData.msgId
-      this.sessionList[index].lastMsgData = msgData
-      this.sessionList[index].latestUpdate = new Date().getTime() / 1000
-      await WeilaDB.getInstance().putSession(this.sessionList[index])
+      this.applySessionMsgData(this.sessionList[index], msgData, shouldMarkRead)
+      await this.persistSessionUpdate(this.sessionList[index])
+    }
+
+    if (shouldMarkRead && msgData.msgId > 0) {
+      void this.syncSessionReadAck(msgData.sessionId, msgData.sessionType, msgData.msgId).catch(
+        (reason) => {
+          wlerr('同步活跃会话已读失败:', reason)
+        },
+      )
     }
   }
 
@@ -507,28 +589,44 @@ export default class WLSessionModule {
     sessionType: number,
     msgId: number,
   ): Promise<boolean> {
-    const buildResult = WeilaPBSessionWrapper.buildMsgReadReq(
-      Long.fromValue(sessionId),
-      sessionType,
-      msgId,
-    )
-    if (buildResult.resultCode === 0) {
-      const rsp = await this.coreInterface.sendPbMsg(buildResult)
-      wllog('设已读的响应结果', rsp)
-
-      // Update local session's readMsgId
-      const index = this.sessionList.findIndex(
-        (s) => s.sessionId === sessionId && s.sessionType === sessionType,
-      )
-      if (index !== -1) {
-        this.sessionList[index].readMsgId = msgId
-        await WeilaDB.getInstance().putSession(this.sessionList[index])
-      }
-
+    const index = this.findSessionIndex(sessionId, sessionType)
+    const currentReadMsgId = index !== -1 ? this.sessionList[index].readMsgId || 0 : 0
+    const targetMsgId = Math.max(currentReadMsgId, msgId)
+    if (targetMsgId <= currentReadMsgId) {
       return true
     }
 
-    return Promise.reject('创建读取消息异常:' + buildResult.resultCode)
+    if (index !== -1) {
+      await this.updateSessionReadLocally(index, targetMsgId)
+    }
+
+    await this.syncSessionReadAck(sessionId, sessionType, targetMsgId)
+    return true
+  }
+
+  public async setActiveSession(sessionId: string, sessionType: number): Promise<boolean> {
+    this.activeSession = {
+      sessionId,
+      sessionType,
+    }
+
+    const index = this.findSessionIndex(sessionId, sessionType)
+    if (index === -1) {
+      return true
+    }
+
+    const session = this.sessionList[index]
+    const targetMsgId = session.lastMsgId || 0
+    if (targetMsgId > (session.readMsgId || 0)) {
+      await this.updateSessionReadLocally(index, targetMsgId)
+      await this.syncSessionReadAck(sessionId, sessionType, targetMsgId)
+    }
+
+    return true
+  }
+
+  public clearActiveSession(): void {
+    this.activeSession = null
   }
 
   public async initSessions(): Promise<boolean> {
@@ -713,14 +811,11 @@ export default class WLSessionModule {
         dbMsgData.msgId = rspMsg.msgId
         dbMsgData.combo_id = getMsgDataIdByCombo(dbMsgData, 0)
         if (index !== -1) {
-          this.sessionList[index].lastMsgId = dbMsgData.msgId
-          this.sessionList[index].lastMsgData = dbMsgData
-          this.sessionList[index].readMsgId = dbMsgData.msgId
-          this.sessionList[index].latestUpdate = new Date().getTime() / 1000
+          this.applySessionMsgData(this.sessionList[index], dbMsgData, true)
           wllog('session:', this.sessionList)
-          await WeilaDB.getInstance().putSession(this.sessionList[index])
+          await this.persistSessionUpdate(this.sessionList[index])
         } else {
-          await this.startSession(sessionId, sessionType, undefined, dbMsgData.msgId)
+          await this.startSession(sessionId, sessionType, undefined, dbMsgData.msgId, dbMsgData)
         }
         return true
       } catch (e) {
@@ -748,11 +843,12 @@ export default class WLSessionModule {
         await this.coreInterface.sendPbMsg(buildMsgRet)
       } finally {
         const sessionInfo = await WeilaDB.getInstance().getSession(sessionId, sessionType)
-        const index = this.sessionList.findIndex((value) => {
-          return value.sessionId === sessionId && value.sessionType === sessionType
-        })
+        const index = this.findSessionIndex(sessionId, sessionType)
         if (index !== -1) {
           this.sessionList.splice(index, 1)
+        }
+        if (this.isActiveSession(sessionId, sessionType)) {
+          this.clearActiveSession()
         }
         if (sessionInfo) {
           await WeilaDB.getInstance().delSessions([sessionInfo.combo_id_type])
@@ -770,6 +866,7 @@ export default class WLSessionModule {
     sessionType: number,
     extra?: any,
     lastMsgId?: number,
+    lastMsgData?: WL_IDbMsgData,
   ): Promise<WL_IDbSession> {
     const dbSessionInfo = await WeilaDB.getInstance().getSession(sessionId, sessionType)
     if (dbSessionInfo) {
@@ -780,13 +877,16 @@ export default class WLSessionModule {
     sessionInfo.sessionId = sessionId
     sessionInfo.sessionType = sessionType
     sessionInfo.combo_id_type = sessionId + '_' + sessionType
-    sessionInfo.readMsgId = 0
+    sessionInfo.readMsgId = lastMsgId ? lastMsgId : 0
     sessionInfo.latestUpdate = new Date().getTime() / 1000
     sessionInfo.lastMsgId = lastMsgId ? lastMsgId : 0
     sessionInfo.sessionName = ''
     sessionInfo.sessionAvatar = default_group_logo
     sessionInfo.status = WL_IDbSessionStatus.SESSION_ACTIVATE
     sessionInfo.extra = extra
+    if (lastMsgData) {
+      sessionInfo.lastMsgData = lastMsgData
+    }
 
     await this.saveSessionInfo(sessionInfo)
     this.sessionList.push(sessionInfo)
@@ -911,18 +1011,6 @@ export default class WLSessionModule {
         this.curBurstInfo.dbMsgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_UNSENT
         await WeilaDB.getInstance().putMsgData(this.curBurstInfo.dbMsgData)
       } finally {
-        //依据marker状态发送不同的对外信息。
-        const index = this.sessionList.findIndex((value) => {
-          return (
-            value.sessionId === this.curBurstInfo.sessionId &&
-            value.sessionType === this.curBurstInfo.sessionType
-          )
-        })
-
-        if (index !== -1) {
-          this.sessionList[index].lastMsgId = this.curBurstInfo.dbMsgData.msgId
-        }
-
         const pttRecordInd: WL_PttRecordInd = {} as WL_PttRecordInd
         pttRecordInd.msgData = this.curBurstInfo.dbMsgData
         if (this.curBurstInfo.dbMsgData.status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_SENT) {
@@ -938,6 +1026,26 @@ export default class WLSessionModule {
               0,
             )
             await WeilaDB.getInstance().putMsgData(this.curBurstInfo.dbMsgData)
+            const sessionIndex = this.findSessionIndex(
+              this.curBurstInfo.sessionId,
+              this.curBurstInfo.sessionType,
+            )
+            if (sessionIndex !== -1) {
+              this.applySessionMsgData(
+                this.sessionList[sessionIndex],
+                this.curBurstInfo.dbMsgData,
+                true,
+              )
+              await this.persistSessionUpdate(this.sessionList[sessionIndex])
+            } else {
+              await this.startSession(
+                this.curBurstInfo.sessionId,
+                this.curBurstInfo.sessionType,
+                undefined,
+                this.curBurstInfo.dbMsgData.msgId,
+                this.curBurstInfo.dbMsgData,
+              )
+            }
 
             pttRecordInd.state = WL_PttRecordState.PTT_AUDIO_RECORDING_END
             this.coreInterface.sendExtEvent(
@@ -1026,6 +1134,10 @@ export default class WLSessionModule {
 
   public async releaseTalk(): Promise<boolean> {
     return this.pttFsm.releaseTalk()
+  }
+
+  public clearActiveSessionState(): void {
+    this.clearActiveSession()
   }
 
   private async canTalk(sessionId: string, sessionType: number): Promise<boolean> {

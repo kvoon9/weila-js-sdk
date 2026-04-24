@@ -3,7 +3,7 @@ import { useWeilaStore } from '../stores/weila'
 import { storeToRefs } from 'pinia'
 import { watch } from 'vue'
 import type { WL_IDbSession } from '@weilasdk/core'
-import { WL_ExtEventID } from '@weilasdk/core'
+import { WL_DataPrepareState, WL_ExtEventID } from '@weilasdk/core'
 import type { WL_ExtEventCallback } from '@weilasdk/core'
 
 export const useSessions = defineQuery(() => {
@@ -21,20 +21,23 @@ export const useSessions = defineQuery(() => {
   // Refetch sessions when session data changes
   watch(
     core,
-    (coreInstance) => {
+    (coreInstance, _oldCore, onCleanup) => {
       if (!coreInstance) return
-      const handler: WL_ExtEventCallback = (eventId) => {
-        // Refetch on: initial sync complete, new message, message sent, new session
+      const handler: WL_ExtEventCallback = (eventId, eventData) => {
+        // Refetch on: initial sync complete, new session, session state updated
         if (
-          eventId === WL_ExtEventID.WL_EXT_DATA_PREPARE_IND ||
-          eventId === WL_ExtEventID.WL_EXT_NEW_MSG_RECV_IND ||
-          eventId === WL_ExtEventID.WL_EXT_MSG_SEND_IND ||
-          eventId === WL_ExtEventID.WL_EXT_NEW_SESSION_OPEN_IND
+          (eventId === WL_ExtEventID.WL_EXT_DATA_PREPARE_IND &&
+            eventData?.state === WL_DataPrepareState.PREPARE_SUCC_END) ||
+          eventId === WL_ExtEventID.WL_EXT_NEW_SESSION_OPEN_IND ||
+          eventId === WL_ExtEventID.WL_EXT_SESSION_UPDATED_IND
         ) {
           queryReturn.refetch().catch(console.error)
         }
       }
       coreInstance.weila_onEvent(handler)
+      onCleanup(() => {
+        coreInstance.weila_offEvent(handler)
+      })
     },
     { immediate: true },
   )

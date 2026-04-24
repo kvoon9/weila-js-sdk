@@ -78,6 +78,8 @@ enum WL_ExtEventID {
   WL_EXT_NEW_MSG_RECV_IND,
   /*! 告知客户端，新会话自动创建, 数据是WL_IDbSession */
   WL_EXT_NEW_SESSION_OPEN_IND,
+  /*! 告知客户端，会话信息已更新, 数据是WL_IDbSession */
+  WL_EXT_SESSION_UPDATED_IND,
   /*! 告知客户端，有新的好友或群通知信息 */
   WL_EXT_NEW_NOTIFICATION_IND,
   /*! 告知客户端，群属性有变更 */
