@@ -1,5 +1,14 @@
 <script setup lang="ts">
-import { ref, computed, watch, triggerRef, toRaw, nextTick, useTemplateRef } from 'vue'
+import {
+  ref,
+  computed,
+  watch,
+  triggerRef,
+  toRaw,
+  nextTick,
+  useTemplateRef,
+  onBeforeUnmount,
+} from 'vue'
 import { useRouteQuery } from '@vueuse/router'
 import { Dropdown } from 'floating-vue'
 
@@ -113,14 +122,6 @@ const handleMessageEvent: WL_ExtEventCallback = (eventId, eventData) => {
   }
   void ensureSenderInfo(msgData.senderId)
 
-  // Auto-mark as read to prevent unread count increment
-  if (eventId === WL_ExtEventID.WL_EXT_NEW_MSG_RECV_IND) {
-    weilaCore.value?.weila_setSessionMsgRead(
-      msgData.sessionId,
-      msgData.sessionType,
-      msgData.msgId,
-    ).catch(console.error)
-  }
 }
 
 // ---- 音频播放结束监听 ----
@@ -133,19 +134,42 @@ const handleAudioPlayEnd = (indData: { state: WL_PttAudioPlayState }) => {
 // 注册全局事件监听（消息追加 + 音频播放结束）
 watch(
   weilaCore,
-  (core, _oldCore) => {
+  (core, _oldCore, onCleanup) => {
     if (!core) return
-    core.weila_onEvent(handleMessageEvent)
-    core.weila_onEvent((eventId, eventData) => {
+    const handlePttPlayEvent: WL_ExtEventCallback = (eventId, eventData) => {
       if (eventId === WL_ExtEventID.WL_EXT_PTT_PLAY_IND) {
         handleAudioPlayEnd((eventData as WL_PttPlayInd).indData)
       }
+    }
+
+    core.weila_onEvent(handleMessageEvent)
+    core.weila_onEvent(handlePttPlayEvent)
+    onCleanup(() => {
+      core.weila_offEvent(handleMessageEvent)
+      core.weila_offEvent(handlePttPlayEvent)
     })
-    // weila_onEvent 是 additive 的，目前 SDK 没有 offEvent API
-    // 所以这里不需要手动 cleanup（组件销毁后 handler 引用的 ref 不再被 UI 消费）
   },
   { immediate: true },
 )
+
+watch(
+  [weilaCore, () => selectedSession.value?.sessionId, () => selectedSession.value?.sessionType],
+  ([core, sessionId, sessionType]) => {
+    if (!core) return
+
+    if (!sessionId || sessionType === undefined) {
+      core.weila_clearActiveSession()
+      return
+    }
+
+    core.weila_setActiveSession(sessionId, sessionType).catch(console.error)
+  },
+  { immediate: true },
+)
+
+onBeforeUnmount(() => {
+  weilaCore.value?.weila_clearActiveSession()
+})
 
 function openUrl(url: string) {
   window.open(url)
@@ -169,17 +193,6 @@ async function handleSelectSession(session: WL_IDbSession) {
   console.log('session', session)
   selectedSessionId.value = session.sessionId
   triggerRef(selectedSessionId)
-
-  // Mark session as read to clear unread count
-  if (weilaCore.value && session.lastMsgId > 0) {
-    await weilaCore.value.weila_setSessionMsgRead(
-      session.sessionId,
-      session.sessionType,
-      session.lastMsgId,
-    )
-    // Refetch sessions to update unread count in UI
-    await refetchSessions()
-  }
 }
 
 async function sendMessage() {

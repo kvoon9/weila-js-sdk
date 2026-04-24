@@ -752,6 +752,7 @@ class WeilaCore implements WL_CoreInterface {
    * 登出系统
    */
   public async weila_logout(): Promise<boolean> {
+    this.sessionModule.clearActiveSessionState()
     return this.mainFsmService.send('FSM_LOGOUT_EVT')
   }
 
@@ -968,6 +969,22 @@ class WeilaCore implements WL_CoreInterface {
    */
   public async weila_setSessionMsgRead(sessionId: string, sessionType: number, msgId: number): Promise<boolean> {
     return this.sessionModule.setSessionMsgRead(sessionId, sessionType, msgId)
+  }
+
+  /**
+   * 设置当前活跃会话。活跃会话收到新消息时不会增加未读数。
+   * @param sessionId 会话id
+   * @param sessionType 会话类型
+   */
+  public async weila_setActiveSession(sessionId: string, sessionType: number): Promise<boolean> {
+    return this.sessionModule.setActiveSession(sessionId, sessionType)
+  }
+
+  /**
+   * 清除当前活跃会话状态
+   */
+  public weila_clearActiveSession(): void {
+    this.sessionModule.clearActiveSessionState()
   }
 
   /**
@@ -1793,8 +1810,7 @@ class WeilaCore implements WL_CoreInterface {
           cb(this.weila_getSessions())
         } else if (
           eventId === WL_ExtEventID.WL_EXT_NEW_SESSION_OPEN_IND ||
-          eventId === WL_ExtEventID.WL_EXT_NEW_MSG_RECV_IND ||
-          eventId === WL_ExtEventID.WL_EXT_MSG_SEND_IND
+          eventId === WL_ExtEventID.WL_EXT_SESSION_UPDATED_IND
         ) {
           cb(this.weila_getSessions())
         }
