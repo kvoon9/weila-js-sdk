@@ -1,8 +1,9 @@
-import { shallowRef } from 'vue'
+import { shallowRef, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { useLocalStorage } from '@vueuse/core'
-import { WeilaCore, initLogger, setLoggerEnabled, setConfigData, WL_ConfigID } from '@weilasdk/core'
+import { WeilaCore, initLogger, setLoggerEnabled, setConfigData, WL_ConfigID, WL_ExtEventID } from '@weilasdk/core'
 import type { WL_IDbUserInfo } from '@weilasdk/core'
+import type { WL_ExtEventCallback } from '@weilasdk/core'
 import md5 from 'md5'
 
 // Encrypt with md5-based key derivation
@@ -36,6 +37,8 @@ const storedCredentials = useLocalStorage<{ account: string; password: string; c
 export const useWeilaStore = defineStore('weila', () => {
   const core = shallowRef<WeilaCore | null>(null)
   const userInfo = shallowRef<WL_IDbUserInfo | null>(null)
+  const kickoutReason = ref('')
+  const kickoutReasonText = ref('')
 
   async function init() {
     if (core.value) return core.value
@@ -61,6 +64,15 @@ export const useWeilaStore = defineStore('weila', () => {
 
     await instance.weila_init()
 
+    // Register kickout event listener
+    const kickoutHandler: WL_ExtEventCallback = (eventId, eventData) => {
+      if (eventId === WL_ExtEventID.WL_EXT_KICKOUT_IND) {
+        kickoutReason.value = String(eventData.reason)
+        kickoutReasonText.value = eventData.reasonText
+      }
+    }
+    instance.weila_onEvent(kickoutHandler)
+
     core.value = instance
 
     return instance
@@ -74,6 +86,11 @@ export const useWeilaStore = defineStore('weila', () => {
     return userInfo.value
   }
 
+  function clearKickoutState() {
+    kickoutReason.value = ''
+    kickoutReasonText.value = ''
+  }
+
   async function logout() {
     if (core.value) {
       await core.value.weila_logout()
@@ -81,6 +98,7 @@ export const useWeilaStore = defineStore('weila', () => {
     core.value = null
     userInfo.value = null
     storedCredentials.value = null
+    clearKickoutState()
   }
 
   // Auto-login with stored credentials
@@ -97,7 +115,7 @@ export const useWeilaStore = defineStore('weila', () => {
     }
   }
 
-  return { core, userInfo, init, login, logout, autoLogin, storedCredentials }
+  return { core, userInfo, kickoutReason, kickoutReasonText, init, login, logout, autoLogin, clearKickoutState, storedCredentials }
 })
 
 // Pinia HMR —— 替代手动 import.meta.hot.dispose/data 模式
