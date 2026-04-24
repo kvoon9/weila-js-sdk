@@ -256,8 +256,9 @@ class WLPlayerWorklet extends AudioWorkletProcessor {
 
       case WLAudioPlayerEvent.WL_WORKLET_NODE_CLOSE_REQ:
         {
+          const prevState = this.state
           this.state = PLAY_CLOSING
-          if (this.state !== PLAY_STARTED) {
+          if (prevState !== PLAY_STARTED) {
             this.closePlayer()
           }
         }

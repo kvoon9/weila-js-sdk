@@ -838,6 +838,9 @@ export default class WLPttFsm {
       return false
     }
 
+    // 历史播放同样依赖浏览器音频上下文，先沿用统一初始化逻辑。
+    await this.initAudio()
+
     const audioItems: WL_PttAudioItem[] = []
     msgDatas.forEach((value) => {
       if (value.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE) {
