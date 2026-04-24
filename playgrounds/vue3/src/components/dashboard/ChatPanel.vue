@@ -170,6 +170,11 @@ async function handleSelectSession(session: WL_IDbSession) {
   selectedSessionId.value = session.sessionId
   triggerRef(selectedSessionId)
 
+  // 借助用户点击会话的手势提前解锁音频系统，避免实时语音首播时再被浏览器拦截。
+  await weilaCore.value?.weila_audioInit().catch((err) => {
+    console.warn('[Audio] Init on session select failed:', err)
+  })
+
   // Mark session as read to clear unread count
   if (weilaCore.value && session.lastMsgId > 0) {
     await weilaCore.value.weila_setSessionMsgRead(

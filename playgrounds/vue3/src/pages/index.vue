@@ -28,6 +28,7 @@ async function handleLogin() {
 
   try {
     await weila.login(account.value, password.value, countryCode.value)
+    await weila.core?.weila_audioInit()
     router.push('/chat')
   } catch (err) {
     console.error('Login failed:', err)
