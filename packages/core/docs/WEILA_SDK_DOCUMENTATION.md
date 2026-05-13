@@ -114,19 +114,17 @@ setConfigData([
 // 创建 SDK 实例
 const weila = new WeilaCore()
 
-// 设置 WebSocket 地址（尽早调用）
-weila.weila_setWebSock('wss://your-websocket-server.com')
-
-// 设置 App 认证信息（尽早调用，最好在登录前）
-weila.weila_setAuthInfo('your-app-id', 'your-app-key')
-
 // 注册事件回调
 weila.weila_onEvent((eventId, eventData) => {
   console.log('事件:', eventId, eventData)
 })
 
-// 初始化 SDK（首次较慢，之后会缓存）
-await weila.weila_init()
+// 初始化 SDK（首次较慢，之后会缓存），并传入服务器地址与 App 认证信息
+await weila.weila_init({
+  webSock: 'wss://your-websocket-server.com',
+  appId: 'your-app-id',
+  appKey: 'your-app-key',
+})
 
 // 初始化音频系统（必须在用户点击事件中调用）
 await weila.weila_audioInit()
@@ -140,7 +138,7 @@ await weila.weila_audioInit()
 
 | 方法                                               | 说明                                   |
 | -------------------------------------------------- | -------------------------------------- |
-| `weila_init()`                                     | 初始化 SDK，加载资源                   |
+| `weila_init(options?: { webSock?: string; appId?: string; appKey?: string })` | 初始化 SDK，加载资源，可传入服务器地址与 App 认证信息 |
 | `weila_setWebSock(addr: string)`                   | 设置 WebSocket 服务器地址              |
 | `weila_setAuthInfo(appId: string, appKey: string)` | 设置 App 认证信息                      |
 | `weila_audioInit()`                                | 初始化音频系统（必须在用户事件中调用） |
