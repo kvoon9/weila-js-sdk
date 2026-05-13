@@ -89,6 +89,12 @@ interface WL_SendingPbMsgInfo {
   timeout?: number
 }
 
+export interface WL_InitOptions {
+  appId?: string
+  appKey?: string
+  webSock?: string
+}
+
 class WeilaCore implements WL_CoreInterface {
   readonly maxRetryLoginTimes = 2
   mainFsm?: any
@@ -572,7 +578,20 @@ class WeilaCore implements WL_CoreInterface {
    * 第一次初始化会有一点慢，因为需要下载比较大的数据。后续数据缓存后
    * 就会比较快了。建议初始化的时候，屏蔽屏幕的操作
    */
-  public async weila_init(): Promise<boolean> {
+  public async weila_init(options?: WL_InitOptions): Promise<boolean> {
+    const { appId, appKey, webSock } = options ?? {}
+
+    if (webSock) {
+      this.weila_setWebSock(webSock)
+    }
+
+    if (options && ('appId' in options || 'appKey' in options)) {
+      if (!appId || !appKey) {
+        return Promise.reject(new Error('appId and appKey must be provided together'))
+      }
+      this.weila_setAuthInfo(appId, appKey)
+    }
+
     return new Promise<boolean>((resolve, reject) => {
       const callback = {} as WL_PromiseCallback
       callback.resolve = resolve

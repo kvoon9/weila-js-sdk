@@ -87,12 +87,12 @@ weila.weila_onEvent((eventId, eventData) => {
 ```typescript
 async function startApp() {
   try {
-    // 设置服务器地址与应用信息
-    weila.weila_setWebSock('wss://api.example.com/ws')
-    weila.weila_setAuthInfo('YOUR_APP_ID', 'YOUR_APP_KEY')
-
-    // 初始化资源
-    await weila.weila_init()
+    // 初始化资源、服务器地址与应用信息
+    await weila.weila_init({
+      webSock: 'wss://api.example.com/ws',
+      appId: 'YOUR_APP_ID',
+      appKey: 'YOUR_APP_KEY',
+    })
 
     // 登录 (countryCode '0' 为微喇号，'86' 为中国手机号)
     const userInfo = await weila.weila_login('account', 'password', '86')
@@ -162,9 +162,11 @@ setConfigData([
 
 设置应用的认证 ID 和秘钥。
 
-### `weila_init(): Promise<boolean>`
+### `weila_init(options?: { webSock?: string; appId?: string; appKey?: string }): Promise<boolean>`
 
 初始化 SDK，主要用于加载必要的静态资源和配置环境。
+
+可以在初始化时传入 WebSocket 地址和 App 认证信息；如果传入 `appId` 或 `appKey`，两者必须同时提供。旧版 `weila_setWebSock(webSock)` 和 `weila_setAuthInfo(appId, appKey)` 仍可在登录前调用。
 
 ### `weila_login(account, password, countryCode): Promise<WL_IDbUserInfo>`
 

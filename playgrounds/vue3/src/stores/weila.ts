@@ -113,13 +113,12 @@ export const useWeilaStore = defineStore('weila', () => {
     ])
 
     const instance = new WeilaCore()
-    instance.weila_setWebSock(import.meta.env.VITE_WEILA_WSS)
-    instance.weila_setAuthInfo(
-      import.meta.env.VITE_WEILA_APP_ID,
-      import.meta.env.VITE_WEILA_APP_KEY,
-    )
 
-    await instance.weila_init()
+    await instance.weila_init({
+      webSock: import.meta.env.VITE_WEILA_WSS,
+      appId: import.meta.env.VITE_WEILA_APP_ID,
+      appKey: import.meta.env.VITE_WEILA_APP_KEY,
+    })
 
     // Register kickout event listener
     const kickoutHandler: WL_ExtEventCallback = (eventId, eventData) => {
