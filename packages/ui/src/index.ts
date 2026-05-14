@@ -20,6 +20,7 @@ export { default as WlVideoBubble } from './components/Message/WlVideoBubble.vue
 
 // Composables
 export { useSessions } from './composables/useSessions'
+export { useMessageHistory } from './composables/useMessageHistory'
 export { useSessionLastMessages } from './composables/useSessionLastMessages'
 export { framesToDuration } from './composables/useAudio'
 

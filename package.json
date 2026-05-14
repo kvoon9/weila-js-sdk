@@ -4,6 +4,7 @@
   "scripts": {
     "build": "pnpm -r run build",
     "build:core": "pnpm --filter @weilasdk/core run build",
+    "build:core:w": "pnpm --filter @weilasdk/core run build:watch",
     "build:ui": "pnpm --filter @weilasdk/ui run build",
     "dev": "pnpm --filter @weilasdk/playground-vue3 run dev",
     "dev:ui": "pnpm --filter @weilasdk/ui run dev",

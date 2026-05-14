@@ -3,23 +3,11 @@ import type { WeilaCore } from '@weilasdk/core'
 import type { WL_IDbSession, WL_ExtEventCallback } from '@weilasdk/core'
 import { WL_ExtEventID, WL_IDbSessionType } from '@weilasdk/core'
 
-type CoreGetter = () => WeilaCore | undefined
-
-export interface UseSessionsState {
-  readonly sessions: WL_IDbSession[]
-  readonly personalSessions: WL_IDbSession[]
-  readonly groupSessions: WL_IDbSession[]
-  readonly loading: boolean
-  readonly error: Error | null
-  readonly dataPrepared: boolean
-  refresh: () => Promise<void>
-}
-
 /**
  * Session List Composable
  * Provides reactive session list from WeilaCore
  */
-export function useSessions(getCore: CoreGetter): UseSessionsState {
+export function useSessions(getCore: () => WeilaCore | null) {
   const sessions = ref<WL_IDbSession[]>([])
   const loading = ref(false)
   const error = ref<Error | null>(null)
@@ -90,24 +78,12 @@ export function useSessions(getCore: CoreGetter): UseSessionsState {
   )
 
   return {
-    get sessions() {
-      return sortedSessions.value
-    },
-    get personalSessions() {
-      return personalSessions.value
-    },
-    get groupSessions() {
-      return groupSessions.value
-    },
-    get loading() {
-      return loading.value
-    },
-    get error() {
-      return error.value
-    },
-    get dataPrepared() {
-      return dataPrepared.value
-    },
+    sessions: sortedSessions,
+    personalSessions,
+    groupSessions,
+    loading,
+    error,
+    dataPrepared,
     refresh: fetchSessions,
   }
 }

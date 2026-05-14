@@ -19,18 +19,23 @@ import {
   WLEmojiPicker,
   WlImagePreview,
   WlVideoPreview,
+  useMessageHistory,
+  useSessions,
 } from '@weilasdk/ui'
-import type { WL_IDbMsgData, WL_IDbSession } from '@weilasdk/core'
+import type { WeilaCore, WL_IDbMsgData, WL_IDbSession } from '@weilasdk/core'
 import { WL_ExtEventID, WL_PttAudioPlayState } from '@weilasdk/core'
 import type { WL_ExtEventCallback, WL_PttPlayInd } from '@weilasdk/core'
 import { useWeilaStore } from '../../stores/weila'
-import { useSessions } from '../../queries/sessions'
-import { useMessageHistory } from '../../composables/useMessageHistory'
 import { storeToRefs } from 'pinia'
 
 const weila = useWeilaStore()
 const { core: weilaCore, userInfo } = storeToRefs(weila)
-const { data: sessions, refetch: refetchSessions } = useSessions()
+const {
+  sessions,
+  loading: sessionsLoading,
+  error: sessionsError,
+  refresh: refreshSessions,
+} = useSessions(() => weilaCore.value)
 
 const selectedSessionId = useRouteQuery<string>('sessionId')
 
@@ -74,7 +79,7 @@ function handleAudioPause() {
 
 const selectedSession = computed(() => {
   if (!selectedSessionId.value) return null
-  return sessions.value?.find((s) => s.sessionId === selectedSessionId.value) ?? null
+  return sessions.value.find((s) => s.sessionId === selectedSessionId.value) ?? null
 })
 
 const wlMsgListRef = ref<InstanceType<typeof WlMsgList>>()
@@ -84,45 +89,16 @@ watch(selectedSession, () => {
   wlMsgListRef.value?.resetScrollState()
 })
 
-const { messages, senderInfos, hasMore, loading, ensureSenderInfo, loadMore } = useMessageHistory(
-  weilaCore,
-  selectedSession,
+const {
+  messages,
+  senderInfos,
+  hasMore,
+  loading: messagesLoading,
+  loadMore,
+} = useMessageHistory(
+  () => weilaCore.value,
+  () => selectedSession.value ?? undefined,
 )
-
-// ---- 消息事件监听 ----
-const handleMessageEvent: WL_ExtEventCallback = (eventId, eventData) => {
-  if (
-    eventId !== WL_ExtEventID.WL_EXT_NEW_MSG_RECV_IND &&
-    eventId !== WL_ExtEventID.WL_EXT_MSG_SEND_IND
-  )
-    return
-
-  const msgData = eventData as WL_IDbMsgData
-  const session = selectedSession.value
-  if (
-    !session ||
-    msgData.sessionId !== session.sessionId ||
-    msgData.sessionType !== session.sessionType
-  )
-    return
-
-  // 同一个 combo_id 的后续 PTT chunks 应该更新现有消息（frameCount 等）
-  const existingIdx = messages.value.findIndex((m) => m.combo_id === msgData.combo_id)
-  if (existingIdx !== -1) {
-    const existing = messages.value[existingIdx]
-    if (msgData.pttData) {
-      existing.pttData = { ...existing.pttData, ...msgData.pttData }
-    }
-    if (msgData.audioData) {
-      existing.audioData = { ...existing.audioData, ...msgData.audioData }
-    }
-    messages.value[existingIdx] = { ...existing }
-  } else {
-    messages.value = [...messages.value, msgData]
-  }
-  void ensureSenderInfo(msgData.senderId)
-
-}
 
 // ---- 音频播放结束监听 ----
 const handleAudioPlayEnd = (indData: { state: WL_PttAudioPlayState }) => {
@@ -131,7 +107,7 @@ const handleAudioPlayEnd = (indData: { state: WL_PttAudioPlayState }) => {
   }
 }
 
-// 注册全局事件监听（消息追加 + 音频播放结束）
+// 注册全局事件监听（音频播放结束）
 watch(
   weilaCore,
   (core, _oldCore, onCleanup) => {
@@ -142,10 +118,8 @@ watch(
       }
     }
 
-    core.weila_onEvent(handleMessageEvent)
     core.weila_onEvent(handlePttPlayEvent)
     onCleanup(() => {
-      core.weila_offEvent(handleMessageEvent)
       core.weila_offEvent(handlePttPlayEvent)
     })
   },
@@ -328,8 +302,8 @@ async function handlePttStop() {
   <div class="flex flex-1 h-full overflow-hidden">
     <!-- Session List Sidebar -->
     <div class="w-80 border-r border-neutral-200 overflow-hidden flex flex-col bg-white">
-      <SessionList v-if="weilaCore" :sessions="sessions ?? []" :active-session-id="selectedSessionId"
-        @select="handleSelectSession" @refresh="refetchSessions" />
+      <SessionList v-if="weilaCore" :sessions="sessions" :active-session-id="selectedSessionId"
+        :loading="sessionsLoading" :error="sessionsError" @select="handleSelectSession" @refresh="refreshSessions" />
       <div v-else class="flex items-center justify-center h-full text-neutral-500">Loading SDK...</div>
     </div>
 
@@ -342,10 +316,10 @@ async function handlePttStop() {
 
         <div class="relative">
           <WlMsgList ref="wlMsgListRef" style="height: 400px" class="bg-neutral-100" :messages="messages"
-            :current-user-id="userInfo?.userId ?? 0" :sender-infos="senderInfos" :has-more="hasMore" :loading="loading"
-            :playing-audio-id="playingAudioId" @audio-play="handleAudioPlay" @audio-pause="handleAudioPause"
-            @load-more="loadMore(messages[0]?.msgId - 1)" @image-click="handleImageClick" @file-click="openUrl"
-            @video-click="handleVideoClick" @location-click="openLocation" />
+            :current-user-id="userInfo?.userId ?? 0" :sender-infos="senderInfos" :has-more="hasMore"
+            :loading="messagesLoading" :playing-audio-id="playingAudioId" @audio-play="handleAudioPlay"
+            @audio-pause="handleAudioPause" @load-more="loadMore()" @image-click="handleImageClick"
+            @file-click="openUrl" @video-click="handleVideoClick" @location-click="openLocation" />
         </div>
 
         <!-- Message Input -->

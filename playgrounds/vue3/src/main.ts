@@ -1,13 +1,15 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import { PiniaColada } from '@pinia/colada'
-import { RouterView } from 'vue-router'
 // eslint-disable-next-line import/no-unassigned-import
 import './style.css'
-import '@weilasdk/ui/dist/index.css'
-import 'floating-vue/dist/style.css'
 import router from './router'
 import App from './App.vue'
+
+// oxlint-disable-next-line import/no-unassigned-import - it is css file
+import '@weilasdk/ui/index.css'
+// oxlint-disable-next-line import/no-unassigned-import - it is css file
+import 'floating-vue/dist/style.css'
 
 // eslint-disable-next-line no-extend-native, typescript-eslint/unbound-method
 // Monkey-patch AudioWorklet.addModule to redirect worklet loading
