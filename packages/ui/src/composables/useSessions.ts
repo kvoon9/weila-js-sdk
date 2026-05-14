@@ -1,13 +1,25 @@
-import { ref, computed, onMounted, onUnmounted, watch, type Ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { WeilaCore } from '@weilasdk/core'
 import type { WL_IDbSession, WL_ExtEventCallback } from '@weilasdk/core'
 import { WL_ExtEventID, WL_IDbSessionType } from '@weilasdk/core'
+
+type CoreGetter = () => WeilaCore | undefined
+
+export interface UseSessionsState {
+  readonly sessions: WL_IDbSession[]
+  readonly personalSessions: WL_IDbSession[]
+  readonly groupSessions: WL_IDbSession[]
+  readonly loading: boolean
+  readonly error: Error | null
+  readonly dataPrepared: boolean
+  refresh: () => Promise<void>
+}
 
 /**
  * Session List Composable
  * Provides reactive session list from WeilaCore
  */
-export function useSessions(weilaCore: Ref<WeilaCore | undefined>) {
+export function useSessions(getCore: CoreGetter): UseSessionsState {
   const sessions = ref<WL_IDbSession[]>([])
   const loading = ref(false)
   const error = ref<Error | null>(null)
@@ -30,7 +42,8 @@ export function useSessions(weilaCore: Ref<WeilaCore | undefined>) {
   )
 
   async function fetchSessions() {
-    if (!weilaCore.value) {
+    const core = getCore()
+    if (!core) {
       error.value = new Error('WeilaCore is not provided')
       return
     }
@@ -39,7 +52,7 @@ export function useSessions(weilaCore: Ref<WeilaCore | undefined>) {
     error.value = null
 
     try {
-      sessions.value = await weilaCore.value.weila_getSessionsFromDb()
+      sessions.value = await core.weila_getSessionsFromDb()
     } catch (e) {
       error.value = e instanceof Error ? e : new Error(String(e))
     } finally {
@@ -54,45 +67,47 @@ export function useSessions(weilaCore: Ref<WeilaCore | undefined>) {
       void fetchSessions()
     }
     // WL_EXT_NEW_SESSION_OPEN_IND: new session created
-    else if (eventId === WL_ExtEventID.WL_EXT_NEW_SESSION_OPEN_IND) {
+    else if (
+      eventId === WL_ExtEventID.WL_EXT_NEW_SESSION_OPEN_IND ||
+      eventId === WL_ExtEventID.WL_EXT_NEW_MSG_RECV_IND ||
+      eventId === WL_ExtEventID.WL_EXT_MSG_SEND_IND
+    ) {
       void fetchSessions()
     }
   }
 
   // Watch for weilaCore changes
   watch(
-    weilaCore,
-    (newCore) => {
+    getCore,
+    (newCore, _oldCore, onCleanup) => {
       if (newCore) {
         newCore.weila_onEvent(handleEvent)
+        onCleanup(() => newCore.weila_offEvent(handleEvent))
+        void fetchSessions()
       }
     },
     { immediate: true },
   )
 
-  onMounted(() => {
-    if (weilaCore.value) {
-      // 注册事件监听
-      weilaCore.value.weila_onEvent(handleEvent)
-
-      // 如果数据已经准备好，直接获取
-      if (dataPrepared.value) {
-        void fetchSessions()
-      }
-    }
-  })
-
-  onUnmounted(() => {
-    // Note: We cannot easily remove the listener without storing the callback reference
-  })
-
   return {
-    sessions: sortedSessions,
-    personalSessions,
-    groupSessions,
-    loading,
-    error,
-    dataPrepared,
+    get sessions() {
+      return sortedSessions.value
+    },
+    get personalSessions() {
+      return personalSessions.value
+    },
+    get groupSessions() {
+      return groupSessions.value
+    },
+    get loading() {
+      return loading.value
+    },
+    get error() {
+      return error.value
+    },
+    get dataPrepared() {
+      return dataPrepared.value
+    },
     refresh: fetchSessions,
   }
 }
