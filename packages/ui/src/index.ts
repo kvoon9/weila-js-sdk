@@ -17,6 +17,7 @@ export { default as WLEmojiPicker } from './components/Emoji/WLEmojiPicker.vue'
 export { default as WlImagePreview } from './components/ImagePreview/WlImagePreview.vue'
 export { default as WlVideoPreview } from './components/VideoPreview/WlVideoPreview.vue'
 export { default as WlVideoBubble } from './components/Message/WlVideoBubble.vue'
+export { default as WlChatPanel } from './components/ChatPanel/WlChatPanel.vue'
 
 // Composables
 export { useSessions } from './composables/useSessions'
@@ -40,3 +41,4 @@ export type { WlPttButtonProps } from './components/PttButton/WlPttButton.vue'
 export type { WlImagePreviewProps } from './components/ImagePreview/WlImagePreview.vue'
 export type { WlVideoPreviewProps } from './components/VideoPreview/WlVideoPreview.vue'
 export type { WlVideoBubbleProps } from './components/Message/WlVideoBubble.vue'
+export type { WlChatPanelProps } from './components/ChatPanel/WlChatPanel.vue'
