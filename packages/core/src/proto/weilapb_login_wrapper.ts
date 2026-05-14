@@ -11,11 +11,12 @@ class WeilaPBLoginWrapper {
     countryCode: string,
     appId: string,
     appKey: string,
+    md5: boolean = true,
   ): WLBuildMsgRet {
     const loginMsg = new WL.Login.LoginMessage()
     loginMsg.reqLoginApp = new WL.Login.ReqLoginApp()
     loginMsg.reqLoginApp.account = account
-    loginMsg.reqLoginApp.password = MD5(password).toString()
+    loginMsg.reqLoginApp.password = md5 ? MD5(password).toString() : password
     loginMsg.reqLoginApp.countryCode = countryCode
 
     const signature = {} as any

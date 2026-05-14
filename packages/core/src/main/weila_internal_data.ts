@@ -48,6 +48,7 @@ interface WL_LoginParam {
   account: string
   password: string
   countryCode: string
+  md5: boolean
   callback: WL_PromiseCallback
 }
 

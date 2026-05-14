@@ -95,6 +95,14 @@ export interface WL_InitOptions {
   webSock?: string
 }
 
+export interface WL_LoginOptions {
+  /**
+   * Whether the SDK should MD5 the password before sending it.
+   * Defaults to true for backward compatibility.
+   */
+  md5?: boolean
+}
+
 class WeilaCore implements WL_CoreInterface {
   readonly maxRetryLoginTimes = 2
   mainFsm?: any
@@ -380,6 +388,7 @@ class WeilaCore implements WL_CoreInterface {
         loginParam.account,
         loginParam.password,
         loginParam.countryCode,
+        loginParam.md5,
       )
       wllog('loginServer succ', loginResult)
       return loginResult
@@ -605,12 +614,14 @@ class WeilaCore implements WL_CoreInterface {
    * @param account 微喇号或手机号
    * @param password 密码
    * @param countryCode 如果是微喇号，则必须是'0'，否则是国家码，如'86'
+   * @param options 登录选项。默认会对 password 做 MD5；如果 password 已经是 MD5，传 { md5: false }
    * 返回Promise，成功带回登录用户的信息，失败则告知失败信息
    */
   public async weila_login(
     account: string,
     password: string,
     countryCode: string,
+    options: WL_LoginOptions = {},
   ): Promise<WL_IDbUserInfo> {
     return new Promise<WL_IDbUserInfo>((resolve, reject) => {
       const params = {} as WL_LoginParam
@@ -621,6 +632,7 @@ class WeilaCore implements WL_CoreInterface {
       params.account = account
       params.password = password
       params.countryCode = countryCode
+      params.md5 = options.md5 ?? true
       this.mainFsmService.send(fsmEvents.FSM_LOGIN_SERVER_EVT, { data: params })
     })
   }

@@ -170,8 +170,9 @@ export default class WLLoginModule {
     account: string,
     password: string,
     countryCode: string,
+    md5: boolean = true,
   ): Promise<WL_IDbUserInfo> {
-    wllog('登录请求:', account, password, countryCode)
+    wllog('登录请求:', account, countryCode, md5)
     const appKeyAndId = WeilaDB.getAppAuthInfo() ? WeilaDB.getAppAuthInfo() : getAppKeyAndId()
     const wlBuildMsgRet = WeilaPBLoginWrapper.buildLoginAppReq(
       account,
@@ -179,6 +180,7 @@ export default class WLLoginModule {
       countryCode,
       appKeyAndId.appId,
       appKeyAndId.appKey,
+      md5,
     )
     if (wlBuildMsgRet.resultCode === 0) {
       const loginAppRsp = (await this.coreInterface.sendPbMsg(

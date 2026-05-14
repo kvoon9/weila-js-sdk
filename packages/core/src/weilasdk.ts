@@ -1,6 +1,6 @@
 /* eslint-disable */
 export { WeilaCore } from './main/weila_core'
-export type { WL_InitOptions } from './main/weila_core'
+export type { WL_InitOptions, WL_LoginOptions } from './main/weila_core'
 export { getErrorMsg } from './main/weila_utils'
 export { SetConfigDataParam, setConfigData, WL_ConfigID } from './main/weila_config'
 export { initLogger, getLogger, setLoggerEnabled, isLoggerEnabled } from './log/weila_log'
