@@ -13,6 +13,7 @@ import {
   WL_IDbSessionStatus,
   WL_IDbSetting,
   WL_IDbSettingID,
+  applySessionExtraProfile,
   isGroupSessionType,
   isIndividualSessionType,
   isServiceSessionType,
@@ -111,6 +112,10 @@ export default class WLSessionModule {
         dBSession.sessionName = service.name
         dBSession.sessionAvatar = service.avatar
       }
+    }
+
+    if (!dBSession.sessionName) {
+      applySessionExtraProfile(dBSession)
     }
 
     await WeilaDB.getInstance().putSession(dBSession)
@@ -872,6 +877,18 @@ export default class WLSessionModule {
   ): Promise<WL_IDbSession> {
     const dbSessionInfo = await WeilaDB.getInstance().getSession(sessionId, sessionType)
     if (dbSessionInfo) {
+      if (extra) {
+        dbSessionInfo.extra = extra
+        if (applySessionExtraProfile(dbSessionInfo)) {
+          const index = this.findSessionIndex(sessionId, sessionType)
+          if (index !== -1) {
+            this.sessionList[index] = dbSessionInfo
+            await this.persistSessionUpdate(this.sessionList[index])
+          } else {
+            await WeilaDB.getInstance().putSession(dbSessionInfo)
+          }
+        }
+      }
       return dbSessionInfo
     }
 

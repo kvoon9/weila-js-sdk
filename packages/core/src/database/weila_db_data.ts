@@ -66,6 +66,29 @@ function isServiceSessionType(sessionType: number): boolean {
   return sessionType === WL_IDbSessionType.SESSION_SERVICE_TYPE
 }
 
+function applySessionExtraProfile(session: WL_IDbSession): boolean {
+  const extra = session.extra
+  if (!extra || typeof extra !== 'object') {
+    return false
+  }
+
+  const sessionName = extra.sessionName || extra.name || extra.nick
+  const sessionAvatar = extra.sessionAvatar || extra.avatar
+
+  if (!sessionName && !sessionAvatar) {
+    return false
+  }
+
+  if (sessionName) {
+    session.sessionName = sessionName
+  }
+  if (sessionAvatar) {
+    session.sessionAvatar = sessionAvatar
+  }
+  session.status = WL_IDbSessionStatus.SESSION_ACTIVATE
+  return true
+}
+
 interface WL_IDbSession {
   combo_id_type: string
   sessionId: string
@@ -419,6 +442,7 @@ export {
   isIndividualSessionType,
   isGroupSessionType,
   isServiceSessionType,
+  applySessionExtraProfile,
   WL_IDbSessionSetting,
   WL_IDbUserInfo,
   WL_IDbSessionSettingParams,

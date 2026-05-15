@@ -29,6 +29,7 @@ import {
   WL_IDbSetting,
   WL_IDbSettingID,
   WL_IDbUserInfo,
+  applySessionExtraProfile,
   isGroupSessionType,
   isIndividualSessionType,
   isServiceSessionType,
@@ -153,6 +154,7 @@ class WeilaDB extends Dexie {
         session.sessionAvatar = groupInfo.avatar
       } else {
         session.status = WL_IDbSessionStatus.SESSION_INVALID
+        applySessionExtraProfile(session)
       }
     } else if (isIndividualSessionType(session.sessionType)) {
       const userInfo = await WeilaDB.getInstance().getUser(parseInt(session.sessionId))
@@ -161,6 +163,7 @@ class WeilaDB extends Dexie {
         session.sessionAvatar = userInfo.avatar
       } else {
         session.status = WL_IDbSessionStatus.SESSION_INVALID
+        applySessionExtraProfile(session)
       }
     } else if (isServiceSessionType(session.sessionType)) {
       const serviceId = Long.fromValue(session.sessionId).high
@@ -170,6 +173,7 @@ class WeilaDB extends Dexie {
         session.sessionAvatar = service.avatar
       } else {
         session.status = WL_IDbSessionStatus.SESSION_INVALID
+        applySessionExtraProfile(session)
       }
     }
 
