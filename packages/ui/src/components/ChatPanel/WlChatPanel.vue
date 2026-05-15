@@ -42,6 +42,7 @@ const props = withDefaults(defineProps<WlChatPanelProps>(), {
 
 const emit = defineEmits<{
   'update:selectedSessionId': [sessionId: string]
+  'delete-session': [session: WL_IDbSession]
 }>()
 
 const {
@@ -62,6 +63,7 @@ const previewOpen = ref(false)
 const previewVideo = ref<string | null>(null)
 const previewVideoOpen = ref(false)
 const wlMsgListRef = ref<InstanceType<typeof WlMsgList>>()
+const deletingSessionKey = ref('')
 
 const selectedSession = computed(() => {
   if (!props.selectedSessionId) return null
@@ -163,9 +165,44 @@ function openLocation(location: { latitude: number; longitude: number }) {
   )
 }
 
+async function deleteSession(session: WL_IDbSession): Promise<boolean> {
+  if (!props.core || deletingSessionKey.value) return false
+  const deletingSessionId = session.sessionId
+  const deletingSessionType = session.sessionType
+
+  deletingSessionKey.value = `${session.sessionId}-${session.sessionType}`
+
+  try {
+    await props.core.weila_deleteSession(deletingSessionId, deletingSessionType)
+
+    if (
+      selectedSession.value?.sessionId === deletingSessionId
+      && selectedSession.value?.sessionType === deletingSessionType
+    ) {
+      emit('update:selectedSessionId', '')
+    }
+
+    await refreshSessions()
+    return true
+  } catch (err) {
+    console.error('[WlChatPanel] Failed to delete session:', err)
+    return false
+  } finally {
+    deletingSessionKey.value = ''
+  }
+}
+
 function handleSelectSession(session: WL_IDbSession) {
   emit('update:selectedSessionId', session.sessionId)
 }
+
+function handleDeleteSession(session: WL_IDbSession) {
+  emit('delete-session', session)
+}
+
+defineExpose({
+  deleteSession,
+})
 
 async function sendMessage() {
   if (!props.core || !selectedSession.value || !messageInput.value.trim()) return
@@ -303,7 +340,9 @@ async function handlePttStop() {
         :active-session-id="selectedSessionId"
         :loading="sessionsLoading"
         :error="sessionsError"
+        :deleting-session-key="deletingSessionKey"
         @select="handleSelectSession"
+        @delete="handleDeleteSession"
         @refresh="refreshSessions"
       />
       <div v-else class="flex items-center justify-center h-full text-neutral-500">Loading SDK...</div>

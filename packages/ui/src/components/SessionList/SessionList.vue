@@ -6,6 +6,7 @@ import SessionListItem from './SessionListItem.vue'
 interface Props {
   sessions: WL_IDbSession[]
   activeSessionId?: string
+  deletingSessionKey?: string
   loading?: boolean
   error?: Error | null
   filter?: 'all' | 'personal' | 'group'
@@ -13,6 +14,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   activeSessionId: '',
+  deletingSessionKey: '',
   loading: false,
   error: null,
   filter: 'all',
@@ -20,6 +22,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   select: [session: WL_IDbSession]
+  delete: [session: WL_IDbSession]
   refresh: []
 }>()
 
@@ -36,6 +39,10 @@ const filteredSessions = computed(() => {
 
 function handleSelect(session: WL_IDbSession) {
   emit('select', session)
+}
+
+function handleDelete(session: WL_IDbSession) {
+  emit('delete', session)
 }
 
 function handleRefresh() {
@@ -102,7 +109,9 @@ function handleRefresh() {
         :key="`${session.sessionId}-${session.sessionType}`"
         :session="session"
         :active="session.sessionId === activeSessionId"
+        :deleting="`${session.sessionId}-${session.sessionType}` === deletingSessionKey"
         @click="handleSelect"
+        @delete="handleDelete"
       />
     </div>
   </div>

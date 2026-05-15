@@ -6,14 +6,17 @@ import { WL_IDbMsgDataType } from '@weilasdk/core'
 interface Props {
   session: WL_IDbSession
   active?: boolean
+  deleting?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   active: false,
+  deleting: false,
 })
 
 const emit = defineEmits<{
   click: [session: WL_IDbSession]
+  delete: [session: WL_IDbSession]
 }>()
 
 const sessionName = computed(() => {
@@ -86,11 +89,16 @@ const messagePreview = computed(() => {
 function handleClick() {
   emit('click', props.session)
 }
+
+function handleDelete() {
+  if (props.deleting) return
+  emit('delete', props.session)
+}
 </script>
 
 <template>
   <div
-    class="session-list-item flex items-center gap-3 p-3 cursor-pointer rounded-lg transition-colors"
+    class="session-list-item group flex items-center gap-3 p-3 cursor-pointer rounded-lg transition-colors"
     :class="[
       active ? 'bg-neutral-100' : 'hover:bg-neutral-50'
     ]"
@@ -134,11 +142,49 @@ function handleClick() {
         </span>
       </div>
     </div>
+
+    <button
+      type="button"
+      class="delete-button flex-shrink-0 w-8 h-8 inline-flex items-center justify-center rounded text-neutral-400 hover:text-red-600 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 disabled:cursor-not-allowed disabled:opacity-60"
+      :disabled="deleting"
+      :title="deleting ? 'Deleting' : 'Delete session'"
+      @click.stop="handleDelete"
+    >
+      <svg
+        v-if="!deleting"
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-4 w-4"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3m-8 0h10"
+        />
+      </svg>
+      <span
+        v-else
+        class="h-4 w-4 rounded-full border-2 border-neutral-300 border-t-red-500 animate-spin"
+        aria-hidden="true"
+      ></span>
+    </button>
   </div>
 </template>
 
 <style scoped>
 .session-list-item {
   user-select: none;
+}
+
+.delete-button {
+  opacity: 0;
+}
+
+.session-list-item:hover .delete-button,
+.session-list-item:focus-within .delete-button {
+  opacity: 1;
 }
 </style>
