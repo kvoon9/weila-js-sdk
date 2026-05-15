@@ -40,6 +40,7 @@ import {
   WL_IDbSessionType,
   WL_IDbSettingID,
   WL_IDbUserInfo,
+  isServiceSessionType,
 } from 'db/weila_db_data'
 import { getLogger } from 'log/weila_log'
 import {
@@ -342,17 +343,22 @@ class WeilaCore implements WL_CoreInterface {
   }
 
   private async prepareData(_context: any, _event: any): Promise<boolean> {
+    console.log('[Weila:prepareData] starting data preparation...')
     const ind = {} as WL_DataPrepareInd
     ind.state = WL_DataPrepareState.PREPARE_PROGRESS_IND
     ind.msg = 'SDK.FriendInit'
     this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind)
     await this.friendModule.initFriends()
+    console.log('[Weila:prepareData] friends initialized')
     ind.msg = 'SDK.GroupInit'
     this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind)
     await this.groupModule.initGroups()
+    console.log('[Weila:prepareData] groups initialized')
     ind.msg = 'SDK.SessionInit'
     this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind)
+    console.log('[Weila:prepareData] starting session initialization...')
     await this.sessionModule.initSessions()
+    console.log('[Weila:prepareData] sessions initialized')
     ind.msg = 'SDK.ExtensionInit'
     this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind)
     await this.loginModule.initExtension()
@@ -363,7 +369,7 @@ class WeilaCore implements WL_CoreInterface {
     try {
       await this.businessModule.initService(
         sessionList.filter((value) => {
-          return value.sessionType === WL_IDbSessionType.SESSION_SERVICE_TYPE
+          return isServiceSessionType(value.sessionType)
         }),
       )
     } catch (e) {
@@ -759,8 +765,19 @@ class WeilaCore implements WL_CoreInterface {
     fromMsgId: number,
     count: number,
   ): Promise<WL_IDbMsgData[]> {
+    console.log(`[Weila:getMsgDatas] sessionId=${sessionId}, sessionType=${sessionType}, fromMsgId=${fromMsgId}, count=${count}`)
     const result = await this.sessionModule.getMsgDatas(sessionId, sessionType, fromMsgId, count)
-    return result.toReversed()
+    const reversed = result.toReversed()
+    console.log(`[Weila:getMsgDatas] result count=${reversed.length}`, reversed.map(m => ({
+      combo_id: m.combo_id,
+      msgId: m.msgId,
+      msgType: m.msgType,
+      senderId: m.senderId,
+      textData: m.textData?.substring(0, 50),
+      created: m.created,
+      status: m.status,
+    })))
+    return reversed
   }
 
   /**
@@ -941,7 +958,15 @@ class WeilaCore implements WL_CoreInterface {
    * 获取内存中的会话列表
    */
   public weila_getSessions(): WL_IDbSession[] {
-    return this.sessionModule.getSessionList()?.slice()
+    const list = this.sessionModule.getSessionList()?.slice()
+    console.log(`[Weila:getSessions] in-memory sessions count=${list?.length}`, list?.map(s => ({
+      sessionId: s.sessionId,
+      sessionName: s.sessionName,
+      sessionType: s.sessionType,
+      lastMsgId: s.lastMsgId,
+      readMsgId: s.readMsgId,
+    })))
+    return list
   }
 
   /**
@@ -961,6 +986,7 @@ class WeilaCore implements WL_CoreInterface {
    */
   public async weila_getSessionsFromDb(): Promise<WL_IDbSession[]> {
     const sessions = await WeilaDB.getInstance().getSessions()
+    console.log(`[Weila:getSessionsFromDb] raw sessions from DB count=${sessions.length}`)
     // Fill in lastMsgData for sessions that don't have it
     for (const session of sessions) {
       if (!session.lastMsgData) {
@@ -970,6 +996,21 @@ class WeilaCore implements WL_CoreInterface {
         }
       }
     }
+    console.log(`[Weila:getSessionsFromDb] final sessions count=${sessions.length}`, sessions.map(s => ({
+      sessionId: s.sessionId,
+      sessionName: s.sessionName,
+      sessionType: s.sessionType,
+      lastMsgId: s.lastMsgId,
+      readMsgId: s.readMsgId,
+      latestUpdate: s.latestUpdate,
+      lastMsgData: s.lastMsgData ? {
+        combo_id: s.lastMsgData.combo_id,
+        msgId: s.lastMsgData.msgId,
+        msgType: s.lastMsgData.msgType,
+        textData: s.lastMsgData.textData?.substring(0, 50),
+        created: s.lastMsgData.created,
+      } : null,
+    })))
     return sessions
   }
 
@@ -1157,12 +1198,15 @@ class WeilaCore implements WL_CoreInterface {
       return Promise.reject('微喇状态不正确')
     }
 
-    return this.sessionModule.sendMsgData(
+    console.log(`[Weila:sendTextMsg] sessionId=${sessionId}, sessionType=${sessionType}, text="${text.substring(0, 50)}"`)
+    const result = await this.sessionModule.sendMsgData(
       sessionId,
       sessionType,
       text,
       WL_IDbMsgDataType.WL_DB_MSG_DATA_TEXT_TYPE,
     )
+    console.log(`[Weila:sendTextMsg] result=${result}`)
+    return result
   }
 
   /**

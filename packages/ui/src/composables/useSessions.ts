@@ -1,7 +1,7 @@
 import { computed, ref, watch } from 'vue'
 import type { WeilaCore } from '@weilasdk/core'
 import type { WL_IDbSession, WL_ExtEventCallback } from '@weilasdk/core'
-import { WL_ExtEventID, WL_IDbSessionType } from '@weilasdk/core'
+import { WL_ExtEventID, isGroupSessionType, isIndividualSessionType } from '@weilasdk/core'
 
 /**
  * Session List Composable
@@ -22,11 +22,11 @@ export function useSessions(getCore: () => WeilaCore | null) {
   })
 
   const personalSessions = computed(() =>
-    sortedSessions.value.filter((s) => s.sessionType === WL_IDbSessionType.SESSION_INDIVIDUAL_TYPE),
+    sortedSessions.value.filter((s) => isIndividualSessionType(s.sessionType)),
   )
 
   const groupSessions = computed(() =>
-    sortedSessions.value.filter((s) => s.sessionType === WL_IDbSessionType.SESSION_GROUP_TYPE),
+    sortedSessions.value.filter((s) => isGroupSessionType(s.sessionType)),
   )
 
   async function fetchSessions() {
@@ -41,8 +41,23 @@ export function useSessions(getCore: () => WeilaCore | null) {
 
     try {
       sessions.value = await core.weila_getSessionsFromDb()
+      console.log(`[Weila:UI:useSessions] fetchSessions completed, count=${sessions.value.length}`, sessions.value.map(s => ({
+        sessionId: s.sessionId,
+        sessionName: s.sessionName,
+        sessionType: s.sessionType,
+        lastMsgId: s.lastMsgId,
+        readMsgId: s.readMsgId,
+        latestUpdate: s.latestUpdate,
+        lastMsg: s.lastMsgData ? {
+          msgId: s.lastMsgData.msgId,
+          msgType: s.lastMsgData.msgType,
+          text: s.lastMsgData.textData?.substring(0, 50),
+          created: s.lastMsgData.created,
+        } : null,
+      })))
     } catch (e) {
       error.value = e instanceof Error ? e : new Error(String(e))
+      console.log('[Weila:UI:useSessions] fetchSessions error:', e)
     } finally {
       loading.value = false
     }
@@ -51,15 +66,21 @@ export function useSessions(getCore: () => WeilaCore | null) {
   const handleEvent: WL_ExtEventCallback = (eventId, _eventData) => {
     // WL_EXT_DATA_PREPARE_IND: initial data loaded - 登录后数据同步完成
     if (eventId === WL_ExtEventID.WL_EXT_DATA_PREPARE_IND) {
+      console.log('[Weila:UI:useSessions] event: WL_EXT_DATA_PREPARE_IND -> fetching sessions')
       dataPrepared.value = true
       void fetchSessions()
     }
     // WL_EXT_NEW_SESSION_OPEN_IND: new session created
-    else if (
-      eventId === WL_ExtEventID.WL_EXT_NEW_SESSION_OPEN_IND ||
-      eventId === WL_ExtEventID.WL_EXT_NEW_MSG_RECV_IND ||
-      eventId === WL_ExtEventID.WL_EXT_MSG_SEND_IND
-    ) {
+    else if (eventId === WL_ExtEventID.WL_EXT_NEW_SESSION_OPEN_IND) {
+      console.log('[Weila:UI:useSessions] event: WL_EXT_NEW_SESSION_OPEN_IND -> fetching sessions')
+      void fetchSessions()
+    }
+    else if (eventId === WL_ExtEventID.WL_EXT_NEW_MSG_RECV_IND) {
+      console.log('[Weila:UI:useSessions] event: WL_EXT_NEW_MSG_RECV_IND -> fetching sessions')
+      void fetchSessions()
+    }
+    else if (eventId === WL_ExtEventID.WL_EXT_MSG_SEND_IND) {
+      console.log('[Weila:UI:useSessions] event: WL_EXT_MSG_SEND_IND -> fetching sessions')
       void fetchSessions()
     }
   }

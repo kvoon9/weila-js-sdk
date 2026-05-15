@@ -26,10 +26,12 @@ import {
   WL_IDbSessionSetting,
   WL_IDbSessionSettingParams,
   WL_IDbSessionStatus,
-  WL_IDbSessionType,
   WL_IDbSetting,
   WL_IDbSettingID,
   WL_IDbUserInfo,
+  isGroupSessionType,
+  isIndividualSessionType,
+  isServiceSessionType,
 } from './weila_db_data'
 import { getLogger } from 'log/weila_log'
 import TinyPinyin from 'tiny-pinyin'
@@ -144,7 +146,7 @@ class WeilaDB extends Dexie {
     session.sessionAvatar = default_group_logo
     session.status = WL_IDbSessionStatus.SESSION_ACTIVATE
 
-    if (session.sessionType === WL_IDbSessionType.SESSION_GROUP_TYPE) {
+    if (isGroupSessionType(session.sessionType)) {
       const groupInfo = await WeilaDB.getInstance().getGroup(session.sessionId)
       if (groupInfo) {
         session.sessionName = groupInfo.name
@@ -152,7 +154,7 @@ class WeilaDB extends Dexie {
       } else {
         session.status = WL_IDbSessionStatus.SESSION_INVALID
       }
-    } else if (session.sessionType === WL_IDbSessionType.SESSION_INDIVIDUAL_TYPE) {
+    } else if (isIndividualSessionType(session.sessionType)) {
       const userInfo = await WeilaDB.getInstance().getUser(parseInt(session.sessionId))
       if (userInfo) {
         session.sessionName = userInfo.nick
@@ -160,7 +162,7 @@ class WeilaDB extends Dexie {
       } else {
         session.status = WL_IDbSessionStatus.SESSION_INVALID
       }
-    } else if (session.sessionType === WL_IDbSessionType.SESSION_SERVICE_TYPE) {
+    } else if (isServiceSessionType(session.sessionType)) {
       const serviceId = Long.fromValue(session.sessionId).high
       const service = await WeilaDB.getInstance().getService(serviceId)
       if (service) {
@@ -243,20 +245,20 @@ class WeilaDB extends Dexie {
       sessionSetting.tts = false
       sessionSetting.mute = false
       sessionSetting.loactionShared = false
-      if (sessionType === WL_IDbSessionType.SESSION_INDIVIDUAL_TYPE) {
+      if (isIndividualSessionType(sessionType)) {
         const friendInfo = await this.friends.get(parseInt(sessionId))
         if (friendInfo) {
           sessionSetting.tts = friendInfo.tts
           sessionSetting.loactionShared = friendInfo.locationShared
         }
-      } else if (sessionType === WL_IDbSessionType.SESSION_GROUP_TYPE) {
+      } else if (isGroupSessionType(sessionType)) {
         const comboId = sessionId + '_' + this.loginUserId
         const memberInfo = await this.group_members.get(comboId)
         if (memberInfo) {
           sessionSetting.tts = memberInfo.tts
           sessionSetting.loactionShared = memberInfo.locationShared
         }
-      } else if (sessionType === WL_IDbSessionType.SESSION_SERVICE_TYPE) {
+      } else if (isServiceSessionType(sessionType)) {
         sessionSetting.tts = true
         sessionSetting.mute = false
         sessionSetting.loactionShared = true
@@ -289,15 +291,15 @@ class WeilaDB extends Dexie {
     }
 
     if (params.tts !== undefined || params.loactionShared !== undefined) {
-      if (sessionType === WL_IDbSessionType.SESSION_GROUP_TYPE) {
+      if (isGroupSessionType(sessionType)) {
         const groupInfo = await this.groups.get(sessionId)
         if (groupInfo) {
           const id = groupInfo.groupId + '_' + groupInfo.ownerId
           this.group_members.where('combo_gid_uid').equals(id).modify(setting)
         }
-      } else if (sessionType === WL_IDbSessionType.SESSION_INDIVIDUAL_TYPE) {
+      } else if (isIndividualSessionType(sessionType)) {
         this.friends.where('userId').equals(parseInt(sessionId)).modify(setting)
-      } else if (sessionType === WL_IDbSessionType.SESSION_SERVICE_TYPE) {
+      } else if (isServiceSessionType(sessionType)) {
         //TODO: 服务类的会话暂时不支持设置到其他属性去
 
         setting.tts = true
@@ -345,6 +347,20 @@ class WeilaDB extends Dexie {
   public async getSessions(): Promise<WL_IDbSession[]> {
     const list = await this.sessions.toCollection().toArray()
     wllog(list)
+    console.log(`[Weila:DB:getSessions] count=${list.length}`, list.map(s => ({
+      sessionId: s.sessionId,
+      sessionName: s.sessionName,
+      sessionType: s.sessionType,
+      lastMsgId: s.lastMsgId,
+      readMsgId: s.readMsgId,
+      latestUpdate: s.latestUpdate,
+      lastMsgData: s.lastMsgData ? {
+        combo_id: s.lastMsgData.combo_id,
+        msgId: s.lastMsgData.msgId,
+        msgType: s.lastMsgData.msgType,
+        textData: s.lastMsgData.textData?.substring(0, 50),
+      } : null,
+    })))
     return list
   }
 
@@ -354,7 +370,15 @@ class WeilaDB extends Dexie {
     sessionType: number,
   ): Promise<WL_IDbSession | undefined> {
     const id = sessionId + '_' + sessionType
-    return this.sessions.get(id)
+    const session = await this.sessions.get(id)
+    console.log(`[Weila:DB:getSession] id=${id}`, session ? {
+      sessionId: session.sessionId,
+      sessionName: session.sessionName,
+      sessionType: session.sessionType,
+      lastMsgId: session.lastMsgId,
+      readMsgId: session.readMsgId,
+    } : 'not found')
+    return session
   }
 
   @SyncTime()
@@ -792,7 +816,7 @@ class WeilaDB extends Dexie {
       msgData.created = Long.fromValue(msgDataRaws[i].created).toNumber()
       msgData.msgId = msgDataRaws[i].msgId
       if (
-        msgDataRaws[i].sessionType === WL.Common.SessionType.SESSION_TYPE_SINGLE &&
+        isIndividualSessionType(msgDataRaws[i].sessionType) &&
         msgDataRaws[i].senderId !== myUserId
       ) {
         msgData.senderId = msgDataRaws[i].senderId
@@ -931,7 +955,7 @@ class WeilaDB extends Dexie {
     count: number,
   ): Promise<WL_IDbMsgData[]> {
     wllog('获取最后%d条消息:', count)
-    return this.msgDatas
+    const result = await this.msgDatas
       .orderBy('created')
       .and((x) => {
         return x.sessionId === sessionId && x.sessionType === sessionType
@@ -939,6 +963,16 @@ class WeilaDB extends Dexie {
       .reverse()
       .limit(count)
       .toArray()
+    console.log(`[Weila:DB:getLastMsgDatas] sessionId=${sessionId}, sessionType=${sessionType}, count=${count}, returned=${result.length}`, result.map(m => ({
+      combo_id: m.combo_id,
+      msgId: m.msgId,
+      msgType: m.msgType,
+      senderId: m.senderId,
+      textData: m.textData?.substring(0, 50),
+      created: m.created,
+      status: m.status,
+    })))
+    return result
   }
 
   @AsyncTime()
@@ -952,7 +986,7 @@ class WeilaDB extends Dexie {
       count = fromMsgId
     }
     wllog('获取从%d获取%d条消息:', fromMsgId, count)
-    return this.msgDatas
+    const result = await this.msgDatas
       .orderBy('created')
       .and((x) => {
         return x.sessionId === sessionId && x.sessionType === sessionType && x.msgId <= fromMsgId
@@ -960,6 +994,16 @@ class WeilaDB extends Dexie {
       .reverse()
       .limit(count)
       .toArray()
+    console.log(`[Weila:DB:getMsgDatasWithRange] sessionId=${sessionId}, sessionType=${sessionType}, fromMsgId=${fromMsgId}, count=${count}, returned=${result.length}`, result.map(m => ({
+      combo_id: m.combo_id,
+      msgId: m.msgId,
+      msgType: m.msgType,
+      senderId: m.senderId,
+      textData: m.textData?.substring(0, 50),
+      created: m.created,
+      status: m.status,
+    })))
+    return result
   }
 
   @AsyncTime()
@@ -1015,12 +1059,20 @@ class WeilaDB extends Dexie {
     sessionId: string,
     sessionType: number,
   ): Promise<WL_IDbMsgData | undefined> {
-    return this.msgDatas
+    const msg = await this.msgDatas
       .orderBy('created')
       .and((x) => {
         return x.sessionId === sessionId && x.sessionType === sessionType
       })
       .last()
+    console.log(`[Weila:DB:getLastMsgData] sessionId=${sessionId}, sessionType=${sessionType}`, msg ? {
+      combo_id: msg.combo_id,
+      msgId: msg.msgId,
+      msgType: msg.msgType,
+      textData: msg.textData?.substring(0, 50),
+      created: msg.created,
+    } : 'not found')
+    return msg
   }
 
   @AsyncTime()

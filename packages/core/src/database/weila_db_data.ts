@@ -1,3 +1,5 @@
+import { WL } from 'proto/weilapb'
+
 // 存入数据库的设置项
 enum WL_IDbSettingID {
   SETTING_LOGIN_TOKEN, // token 一些上传需要用到的token数据
@@ -20,27 +22,48 @@ enum WL_IDbSessionStatus {
   SESSION_INVALID,
 }
 
-enum WL_IDbSessionType {
+const WL_IDbSessionType = {
   // 个人会话
-  SESSION_INDIVIDUAL_TYPE = 0x01,
+  SESSION_INDIVIDUAL_TYPE: WL.Common.SessionType.SESSION_TYPE_SINGLE,
 
   // 群会话
-  SESSION_GROUP_TYPE = 0x02,
+  SESSION_GROUP_TYPE: WL.Common.SessionType.SESSION_TYPE_GROUP,
 
   // 聊天室 / Room
-  SESSION_ROOM_TYPE = 0x04,
+  SESSION_ROOM_TYPE: WL.Common.SessionType.SESSION_TYPE_ROOM,
 
   // 服务号
-  SESSION_SERVICE_TYPE = 0x08,
+  SESSION_SERVICE_TYPE: WL.Common.SessionType.SESSION_TYPE_SERVICE,
 
   // 企业个人会话
-  SESSION_CORP_INDIVIDUAL_TYPE = 0x11,
+  SESSION_CORP_INDIVIDUAL_TYPE: WL.Common.SessionType.SESSION_TYPE_CORP_SINGLE,
 
   // 企业群会话
-  SESSION_CORP_GROUP_TYPE = 0x12,
+  SESSION_CORP_GROUP_TYPE: WL.Common.SessionType.SESSION_TYPE_CORP_GROUP,
 
   // 企业临时群
-  SESSION_CORP_GROUP_TMP_TYPE = 0x13,
+  SESSION_CORP_GROUP_TMP_TYPE: WL.Common.SessionType.SESSION_TYPE_CORP_GROUP_TMP,
+} as const
+
+type WL_IDbSessionType = (typeof WL_IDbSessionType)[keyof typeof WL_IDbSessionType]
+
+function isIndividualSessionType(sessionType: number): boolean {
+  return (
+    sessionType === WL_IDbSessionType.SESSION_INDIVIDUAL_TYPE ||
+    sessionType === WL_IDbSessionType.SESSION_CORP_INDIVIDUAL_TYPE
+  )
+}
+
+function isGroupSessionType(sessionType: number): boolean {
+  return (
+    sessionType === WL_IDbSessionType.SESSION_GROUP_TYPE ||
+    sessionType === WL_IDbSessionType.SESSION_CORP_GROUP_TYPE ||
+    sessionType === WL_IDbSessionType.SESSION_CORP_GROUP_TMP_TYPE
+  )
+}
+
+function isServiceSessionType(sessionType: number): boolean {
+  return sessionType === WL_IDbSessionType.SESSION_SERVICE_TYPE
 }
 
 interface WL_IDbSession {
@@ -393,6 +416,9 @@ export {
   WL_IDbSessionStatus,
   WL_IDbSession,
   WL_IDbSessionType,
+  isIndividualSessionType,
+  isGroupSessionType,
+  isServiceSessionType,
   WL_IDbSessionSetting,
   WL_IDbUserInfo,
   WL_IDbSessionSettingParams,

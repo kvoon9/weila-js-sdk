@@ -9,9 +9,9 @@ import {
   WL_IDbServiceStaffInfo,
   WL_IDbSession,
   WL_IDbSessionStatus,
-  WL_IDbSessionType,
   WL_IDbUserInfo,
   WL_ServiceStatus,
+  isServiceSessionType,
 } from 'db/weila_db_data'
 import { WeilaPbBusinessWrapper } from 'proto/weilapb_business_wrapper'
 import Long from 'long'
@@ -298,7 +298,7 @@ export default class WLBusinessModule {
     }
 
     dbSessionList = dbSessionList.filter((value) => {
-      return value.sessionType === WL_IDbSessionType.SESSION_SERVICE_TYPE
+      return isServiceSessionType(value.sessionType)
     })
 
     const sessionIds_long = dbSessionList.map((value) => {

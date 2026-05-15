@@ -11,9 +11,11 @@ import {
   WL_IDbServiceSessionInfo,
   WL_IDbSession,
   WL_IDbSessionStatus,
-  WL_IDbSessionType,
   WL_IDbSetting,
   WL_IDbSettingID,
+  isGroupSessionType,
+  isIndividualSessionType,
+  isServiceSessionType,
 } from 'db/weila_db_data'
 import {
   default_group_logo,
@@ -88,19 +90,19 @@ export default class WLSessionModule {
   }
 
   private async saveSessionInfo(dBSession: WL_IDbSession): Promise<boolean> {
-    if (dBSession.sessionType === WL_IDbSessionType.SESSION_INDIVIDUAL_TYPE) {
+    if (isIndividualSessionType(dBSession.sessionType)) {
       const userInfo = await WeilaDB.getInstance().getUser(parseInt(dBSession.sessionId))
       if (userInfo) {
         dBSession.sessionName = userInfo.nick
         dBSession.sessionAvatar = userInfo.avatar
       }
-    } else if (dBSession.sessionType === WL_IDbSessionType.SESSION_GROUP_TYPE) {
+    } else if (isGroupSessionType(dBSession.sessionType)) {
       const groupInfo: WL_IDbGroup = await WeilaDB.getInstance().getGroup(dBSession.sessionId)
       if (groupInfo) {
         dBSession.sessionName = groupInfo.name
         dBSession.sessionAvatar = groupInfo.avatar
       }
-    } else if (dBSession.sessionType === WL_IDbSessionType.SESSION_SERVICE_TYPE) {
+    } else if (isServiceSessionType(dBSession.sessionType)) {
       const idNumber = Long.fromValue(dBSession.sessionId)
       const service: WL_IDbService | undefined = await WeilaDB.getInstance().getService(
         idNumber.high,
@@ -192,7 +194,7 @@ export default class WLSessionModule {
       let session: WL_IDbSession = {} as WL_IDbSession
       session.sessionId = msgData.sessionId
       session.sessionType = msgData.sessionType
-      if (msgData.sessionType === WL_IDbSessionType.SESSION_SERVICE_TYPE) {
+      if (isServiceSessionType(msgData.sessionType)) {
         // 如果是之前没有这个session，说明此服务也不再DB中，所以需要从服务器获取服务的信息
         const serviceSession: WL_IDbServiceSessionInfo | undefined =
           await this.coreInterface.executeCoreFunc('weila_getServiceSession', msgData.sessionId)
@@ -204,7 +206,7 @@ export default class WLSessionModule {
           session.extra = serviceSession.serviceSession
         }
       } else {
-        if (msgData.sessionType === WL_IDbSessionType.SESSION_GROUP_TYPE) {
+        if (isGroupSessionType(msgData.sessionType)) {
           await this.coreInterface.executeCoreFunc('weila_getGroupFromServer', session.sessionId)
         }
 
@@ -248,12 +250,12 @@ export default class WLSessionModule {
         speakerInfo = '未知用户'
       }
 
-      if (msgData.sessionType === WL_IDbSessionType.SESSION_GROUP_TYPE) {
+      if (isGroupSessionType(msgData.sessionType)) {
         const groupInfo = await WeilaDB.getInstance().getGroup(msgData.sessionId)
         if (groupInfo) {
           speakerInfo += '在' + groupInfo.name + '里'
         }
-      } else if (msgData.sessionType === WL_IDbSessionType.SESSION_SERVICE_TYPE) {
+      } else if (isServiceSessionType(msgData.sessionType)) {
         const service = await WeilaDB.getInstance().getService(
           Long.fromValue(msgData.sessionId).high,
         )
@@ -1141,7 +1143,7 @@ export default class WLSessionModule {
   }
 
   private async canTalk(sessionId: string, sessionType: number): Promise<boolean> {
-    if (sessionType === WL_IDbSessionType.SESSION_GROUP_TYPE) {
+    if (isGroupSessionType(sessionType)) {
       const groupInfo = await WeilaDB.getInstance().getGroup(sessionId)
       return groupInfo.speechEnable
     }

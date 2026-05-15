@@ -1,9 +1,13 @@
 import { WeilaDB } from 'db/weila_db'
 import { fetchWithTimeout } from 'main/weila_utils'
-import { WL } from 'proto/weilapb'
 import OSS from 'ali-oss'
 import { getLogger } from 'log/weila_log'
-import { WL_IDbSettingID } from 'db/weila_db_data'
+import {
+  WL_IDbSettingID,
+  isGroupSessionType,
+  isIndividualSessionType,
+  isServiceSessionType,
+} from 'db/weila_db_data'
 
 const wllog = getLogger('ALI-OSS:info')
 const wlerr = getLogger('ALI-OSS:err')
@@ -139,24 +143,12 @@ class AliOssHelper {
 
     // get user session
     let userStr = 'unknown_'
-    switch (sessionType) {
-      case WL.Common.SessionType.SESSION_TYPE_SINGLE:
-        {
-          userStr = 'user_' + sessionId
-        }
-        break
-
-      case WL.Common.SessionType.SESSION_TYPE_GROUP:
-        {
-          userStr = 'group_' + sessionId
-        }
-        break
-
-      case WL.Common.SessionType.SESSION_TYPE_SERVICE:
-        {
-          userStr = 'company_' + sessionId
-        }
-        break
+    if (isIndividualSessionType(sessionType)) {
+      userStr = 'user_' + sessionId
+    } else if (isGroupSessionType(sessionType)) {
+      userStr = 'group_' + sessionId
+    } else if (isServiceSessionType(sessionType)) {
+      userStr = 'company_' + sessionId
     }
 
     let url =
