@@ -80,6 +80,17 @@ interface SetConfigDataParam {
   version: number
 }
 
+function validateWasmData(data: ArrayBuffer, url: string): void {
+  const bytes = new Uint8Array(data, 0, Math.min(data.byteLength, 4))
+  const isWasm = bytes[0] === 0x00 && bytes[1] === 0x61 && bytes[2] === 0x73 && bytes[3] === 0x6d
+  if (!isWasm) {
+    const magic = Array.from(bytes)
+      .map(byte => byte.toString(16).padStart(2, '0'))
+      .join(' ')
+    throw new Error(`获取 WASM 资源失败:${url} 返回的不是 WASM 文件，magic=${magic}`)
+  }
+}
+
 function setConfigData(params: SetConfigDataParam[]) {
   for (let param of params) {
     wllog('setConfigData id:%d url:%s', param.id, param.url)
@@ -131,6 +142,8 @@ class WLConfig {
         })
       } else if (item.dataType === 'buffer') {
         responseData = await this.fetchUrl(item.url, 'arraybuffer')
+        if (item.id === WL_ConfigID.WL_RES_DATA_OPUS_WASM_ID)
+          validateWasmData(responseData, item.url)
         configDataItem.resource_data = new Uint8Array(responseData)
         dbItem.id = item.id
         dbItem.data = configDataItem
