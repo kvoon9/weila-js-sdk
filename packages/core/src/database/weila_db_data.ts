@@ -23,10 +23,24 @@ enum WL_IDbSessionStatus {
 enum WL_IDbSessionType {
   // 个人会话
   SESSION_INDIVIDUAL_TYPE = 0x01,
+
   // 群会话
   SESSION_GROUP_TYPE = 0x02,
+
+  // 聊天室 / Room
+  SESSION_ROOM_TYPE = 0x04,
+
   // 服务号
   SESSION_SERVICE_TYPE = 0x08,
+
+  // 企业个人会话
+  SESSION_CORP_INDIVIDUAL_TYPE = 0x11,
+
+  // 企业群会话
+  SESSION_CORP_GROUP_TYPE = 0x12,
+
+  // 企业临时群
+  SESSION_CORP_GROUP_TMP_TYPE = 0x13,
 }
 
 interface WL_IDbSession {
