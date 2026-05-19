@@ -360,7 +360,7 @@ async function handlePttStop() {
     <div class="flex-1 p-4 overflow-y-auto">
       <div v-if="selectedSession">
         <h2 class="text-lg font-semibold mb-4">
-          Session: {{ selectedSession.sessionName || selectedSession.sessionId }}
+          {{ selectedSession.sessionName || selectedSession.sessionId }}
         </h2>
 
         <div class="relative">
