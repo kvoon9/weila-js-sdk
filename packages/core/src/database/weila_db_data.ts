@@ -8,6 +8,7 @@ enum WL_IDbSettingID {
   SETTING_GROUP_LATEST_UPDATE, // 群组最后一次更新时间
   SETTING_SUB_USERINFO_VER_UPDATE,
   SETTING_MSG_SENDING_SEQ, // 发送消息的序号，不断地累加
+  SETTING_CORP_SESSION_LATEST_UPDATE, // 企业会话信息最后一次更新的时间
 }
 
 interface WL_IDbSetting {

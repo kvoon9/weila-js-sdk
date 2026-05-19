@@ -101,7 +101,7 @@ export default class WLSessionModule {
       const groupInfo: WL_IDbGroup = await WeilaDB.getInstance().getGroup(dBSession.sessionId)
       if (groupInfo) {
         dBSession.sessionName = groupInfo.name
-        dBSession.sessionAvatar = groupInfo.avatar
+        dBSession.sessionAvatar = groupInfo.avatar || default_group_logo
       }
     } else if (isServiceSessionType(dBSession.sessionType)) {
       const idNumber = Long.fromValue(dBSession.sessionId)
@@ -642,44 +642,54 @@ export default class WLSessionModule {
     this.activeSession = null
   }
 
-  public async initSessions(): Promise<boolean> {
+  private async syncSessionsByType(
+    type: number,
+    settingId: WL_IDbSettingID,
+  ): Promise<boolean> {
     const dbInstance = WeilaDB.getInstance()
-    let settingItem = await dbInstance.getSettingItem(WL_IDbSettingID.SETTING_SESSION_LATEST_UPDATE)
+    let settingItem = await dbInstance.getSettingItem(settingId)
     let latestTime = 0
     if (settingItem) {
       latestTime = settingItem.data as number
     }
-    const buildResult = WeilaPBSessionWrapper.buildGetSessionReq(Long.fromValue(latestTime))
+    const buildResult = WeilaPBSessionWrapper.buildGetSessionReq(Long.fromValue(latestTime), type)
 
     if (buildResult.resultCode === 0) {
       let rspMsg = (await this.coreInterface.sendPbMsg(
         buildResult,
         30000,
       )) as WL.Session.IRspGetSession
-      wllog('buildGetSessionReq:', rspMsg)
+      wllog('buildGetSessionReq type=%d:', type, rspMsg)
       if (!settingItem) {
         settingItem = {} as WL_IDbSetting
-        settingItem.id = WL_IDbSettingID.SETTING_SESSION_LATEST_UPDATE
+        settingItem.id = settingId
       }
       settingItem.data = Long.fromValue(rspMsg.latestUpdated).toNumber()
       await dbInstance.putSettingItem(settingItem)
 
-      wllog('initSessions:', rspMsg.sessionInfoList)
+      wllog('initSessions type=%d:', type, rspMsg.sessionInfoList)
       if (rspMsg.sessionInfoList.length) {
         const sessionInfos: WL_IDbSession[] = await dbInstance.convertFromSessionRaw(
           rspMsg.sessionInfoList,
         )
         await dbInstance.putSessions(sessionInfos)
-        wllog('after convert:', sessionInfos)
+        wllog('after convert type=%d:', type, sessionInfos)
       }
-
-      this.sessionList = await dbInstance.getSessions()
-      wllog('会话列表:', this.sessionList)
 
       return true
     }
 
     return Promise.reject('创建消息失败:' + buildResult.resultCode)
+  }
+
+  public async initSessions(): Promise<boolean> {
+    await this.syncSessionsByType(0, WL_IDbSettingID.SETTING_SESSION_LATEST_UPDATE)
+    await this.syncSessionsByType(1, WL_IDbSettingID.SETTING_CORP_SESSION_LATEST_UPDATE)
+
+    this.sessionList = await WeilaDB.getInstance().getSessions()
+    wllog('会话列表:', this.sessionList)
+
+    return true
   }
 
   public async sendAudioMsg(

@@ -11,10 +11,13 @@ import {
 } from 'db/weila_db_data'
 
 class WeilaPBSessionWrapper {
-  public static buildGetSessionReq(updateTime: Long): WLBuildMsgRet {
+  public static buildGetSessionReq(updateTime: Long, type?: number): WLBuildMsgRet {
     const sessionMessage = new WL.Session.SessionMessage()
     sessionMessage.reqGetSession = new WL.Session.ReqGetSession()
     sessionMessage.reqGetSession.latestUpdated = updateTime
+    if (type !== undefined) {
+      sessionMessage.reqGetSession.type = type
+    }
 
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_SESSION,

@@ -31,17 +31,20 @@ export interface WlChatPanelProps {
   core: WeilaCore | null
   currentUserId?: number
   selectedSessionId?: string
+  selectedSessionType?: number
   messageListHeight?: string
 }
 
 const props = withDefaults(defineProps<WlChatPanelProps>(), {
   currentUserId: 0,
   selectedSessionId: '',
+  selectedSessionType: undefined,
   messageListHeight: '400px',
 })
 
 const emit = defineEmits<{
   'update:selectedSessionId': [sessionId: string]
+  'update:selectedSessionType': [sessionType: number | undefined]
   'delete-session': [session: WL_IDbSession]
 }>()
 
@@ -67,7 +70,10 @@ const deletingSessionKey = ref('')
 
 const selectedSession = computed(() => {
   if (!props.selectedSessionId) return null
-  return sessions.value.find((s) => s.sessionId === props.selectedSessionId) ?? null
+  return sessions.value.find((s) => {
+    if (s.sessionId !== props.selectedSessionId) return false
+    return props.selectedSessionType === undefined || s.sessionType === props.selectedSessionType
+  }) ?? null
 })
 
 watch(selectedSession, () => {
@@ -180,6 +186,7 @@ async function deleteSession(session: WL_IDbSession): Promise<boolean> {
       && selectedSession.value?.sessionType === deletingSessionType
     ) {
       emit('update:selectedSessionId', '')
+      emit('update:selectedSessionType', undefined)
     }
 
     await refreshSessions()
@@ -194,6 +201,7 @@ async function deleteSession(session: WL_IDbSession): Promise<boolean> {
 
 function handleSelectSession(session: WL_IDbSession) {
   emit('update:selectedSessionId', session.sessionId)
+  emit('update:selectedSessionType', session.sessionType)
 }
 
 function handleDeleteSession(session: WL_IDbSession) {
@@ -338,6 +346,7 @@ async function handlePttStop() {
         v-if="core"
         :sessions="sessions"
         :active-session-id="selectedSessionId"
+        :active-session-type="selectedSessionType"
         :loading="sessionsLoading"
         :error="sessionsError"
         :deleting-session-key="deletingSessionKey"

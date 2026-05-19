@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { WL_IDbSession } from '@weilasdk/core'
 import { WL_IDbMsgDataType } from '@weilasdk/core'
 
@@ -22,6 +22,19 @@ const emit = defineEmits<{
 const sessionName = computed(() => {
   return props.session.sessionName || 'Unknown'
 })
+
+const imageLoadFailed = ref(false)
+
+const sessionAvatar = computed(() => {
+  return imageLoadFailed.value ? '' : props.session.sessionAvatar
+})
+
+watch(
+  () => props.session.sessionAvatar,
+  () => {
+    imageLoadFailed.value = false
+  },
+)
 
 const lastMessageTime = computed(() => {
   const time = props.session.latestUpdate
@@ -55,6 +68,12 @@ const sessionTypeLabel = computed(() => {
       return 'Group'
     case 0x08:
       return 'Service'
+    case 0x11:
+      return 'Corp Personal'
+    case 0x12:
+      return 'Corp Group'
+    case 0x13:
+      return 'Corp Temp Group'
     default:
       return ''
   }
@@ -107,10 +126,11 @@ function handleDelete() {
       class="avatar flex-shrink-0 w-12 h-12 rounded-full bg-neutral-200 flex items-center justify-center overflow-hidden"
     >
       <img
-        v-if="session.sessionAvatar"
-        :src="session.sessionAvatar"
+        v-if="sessionAvatar"
+        :src="sessionAvatar"
         :alt="sessionName"
         class="w-full h-full object-cover"
+        @error="imageLoadFailed = true"
       />
       <span v-else class="text-lg font-medium text-neutral-400">
         {{ sessionName.charAt(0).toUpperCase() }}

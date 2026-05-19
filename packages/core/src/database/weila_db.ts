@@ -151,7 +151,7 @@ class WeilaDB extends Dexie {
       const groupInfo = await WeilaDB.getInstance().getGroup(session.sessionId)
       if (groupInfo) {
         session.sessionName = groupInfo.name
-        session.sessionAvatar = groupInfo.avatar
+        session.sessionAvatar = groupInfo.avatar || default_group_logo
       } else {
         session.status = WL_IDbSessionStatus.SESSION_INVALID
         applySessionExtraProfile(session)
