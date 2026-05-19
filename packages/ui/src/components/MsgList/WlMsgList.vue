@@ -59,6 +59,14 @@ function getSender(msg: WL_IDbMsgData) {
   return props.senderInfos.get(msg.senderId)
 }
 
+function getSenderLabel(msg: WL_IDbMsgData) {
+  const sender = getSender(msg)
+  const name = sender?.nick || String(msg.senderId)
+  const id = sender?.weilaNum || sender?.userId || msg.senderId
+
+  return `${name}(${id})`
+}
+
 function isSelf(msg: WL_IDbMsgData) {
   return msg.senderId === props.currentUserId
 }
@@ -136,31 +144,37 @@ watch(
         <span v-else class="icon-[carbon--user-avatar-filled] size-6 text-neutral-500" />
       </div>
 
-      <!-- Text Message -->
-      <WlTextBubble v-if="isText(msg)" :msg="msg" :is-self="isSelf(msg)" :sender="getSender(msg)" />
+      <div class="flex-1 min-w-0 flex flex-col gap-1" :class="isSelf(msg) ? 'items-end' : 'items-start'">
+        <div class="max-w-full truncate text-xs text-neutral-500 px-1">
+          {{ getSenderLabel(msg) }}
+        </div>
 
-      <!-- Audio Message -->
-      <WlAudioBubble v-else-if="isAudio(msg)" :msg="msg" :is-self="isSelf(msg)"
-        :playing="playingAudioId === msg.combo_id" @play="emit('audio-play', msg)" @pause="emit('audio-pause', msg)" />
+        <!-- Text Message -->
+        <WlTextBubble v-if="isText(msg)" :msg="msg" :is-self="isSelf(msg)" :sender="getSender(msg)" />
 
-      <!-- Image Message -->
-      <WlImageBubble v-else-if="isImage(msg)" :msg="msg" :is-self="isSelf(msg)"
-        :sender="getSender(msg)" @click="handleImageClick" />
+        <!-- Audio Message -->
+        <WlAudioBubble v-else-if="isAudio(msg)" :msg="msg" :is-self="isSelf(msg)"
+          :playing="playingAudioId === msg.combo_id" @play="emit('audio-play', msg)" @pause="emit('audio-pause', msg)" />
 
-      <!-- Location Message -->
-      <WlLocationBubble v-else-if="isLocation(msg) && msg.location" :msg="msg" :is-self="isSelf(msg)"
-        :sender="getSender(msg)" @click="handleLocationClick" />
+        <!-- Image Message -->
+        <WlImageBubble v-else-if="isImage(msg)" :msg="msg" :is-self="isSelf(msg)"
+          :sender="getSender(msg)" @click="handleImageClick" />
 
-      <!-- File Message -->
-      <WlFileBubble v-else-if="isFile(msg)" :msg="msg" :is-self="isSelf(msg)" :sender="getSender(msg)"
-        @click="handleFileClick" />
+        <!-- Location Message -->
+        <WlLocationBubble v-else-if="isLocation(msg) && msg.location" :msg="msg" :is-self="isSelf(msg)"
+          :sender="getSender(msg)" @click="handleLocationClick" />
 
-      <!-- Video Message -->
-      <WlVideoBubble v-else-if="isVideo(msg)" :msg="msg" :is-self="isSelf(msg)"
-        :sender="getSender(msg)" @click="handleVideoClick" />
+        <!-- File Message -->
+        <WlFileBubble v-else-if="isFile(msg)" :msg="msg" :is-self="isSelf(msg)" :sender="getSender(msg)"
+          @click="handleFileClick" />
 
-      <!-- Unsupported Message Type -->
-      <WlUnknownBubble v-else :msg="msg" :is-self="isSelf(msg)" :sender="getSender(msg)" />
+        <!-- Video Message -->
+        <WlVideoBubble v-else-if="isVideo(msg)" :msg="msg" :is-self="isSelf(msg)"
+          :sender="getSender(msg)" @click="handleVideoClick" />
+
+        <!-- Unsupported Message Type -->
+        <WlUnknownBubble v-else :msg="msg" :is-self="isSelf(msg)" :sender="getSender(msg)" />
+      </div>
     </div>
 
     <button v-if="showScrollButton"

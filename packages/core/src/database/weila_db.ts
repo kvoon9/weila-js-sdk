@@ -30,6 +30,7 @@ import {
   WL_IDbSettingID,
   WL_IDbUserInfo,
   applySessionExtraProfile,
+  inheritSessionProfile,
   isGroupSessionType,
   isIndividualSessionType,
   isServiceSessionType,
@@ -194,6 +195,7 @@ class WeilaDB extends Dexie {
       session.sessionType = sessionRaws[i].sessionType
       session.readMsgId = sessionRaws[i].readMsgId
       session.latestUpdate = Long.fromValue(sessionRaws[i].latestUpdated).toNumber()
+      inheritSessionProfile(session, await this.getSession(session.sessionId, session.sessionType))
       wllog('sessionId:%s lastMsgDataRaw:', session.sessionId, sessionRaws[i].latestMsgData)
       if (sessionRaws[i].latestMsgData) {
         const msgDatas: WL_IDbMsgData[] = this.convertFromMsgDataRaws(

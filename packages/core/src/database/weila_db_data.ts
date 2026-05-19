@@ -68,13 +68,7 @@ function isServiceSessionType(sessionType: number): boolean {
 }
 
 function applySessionExtraProfile(session: WL_IDbSession): boolean {
-  const extra = session.extra
-  if (!extra || typeof extra !== 'object') {
-    return false
-  }
-
-  const sessionName = extra.sessionName || extra.name || extra.nick
-  const sessionAvatar = extra.sessionAvatar || extra.avatar
+  const { sessionName, sessionAvatar } = getSessionExtraProfile(session.extra)
 
   if (!sessionName && !sessionAvatar) {
     return false
@@ -88,6 +82,42 @@ function applySessionExtraProfile(session: WL_IDbSession): boolean {
   }
   session.status = WL_IDbSessionStatus.SESSION_ACTIVATE
   return true
+}
+
+function getSessionExtraProfile(extra: any): {
+  sessionName?: string
+  sessionAvatar?: string
+} {
+  if (!extra || typeof extra !== 'object') {
+    return {}
+  }
+
+  return {
+    sessionName: extra.sessionName || extra.name || extra.nick,
+    sessionAvatar: extra.sessionAvatar || extra.avatar,
+  }
+}
+
+function inheritSessionProfile(session: WL_IDbSession, existingSession?: WL_IDbSession): void {
+  if (!existingSession) {
+    return
+  }
+
+  const extra = existingSession.extra && typeof existingSession.extra === 'object'
+    ? { ...existingSession.extra }
+    : {}
+  const { sessionName, sessionAvatar } = getSessionExtraProfile(extra)
+
+  if (!sessionName && existingSession.sessionName) {
+    extra.sessionName = existingSession.sessionName
+  }
+  if (!sessionAvatar && existingSession.sessionAvatar) {
+    extra.sessionAvatar = existingSession.sessionAvatar
+  }
+
+  if (Object.keys(extra).length) {
+    session.extra = extra
+  }
 }
 
 interface WL_IDbSession {
@@ -445,6 +475,7 @@ export {
   isGroupSessionType,
   isServiceSessionType,
   applySessionExtraProfile,
+  inheritSessionProfile,
   WL_IDbSessionSetting,
   WL_IDbUserInfo,
   WL_IDbSessionSettingParams,
