@@ -39,7 +39,7 @@ const statusIcon = computed(() => {
     <div>[不支持的消息类型]</div>
     <div class="flex items-center justify-end gap-1 mt-1 -mb-1 -mr-1">
       <span class="text-xs opacity-60">{{ formattedTime }}</span>
-      <span v-if="statusIcon === 'sending'" class="icon-[carbon--rotate] size-3 animate-spin opacity-60" />
+      <span v-if="statusIcon === 'sending'" class="icon-[carbon--rotate] size-3 animate-spin [animation-direction:reverse] opacity-60" />
       <span v-else-if="statusIcon === 'unsent' || statusIcon === 'error'" class="icon-[carbon--warning] size-3 text-orange-300" />
       <span v-else-if="statusIcon === 'read'" class="icon-[carbon--checkmark] size-3 text-green-300" />
       <span v-else-if="statusIcon === 'sent'" class="icon-[carbon--checkmark] size-3 opacity-60" />

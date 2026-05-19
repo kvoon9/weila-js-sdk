@@ -124,7 +124,7 @@ watch(
   <div ref="listRef" class="flex flex-col h-full bg-neutral-100 overflow-y-auto px-4 py-3" @scroll="onScroll">
     <!-- Load more banner -->
     <div v-if="hasMore || loading" class="flex justify-center py-2 cursor-pointer" @click="emit('load-more')">
-      <span v-if="loading" class="icon-[carbon--rotate] size-5 text-neutral-400 animate-spin" />
+      <span v-if="loading" class="icon-[carbon--rotate] size-5 text-neutral-400 animate-spin [animation-direction:reverse]" />
       <span v-else class="text-sm text-blue-500 hover:text-blue-600">加载更多</span>
     </div>
 
@@ -144,7 +144,7 @@ watch(
         :playing="playingAudioId === msg.combo_id" @play="emit('audio-play', msg)" @pause="emit('audio-pause', msg)" />
 
       <!-- Image Message -->
-      <WlImageBubble v-else-if="isImage(msg) && msg.fileInfo?.fileUrl" :msg="msg" :is-self="isSelf(msg)"
+      <WlImageBubble v-else-if="isImage(msg)" :msg="msg" :is-self="isSelf(msg)"
         :sender="getSender(msg)" @click="handleImageClick" />
 
       <!-- Location Message -->
@@ -156,7 +156,7 @@ watch(
         @click="handleFileClick" />
 
       <!-- Video Message -->
-      <WlVideoBubble v-else-if="isVideo(msg) && msg.fileInfo?.fileUrl" :msg="msg" :is-self="isSelf(msg)"
+      <WlVideoBubble v-else-if="isVideo(msg)" :msg="msg" :is-self="isSelf(msg)"
         :sender="getSender(msg)" @click="handleVideoClick" />
 
       <!-- Unsupported Message Type -->

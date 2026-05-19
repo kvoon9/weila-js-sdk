@@ -76,7 +76,7 @@ const statusIcon = computed(() => {
     </div>
     <div class="flex items-center justify-end gap-1 px-2 pb-1.5 -mt-1">
       <span class="text-xs opacity-60" :class="isSelf ? 'text-blue-200' : 'text-neutral-400'">{{ formattedTime }}</span>
-      <span v-if="statusIcon === 'sending'" class="icon-[carbon--rotate] size-3 animate-spin opacity-60" :class="isSelf ? 'text-blue-200' : 'text-neutral-400'" />
+      <span v-if="statusIcon === 'sending'" class="icon-[carbon--rotate] size-3 animate-spin [animation-direction:reverse] opacity-60" :class="isSelf ? 'text-blue-200' : 'text-neutral-400'" />
       <span v-else-if="statusIcon === 'unsent' || statusIcon === 'error'" class="icon-[carbon--warning] size-3 text-orange-300" />
       <span v-else-if="statusIcon === 'read'" class="icon-[carbon--checkmark] size-3 text-green-300" />
       <span v-else-if="statusIcon === 'sent'" class="icon-[carbon--checkmark] size-3 opacity-60" :class="isSelf ? 'text-blue-200' : 'text-neutral-400'" />

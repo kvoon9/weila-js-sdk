@@ -150,7 +150,7 @@ const statusIcon = computed(() => {
       <template v-if="isSelf">
         <span
           v-if="statusIcon === 'sending'"
-          class="icon-[carbon--rotate] size-3 animate-spin text-blue-200 opacity-80"
+          class="icon-[carbon--rotate] size-3 animate-spin [animation-direction:reverse] text-blue-200 opacity-80"
         />
         <span
           v-else-if="statusIcon === 'unsent' || statusIcon === 'error'"

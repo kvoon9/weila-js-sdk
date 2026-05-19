@@ -40,9 +40,13 @@ const statusIcon = computed(() => {
     <img v-if="msg.fileInfo?.fileUrl" :src="msg.fileInfo.fileUrl"
       class="max-w-[200px] max-h-[200px] rounded-xl object-cover cursor-pointer" alt="image"
       @click="emit('click', msg.fileInfo!.fileUrl)" />
+    <div v-else class="w-[160px] h-[120px] flex flex-col items-center justify-center gap-2">
+      <span class="icon-[carbon--image] size-8" :class="isSelf ? 'text-blue-100' : 'text-neutral-400'" />
+      <span class="text-xs" :class="isSelf ? 'text-blue-100' : 'text-neutral-500'">上传中...</span>
+    </div>
     <div class="flex items-center justify-end gap-1 p-1.5">
       <span class="text-xs opacity-60" :class="isSelf ? 'text-white' : 'text-neutral-600'">{{ formattedTime }}</span>
-      <span v-if="statusIcon === 'sending'" class="icon-[carbon--rotate] size-3 animate-spin opacity-60" :class="isSelf ? 'text-white' : 'text-neutral-600'" />
+      <span v-if="statusIcon === 'sending'" class="icon-[carbon--rotate] size-3 animate-spin [animation-direction:reverse] opacity-60" :class="isSelf ? 'text-white' : 'text-neutral-600'" />
       <span v-else-if="statusIcon === 'unsent' || statusIcon === 'error'" class="icon-[carbon--warning] size-3 text-orange-300" />
       <span v-else-if="statusIcon === 'read'" class="icon-[carbon--checkmark] size-3 text-green-300" />
       <span v-else-if="statusIcon === 'sent'" class="icon-[carbon--checkmark] size-3 opacity-60" :class="isSelf ? 'text-white' : 'text-neutral-600'" />
