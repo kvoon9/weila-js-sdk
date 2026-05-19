@@ -44,9 +44,7 @@ const lastMessageTime = computed(() => {
 })
 
 const unreadCount = computed(() => {
-  const readMsgId = props.session.readMsgId || 0
-  const lastMsgId = props.session.lastMsgId || 0
-  return Math.max(0, lastMsgId - readMsgId)
+  return Math.max(0, props.session.unreadCount || 0)
 })
 
 const sessionTypeLabel = computed(() => {

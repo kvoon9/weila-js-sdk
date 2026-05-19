@@ -47,6 +47,7 @@ export function useSessions(getCore: () => WeilaCore | null) {
         sessionType: s.sessionType,
         lastMsgId: s.lastMsgId,
         readMsgId: s.readMsgId,
+        unreadCount: s.unreadCount,
         latestUpdate: s.latestUpdate,
         lastMsg: s.lastMsgData ? {
           msgId: s.lastMsgData.msgId,
@@ -81,6 +82,10 @@ export function useSessions(getCore: () => WeilaCore | null) {
     }
     else if (eventId === WL_ExtEventID.WL_EXT_MSG_SEND_IND) {
       console.log('[Weila:UI:useSessions] event: WL_EXT_MSG_SEND_IND -> fetching sessions')
+      void fetchSessions()
+    }
+    else if (eventId === WL_ExtEventID.WL_EXT_SESSION_UPDATED_IND) {
+      console.log('[Weila:UI:useSessions] event: WL_EXT_SESSION_UPDATED_IND -> fetching sessions')
       void fetchSessions()
     }
   }

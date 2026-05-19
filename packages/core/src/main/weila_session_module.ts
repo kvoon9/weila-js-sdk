@@ -144,11 +144,15 @@ export default class WLSessionModule {
     msgData: WL_IDbMsgData,
     markRead: boolean,
   ): void {
+    const isIncoming = msgData.senderId !== this.coreInterface.getLoginUserInfo().userId
     session.lastMsgId = msgData.msgId
     session.lastMsgData = msgData
     session.latestUpdate = new Date().getTime() / 1000
     if (markRead && msgData.msgId > 0) {
       session.readMsgId = Math.max(session.readMsgId || 0, msgData.msgId)
+      session.unreadCount = 0
+    } else if (isIncoming && msgData.msgId > 0) {
+      session.unreadCount = (session.unreadCount || 0) + 1
     }
   }
 
@@ -187,6 +191,7 @@ export default class WLSessionModule {
     }
 
     session.readMsgId = nextReadMsgId
+    session.unreadCount = 0
     await this.persistSessionUpdate(session)
     return true
   }
@@ -220,6 +225,7 @@ export default class WLSessionModule {
       this.applySessionMsgData(session, msgData, shouldMarkRead)
       if (!shouldMarkRead) {
         session.readMsgId = session.readMsgId || 0
+        session.unreadCount = session.unreadCount || 0
       }
       session.combo_id_type = session.sessionId + '_' + session.sessionType
       await WeilaDB.getInstance().putSession(session)
@@ -897,6 +903,7 @@ export default class WLSessionModule {
     sessionInfo.sessionType = sessionType
     sessionInfo.combo_id_type = sessionId + '_' + sessionType
     sessionInfo.readMsgId = lastMsgId ? lastMsgId : 0
+    sessionInfo.unreadCount = 0
     sessionInfo.latestUpdate = new Date().getTime() / 1000
     sessionInfo.lastMsgId = lastMsgId ? lastMsgId : 0
     sessionInfo.sessionName = ''

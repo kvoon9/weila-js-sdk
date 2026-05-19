@@ -97,6 +97,7 @@ interface WL_IDbSession {
   sessionAvatar: string
   readMsgId: number
   lastMsgId: number
+  unreadCount?: number
   latestUpdate: number
   status: WL_IDbSessionStatus
   extra?: any

@@ -1002,6 +1002,7 @@ class WeilaCore implements WL_CoreInterface {
       sessionType: s.sessionType,
       lastMsgId: s.lastMsgId,
       readMsgId: s.readMsgId,
+      unreadCount: s.unreadCount,
       latestUpdate: s.latestUpdate,
       lastMsgData: s.lastMsgData ? {
         combo_id: s.lastMsgData.combo_id,

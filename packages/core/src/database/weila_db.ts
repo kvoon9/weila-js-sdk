@@ -207,6 +207,7 @@ class WeilaDB extends Dexie {
           await WeilaDB.getInstance().putMsgData(msgDatas[0])
         }
       }
+      session.unreadCount = session.lastMsgId > session.readMsgId ? 1 : 0
 
       session = await this.fillSessionInfo(session)
       sessions.push(session)
