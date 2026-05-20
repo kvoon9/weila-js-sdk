@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import type { WL_IDbMsgData, WL_IDbUserInfo } from '@weilasdk/core'
 import { WL_IDbMsgDataStatus } from '@weilasdk/core'
 import { formatMsgTime } from '@/utils'
+import { useWeilaUiI18n } from '../../i18n'
 
 export interface WlVideoBubbleProps {
   /** 消息数据 */
@@ -17,11 +18,13 @@ const props = withDefaults(defineProps<WlVideoBubbleProps>(), {
   isSelf: false,
 })
 
+const { t } = useWeilaUiI18n()
+
 const emit = defineEmits<{
   (e: 'click', url: string): void
 }>()
 
-const formattedTime = computed(() => formatMsgTime(props.msg.created))
+const formattedTime = computed(() => formatMsgTime(props.msg.created, t))
 
 const statusIcon = computed(() => {
   if (!props.isSelf) return null
@@ -71,7 +74,7 @@ const statusIcon = computed(() => {
       >
         <div class="flex flex-col items-center gap-2 text-white">
           <span class="icon-[carbon--rotate] size-6 animate-spin [animation-direction:reverse]" />
-          <span class="text-xs">上传中...</span>
+          <span class="text-xs">{{ t('message.uploading') }}</span>
         </div>
       </div>
 

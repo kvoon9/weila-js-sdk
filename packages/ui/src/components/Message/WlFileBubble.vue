@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import type { WL_IDbMsgData, WL_IDbUserInfo } from '@weilasdk/core'
 import { WL_IDbMsgDataStatus } from '@weilasdk/core'
 import { formatMsgTime } from '@/utils'
+import { useWeilaUiI18n } from '../../i18n'
 
 export interface WlFileBubbleProps {
   /** 消息数据 */
@@ -17,6 +18,8 @@ const props = withDefaults(defineProps<WlFileBubbleProps>(), {
   isSelf: false,
 })
 
+const { t } = useWeilaUiI18n()
+
 const emit = defineEmits<{
   (e: 'click', url: string): void
 }>()
@@ -28,7 +31,7 @@ function formatFileSize(bytes?: number): string {
   return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
 }
 
-const formattedTime = computed(() => formatMsgTime(props.msg.created))
+const formattedTime = computed(() => formatMsgTime(props.msg.created, t))
 
 const statusIcon = computed(() => {
   if (!props.isSelf) return null
@@ -67,10 +70,10 @@ const statusIcon = computed(() => {
           class="text-sm font-medium truncate"
           :class="isSelf ? 'text-white' : 'text-neutral-900'"
         >
-          {{ msg.fileInfo.fileName || '文件' }}
+          {{ msg.fileInfo.fileName || t('message.file') }}
         </div>
         <div class="text-xs mt-0.5" :class="isSelf ? 'text-blue-200' : 'text-neutral-400'">
-          {{ msg.fileInfo?.fileUrl ? formatFileSize(msg.fileInfo.fileSize) : '上传中...' }}
+          {{ msg.fileInfo?.fileUrl ? formatFileSize(msg.fileInfo.fileSize) : t('message.uploading') }}
         </div>
       </div>
     </div>

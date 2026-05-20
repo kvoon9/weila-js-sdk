@@ -3,11 +3,15 @@
  *
  * Rules:
  * - Same day: "HH:mm"
- * - Yesterday: "昨天 HH:mm"
+ * - Yesterday: translated "Yesterday HH:mm"
  * - Within this year: "MM-DD HH:mm"
  * - Older: "YYYY-MM-DD HH:mm"
  */
-export function formatMsgTime(timestamp: number): string {
+import type { WeilaUiTranslate } from '../i18n'
+import { translateWeilaUi } from '../i18n'
+
+export function formatMsgTime(timestamp: number, translate?: WeilaUiTranslate): string {
+  const t = translate ?? translateWeilaUi
   const date = new Date(timestamp * 1000) // Unix timestamp to Date
   const now = new Date()
 
@@ -32,7 +36,7 @@ export function formatMsgTime(timestamp: number): string {
   const yesterday = new Date(now)
   yesterday.setDate(yesterday.getDate() - 1)
   if (year === yesterday.getFullYear() && month === yesterday.getMonth() && day === yesterday.getDate()) {
-    return `昨天 ${timeStr}`
+    return t('time.yesterday', { time: timeStr })
   }
 
   // Same year
@@ -47,31 +51,32 @@ export function formatMsgTime(timestamp: number): string {
 /**
  * Format relative time like "刚刚", "5分钟前", "1小时前"
  */
-export function formatTimeAgo(timestamp: number): string {
+export function formatTimeAgo(timestamp: number, translate?: WeilaUiTranslate): string {
+  const t = translate ?? translateWeilaUi
   const now = Date.now()
   const diff = Math.floor((now - timestamp * 1000) / 1000) // seconds
 
   if (diff < 60) {
-    return '刚刚'
+    return t('time.justNow')
   }
 
   const minutes = Math.floor(diff / 60)
   if (minutes < 60) {
-    return `${minutes}分钟前`
+    return t('time.minutesAgo', { minutes })
   }
 
   const hours = Math.floor(minutes / 60)
   if (hours < 24) {
-    return `${hours}小时前`
+    return t('time.hoursAgo', { hours })
   }
 
   const days = Math.floor(hours / 24)
   if (days < 7) {
-    return `${days}天前`
+    return t('time.daysAgo', { days })
   }
 
   // Fall back to absolute time
-  return formatMsgTime(timestamp)
+  return formatMsgTime(timestamp, t)
 }
 
 /**

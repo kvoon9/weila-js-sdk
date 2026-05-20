@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import type { WL_IDbSession } from '@weilasdk/core'
 import { WL_IDbMsgDataType } from '@weilasdk/core'
+import { useWeilaUiI18n } from '../../i18n'
 
 interface Props {
   session: WL_IDbSession
@@ -19,8 +20,10 @@ const emit = defineEmits<{
   delete: [session: WL_IDbSession]
 }>()
 
+const { t } = useWeilaUiI18n()
+
 const sessionName = computed(() => {
-  return props.session.sessionName || 'Unknown'
+  return props.session.sessionName || t('session.unknown')
 })
 
 const imageLoadFailed = ref(false)
@@ -48,7 +51,7 @@ const lastMessageTime = computed(() => {
   if (diffDays === 0) {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   } else if (diffDays === 1) {
-    return 'Yesterday'
+    return t('session.yesterday')
   } else if (diffDays < 7) {
     return date.toLocaleDateString([], { weekday: 'short' })
   } else {
@@ -63,17 +66,17 @@ const unreadCount = computed(() => {
 const sessionTypeLabel = computed(() => {
   switch (props.session.sessionType) {
     case 0x01:
-      return 'Personal'
+      return t('session.type.personal')
     case 0x02:
-      return 'Group'
+      return t('session.type.group')
     case 0x08:
-      return 'Service'
+      return t('session.type.service')
     case 0x11:
-      return 'Corp Personal'
+      return t('session.type.corpPersonal')
     case 0x12:
-      return 'Corp Group'
+      return t('session.type.corpGroup')
     case 0x13:
-      return 'Corp Temp Group'
+      return t('session.type.corpTempGroup')
     default:
       return ''
   }
@@ -87,17 +90,17 @@ const messagePreview = computed(() => {
     case WL_IDbMsgDataType.WL_DB_MSG_DATA_TEXT_TYPE:
       return msg.textData || ''
     case WL_IDbMsgDataType.WL_DB_MSG_DATA_IMAGE_TYPE:
-      return '[Image]'
+      return t('session.preview.image')
     case WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE:
-      return '[Voice Message]'
+      return t('session.preview.voice')
     case WL_IDbMsgDataType.WL_DB_MSG_DATA_VIDEO_TYPE:
-      return '[Video]'
+      return t('session.preview.video')
     case WL_IDbMsgDataType.WL_DB_MSG_DATA_FILE_TYPE:
-      return `[File] ${msg.fileInfo?.fileName || ''}`
+      return `${t('session.preview.file')} ${msg.fileInfo?.fileName || ''}`.trim()
     case WL_IDbMsgDataType.WL_DB_MSG_DATA_LOCATION_TYPE:
-      return '[Location]'
+      return t('session.preview.location')
     case WL_IDbMsgDataType.WL_DB_MSG_DATA_PTT_TYPE:
-      return '[PTT]'
+      return t('session.preview.ptt')
     default:
       return sessionTypeLabel.value
   }
@@ -165,7 +168,7 @@ function handleDelete() {
       type="button"
       class="delete-button flex-shrink-0 w-8 h-8 inline-flex items-center justify-center rounded text-neutral-400 hover:text-red-600 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 disabled:cursor-not-allowed disabled:opacity-60"
       :disabled="deleting"
-      :title="deleting ? 'Deleting' : 'Delete session'"
+      :title="deleting ? t('session.deleting') : t('session.deleteSession')"
       @click.stop="handleDelete"
     >
       <svg

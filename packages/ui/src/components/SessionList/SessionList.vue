@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import type { WL_IDbSession } from '@weilasdk/core'
 import { isGroupSessionType, isIndividualSessionType } from '@weilasdk/core'
 import SessionListItem from './SessionListItem.vue'
+import { useWeilaUiI18n } from '../../i18n'
 
 interface Props {
   sessions: WL_IDbSession[]
@@ -27,6 +28,8 @@ const emit = defineEmits<{
   delete: [session: WL_IDbSession]
   refresh: []
 }>()
+
+const { t } = useWeilaUiI18n()
 
 const filteredSessions = computed(() => {
   switch (props.filter) {
@@ -56,8 +59,8 @@ function handleRefresh() {
   <div class="session-list flex flex-col h-full">
     <!-- Header -->
     <div class="header flex items-center justify-between px-4 py-3 border-b border-neutral-100">
-      <h3 class="font-semibold text-neutral-900">Sessions</h3>
-      <button @click="handleRefresh" class="p-1.5 rounded hover:bg-neutral-100 transition-colors" title="Refresh">
+      <h3 class="font-semibold text-neutral-900">{{ t('session.title') }}</h3>
+      <button @click="handleRefresh" class="p-1.5 rounded hover:bg-neutral-100 transition-colors" :title="t('session.refresh')">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-neutral-400" fill="none" viewBox="0 0 24 24"
           stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -73,17 +76,17 @@ function handleRefresh() {
 
     <!-- Error State -->
     <div v-else-if="error" class="flex-1 flex flex-col items-center justify-center py-8 px-4">
-      <p class="text-red-500 mb-2">Failed to load sessions</p>
+      <p class="text-red-500 mb-2">{{ t('session.failedToLoad') }}</p>
       <p class="text-sm text-neutral-500">{{ error.message }}</p>
       <button @click="handleRefresh"
         class="mt-3 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
-        Retry
+        {{ t('session.retry') }}
       </button>
     </div>
 
     <!-- Empty State -->
     <div v-else-if="filteredSessions.length === 0" class="flex-1 flex items-center justify-center py-8">
-      <p class="text-neutral-500">No sessions found</p>
+      <p class="text-neutral-500">{{ t('session.empty') }}</p>
     </div>
 
     <!-- Session List -->

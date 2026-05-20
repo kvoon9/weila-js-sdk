@@ -26,6 +26,7 @@ import WlImagePreview from '../ImagePreview/WlImagePreview.vue'
 import WlVideoPreview from '../VideoPreview/WlVideoPreview.vue'
 import { useMessageHistory } from '../../composables/useMessageHistory'
 import { useSessions } from '../../composables/useSessions'
+import { useWeilaUiI18n } from '../../i18n'
 
 export interface WlChatPanelProps {
   core: WeilaCore | null
@@ -41,6 +42,8 @@ const props = withDefaults(defineProps<WlChatPanelProps>(), {
   selectedSessionType: undefined,
   messageListHeight: '400px',
 })
+
+const { t } = useWeilaUiI18n()
 
 const emit = defineEmits<{
   'update:selectedSessionId': [sessionId: string]
@@ -354,7 +357,7 @@ async function handlePttStop() {
         @delete="handleDeleteSession"
         @refresh="refreshSessions"
       />
-      <div v-else class="flex items-center justify-center h-full text-neutral-500">Loading SDK...</div>
+      <div v-else class="flex items-center justify-center h-full text-neutral-500">{{ t('chat.loadingSdk') }}</div>
     </div>
 
     <div class="flex-1 p-4 overflow-y-auto">
@@ -396,21 +399,21 @@ async function handlePttStop() {
                   class="w-full px-4 py-2 text-left hover:bg-neutral-50 flex items-center gap-2"
                   @click="triggerImagePicker(); hide()"
                 >
-                  <span class="icon-[carbon--image]"></span> Send Image
+                  <span class="icon-[carbon--image]"></span> {{ t('chat.sendImage') }}
                 </button>
                 <button
                   type="button"
                   class="w-full px-4 py-2 text-left hover:bg-neutral-50 flex items-center gap-2"
                   @click="triggerFilePicker(); hide()"
                 >
-                  <span class="icon-[carbon--document]"></span> Send File
+                  <span class="icon-[carbon--document]"></span> {{ t('chat.sendFile') }}
                 </button>
                 <button
                   type="button"
                   class="w-full px-4 py-2 text-left hover:bg-neutral-50 flex items-center gap-2"
                   @click="triggerVideoPicker(); hide()"
                 >
-                  <span class="icon-[carbon--video]"></span> Send Video
+                  <span class="icon-[carbon--video]"></span> {{ t('chat.sendVideo') }}
                 </button>
               </div>
             </template>
@@ -420,7 +423,7 @@ async function handlePttStop() {
           <input
             v-model="messageInput"
             type="text"
-            placeholder="Type a message..."
+            :placeholder="t('chat.inputPlaceholder')"
             class="flex-1 px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             @keyup.enter="sendMessage"
           />
@@ -429,7 +432,7 @@ async function handlePttStop() {
             class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none"
             @click="sendMessage"
           >
-            Send
+            {{ t('chat.send') }}
           </button>
           <WlPttButton
             :status="pttStatus"
@@ -444,7 +447,7 @@ async function handlePttStop() {
         </div>
       </div>
       <div v-else class="flex items-center justify-center h-full text-neutral-400">
-        <p>Select a session to start chatting</p>
+        <p>{{ t('chat.selectSession') }}</p>
       </div>
     </div>
 

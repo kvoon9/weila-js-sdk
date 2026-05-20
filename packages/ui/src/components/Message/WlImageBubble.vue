@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import type { WL_IDbMsgData, WL_IDbUserInfo } from '@weilasdk/core'
 import { WL_IDbMsgDataStatus } from '@weilasdk/core'
 import { formatMsgTime } from '@/utils'
+import { useWeilaUiI18n } from '../../i18n'
 
 export interface WlImageBubbleProps {
   /** 消息数据 */
@@ -17,11 +18,13 @@ const props = withDefaults(defineProps<WlImageBubbleProps>(), {
   isSelf: false,
 })
 
+const { t } = useWeilaUiI18n()
+
 const emit = defineEmits<{
   (e: 'click', url: string): void
 }>()
 
-const formattedTime = computed(() => formatMsgTime(props.msg.created))
+const formattedTime = computed(() => formatMsgTime(props.msg.created, t))
 
 const statusIcon = computed(() => {
   if (!props.isSelf) return null
@@ -42,7 +45,7 @@ const statusIcon = computed(() => {
       @click="emit('click', msg.fileInfo!.fileUrl)" />
     <div v-else class="w-[160px] h-[120px] flex flex-col items-center justify-center gap-2">
       <span class="icon-[carbon--image] size-8" :class="isSelf ? 'text-blue-100' : 'text-neutral-400'" />
-      <span class="text-xs" :class="isSelf ? 'text-blue-100' : 'text-neutral-500'">上传中...</span>
+      <span class="text-xs" :class="isSelf ? 'text-blue-100' : 'text-neutral-500'">{{ t('message.uploading') }}</span>
     </div>
     <div class="flex items-center justify-end gap-1 p-1.5">
       <span class="text-xs opacity-60" :class="isSelf ? 'text-white' : 'text-neutral-600'">{{ formattedTime }}</span>

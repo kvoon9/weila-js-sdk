@@ -44,6 +44,57 @@ import '@weilasdk/ui/dist/index.css'
 </template>
 ```
 
+## 多语言配置
+
+组件库默认使用 `zh-CN`，即使没有安装插件也能正常显示中文。宿主应用可以通过插件设置语言：
+
+```ts
+import { createApp } from 'vue'
+import { createWeilaUi } from '@weilasdk/ui'
+import App from './App.vue'
+
+createApp(App)
+  .use(createWeilaUi({ locale: 'en' }))
+  .mount('#app')
+```
+
+可以传入 `messages` 覆盖或补充内置文案。缺失 key 会 fallback 到 `zh-CN`，再 fallback 到 key 本身：
+
+```ts
+app.use(createWeilaUi({
+  locale: 'en',
+  messages: {
+    en: {
+      chat: {
+        send: 'Send now',
+      },
+    },
+  },
+}))
+```
+
+也可以在局部组件树内覆盖配置：
+
+```vue
+<script setup lang="ts">
+import { provideWeilaUiI18n } from '@weilasdk/ui'
+
+provideWeilaUiI18n({
+  locale: 'en',
+})
+</script>
+```
+
+组件内部和高级用法可以读取组合式 API：
+
+```ts
+import { useWeilaUiI18n } from '@weilasdk/ui'
+
+const { t, locale, setLocale } = useWeilaUiI18n()
+```
+
+当前内置 `zh-CN` 和 `en`。Emoji 消息 token（如 `[微笑]`）保持协议原值，不参与翻译。
+
 ## 目录结构
 
 ```

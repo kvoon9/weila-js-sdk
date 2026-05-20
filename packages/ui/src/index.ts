@@ -24,6 +24,14 @@ export { useSessions } from './composables/useSessions'
 export { useMessageHistory } from './composables/useMessageHistory'
 export { useSessionLastMessages } from './composables/useSessionLastMessages'
 export { framesToDuration } from './composables/useAudio'
+export {
+  createWeilaUi,
+  DEFAULT_WEILA_UI_LOCALE,
+  provideWeilaUiI18n,
+  translateWeilaUi,
+  useWeilaUiI18n,
+  weilaUiMessages,
+} from './i18n'
 
 // Utils
 export { isValidLocation } from './utils'
@@ -42,3 +50,10 @@ export type { WlImagePreviewProps } from './components/ImagePreview/WlImagePrevi
 export type { WlVideoPreviewProps } from './components/VideoPreview/WlVideoPreview.vue'
 export type { WlVideoBubbleProps } from './components/Message/WlVideoBubble.vue'
 export type { WlChatPanelProps } from './components/ChatPanel/WlChatPanel.vue'
+export type {
+  WeilaUiI18nContext,
+  WeilaUiI18nOptions,
+  WeilaUiLocale,
+  WeilaUiMessages,
+  WeilaUiTranslate,
+} from './i18n'

@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import type { WL_IDbMsgData, WL_IDbUserInfo } from '@weilasdk/core'
 import { WL_IDbMsgDataStatus } from '@weilasdk/core'
 import { formatMsgTime } from '@/utils'
+import { useWeilaUiI18n } from '../../i18n'
 
 export interface WlUnknownBubbleProps {
   /** 消息数据 */
@@ -17,7 +18,9 @@ const props = withDefaults(defineProps<WlUnknownBubbleProps>(), {
   isSelf: false,
 })
 
-const formattedTime = computed(() => formatMsgTime(props.msg.created))
+const { t } = useWeilaUiI18n()
+
+const formattedTime = computed(() => formatMsgTime(props.msg.created, t))
 
 const statusIcon = computed(() => {
   if (!props.isSelf) return null
@@ -36,7 +39,7 @@ const statusIcon = computed(() => {
     class="max-w-[70%] rounded-xl px-3 py-2 text-sm overflow-hidden break-all"
     :class="isSelf ? 'bg-blue-500 text-blue-200' : 'bg-white text-neutral-400'"
   >
-    <div>[不支持的消息类型]</div>
+    <div>{{ t('message.unsupported') }}</div>
     <div class="flex items-center justify-end gap-1 mt-1 -mb-1 -mr-1">
       <span class="text-xs opacity-60">{{ formattedTime }}</span>
       <span v-if="statusIcon === 'sending'" class="icon-[carbon--rotate] size-3 animate-spin [animation-direction:reverse] opacity-60" />

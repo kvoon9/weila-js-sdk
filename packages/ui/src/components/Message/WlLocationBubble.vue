@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import type { WL_IDbMsgData, WL_IDbUserInfo } from '@weilasdk/core'
 import { WL_IDbMsgDataStatus } from '@weilasdk/core'
 import { isValidLocation, formatMsgTime } from '../../utils'
+import { useWeilaUiI18n } from '../../i18n'
 
 export interface WlLocationBubbleProps {
   /** 消息数据 */
@@ -16,6 +17,8 @@ export interface WlLocationBubbleProps {
 const props = withDefaults(defineProps<WlLocationBubbleProps>(), {
   isSelf: false,
 })
+
+const { t } = useWeilaUiI18n()
 
 const emit = defineEmits<{
   (e: 'click', location: { latitude: number; longitude: number }): void
@@ -33,7 +36,7 @@ function handleClick() {
   }
 }
 
-const formattedTime = computed(() => formatMsgTime(props.msg.created))
+const formattedTime = computed(() => formatMsgTime(props.msg.created, t))
 
 const statusIcon = computed(() => {
   if (!props.isSelf) return null

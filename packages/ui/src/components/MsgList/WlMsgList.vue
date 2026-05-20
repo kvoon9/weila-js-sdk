@@ -9,9 +9,11 @@ import WlVideoBubble from '../Message/WlVideoBubble.vue'
 import WlLocationBubble from '../Message/WlLocationBubble.vue'
 import WlFileBubble from '../Message/WlFileBubble.vue'
 import WlUnknownBubble from '../Message/WlUnknownBubble.vue'
+import { useWeilaUiI18n } from '../../i18n'
 
 const showScrollButton = ref(false)
 const hasLoadedMessages = ref(false)
+const { t } = useWeilaUiI18n()
 
 export interface WlMsgListProps {
   /** 消息列表 */
@@ -133,7 +135,7 @@ watch(
     <!-- Load more banner -->
     <div v-if="hasMore || loading" class="flex justify-center py-2 cursor-pointer" @click="emit('load-more')">
       <span v-if="loading" class="icon-[carbon--rotate] size-5 text-neutral-400 animate-spin [animation-direction:reverse]" />
-      <span v-else class="text-sm text-blue-500 hover:text-blue-600">加载更多</span>
+      <span v-else class="text-sm text-blue-500 hover:text-blue-600">{{ t('message.loadMore') }}</span>
     </div>
 
     <div v-for="msg in messages" :key="msg.combo_id" class="flex items-start gap-2 py-1.5"

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
+import { useWeilaUiI18n } from '../i18n'
 
 export interface WlStatusIndicatorProps {
   /** 当前状态 */
@@ -12,14 +13,10 @@ const props = withDefaults(defineProps<WlStatusIndicatorProps>(), {
   label: '',
 })
 
+const { t } = useWeilaUiI18n()
+
 const statusText = computed(() => {
-  const map: Record<string, string> = {
-    idle: '未连接',
-    connecting: '连接中...',
-    connected: '已连接',
-    error: '连接错误',
-  }
-  return props.label || map[props.status] || props.status
+  return props.label || t(`status.${props.status}`)
 })
 
 const statusClass = computed(() => `wl-status--${props.status}`)

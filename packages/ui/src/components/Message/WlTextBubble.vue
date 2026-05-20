@@ -4,6 +4,7 @@ import type { WL_IDbMsgData, WL_IDbUserInfo } from '@weilasdk/core'
 import { WL_IDbMsgDataStatus } from '@weilasdk/core'
 import WLEmoji from '@/components/Emoji/WLEmoji.vue'
 import { parseTextWithEmoji, formatMsgTime } from '@/utils'
+import { useWeilaUiI18n } from '../../i18n'
 
 export interface WlTextBubbleProps {
   /** 消息数据 */
@@ -18,9 +19,11 @@ const props = withDefaults(defineProps<WlTextBubbleProps>(), {
   isSelf: false,
 })
 
+const { t } = useWeilaUiI18n()
+
 const parsedText = computed(() => parseTextWithEmoji(props.msg.textData || ''))
 
-const formattedTime = computed(() => formatMsgTime(props.msg.created))
+const formattedTime = computed(() => formatMsgTime(props.msg.created, t))
 
 const statusIcon = computed(() => {
   if (!props.isSelf) return null

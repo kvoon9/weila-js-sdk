@@ -4,6 +4,7 @@ import type { WL_IDbMsgData } from "@weilasdk/core";
 import { WL_IDbMsgDataStatus } from "@weilasdk/core";
 import { framesToDuration } from "../../composables/useAudio";
 import { formatMsgTime } from "@/utils";
+import { useWeilaUiI18n } from "../../i18n";
 
 export interface WlAudioBubbleProps {
   /** 消息数据 */
@@ -18,6 +19,8 @@ const props = withDefaults(defineProps<WlAudioBubbleProps>(), {
   isSelf: false,
   playing: false,
 });
+
+const { t } = useWeilaUiI18n();
 
 const emit = defineEmits<{
   (e: "play"): void;
@@ -46,7 +49,7 @@ const formattedDuration = computed(() => `${Math.floor(duration.value || 0)}"`);
 //   };
 // });
 
-const formattedTime = computed(() => formatMsgTime(props.msg.created));
+const formattedTime = computed(() => formatMsgTime(props.msg.created, t));
 
 const statusIcon = computed(() => {
   if (!props.isSelf) return null;
