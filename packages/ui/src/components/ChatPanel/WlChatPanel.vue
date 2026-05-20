@@ -7,12 +7,14 @@ import {
   toRaw,
   useTemplateRef,
   watch,
+  watchEffect,
 } from 'vue'
 import { Dropdown } from 'floating-vue'
 
 import type {
   WeilaCore,
   WL_ExtEventCallback,
+  WL_IDbLocationShared,
   WL_IDbMsgData,
   WL_IDbSession,
   WL_PttPlayInd,
@@ -49,6 +51,7 @@ const emit = defineEmits<{
   'update:selectedSessionId': [sessionId: string]
   'update:selectedSessionType': [sessionType: number | undefined]
   'delete-session': [session: WL_IDbSession]
+  'trigger-map-picker': []
 }>()
 
 const {
@@ -93,6 +96,10 @@ const {
   () => props.core,
   () => selectedSession.value ?? undefined,
 )
+
+watchEffect(() => {
+  console.log('messages.value', messages.value)
+})
 
 const handleAudioPlayEnd = (indData: { state: WL_PttAudioPlayState }) => {
   if (indData.state === WL_PttAudioPlayState.PTT_AUDIO_PLAYING_END) {
@@ -213,7 +220,25 @@ function handleDeleteSession(session: WL_IDbSession) {
 
 defineExpose({
   deleteSession,
+  sendLocation,
 })
+
+function normalizeLocation(location: WL_IDbLocationShared): WL_IDbLocationShared {
+  const mapUrl = location.mapUrl?.trim()
+  const hasImageMapUrl = !!mapUrl && (
+    /\.(?:apng|avif|gif|jpe?g|png|webp)(?:[?#].*)?$/i.test(mapUrl)
+    || /^https:\/\/restapi\.amap\.com\/v3\/staticmap(?:\?|$)/i.test(mapUrl)
+    || /^https:\/\/maps\.googleapis\.com\/maps\/api\/staticmap(?:\?|$)/i.test(mapUrl)
+  )
+
+  return {
+    ...location,
+    locationType: location.locationType || 'gcj02',
+    name: location.name || location.title || '',
+    address: location.address || '',
+    mapUrl: hasImageMapUrl ? mapUrl : '',
+  }
+}
 
 async function sendMessage() {
   if (!props.core || !selectedSession.value || !messageInput.value.trim()) return
@@ -233,6 +258,24 @@ async function sendMessage() {
   }
 }
 
+async function sendLocation(location: WL_IDbLocationShared): Promise<boolean> {
+  if (!props.core || !selectedSession.value) return false
+  const normalizedLocation = normalizeLocation(location)
+
+  try {
+    const result = await props.core.weila_sendPosition(
+      selectedSession.value.sessionId,
+      selectedSession.value.sessionType,
+      normalizedLocation,
+    )
+    nextTick(() => wlMsgListRef.value?.scrollToBottom())
+    return result
+  } catch (err) {
+    console.error('[WlChatPanel] Failed to send location:', err)
+    return false
+  }
+}
+
 function triggerImagePicker() {
   imageInputRef.value?.click()
 }
@@ -243,6 +286,11 @@ function triggerFilePicker() {
 
 function triggerVideoPicker() {
   videoInputRef.value?.click()
+}
+
+function triggerMapPicker() {
+  if (!selectedSession.value) return
+  emit('trigger-map-picker')
 }
 
 function handleEmojiSelect(emoji: string) {
@@ -345,18 +393,10 @@ async function handlePttStop() {
 <template>
   <div class="wl-chat-panel flex flex-1 h-full overflow-hidden">
     <div class="w-80 border-r border-neutral-200 overflow-hidden flex flex-col bg-white">
-      <SessionList
-        v-if="core"
-        :sessions="sessions"
-        :active-session-id="selectedSessionId"
-        :active-session-type="selectedSessionType"
-        :loading="sessionsLoading"
-        :error="sessionsError"
-        :deleting-session-key="deletingSessionKey"
-        @select="handleSelectSession"
-        @delete="handleDeleteSession"
-        @refresh="refreshSessions"
-      />
+      <SessionList v-if="core" :sessions="sessions" :active-session-id="selectedSessionId"
+        :active-session-type="selectedSessionType" :loading="sessionsLoading" :error="sessionsError"
+        :deleting-session-key="deletingSessionKey" @select="handleSelectSession" @delete="handleDeleteSession"
+        @refresh="refreshSessions" />
       <div v-else class="flex items-center justify-center h-full text-neutral-500">{{ t('chat.loadingSdk') }}</div>
     </div>
 
@@ -367,24 +407,11 @@ async function handlePttStop() {
         </h2>
 
         <div class="relative">
-          <WlMsgList
-            ref="wlMsgListRef"
-            :style="{ height: messageListHeight }"
-            class="bg-neutral-100"
-            :messages="messages"
-            :current-user-id="currentUserId"
-            :sender-infos="senderInfos"
-            :has-more="hasMore"
-            :loading="messagesLoading"
-            :playing-audio-id="playingAudioId"
-            @audio-play="handleAudioPlay"
-            @audio-pause="handleAudioPause"
-            @load-more="loadMore()"
-            @image-click="handleImageClick"
-            @file-click="openUrl"
-            @video-click="handleVideoClick"
-            @location-click="openLocation"
-          />
+          <WlMsgList ref="wlMsgListRef" :style="{ height: messageListHeight }" class="bg-neutral-100"
+            :messages="messages" :current-user-id="currentUserId" :sender-infos="senderInfos" :has-more="hasMore"
+            :loading="messagesLoading" :playing-audio-id="playingAudioId" @audio-play="handleAudioPlay"
+            @audio-pause="handleAudioPause" @load-more="loadMore()" @image-click="handleImageClick"
+            @file-click="openUrl" @video-click="handleVideoClick" @location-click="openLocation" />
         </div>
 
         <div class="mt-4 flex gap-2 items-center">
@@ -394,53 +421,36 @@ async function handlePttStop() {
             </button>
             <template #popper="{ hide }">
               <div class="py-1 min-w-36">
-                <button
-                  type="button"
-                  class="w-full px-4 py-2 text-left hover:bg-neutral-50 flex items-center gap-2"
-                  @click="triggerImagePicker(); hide()"
-                >
+                <button type="button" class="w-full px-4 py-2 text-left hover:bg-neutral-50 flex items-center gap-2"
+                  @click="triggerImagePicker(); hide()">
                   <span class="icon-[carbon--image]"></span> {{ t('chat.sendImage') }}
                 </button>
-                <button
-                  type="button"
-                  class="w-full px-4 py-2 text-left hover:bg-neutral-50 flex items-center gap-2"
-                  @click="triggerFilePicker(); hide()"
-                >
+                <button type="button" class="w-full px-4 py-2 text-left hover:bg-neutral-50 flex items-center gap-2"
+                  @click="triggerFilePicker(); hide()">
                   <span class="icon-[carbon--document]"></span> {{ t('chat.sendFile') }}
                 </button>
-                <button
-                  type="button"
-                  class="w-full px-4 py-2 text-left hover:bg-neutral-50 flex items-center gap-2"
-                  @click="triggerVideoPicker(); hide()"
-                >
+                <button type="button" class="w-full px-4 py-2 text-left hover:bg-neutral-50 flex items-center gap-2"
+                  @click="triggerVideoPicker(); hide()">
                   <span class="icon-[carbon--video]"></span> {{ t('chat.sendVideo') }}
+                </button>
+                <button type="button" class="w-full px-4 py-2 text-left hover:bg-neutral-50 flex items-center gap-2"
+                  @click="triggerMapPicker(); hide()">
+                  <span class="icon-[carbon--location]"></span> {{ t('chat.sendLocation') }}
                 </button>
               </div>
             </template>
           </Dropdown>
 
           <WLEmojiPicker @select="handleEmojiSelect" />
-          <input
-            v-model="messageInput"
-            type="text"
-            :placeholder="t('chat.inputPlaceholder')"
+          <input v-model="messageInput" type="text" :placeholder="t('chat.inputPlaceholder')"
             class="flex-1 px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            @keyup.enter="sendMessage"
-          />
-          <button
-            type="button"
-            class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none"
-            @click="sendMessage"
-          >
+            @keyup.enter="sendMessage" />
+          <button type="button" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none"
+            @click="sendMessage">
             {{ t('chat.send') }}
           </button>
-          <WlPttButton
-            :status="pttStatus"
-            size="md"
-            :disabled="!selectedSession"
-            @start="handlePttStart"
-            @stop="handlePttStop"
-          />
+          <WlPttButton :status="pttStatus" size="md" :disabled="!selectedSession" @start="handlePttStart"
+            @stop="handlePttStop" />
           <input ref="imageInput" type="file" accept="image/*" class="hidden" @change="handleImageSelected" />
           <input ref="fileInput" type="file" class="hidden" @change="handleFileSelected" />
           <input ref="videoInput" type="file" accept="video/*" class="hidden" @change="handleVideoSelected" />
