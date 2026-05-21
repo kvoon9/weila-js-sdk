@@ -11,6 +11,7 @@ import {
   WL_IDbServiceSessionInfo,
   WL_IDbSession,
   WL_IDbSessionStatus,
+  WL_SessionProfileUpdate,
   WL_IDbSetting,
   WL_IDbSettingID,
   applySessionExtraProfile,
@@ -137,6 +138,48 @@ export default class WLSessionModule {
   private async persistSessionUpdate(session: WL_IDbSession): Promise<void> {
     await WeilaDB.getInstance().putSession(session)
     this.coreInterface.sendExtEvent(WL_ExtEventID.WL_EXT_SESSION_UPDATED_IND, session)
+  }
+
+  public async updateSessionProfile(
+    sessionId: string,
+    sessionType: number,
+    profile: WL_SessionProfileUpdate,
+  ): Promise<WL_IDbSession | undefined> {
+    const session = await WeilaDB.getInstance().getSession(sessionId, sessionType)
+    if (!session) {
+      return undefined
+    }
+
+    let changed = false
+    const sessionName = profile.sessionName?.trim()
+    if (sessionName && session.sessionName !== sessionName) {
+      session.sessionName = sessionName
+      changed = true
+    }
+
+    if (profile.sessionAvatar && session.sessionAvatar !== profile.sessionAvatar) {
+      session.sessionAvatar = profile.sessionAvatar
+      changed = true
+    }
+
+    if (profile.extra !== undefined) {
+      session.extra = profile.extra
+      changed = true
+    }
+
+    if (!changed) {
+      return session
+    }
+
+    const index = this.findSessionIndex(sessionId, sessionType)
+    if (index !== -1) {
+      this.sessionList[index] = session
+      await this.persistSessionUpdate(this.sessionList[index])
+    } else {
+      await this.persistSessionUpdate(session)
+    }
+
+    return session
   }
 
   private applySessionMsgData(

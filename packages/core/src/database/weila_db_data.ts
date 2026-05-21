@@ -141,6 +141,16 @@ interface WL_IDbSessionSettingParams {
   loactionShared?: boolean
 }
 
+interface WL_SessionProfileUpdate {
+  sessionName?: string
+  sessionAvatar?: string
+  extra?: any
+}
+
+type WL_SessionProfileResolver = (
+  session: WL_IDbSession,
+) => Promise<WL_SessionProfileUpdate | null | undefined>
+
 interface WL_IDbSessionSetting {
   combo_id_type: string
   sessionId: string
@@ -470,6 +480,8 @@ export {
   WL_IDbSetting,
   WL_IDbSessionStatus,
   WL_IDbSession,
+  WL_SessionProfileUpdate,
+  WL_SessionProfileResolver,
   WL_IDbSessionType,
   isIndividualSessionType,
   isGroupSessionType,

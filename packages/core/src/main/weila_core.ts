@@ -38,6 +38,8 @@ import {
   WL_IDbSessionSetting,
   WL_IDbSessionSettingParams,
   WL_IDbSessionType,
+  WL_SessionProfileResolver,
+  WL_SessionProfileUpdate,
   WL_IDbSettingID,
   WL_IDbUserInfo,
   isServiceSessionType,
@@ -125,11 +127,14 @@ class WeilaCore implements WL_CoreInterface {
   emitter: TinyEmitter
   heartbeatTimerId: any
   refreshTokenTimerId: any
+  sessionProfileResolver?: WL_SessionProfileResolver
+  resolvingSessionProfileKeys: Set<string>
 
   constructor() {
     this.emitter = new TinyEmitter()
     this.waitingTimeoutChecking = false
     this.isLoginReady = false
+    this.resolvingSessionProfileKeys = new Set()
     this.mainFsm = mainFsm
       .withContext({
         loginParam: null,
@@ -996,6 +1001,9 @@ class WeilaCore implements WL_CoreInterface {
         }
       }
     }
+    sessions.forEach((session) => {
+      void this.resolveEmptySessionProfile(session)
+    })
     console.log(`[Weila:getSessionsFromDb] final sessions count=${sessions.length}`, sessions.map(s => ({
       sessionId: s.sessionId,
       sessionName: s.sessionName,
@@ -1013,6 +1021,54 @@ class WeilaCore implements WL_CoreInterface {
       } : null,
     })))
     return sessions
+  }
+
+  private async resolveEmptySessionProfile(session: WL_IDbSession): Promise<void> {
+    if (!this.sessionProfileResolver || session.sessionName?.trim()) return
+
+    const key = `${session.sessionId}_${session.sessionType}`
+    if (this.resolvingSessionProfileKeys.has(key)) return
+
+    this.resolvingSessionProfileKeys.add(key)
+    try {
+      const profile = await this.sessionProfileResolver(session)
+      const sessionName = profile?.sessionName?.trim()
+      if (!sessionName) return
+
+      await this.weila_updateSessionProfile(session.sessionId, session.sessionType, {
+        ...profile,
+        sessionName,
+      })
+    } catch (err) {
+      wlerr('补全会话资料失败:', err)
+    } finally {
+      this.resolvingSessionProfileKeys.delete(key)
+    }
+  }
+
+  /**
+   * 设置会话资料补全回调。业务层可在企业会话缺少名称/头像时提供资料来源。
+   * 传入 undefined 可取消补全。
+   */
+  public weila_setSessionProfileResolver(
+    resolver?: WL_SessionProfileResolver,
+  ): void {
+    this.sessionProfileResolver = resolver
+  }
+
+  /**
+   * 更新本地会话资料字段。用于业务层拿到更准确的会话名称/头像后回写 SDK 缓存。
+   * 不接受空白 sessionName，避免把空字符串固化到数据库。
+   * @param sessionId 会话id
+   * @param sessionType 会话类型
+   * @param profile 会话资料
+   */
+  public async weila_updateSessionProfile(
+    sessionId: string,
+    sessionType: number,
+    profile: WL_SessionProfileUpdate,
+  ): Promise<WL_IDbSession | undefined> {
+    return this.sessionModule.updateSessionProfile(sessionId, sessionType, profile)
   }
 
   /**
