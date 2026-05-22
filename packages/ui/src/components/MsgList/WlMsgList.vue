@@ -13,6 +13,7 @@ import { useWeilaUiI18n } from '../../i18n'
 
 const showScrollButton = ref(false)
 const hasLoadedMessages = ref(false)
+const failedAvatarUrls = ref(new Set<string>())
 const { t } = useWeilaUiI18n()
 
 export interface WlMsgListProps {
@@ -61,9 +62,27 @@ function getSender(msg: WL_IDbMsgData) {
   return props.senderInfos.get(msg.senderId)
 }
 
+function getSenderName(msg: WL_IDbMsgData) {
+  return getSender(msg)?.nick || String(msg.senderId)
+}
+
+function getSenderAvatarFallback(msg: WL_IDbMsgData) {
+  return getSenderName(msg).charAt(0).toUpperCase()
+}
+
+function getSenderAvatar(msg: WL_IDbMsgData) {
+  const avatar = getSender(msg)?.avatar || ''
+  return avatar && !failedAvatarUrls.value.has(avatar) ? avatar : ''
+}
+
+function handleAvatarError(url: string) {
+  if (!url) return
+  failedAvatarUrls.value = new Set(failedAvatarUrls.value).add(url)
+}
+
 function getSenderLabel(msg: WL_IDbMsgData) {
   const sender = getSender(msg)
-  const name = sender?.nick || String(msg.senderId)
+  const name = getSenderName(msg)
   const id = sender?.weilaNum || sender?.userId || msg.senderId
 
   return `${name}(${id})`
@@ -142,8 +161,11 @@ watch(
       :class="isSelf(msg) ? 'flex-row-reverse' : ''">
       <!-- Avatar -->
       <div class="shrink-0 size-9 rounded-lg overflow-hidden bg-neutral-300 flex items-center justify-center">
-        <img v-if="getSender(msg)?.avatar" :src="getSender(msg)!.avatar" class="size-full object-cover" alt="" />
-        <span v-else class="icon-[carbon--user-avatar-filled] size-6 text-neutral-500" />
+        <img v-if="getSenderAvatar(msg)" :src="getSenderAvatar(msg)" class="size-full object-cover" alt=""
+          @error="handleAvatarError(getSenderAvatar(msg))" />
+        <span v-else class="text-sm font-medium text-neutral-500">
+          {{ getSenderAvatarFallback(msg) }}
+        </span>
       </div>
 
       <div class="flex-1 min-w-0 flex flex-col gap-1" :class="isSelf(msg) ? 'items-end' : 'items-start'">

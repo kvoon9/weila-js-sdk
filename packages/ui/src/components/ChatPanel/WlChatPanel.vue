@@ -22,6 +22,8 @@ import {
   WL_IDbMsgDataType,
   WL_PttAudioPlaySource,
   WL_PttAudioPlayState,
+  isGroupSessionType,
+  isIndividualSessionType,
 } from '@weilasdk/core'
 import SessionList from '../SessionList/SessionList.vue'
 import WlMsgList from '../MsgList/WlMsgList.vue'
@@ -105,6 +107,60 @@ const realtimePttTitle = computed(() => {
     || selectedSession.value?.sessionName
     || realtimePttMessage.value?.sessionId
     || t('session.unknown')
+})
+
+const messageSenderInfos = computed(() => {
+  const merged = new Map(senderInfos.value)
+  const selected = selectedSession.value
+  const loginUser = props.core?.getLoginUserInfo?.()
+
+  if (loginUser?.userId && !merged.has(loginUser.userId)) {
+    merged.set(loginUser.userId, loginUser)
+  }
+
+  if (!selected) {
+    return merged
+  }
+
+  if (isIndividualSessionType(selected.sessionType)) {
+    const sessionUserId = Number(selected.sessionId)
+    if (!Number.isFinite(sessionUserId) || merged.has(sessionUserId)) {
+      return merged
+    }
+
+    merged.set(sessionUserId, {
+      userId: sessionUserId,
+      weilaNum: selected.sessionId,
+      sex: 0,
+      nick: selected.sessionName || selected.sessionId,
+      pinyinName: '',
+      avatar: selected.sessionAvatar || '',
+      status: 0,
+      userType: 0,
+      created: 0,
+    })
+  }
+
+  if (isGroupSessionType(selected.sessionType)) {
+    const senderIds = new Set(messages.value.map((msg) => msg.senderId))
+    senderIds.forEach((senderId) => {
+      if (merged.has(senderId)) return
+
+      merged.set(senderId, {
+        userId: senderId,
+        weilaNum: String(senderId),
+        sex: 0,
+        nick: selected.sessionName || String(senderId),
+        pinyinName: '',
+        avatar: selected.sessionAvatar || '',
+        status: 0,
+        userType: 0,
+        created: 0,
+      })
+    })
+  }
+
+  return merged
 })
 
 watch(selectedSession, () => {
@@ -471,7 +527,7 @@ async function handlePttStop() {
           </div>
 
           <WlMsgList ref="wlMsgListRef" :style="{ height: messageListHeight }" class="bg-neutral-100"
-            :messages="messages" :current-user-id="currentUserId" :sender-infos="senderInfos" :has-more="hasMore"
+            :messages="messages" :current-user-id="currentUserId" :sender-infos="messageSenderInfos" :has-more="hasMore"
             :loading="messagesLoading" :playing-audio-id="playingAudioId" @audio-play="handleAudioPlay"
             @audio-pause="handleAudioPause" @load-more="loadMore()" @image-click="handleImageClick"
             @file-click="openUrl" @video-click="handleVideoClick" @location-click="openLocation" />
