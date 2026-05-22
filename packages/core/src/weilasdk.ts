@@ -5,7 +5,7 @@ export { createWeilaAudioInitController } from './main/weila_audio_init_controll
 export type { WL_AudioInitializable, WL_AudioInitController, WL_AudioInitControllerOptions } from './main/weila_audio_init_controller'
 export { installWeilaAudioRuntimePatch } from './main/weila_audio_runtime'
 export type { WL_AudioRuntimePatchOptions } from './main/weila_audio_runtime'
-export { getErrorMsg } from './main/weila_utils'
+export { calculateAudioDuration, getErrorMsg } from './main/weila_utils'
 export { SetConfigDataParam, setConfigData, WL_ConfigID } from './main/weila_config'
 export { initLogger, getLogger, setLoggerEnabled, isLoggerEnabled } from './log/weila_log'
 export * from './weilasdk_data'

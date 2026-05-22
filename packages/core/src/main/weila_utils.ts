@@ -6,6 +6,7 @@ import { WL_IDbMsgData } from 'db/weila_db_data'
 
 const wllog = getLogger('UTIL:info')
 const wlerr = getLogger('UTIL:err')
+const OPUS_FRAME_DURATION_SEC = 0.02
 
 async function fetchWithTimeout(
   input: RequestInfo,
@@ -847,6 +848,11 @@ function calculateOpusDataFrame(opusData: Uint8Array): number {
   return frameCount
 }
 
+function calculateAudioDuration(frameCount: number): number {
+  if (!frameCount || frameCount <= 0) return 0
+  return Math.max(1, Math.round(frameCount * OPUS_FRAME_DURATION_SEC))
+}
+
 function getMsgDataIdByCombo(msgData: WL_IDbMsgData, seq: number): string {
   if (msgData) {
     return msgData.sessionId + '_' + msgData.sessionType + '_' + msgData.msgId + '_' + seq
@@ -868,6 +874,7 @@ export {
   decompositionAudioData,
   getOpusDataListFromPttData,
   calculateOpusDataFrame,
+  calculateAudioDuration,
   getWebsocketAddr,
   getMsgDataIdByCombo,
 }

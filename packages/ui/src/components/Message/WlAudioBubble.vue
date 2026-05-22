@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { WL_IDbMsgData } from "@weilasdk/core";
-import { WL_IDbMsgDataStatus } from "@weilasdk/core";
-import { framesToDuration } from "../../composables/useAudio";
+import { calculateAudioDuration, WL_IDbMsgDataStatus } from "@weilasdk/core";
 import { formatMsgTime } from "@/utils";
 import { useWeilaUiI18n } from "../../i18n";
 
@@ -28,7 +27,7 @@ const emit = defineEmits<{
 }>();
 
 const duration = computed(() =>
-  framesToDuration(props.msg.audioData?.frameCount ?? 0),
+  calculateAudioDuration(props.msg.audioData?.frameCount ?? 0),
 );
 
 const handleClick = () => {
@@ -39,7 +38,8 @@ const handleClick = () => {
   }
 };
 
-const formattedDuration = computed(() => `${Math.floor(duration.value || 0)}"`);
+const hasDuration = computed(() => duration.value > 0);
+const formattedDuration = computed(() => `${Math.floor(duration.value)}"`);
 
 // const bubbleStyle = computed(() => {
 //   const clampedDuration = Math.min(Math.max(duration.value, 1), 60);
@@ -133,7 +133,7 @@ const statusIcon = computed(() => {
       </div>
 
       <!-- Duration -->
-      <div class="shrink-0 font-medium pl-1">
+      <div v-if="hasDuration" class="shrink-0 font-medium pl-1">
         {{ formattedDuration }}
       </div>
     </div>

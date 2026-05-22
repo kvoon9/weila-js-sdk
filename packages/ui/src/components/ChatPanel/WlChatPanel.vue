@@ -200,8 +200,12 @@ onBeforeUnmount(() => {
 
 async function handleAudioPlay(msg: WL_IDbMsgData) {
   try {
+    const audioMsg = toRaw(msg)
     await props.core?.weila_stopSingle()
-    await props.core?.weila_playSingle(toRaw(msg))
+    await props.core?.weila_playSingle(audioMsg)
+    if (audioMsg.audioData) {
+      msg.audioData = { ...audioMsg.audioData }
+    }
     playingAudioId.value = msg.combo_id
   } catch (err) {
     console.error('[WlChatPanel] Failed to play audio:', err)

@@ -20,9 +20,9 @@ const meta: Meta<typeof WlAudioBubble> = {
 export default meta
 type Story = StoryObj<typeof WlAudioBubble>
 
-// Helper to create audio message with frameCount (frames = seconds * 8)
+// Helper to create audio message as core returns it.
 const createAudioMsg = (seconds: number, extra = {}) => ({
-  audioData: { frameCount: seconds * 8 },
+  audioData: { frameCount: seconds * 50 },
   created: Date.now() / 1000,
   ...extra,
 })
