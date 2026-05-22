@@ -18,6 +18,7 @@ export { default as WlImagePreview } from './components/ImagePreview/WlImagePrev
 export { default as WlVideoPreview } from './components/VideoPreview/WlVideoPreview.vue'
 export { default as WlVideoBubble } from './components/Message/WlVideoBubble.vue'
 export { default as WlChatPanel } from './components/ChatPanel/WlChatPanel.vue'
+export { default as WlChatComposer } from './components/ChatPanel/WlChatComposer.vue'
 
 // Composables
 export { useSessions } from './composables/useSessions'
@@ -50,6 +51,7 @@ export type { WlImagePreviewProps } from './components/ImagePreview/WlImagePrevi
 export type { WlVideoPreviewProps } from './components/VideoPreview/WlVideoPreview.vue'
 export type { WlVideoBubbleProps } from './components/Message/WlVideoBubble.vue'
 export type { WlChatPanelProps } from './components/ChatPanel/WlChatPanel.vue'
+export type { WlChatComposerProps } from './components/ChatPanel/WlChatComposer.vue'
 export type {
   WeilaUiI18nContext,
   WeilaUiI18nOptions,

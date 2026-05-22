@@ -44,7 +44,9 @@ function handleSelect(emoji: string) {
 <style scoped>
 .emoji-trigger {
   padding: 0.5rem;
+  border: 0;
   border-radius: 0.5rem;
+  background: transparent;
   transition: background-color 0.2s;
 }
 
@@ -54,15 +56,18 @@ function handleSelect(emoji: string) {
 
 .emoji-grid {
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
+  grid-template-columns: repeat(8, 36px);
   gap: 4px;
   padding: 8px;
-  max-width: 280px;
+  width: 344px;
+  box-sizing: border-box;
 }
 
 .emoji-item {
   padding: 0.25rem;
+  border: 0;
   border-radius: 0.25rem;
+  background: transparent;
   cursor: pointer;
   display: flex;
   align-items: center;

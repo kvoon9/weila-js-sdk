@@ -5,11 +5,9 @@ import {
   onBeforeUnmount,
   ref,
   toRaw,
-  useTemplateRef,
   watch,
   watchEffect,
 } from 'vue'
-import { Dropdown } from 'floating-vue'
 
 import type {
   WeilaCore,
@@ -22,10 +20,9 @@ import type {
 import { WL_ExtEventID, WL_PttAudioPlayState } from '@weilasdk/core'
 import SessionList from '../SessionList/SessionList.vue'
 import WlMsgList from '../MsgList/WlMsgList.vue'
-import WlPttButton from '../PttButton/WlPttButton.vue'
-import WLEmojiPicker from '../Emoji/WLEmojiPicker.vue'
 import WlImagePreview from '../ImagePreview/WlImagePreview.vue'
 import WlVideoPreview from '../VideoPreview/WlVideoPreview.vue'
+import WlChatComposer from './WlChatComposer.vue'
 import { useMessageHistory } from '../../composables/useMessageHistory'
 import { useSessions } from '../../composables/useSessions'
 import { useWeilaUiI18n } from '../../i18n'
@@ -64,9 +61,6 @@ const {
 const messageInput = ref('')
 const pttStatus = ref<'idle' | 'recording' | 'processing'>('idle')
 const playingAudioId = ref<string | null>(null)
-const imageInputRef = useTemplateRef<HTMLInputElement>('imageInput')
-const fileInputRef = useTemplateRef<HTMLInputElement>('fileInput')
-const videoInputRef = useTemplateRef<HTMLInputElement>('videoInput')
 const previewImage = ref<string | null>(null)
 const previewOpen = ref(false)
 const previewVideo = ref<string | null>(null)
@@ -276,18 +270,6 @@ async function sendLocation(location: WL_IDbLocationShared): Promise<boolean> {
   }
 }
 
-function triggerImagePicker() {
-  imageInputRef.value?.click()
-}
-
-function triggerFilePicker() {
-  fileInputRef.value?.click()
-}
-
-function triggerVideoPicker() {
-  videoInputRef.value?.click()
-}
-
 function triggerMapPicker() {
   if (!selectedSession.value) return
   emit('trigger-map-picker')
@@ -414,47 +396,10 @@ async function handlePttStop() {
             @file-click="openUrl" @video-click="handleVideoClick" @location-click="openLocation" />
         </div>
 
-        <div class="mt-4 flex gap-2 items-center">
-          <Dropdown class="media-dropdown" :distance="8" placement="top-start">
-            <button class="p-2 rounded-lg hover:bg-neutral-100" type="button">
-              <span class="icon-[carbon--add] text-xl"></span>
-            </button>
-            <template #popper="{ hide }">
-              <div class="py-1 min-w-36">
-                <button type="button" class="w-full px-4 py-2 text-left hover:bg-neutral-50 flex items-center gap-2"
-                  @click="triggerImagePicker(); hide()">
-                  <span class="icon-[carbon--image]"></span> {{ t('chat.sendImage') }}
-                </button>
-                <button type="button" class="w-full px-4 py-2 text-left hover:bg-neutral-50 flex items-center gap-2"
-                  @click="triggerFilePicker(); hide()">
-                  <span class="icon-[carbon--document]"></span> {{ t('chat.sendFile') }}
-                </button>
-                <button type="button" class="w-full px-4 py-2 text-left hover:bg-neutral-50 flex items-center gap-2"
-                  @click="triggerVideoPicker(); hide()">
-                  <span class="icon-[carbon--video]"></span> {{ t('chat.sendVideo') }}
-                </button>
-                <button type="button" class="w-full px-4 py-2 text-left hover:bg-neutral-50 flex items-center gap-2"
-                  @click="triggerMapPicker(); hide()">
-                  <span class="icon-[carbon--location]"></span> {{ t('chat.sendLocation') }}
-                </button>
-              </div>
-            </template>
-          </Dropdown>
-
-          <WLEmojiPicker @select="handleEmojiSelect" />
-          <input v-model="messageInput" type="text" :placeholder="t('chat.inputPlaceholder')"
-            class="flex-1 px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            @keyup.enter="sendMessage" />
-          <button type="button" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none"
-            @click="sendMessage">
-            {{ t('chat.send') }}
-          </button>
-          <WlPttButton :status="pttStatus" size="md" :disabled="!selectedSession" @start="handlePttStart"
-            @stop="handlePttStop" />
-          <input ref="imageInput" type="file" accept="image/*" class="hidden" @change="handleImageSelected" />
-          <input ref="fileInput" type="file" class="hidden" @change="handleFileSelected" />
-          <input ref="videoInput" type="file" accept="video/*" class="hidden" @change="handleVideoSelected" />
-        </div>
+        <WlChatComposer v-model="messageInput" :ptt-status="pttStatus" :disabled="!selectedSession"
+          @send="sendMessage" @emoji-select="handleEmojiSelect" @image-selected="handleImageSelected"
+          @file-selected="handleFileSelected" @video-selected="handleVideoSelected"
+          @trigger-map-picker="triggerMapPicker" @ptt-start="handlePttStart" @ptt-stop="handlePttStop" />
       </div>
       <div v-else class="flex items-center justify-center h-full text-neutral-400">
         <p>{{ t('chat.selectSession') }}</p>
@@ -465,10 +410,3 @@ async function handlePttStop() {
     <WlVideoPreview v-if="previewVideo" v-model:open="previewVideoOpen" :src="previewVideo" />
   </div>
 </template>
-
-<style>
-.media-dropdown .v-popper__arrow-inner,
-.media-dropdown .v-popper__arrow-outer {
-  display: none;
-}
-</style>
