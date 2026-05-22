@@ -10,12 +10,17 @@ import { WL_ExtEventID } from '@weilasdk/core'
 
 const PAGE_SIZE = 20
 
+interface UseMessageHistoryOptions {
+  shouldAppendMessage?: (message: WL_IDbMsgData) => boolean
+}
+
 /**
  * Message history composable for the active session.
  */
 export function useMessageHistory(
   getCore: () => WeilaCore | null,
   getSession: () => WL_IDbSession | undefined,
+  options: UseMessageHistoryOptions = {},
 ) {
   const messages = shallowRef<WL_IDbMsgData[]>([])
   const senderInfos = shallowRef<Map<number, WL_IDbUserInfo>>(new Map())
@@ -123,7 +128,10 @@ export function useMessageHistory(
       return
     }
 
-    void appendRealtimeMessage(eventData as WL_IDbMsgData)
+    const msg = eventData as WL_IDbMsgData
+    if (options.shouldAppendMessage?.(msg) === false) return
+
+    void appendRealtimeMessage(msg)
   }
 
   watch(

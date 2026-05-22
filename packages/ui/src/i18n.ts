@@ -66,6 +66,8 @@ export const weilaUiMessages = {
     },
     chat: {
       loadingSdk: '正在加载 SDK...',
+      realtimePttPlaying: '正在播放实时语音',
+      realtimePttFinishing: '正在同步语音消息',
       sendImage: '发送图片',
       sendFile: '发送文件',
       sendVideo: '发送视频',
@@ -124,6 +126,8 @@ export const weilaUiMessages = {
     },
     chat: {
       loadingSdk: 'Loading SDK...',
+      realtimePttPlaying: 'Playing live voice',
+      realtimePttFinishing: 'Syncing voice message',
       sendImage: 'Send Image',
       sendFile: 'Send File',
       sendVideo: 'Send Video',

@@ -17,7 +17,12 @@ import type {
   WL_IDbSession,
   WL_PttPlayInd,
 } from '@weilasdk/core'
-import { WL_ExtEventID, WL_PttAudioPlayState } from '@weilasdk/core'
+import {
+  WL_ExtEventID,
+  WL_IDbMsgDataType,
+  WL_PttAudioPlaySource,
+  WL_PttAudioPlayState,
+} from '@weilasdk/core'
 import SessionList from '../SessionList/SessionList.vue'
 import WlMsgList from '../MsgList/WlMsgList.vue'
 import WlImagePreview from '../ImagePreview/WlImagePreview.vue'
@@ -51,22 +56,36 @@ const emit = defineEmits<{
   'trigger-map-picker': []
 }>()
 
-const {
-  sessions,
-  loading: sessionsLoading,
-  error: sessionsError,
-  refresh: refreshSessions,
-} = useSessions(() => props.core)
-
 const messageInput = ref('')
 const pttStatus = ref<'idle' | 'recording' | 'processing'>('idle')
 const playingAudioId = ref<string | null>(null)
+const realtimePttMessage = ref<WL_IDbMsgData | null>(null)
+const realtimePttPlaying = ref(false)
 const previewImage = ref<string | null>(null)
 const previewOpen = ref(false)
 const previewVideo = ref<string | null>(null)
 const previewVideoOpen = ref(false)
 const wlMsgListRef = ref<InstanceType<typeof WlMsgList>>()
 const deletingSessionKey = ref('')
+const realtimePttMessageIds = new Set<string>()
+
+function isRealtimePttMessage(msg: WL_IDbMsgData | undefined) {
+  return Boolean(
+    msg && (
+      msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_PTT_TYPE
+      || (msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE && msg.pttData)
+      || realtimePttMessageIds.has(msg.combo_id)
+    ),
+  )
+}
+
+const {
+  sessions,
+  loading: sessionsLoading,
+  error: sessionsError,
+  refresh: refreshSessions,
+  refreshSilently: refreshSessionsSilently,
+} = useSessions(() => props.core)
 
 const selectedSession = computed(() => {
   if (!props.selectedSessionId) return null
@@ -74,6 +93,18 @@ const selectedSession = computed(() => {
     if (s.sessionId !== props.selectedSessionId) return false
     return props.selectedSessionType === undefined || s.sessionType === props.selectedSessionType
   }) ?? null
+})
+
+const realtimePttTitle = computed(() => {
+  const msg = realtimePttMessage.value
+  const realtimeSession = msg
+    ? sessions.value.find((s) => s.sessionId === msg.sessionId && s.sessionType === msg.sessionType)
+    : null
+
+  return realtimeSession?.sessionName
+    || selectedSession.value?.sessionName
+    || realtimePttMessage.value?.sessionId
+    || t('session.unknown')
 })
 
 watch(selectedSession, () => {
@@ -89,15 +120,44 @@ const {
 } = useMessageHistory(
   () => props.core,
   () => selectedSession.value ?? undefined,
+  {
+    shouldAppendMessage: (msg) => !isRealtimePttMessage(msg),
+  },
 )
 
 watchEffect(() => {
   console.log('messages.value', messages.value)
 })
 
-const handleAudioPlayEnd = (indData: { state: WL_PttAudioPlayState }) => {
+async function finishRealtimePttPlayback() {
+  const completedMessageId = realtimePttMessage.value?.combo_id
+  realtimePttPlaying.value = false
+
+  if (realtimePttMessage.value) {
+    await loadMore(0)
+    await refreshSessionsSilently()
+  }
+
+  if (completedMessageId) {
+    realtimePttMessageIds.delete(completedMessageId)
+  }
+  if (!completedMessageId || realtimePttMessage.value?.combo_id === completedMessageId) {
+    realtimePttMessage.value = null
+  }
+}
+
+const handleAudioPlayInd = (event: WL_PttPlayInd) => {
+  const { indData, msgData } = event
+
+  if (indData.source === WL_PttAudioPlaySource.PTT_AUDIO_SRC_STREAM && msgData) {
+    realtimePttMessage.value = msgData
+    realtimePttMessageIds.add(msgData.combo_id)
+    realtimePttPlaying.value = indData.state !== WL_PttAudioPlayState.PTT_AUDIO_PLAYING_END
+  }
+
   if (indData.state === WL_PttAudioPlayState.PTT_AUDIO_PLAYING_END) {
     playingAudioId.value = null
+    void finishRealtimePttPlayback()
   }
 }
 
@@ -107,7 +167,7 @@ watch(
     if (!core) return
     const handlePttPlayEvent: WL_ExtEventCallback = (eventId, eventData) => {
       if (eventId === WL_ExtEventID.WL_EXT_PTT_PLAY_IND) {
-        handleAudioPlayEnd((eventData as WL_PttPlayInd).indData)
+        handleAudioPlayInd(eventData as WL_PttPlayInd)
       }
     }
 
@@ -389,6 +449,23 @@ async function handlePttStop() {
         </h2>
 
         <div class="relative">
+          <div v-if="realtimePttMessage"
+            class="absolute left-3 right-3 top-3 z-10 flex items-center gap-3 rounded-lg border border-blue-100 bg-blue-50/95 px-3 py-2 text-blue-700 shadow-sm backdrop-blur">
+            <span class="icon-[carbon--volume-up-filled] size-5 shrink-0" />
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-sm font-medium">{{ realtimePttTitle }}</p>
+              <p class="text-xs text-blue-600">
+                {{ realtimePttPlaying ? t('chat.realtimePttPlaying') : t('chat.realtimePttFinishing') }}
+              </p>
+            </div>
+            <div class="flex h-6 items-center gap-1">
+              <span v-for="index in 5" :key="index"
+                class="wl-realtime-ptt-bar h-2.5 w-1 rounded-full bg-blue-500"
+                :class="{ 'wl-realtime-ptt-bar-paused': !realtimePttPlaying }"
+                :style="{ animationDelay: `${index * 90}ms` }" />
+            </div>
+          </div>
+
           <WlMsgList ref="wlMsgListRef" :style="{ height: messageListHeight }" class="bg-neutral-100"
             :messages="messages" :current-user-id="currentUserId" :sender-infos="senderInfos" :has-more="hasMore"
             :loading="messagesLoading" :playing-audio-id="playingAudioId" @audio-play="handleAudioPlay"
@@ -410,3 +487,25 @@ async function handlePttStop() {
     <WlVideoPreview v-if="previewVideo" v-model:open="previewVideoOpen" :src="previewVideo" />
   </div>
 </template>
+
+<style scoped>
+.wl-realtime-ptt-bar {
+  animation: wl-realtime-ptt-wave 0.9s ease-in-out infinite;
+}
+
+.wl-realtime-ptt-bar-paused {
+  animation-play-state: paused;
+  opacity: 0.45;
+}
+
+@keyframes wl-realtime-ptt-wave {
+  0%,
+  100% {
+    transform: scaleY(0.45);
+  }
+
+  50% {
+    transform: scaleY(1.8);
+  }
+}
+</style>
