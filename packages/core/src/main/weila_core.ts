@@ -38,10 +38,15 @@ import {
   WL_IDbSessionSetting,
   WL_IDbSessionSettingParams,
   WL_IDbSessionType,
+  WL_GroupProfileResolver,
+  WL_Profile,
+  WL_ProfileResolver,
   WL_SessionProfileResolver,
   WL_SessionProfileUpdate,
   WL_IDbSettingID,
   WL_IDbUserInfo,
+  isGroupSessionType,
+  isIndividualSessionType,
   isServiceSessionType,
 } from 'db/weila_db_data'
 import { getLogger } from 'log/weila_log'
@@ -127,6 +132,8 @@ class WeilaCore implements WL_CoreInterface {
   emitter: TinyEmitter
   heartbeatTimerId: any
   refreshTokenTimerId: any
+  profileResolver?: WL_ProfileResolver
+  groupProfileResolver?: WL_GroupProfileResolver
   sessionProfileResolver?: WL_SessionProfileResolver
   resolvingSessionProfileKeys: Set<string>
 
@@ -824,7 +831,39 @@ class WeilaCore implements WL_CoreInterface {
    * 可能返回undefined，因为可能不存在
    */
   public async weila_getGroup(groupId: string): Promise<WL_IDbGroup | undefined> {
-    return WeilaDB.getInstance().getGroup(groupId)
+    let group = await WeilaDB.getInstance().getGroup(groupId)
+    if ((group?.name && group.avatar) || !this.groupProfileResolver) {
+      return group
+    }
+
+    const profile = await this.resolveGroupProfile(groupId)
+    if (!profile?.name && !profile?.avatar) {
+      return group
+    }
+
+    group = {
+      ...group,
+      groupId,
+      groupNum: group?.groupNum || groupId,
+      groupType: group?.groupType ?? WL_IDbSessionType.SESSION_GROUP_TYPE,
+      groupClass: group?.groupClass ?? 0,
+      name: profile.name || group?.name || groupId,
+      pinyinName: group?.pinyinName || '',
+      avatar: profile.avatar || group?.avatar || '',
+      memberCount: group?.memberCount ?? 0,
+      memberLimit: group?.memberLimit ?? 0,
+      memberVersion: group?.memberVersion ?? 0,
+      version: group?.version ?? 0,
+      ownerId: group?.ownerId ?? 0,
+      speechEnable: group?.speechEnable ?? false,
+      audioQuality: group?.audioQuality ?? 0,
+      authType: group?.authType ?? 0,
+      publicType: group?.publicType ?? 0,
+      burstType: group?.burstType ?? 0,
+      created: group?.created ?? 0,
+    } as WL_IDbGroup
+    await WeilaDB.getInstance().putGroup(group)
+    return group
   }
 
   /**
@@ -926,7 +965,30 @@ class WeilaCore implements WL_CoreInterface {
    * @param userId 用户id
    */
   public async weila_getUserInfo(userId: number): Promise<WL_IDbUserInfo | undefined> {
-    return WeilaDB.getInstance().getUser(userId)
+    let userInfo = await WeilaDB.getInstance().getUser(userId)
+    if ((userInfo?.nick && userInfo.avatar) || !this.profileResolver) {
+      return userInfo
+    }
+
+    const profile = await this.resolveProfile(userId)
+    if (!profile?.name && !profile?.avatar) {
+      return userInfo
+    }
+
+    userInfo = {
+      ...userInfo,
+      userId,
+      weilaNum: userInfo?.weilaNum || String(userId),
+      sex: userInfo?.sex ?? 0,
+      nick: profile.name || userInfo?.nick || String(userId),
+      pinyinName: userInfo?.pinyinName || '',
+      avatar: profile.avatar || userInfo?.avatar || '',
+      status: userInfo?.status ?? 0,
+      userType: userInfo?.userType ?? 0,
+      created: userInfo?.created ?? 0,
+    } as WL_IDbUserInfo
+    await WeilaDB.getInstance().putUserInfo(userInfo)
+    return userInfo
   }
 
   /**
@@ -1024,14 +1086,34 @@ class WeilaCore implements WL_CoreInterface {
   }
 
   private async resolveEmptySessionProfile(session: WL_IDbSession): Promise<void> {
-    if (!this.sessionProfileResolver || session.sessionName?.trim()) return
+    if (session.sessionName?.trim()) return
 
     const key = `${session.sessionId}_${session.sessionType}`
     if (this.resolvingSessionProfileKeys.has(key)) return
 
     this.resolvingSessionProfileKeys.add(key)
     try {
-      const profile = await this.sessionProfileResolver(session)
+      let profile: WL_SessionProfileUpdate | null | undefined
+      if (isIndividualSessionType(session.sessionType)) {
+        const userProfile = await this.resolveProfile(Number(session.sessionId))
+        profile = userProfile
+          ? {
+              sessionName: userProfile.name,
+              sessionAvatar: userProfile.avatar,
+            }
+          : null
+      } else if (isGroupSessionType(session.sessionType)) {
+        const groupProfile = await this.resolveGroupProfile(session.sessionId)
+        profile = groupProfile
+          ? {
+              sessionName: groupProfile.name,
+              sessionAvatar: groupProfile.avatar,
+            }
+          : null
+      } else if (this.sessionProfileResolver) {
+        profile = await this.sessionProfileResolver(session)
+      }
+
       const sessionName = profile?.sessionName?.trim()
       if (!sessionName) return
 
@@ -1044,6 +1126,34 @@ class WeilaCore implements WL_CoreInterface {
     } finally {
       this.resolvingSessionProfileKeys.delete(key)
     }
+  }
+
+  private async resolveProfile(userId: number): Promise<WL_Profile | null | undefined> {
+    if (!this.profileResolver || !Number.isFinite(userId)) return null
+    try {
+      return await this.profileResolver(userId)
+    } catch (err) {
+      wlerr('补全用户资料失败:', err)
+      return null
+    }
+  }
+
+  private async resolveGroupProfile(groupId: string): Promise<WL_Profile | null | undefined> {
+    if (!this.groupProfileResolver) return null
+    try {
+      return await this.groupProfileResolver(groupId)
+    } catch (err) {
+      wlerr('补全群资料失败:', err)
+      return null
+    }
+  }
+
+  public weila_setProfileResolver(resolver?: WL_ProfileResolver): void {
+    this.profileResolver = resolver
+  }
+
+  public weila_setGroupProfileResolver(resolver?: WL_GroupProfileResolver): void {
+    this.groupProfileResolver = resolver
   }
 
   /**

@@ -147,6 +147,19 @@ interface WL_SessionProfileUpdate {
   extra?: any
 }
 
+interface WL_Profile {
+  name?: string
+  avatar?: string
+}
+
+type WL_ProfileResolver = (
+  userId: number,
+) => Promise<WL_Profile | null | undefined>
+
+type WL_GroupProfileResolver = (
+  groupId: string,
+) => Promise<WL_Profile | null | undefined>
+
 type WL_SessionProfileResolver = (
   session: WL_IDbSession,
 ) => Promise<WL_SessionProfileUpdate | null | undefined>
@@ -480,6 +493,9 @@ export {
   WL_IDbSetting,
   WL_IDbSessionStatus,
   WL_IDbSession,
+  WL_Profile,
+  WL_ProfileResolver,
+  WL_GroupProfileResolver,
   WL_SessionProfileUpdate,
   WL_SessionProfileResolver,
   WL_IDbSessionType,

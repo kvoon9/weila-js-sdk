@@ -22,7 +22,6 @@ import {
   WL_IDbMsgDataType,
   WL_PttAudioPlaySource,
   WL_PttAudioPlayState,
-  isGroupSessionType,
   isIndividualSessionType,
 } from '@weilasdk/core'
 import SessionList from '../SessionList/SessionList.vue'
@@ -138,25 +137,6 @@ const messageSenderInfos = computed(() => {
       status: 0,
       userType: 0,
       created: 0,
-    })
-  }
-
-  if (isGroupSessionType(selected.sessionType)) {
-    const senderIds = new Set(messages.value.map((msg) => msg.senderId))
-    senderIds.forEach((senderId) => {
-      if (merged.has(senderId)) return
-
-      merged.set(senderId, {
-        userId: senderId,
-        weilaNum: String(senderId),
-        sex: 0,
-        nick: selected.sessionName || String(senderId),
-        pinyinName: '',
-        avatar: selected.sessionAvatar || '',
-        status: 0,
-        userType: 0,
-        created: 0,
-      })
     })
   }
 

@@ -6,7 +6,7 @@ import type {
   WL_IDbSession,
   WL_IDbUserInfo,
 } from '@weilasdk/core'
-import { WL_ExtEventID } from '@weilasdk/core'
+import { WL_ExtEventID, isGroupSessionType } from '@weilasdk/core'
 
 const PAGE_SIZE = 20
 
@@ -40,7 +40,13 @@ export function useMessageHistory(
     const core = getCore()
     if (senderInfos.value.has(senderId) || !core) return
 
-    const info = await core.weila_getUserInfo(senderId)
+    let info = await core.weila_getUserInfo(senderId)
+    const session = getSession()
+    if (!info && session && isGroupSessionType(session.sessionType)) {
+      const groupMembers = await core.weila_getGroupMembers(session.sessionId)
+      info = groupMembers.find((member) => member.memberInfo.userId === senderId)?.userInfo
+    }
+
     if (!info) return
 
     const updated = new Map(senderInfos.value)
