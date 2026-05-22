@@ -9,11 +9,11 @@ import WlVideoBubble from '../Message/WlVideoBubble.vue'
 import WlLocationBubble from '../Message/WlLocationBubble.vue'
 import WlFileBubble from '../Message/WlFileBubble.vue'
 import WlUnknownBubble from '../Message/WlUnknownBubble.vue'
+import WlAvatar from '../Avatar/WlAvatar.vue'
 import { useWeilaUiI18n } from '../../i18n'
 
 const showScrollButton = ref(false)
 const hasLoadedMessages = ref(false)
-const failedAvatarUrls = ref(new Set<string>())
 const { t } = useWeilaUiI18n()
 
 export interface WlMsgListProps {
@@ -66,18 +66,8 @@ function getSenderName(msg: WL_IDbMsgData) {
   return getSender(msg)?.nick || String(msg.senderId)
 }
 
-function getSenderAvatarFallback(msg: WL_IDbMsgData) {
-  return getSenderName(msg).charAt(0).toUpperCase()
-}
-
 function getSenderAvatar(msg: WL_IDbMsgData) {
-  const avatar = getSender(msg)?.avatar || ''
-  return avatar && !failedAvatarUrls.value.has(avatar) ? avatar : ''
-}
-
-function handleAvatarError(url: string) {
-  if (!url) return
-  failedAvatarUrls.value = new Set(failedAvatarUrls.value).add(url)
+  return getSender(msg)?.avatar || ''
 }
 
 function getSenderLabel(msg: WL_IDbMsgData) {
@@ -159,14 +149,7 @@ watch(
 
     <div v-for="msg in messages" :key="msg.combo_id" class="flex items-start gap-2 py-1.5"
       :class="isSelf(msg) ? 'flex-row-reverse' : ''">
-      <!-- Avatar -->
-      <div class="shrink-0 size-9 rounded-lg overflow-hidden bg-neutral-300 flex items-center justify-center">
-        <img v-if="getSenderAvatar(msg)" :src="getSenderAvatar(msg)" class="size-full object-cover" alt=""
-          @error="handleAvatarError(getSenderAvatar(msg))" />
-        <span v-else class="text-sm font-medium text-neutral-500">
-          {{ getSenderAvatarFallback(msg) }}
-        </span>
-      </div>
+      <WlAvatar :src="getSenderAvatar(msg)" :name="getSenderName(msg)" />
 
       <div class="flex-1 min-w-0 flex flex-col gap-1" :class="isSelf(msg) ? 'items-end' : 'items-start'">
         <div class="max-w-full truncate text-xs text-neutral-500 px-1">

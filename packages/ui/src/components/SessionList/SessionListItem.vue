@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed } from 'vue'
 import type { WL_IDbSession } from '@weilasdk/core'
 import { WL_IDbMsgDataType } from '@weilasdk/core'
+import WlAvatar from '../Avatar/WlAvatar.vue'
 import { useWeilaUiI18n } from '../../i18n'
 
 interface Props {
@@ -25,19 +26,6 @@ const { t } = useWeilaUiI18n()
 const sessionName = computed(() => {
   return props.session.sessionName || t('session.unknown')
 })
-
-const imageLoadFailed = ref(false)
-
-const sessionAvatar = computed(() => {
-  return imageLoadFailed.value ? '' : props.session.sessionAvatar
-})
-
-watch(
-  () => props.session.sessionAvatar,
-  () => {
-    imageLoadFailed.value = false
-  },
-)
 
 const lastMessageTime = computed(() => {
   const time = props.session.latestUpdate
@@ -124,21 +112,14 @@ function handleDelete() {
     ]"
     @click="handleClick"
   >
-    <!-- Avatar -->
-    <div
-      class="avatar flex-shrink-0 w-12 h-12 rounded-full bg-neutral-200 flex items-center justify-center overflow-hidden"
-    >
-      <img
-        v-if="sessionAvatar"
-        :src="sessionAvatar"
-        :alt="sessionName"
-        class="w-full h-full object-cover"
-        @error="imageLoadFailed = true"
-      />
-      <span v-else class="text-lg font-medium text-neutral-400">
-        {{ sessionName.charAt(0).toUpperCase() }}
-      </span>
-    </div>
+    <WlAvatar
+      :src="session.sessionAvatar"
+      :name="sessionName"
+      size-class="w-12 h-12"
+      rounded-class="rounded-full"
+      bg-class="bg-neutral-200"
+      fallback-class="text-lg font-medium text-neutral-400"
+    />
 
     <!-- Content -->
     <div class="flex-1 min-w-0">
