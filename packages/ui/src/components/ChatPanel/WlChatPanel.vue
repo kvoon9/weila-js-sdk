@@ -269,7 +269,7 @@ function handleVideoClick(url: string) {
 
 function openLocation(location: { latitude: number; longitude: number }) {
   window.open(
-    `https://maps.google.com/?q=${location.latitude},${location.longitude}`,
+    `https://uri.amap.com/marker?position=${location.longitude},${location.latitude}`,
     '_blank',
     'noopener,noreferrer',
   )
