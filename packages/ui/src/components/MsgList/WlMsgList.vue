@@ -52,7 +52,7 @@ const emit = defineEmits<{
   /** 视频点击 */
   'video-click': [url: string]
   /** 位置点击 */
-  'location-click': [location: { latitude: number; longitude: number }]
+  'location-click': [location: { latitude: number; longitude: number; name: string; address: string }]
 }>()
 
 /** 列表容器 ref */
@@ -109,7 +109,7 @@ function handleVideoClick(url: string) {
   emit('video-click', url)
 }
 
-function handleLocationClick(location: { latitude: number; longitude: number }) {
+function handleLocationClick(location: { latitude: number; longitude: number; name: string; address: string }) {
   emit('location-click', location)
 }
 

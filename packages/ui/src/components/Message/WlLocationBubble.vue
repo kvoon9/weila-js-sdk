@@ -21,7 +21,7 @@ const props = withDefaults(defineProps<WlLocationBubbleProps>(), {
 const { t } = useWeilaUiI18n()
 
 const emit = defineEmits<{
-  (e: 'click', location: { latitude: number; longitude: number }): void
+  (e: 'click', location: { latitude: number; longitude: number; name: string; address: string }): void
 }>()
 
 function handleClick() {
@@ -30,6 +30,8 @@ function handleClick() {
   const location = {
     latitude: props.msg.location.latitude,
     longitude: props.msg.location.longitude,
+    name: props.msg.location.name || '',
+    address: props.msg.location.address || '',
   }
   if (isValidLocation(location)) {
     emit('click', location)

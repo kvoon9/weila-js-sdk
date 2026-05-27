@@ -55,6 +55,7 @@ const emit = defineEmits<{
   'update:selectedSessionType': [sessionType: number | undefined]
   'delete-session': [session: WL_IDbSession]
   'trigger-map-picker': []
+  'location-click': [location: { latitude: number; longitude: number; name: string; address: string }]
 }>()
 
 const messageInput = ref('')
@@ -267,12 +268,8 @@ function handleVideoClick(url: string) {
   previewVideoOpen.value = true
 }
 
-function openLocation(location: { latitude: number; longitude: number }) {
-  window.open(
-    `https://uri.amap.com/marker?position=${location.longitude},${location.latitude}`,
-    '_blank',
-    'noopener,noreferrer',
-  )
+function openLocation(location: { latitude: number; longitude: number; name: string; address: string }) {
+  emit('location-click', location)
 }
 
 async function deleteSession(session: WL_IDbSession): Promise<boolean> {

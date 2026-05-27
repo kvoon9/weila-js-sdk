@@ -51,6 +51,11 @@ async function handleDeleteSessionConfirm() {
     isDeletingSession.value = false
   }
 }
+
+function handleLocationClick(location: { latitude: number; longitude: number; name: string; address: string }) {
+  // eslint-disable-next-line no-console
+  console.log('[Playground] Location clicked:', location)
+}
 </script>
 
 <template>
@@ -61,6 +66,7 @@ async function handleDeleteSessionConfirm() {
     :selected-session-id="selectedSessionId"
     @update:selected-session-id="handleSelectedSessionIdUpdate"
     @delete-session="handleDeleteSessionRequest"
+    @location-click="handleLocationClick"
   />
   <ConfirmModal :visible="isDeleteSessionModalVisible" @cancel="handleDeleteSessionCancel">
     <h3 class="text-lg font-semibold text-gray-900 mb-2">Delete session</h3>
