@@ -2,6 +2,7 @@ import { computed, ref, watch } from 'vue'
 import type { WeilaCore } from '@weilasdk/core'
 import type { WL_IDbMsgData, WL_IDbSession, WL_ExtEventCallback } from '@weilasdk/core'
 import {
+  WL_DataPrepareState,
   WL_ExtEventID,
   WL_IDbMsgDataType,
   isGroupSessionType,
@@ -92,7 +93,8 @@ export function useSessions(getCore: () => WeilaCore | null) {
   const handleEvent: WL_ExtEventCallback = (eventId, eventData) => {
     // WL_EXT_DATA_PREPARE_IND: initial data loaded - 登录后数据同步完成
     if (eventId === WL_ExtEventID.WL_EXT_DATA_PREPARE_IND) {
-      console.log('[Weila:UI:useSessions] event: WL_EXT_DATA_PREPARE_IND -> fetching sessions')
+      if (eventData?.state !== WL_DataPrepareState.PREPARE_SUCC_END) return
+      console.log('[Weila:UI:useSessions] event: WL_EXT_DATA_PREPARE_IND success -> fetching sessions')
       dataPrepared.value = true
       void fetchSessions(sessions.value.length === 0)
     }

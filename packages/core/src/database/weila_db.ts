@@ -459,7 +459,7 @@ class WeilaDB extends Dexie {
   }
 
   @AsyncTime()
-  public async getGroup(groupId: string): Promise<WL_IDbGroup> {
+  public async getGroup(groupId: string): Promise<WL_IDbGroup | undefined> {
     return this.groups.get(groupId)
   }
 

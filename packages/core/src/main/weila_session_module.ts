@@ -1221,7 +1221,20 @@ export default class WLSessionModule {
 
   private async canTalk(sessionId: string, sessionType: number): Promise<boolean> {
     if (isGroupSessionType(sessionType)) {
-      const groupInfo = await WeilaDB.getInstance().getGroup(sessionId)
+      let groupInfo = await WeilaDB.getInstance().getGroup(sessionId)
+      if (!groupInfo) {
+        try {
+          groupInfo = await this.coreInterface.executeCoreFunc('weila_getGroupFromServer', sessionId)
+        } catch (err) {
+          wlerr('申请话权前获取群信息失败:', { sessionId, sessionType, err })
+        }
+      }
+
+      if (!groupInfo) {
+        wlerr('申请话权失败，群信息不存在:', { sessionId, sessionType })
+        return false
+      }
+
       return groupInfo.speechEnable
     }
 

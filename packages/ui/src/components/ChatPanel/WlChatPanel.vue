@@ -56,6 +56,7 @@ const emit = defineEmits<{
   'delete-session': [session: WL_IDbSession]
   'trigger-map-picker': []
   'location-click': [location: { latitude: number; longitude: number; name: string; address: string }]
+  'ptt-error': [payload: { session: WL_IDbSession, error?: unknown }]
 }>()
 
 const messageInput = ref('')
@@ -448,8 +449,12 @@ async function handlePttStart() {
     )
 
     pttStatus.value = success ? 'recording' : 'idle'
+    if (!success) {
+      emit('ptt-error', { session: selectedSession.value })
+    }
   } catch (err) {
     pttStatus.value = 'idle'
+    emit('ptt-error', { session: selectedSession.value, error: err })
     console.error('[WlChatPanel] Failed to start PTT:', err)
   }
 }
