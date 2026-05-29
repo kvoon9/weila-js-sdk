@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, useTemplateRef, watch, nextTick } from 'vue'
 import type { WL_IDbMsgData, WL_IDbUserInfo } from '@weilasdk/core'
-import { WL_IDbMsgDataType } from '@weilasdk/core'
+import { WL_IDbMsgDataStatus, WL_IDbMsgDataType } from '@weilasdk/core'
 import WlAudioBubble from '../Message/WlAudioBubble.vue'
 import WlTextBubble from '../Message/WlTextBubble.vue'
 import WlImageBubble from '../Message/WlImageBubble.vue'
@@ -11,6 +11,7 @@ import WlFileBubble from '../Message/WlFileBubble.vue'
 import WlUnknownBubble from '../Message/WlUnknownBubble.vue'
 import WlAvatar from '../Avatar/WlAvatar.vue'
 import { useWeilaUiI18n } from '../../i18n'
+import { formatMsgTime } from '../../utils'
 
 const showScrollButton = ref(false)
 const hasLoadedMessages = ref(false)
@@ -63,7 +64,8 @@ function getSender(msg: WL_IDbMsgData) {
 }
 
 function getSenderName(msg: WL_IDbMsgData) {
-  return getSender(msg)?.nick || String(msg.senderId)
+  const sender = getSender(msg)
+  return sender?.nick || sender?.weilaNum || String(msg.senderId)
 }
 
 function getSenderAvatar(msg: WL_IDbMsgData) {
@@ -73,13 +75,28 @@ function getSenderAvatar(msg: WL_IDbMsgData) {
 function getSenderLabel(msg: WL_IDbMsgData) {
   const sender = getSender(msg)
   const name = getSenderName(msg)
-  const id = sender?.weilaNum || sender?.userId || msg.senderId
+  const weilaNum = sender?.weilaNum
 
-  return `${name}(${id})`
+  return weilaNum ? `${name} (${weilaNum})` : name
 }
 
 function isSelf(msg: WL_IDbMsgData) {
   return msg.senderId === props.currentUserId
+}
+
+function getMsgTime(msg: WL_IDbMsgData) {
+  return formatMsgTime(msg.created, t)
+}
+
+function getStatusIcon(msg: WL_IDbMsgData) {
+  if (!isSelf(msg)) return null
+  const status = msg.status
+  if (status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_SENDING) return 'sending'
+  if (status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_UNSENT) return 'unsent'
+  if (status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR) return 'error'
+  if (status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_READ) return 'read'
+  if (status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_SENT || status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_NEW) return 'sent'
+  return null
 }
 
 const isText = (msg: WL_IDbMsgData) => msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_TEXT_TYPE
@@ -147,13 +164,21 @@ watch(
       <span v-else class="text-sm text-blue-500 hover:text-blue-600">{{ t('message.loadMore') }}</span>
     </div>
 
-    <div v-for="msg in messages" :key="msg.combo_id" class="flex items-start gap-2 py-1.5"
+    <div v-for="msg in messages" :key="msg.combo_id" class="flex items-start gap-2 py-3"
       :class="isSelf(msg) ? 'flex-row-reverse' : ''">
       <WlAvatar :src="getSenderAvatar(msg)" :name="getSenderName(msg)" />
 
       <div class="flex-1 min-w-0 flex flex-col gap-1" :class="isSelf(msg) ? 'items-end' : 'items-start'">
-        <div class="max-w-full truncate text-xs text-neutral-500 px-1">
-          {{ getSenderLabel(msg) }}
+        <div
+          class="max-w-full truncate text-xs text-neutral-500 px-1 flex items-center gap-2"
+          :class="isSelf(msg) ? 'justify-end' : 'justify-start'"
+        >
+          <span v-if="!isSelf(msg)" class="truncate">{{ getSenderLabel(msg) }}</span>
+          <span class="shrink-0 text-neutral-400">{{ getMsgTime(msg) }}</span>
+          <span v-if="getStatusIcon(msg) === 'sending'" class="icon-[carbon--rotate] size-3 shrink-0 animate-spin [animation-direction:reverse] text-neutral-400" />
+          <span v-else-if="getStatusIcon(msg) === 'unsent' || getStatusIcon(msg) === 'error'" class="icon-[carbon--warning] size-3 shrink-0 text-orange-400" />
+          <span v-else-if="getStatusIcon(msg) === 'read'" class="icon-[carbon--checkmark] size-3 shrink-0 text-green-500" />
+          <span v-else-if="getStatusIcon(msg) === 'sent'" class="icon-[carbon--checkmark] size-3 shrink-0 text-neutral-400" />
         </div>
 
         <!-- Text Message -->

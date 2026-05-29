@@ -1,8 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import type { WL_IDbMsgData, WL_IDbUserInfo } from '@weilasdk/core'
-import { WL_IDbMsgDataStatus } from '@weilasdk/core'
-import { formatMsgTime } from '@/utils'
 import { useWeilaUiI18n } from '../../i18n'
 
 export interface WlFileBubbleProps {
@@ -30,19 +27,6 @@ function formatFileSize(bytes?: number): string {
   if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
   return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
 }
-
-const formattedTime = computed(() => formatMsgTime(props.msg.created, t))
-
-const statusIcon = computed(() => {
-  if (!props.isSelf) return null
-  const status = props.msg.status
-  if (status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_SENDING) return 'sending'
-  if (status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_UNSENT) return 'unsent'
-  if (status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR) return 'error'
-  if (status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_READ) return 'read'
-  if (status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_SENT || status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_NEW) return 'sent'
-  return null
-})
 </script>
 
 <template>
@@ -76,13 +60,6 @@ const statusIcon = computed(() => {
           {{ msg.fileInfo?.fileUrl ? formatFileSize(msg.fileInfo.fileSize) : t('message.uploading') }}
         </div>
       </div>
-    </div>
-    <div class="flex items-center justify-end gap-1 px-2 pb-1.5 -mt-1">
-      <span class="text-xs opacity-60" :class="isSelf ? 'text-blue-200' : 'text-neutral-400'">{{ formattedTime }}</span>
-      <span v-if="statusIcon === 'sending'" class="icon-[carbon--rotate] size-3 animate-spin [animation-direction:reverse] opacity-60" :class="isSelf ? 'text-blue-200' : 'text-neutral-400'" />
-      <span v-else-if="statusIcon === 'unsent' || statusIcon === 'error'" class="icon-[carbon--warning] size-3 text-orange-300" />
-      <span v-else-if="statusIcon === 'read'" class="icon-[carbon--checkmark] size-3 text-green-300" />
-      <span v-else-if="statusIcon === 'sent'" class="icon-[carbon--checkmark] size-3 opacity-60" :class="isSelf ? 'text-blue-200' : 'text-neutral-400'" />
     </div>
   </div>
 </template>

@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { WL_IDbMsgData } from "@weilasdk/core";
-import { calculateAudioDuration, WL_IDbMsgDataStatus } from "@weilasdk/core";
-import { formatMsgTime } from "@/utils";
-import { useWeilaUiI18n } from "../../i18n";
+import { calculateAudioDuration } from "@weilasdk/core";
 
 export interface WlAudioBubbleProps {
   /** 消息数据 */
@@ -18,8 +16,6 @@ const props = withDefaults(defineProps<WlAudioBubbleProps>(), {
   isSelf: false,
   playing: false,
 });
-
-const { t } = useWeilaUiI18n();
 
 const emit = defineEmits<{
   (e: "play"): void;
@@ -49,24 +45,6 @@ const formattedDuration = computed(() => `${Math.floor(duration.value)}"`);
 //   };
 // });
 
-const formattedTime = computed(() => formatMsgTime(props.msg.created, t));
-
-const statusIcon = computed(() => {
-  if (!props.isSelf) return null;
-  const status = props.msg.status;
-  if (status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_SENDING)
-    return "sending";
-  if (status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_UNSENT)
-    return "unsent";
-  if (status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR) return "error";
-  if (status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_READ) return "read";
-  if (
-    status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_SENT ||
-    status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_NEW
-  )
-    return "sent";
-  return null;
-});
 </script>
 
 <template>
@@ -138,37 +116,6 @@ const statusIcon = computed(() => {
       </div>
     </div>
 
-    <!-- Time and Status row -->
-    <div
-      class="flex items-center gap-1 px-3 pb-1.5 -mt-1"
-      :class="isSelf ? 'justify-end' : 'justify-start'"
-    >
-      <span
-        class="text-xs"
-        :class="isSelf ? 'text-blue-200 opacity-80' : 'text-neutral-500'"
-      >
-        {{ formattedTime }}
-      </span>
-      <!-- Status icons only for self messages -->
-      <template v-if="isSelf">
-        <span
-          v-if="statusIcon === 'sending'"
-          class="icon-[carbon--rotate] size-3 animate-spin [animation-direction:reverse] text-blue-200 opacity-80"
-        />
-        <span
-          v-else-if="statusIcon === 'unsent' || statusIcon === 'error'"
-          class="icon-[carbon--warning] size-3 text-orange-300"
-        />
-        <span
-          v-else-if="statusIcon === 'read'"
-          class="icon-[carbon--checkmark] size-3 text-green-300"
-        />
-        <span
-          v-else-if="statusIcon === 'sent'"
-          class="icon-[carbon--checkmark] size-3 text-blue-200 opacity-80"
-        />
-      </template>
-    </div>
   </div>
 </template>
 
