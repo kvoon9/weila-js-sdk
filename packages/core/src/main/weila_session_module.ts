@@ -186,6 +186,7 @@ export default class WLSessionModule {
     session: WL_IDbSession,
     msgData: WL_IDbMsgData,
     markRead: boolean,
+    countUnread = true,
   ): void {
     const isIncoming = msgData.senderId !== this.coreInterface.getLoginUserInfo().userId
     session.lastMsgId = msgData.msgId
@@ -194,7 +195,7 @@ export default class WLSessionModule {
     if (markRead && msgData.msgId > 0) {
       session.readMsgId = Math.max(session.readMsgId || 0, msgData.msgId)
       session.unreadCount = 0
-    } else if (isIncoming && msgData.msgId > 0) {
+    } else if (countUnread && isIncoming && msgData.msgId > 0) {
       session.unreadCount = (session.unreadCount || 0) + 1
     }
   }
@@ -239,7 +240,10 @@ export default class WLSessionModule {
     return true
   }
 
-  private async updateSessionByNewMsgData(msgData: WL_IDbMsgData): Promise<void> {
+  private async updateSessionByNewMsgData(
+    msgData: WL_IDbMsgData,
+    countUnread = true,
+  ): Promise<void> {
     const index = this.findSessionIndex(msgData.sessionId, msgData.sessionType)
     const shouldMarkRead = this.isActiveSession(msgData.sessionId, msgData.sessionType)
 
@@ -265,7 +269,7 @@ export default class WLSessionModule {
 
         session = await WeilaDB.getInstance().fillSessionInfo(session)
       }
-      this.applySessionMsgData(session, msgData, shouldMarkRead)
+      this.applySessionMsgData(session, msgData, shouldMarkRead, countUnread)
       if (!shouldMarkRead) {
         session.readMsgId = session.readMsgId || 0
         session.unreadCount = session.unreadCount || 0
@@ -276,7 +280,7 @@ export default class WLSessionModule {
       //发送有新的会话通知
       this.coreInterface.sendExtEvent(WL_ExtEventID.WL_EXT_NEW_SESSION_OPEN_IND, session)
     } else {
-      this.applySessionMsgData(this.sessionList[index], msgData, shouldMarkRead)
+      this.applySessionMsgData(this.sessionList[index], msgData, shouldMarkRead, countUnread)
       await this.persistSessionUpdate(this.sessionList[index])
     }
 
@@ -457,10 +461,13 @@ export default class WLSessionModule {
           if (msgDatas.length) {
             const msgData = msgDatas[0]
             msgData.combo_id = getMsgDataIdByCombo(msgData, 0)
+            const isPttMsg = msgData.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_PTT_TYPE
 
-            if (msgData.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_PTT_TYPE) {
-              const audioMsgData = await this.pttFsm.putPttMsgData(msgData)
-              await this.updateSessionByNewMsgData(audioMsgData)
+            if (isPttMsg) {
+              const { msgData: audioMsgData, isNewAudioItem } = await this.pttFsm.putPttMsgData(
+                msgData,
+              )
+              await this.updateSessionByNewMsgData(audioMsgData, isNewAudioItem)
               //发送通知消息出去
               this.coreInterface.sendExtEvent(WL_ExtEventID.WL_EXT_NEW_MSG_RECV_IND, audioMsgData)
             } else if (msgData.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_TEXT_TYPE) {
@@ -483,7 +490,7 @@ export default class WLSessionModule {
             }
 
             wllog('incoming msgdata:', msgData)
-            if (msgData.msgType !== WL_IDbMsgDataType.WL_DB_MSG_DATA_PTT_TYPE) {
+            if (!isPttMsg) {
               if (msgData.msgType !== WL_IDbMsgDataType.WL_DB_MSG_DATA_WITHDRAW_TYPE) {
                 await this.updateSessionByNewMsgData(msgData)
                 //发送通知消息出去
