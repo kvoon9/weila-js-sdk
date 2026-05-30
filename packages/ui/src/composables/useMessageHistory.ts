@@ -66,18 +66,40 @@ export function useMessageHistory(
     )
   }
 
+  function mergeMessage(existing: WL_IDbMsgData, next: WL_IDbMsgData): WL_IDbMsgData {
+    const base = next.audioData || !existing.audioData ? next : existing
+    const fallback = base === next ? existing : next
+    const audioData = base.audioData || fallback.audioData
+
+    return {
+      ...fallback,
+      ...base,
+      audioData,
+      pttData: audioData
+        ? undefined
+        : base.pttData ? { ...fallback.pttData, ...base.pttData } : fallback.pttData,
+    }
+  }
+
+  function dedupeMessages(nextMessages: WL_IDbMsgData[]): WL_IDbMsgData[] {
+    const byId = new Map<string, WL_IDbMsgData>()
+
+    for (const msg of nextMessages) {
+      const id = msg.combo_id || `${msg.sessionId}_${msg.sessionType}_${msg.msgId}`
+      const existing = byId.get(id)
+      byId.set(id, existing ? mergeMessage(existing, msg) : msg)
+    }
+
+    return [...byId.values()]
+  }
+
   async function appendRealtimeMessage(msg: WL_IDbMsgData) {
     if (!isCurrentSessionMessage(msg)) return
 
     const existingIdx = messages.value.findIndex((m) => m.combo_id === msg.combo_id)
     if (existingIdx !== -1) {
       const existing = messages.value[existingIdx]
-      const updated = {
-        ...existing,
-        ...msg,
-        pttData: msg.pttData ? { ...existing.pttData, ...msg.pttData } : existing.pttData,
-        audioData: msg.audioData ? { ...existing.audioData, ...msg.audioData } : existing.audioData,
-      }
+      const updated = mergeMessage(existing, msg)
       messages.value = [
         ...messages.value.slice(0, existingIdx),
         updated,
@@ -111,14 +133,19 @@ export function useMessageHistory(
 
       hasMore.value = result.length === PAGE_SIZE
 
+      const dedupedResult = dedupeMessages(result)
+
       if (cursor === 0) {
-        messages.value = result
+        messages.value = dedupedResult
       } else {
         const existingIds = new Set(messages.value.map((m) => m.combo_id))
-        messages.value = [...result.filter((m) => !existingIds.has(m.combo_id)), ...messages.value]
+        messages.value = dedupeMessages([
+          ...dedupedResult.filter((m) => !existingIds.has(m.combo_id)),
+          ...messages.value,
+        ])
       }
 
-      await ensureSenderInfos(result)
+      await ensureSenderInfos(dedupedResult)
     } catch (e) {
       error.value = e instanceof Error ? e : new Error(String(e))
     } finally {

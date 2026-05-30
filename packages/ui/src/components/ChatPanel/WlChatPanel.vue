@@ -440,21 +440,22 @@ async function handlePttStart() {
     return
   }
 
+  const session = toRaw(selectedSession.value)
   pttStatus.value = 'processing'
 
   try {
     const success = await props.core.weila_requestTalk(
-      selectedSession.value.sessionId,
-      selectedSession.value.sessionType,
+      session.sessionId,
+      session.sessionType,
     )
 
     pttStatus.value = success ? 'recording' : 'idle'
     if (!success) {
-      emit('ptt-error', { session: selectedSession.value })
+      emit('ptt-error', { session })
     }
   } catch (err) {
     pttStatus.value = 'idle'
-    emit('ptt-error', { session: selectedSession.value, error: err })
+    emit('ptt-error', { session, error: err })
     console.error('[WlChatPanel] Failed to start PTT:', err)
   }
 }

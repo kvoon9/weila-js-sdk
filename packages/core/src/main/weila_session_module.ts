@@ -264,7 +264,15 @@ export default class WLSessionModule {
         }
       } else {
         if (isGroupSessionType(msgData.sessionType)) {
-          await this.coreInterface.executeCoreFunc('weila_getGroupFromServer', session.sessionId)
+          try {
+            await this.coreInterface.executeCoreFunc('weila_getGroupFromServer', session.sessionId)
+          } catch (err) {
+            wlerr('新消息创建会话时获取群信息失败:', {
+              sessionId: session.sessionId,
+              sessionType: session.sessionType,
+              err,
+            })
+          }
         }
 
         session = await WeilaDB.getInstance().fillSessionInfo(session)
@@ -1203,19 +1211,13 @@ export default class WLSessionModule {
   }
 
   public async requestTalk(sessionId: string, sessionType: number): Promise<boolean> {
-    //要判断一下是否可以申请发言
-    const ret = await this.canTalk(sessionId, sessionType)
-    if (ret) {
-      await this.pttFsm.requestTalk()
-      this.curBurstInfo = {} as WL_BurstInfo
-      this.curBurstInfo.curMarker = WL_PttPackType.PTT_FIRST_PACK
-      this.curBurstInfo.packetPayloadList = []
-      this.curBurstInfo.sessionId = sessionId
-      this.curBurstInfo.sessionType = sessionType
-      return true
-    }
-
-    return false
+    await this.pttFsm.requestTalk()
+    this.curBurstInfo = {} as WL_BurstInfo
+    this.curBurstInfo.curMarker = WL_PttPackType.PTT_FIRST_PACK
+    this.curBurstInfo.packetPayloadList = []
+    this.curBurstInfo.sessionId = sessionId
+    this.curBurstInfo.sessionType = sessionType
+    return true
   }
 
   public async releaseTalk(): Promise<boolean> {
@@ -1238,8 +1240,8 @@ export default class WLSessionModule {
       }
 
       if (!groupInfo) {
-        wlerr('申请话权失败，群信息不存在:', { sessionId, sessionType })
-        return false
+        wlerr('群信息不存在:', { sessionId, sessionType })
+        return true
       }
 
       return groupInfo.speechEnable

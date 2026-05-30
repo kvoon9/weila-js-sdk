@@ -47,7 +47,7 @@ export default class WLGroupModule {
             this.coreInterface.rspPbMsg(
               serviceHead.seq,
               serviceHead.resultCode,
-              serverMessage.groupMessage.rspGetGroupVersion,
+              serverMessage.groupMessage?.rspGetGroupVersion,
             )
           }
           break
@@ -57,7 +57,7 @@ export default class WLGroupModule {
             this.coreInterface.rspPbMsg(
               serviceHead.seq,
               serviceHead.resultCode,
-              serverMessage.groupMessage.rspGetGroupAttribute,
+              serverMessage.groupMessage?.rspGetGroupAttribute,
             )
           }
           break
@@ -67,7 +67,7 @@ export default class WLGroupModule {
             this.coreInterface.rspPbMsg(
               serviceHead.seq,
               serviceHead.resultCode,
-              serverMessage.groupMessage.rspGetGroupInfo,
+              serverMessage.groupMessage?.rspGetGroupInfo,
             )
           }
           break
@@ -77,7 +77,7 @@ export default class WLGroupModule {
             this.coreInterface.rspPbMsg(
               serviceHead.seq,
               serviceHead.resultCode,
-              serverMessage.groupMessage.rspGetMemberUserInfo,
+              serverMessage.groupMessage?.rspGetMemberUserInfo,
             )
           }
           break
@@ -87,7 +87,7 @@ export default class WLGroupModule {
             this.coreInterface.rspPbMsg(
               serviceHead.seq,
               serviceHead.resultCode,
-              serverMessage.groupMessage.rspGroupBroadcast,
+              serverMessage.groupMessage?.rspGroupBroadcast,
             )
           }
           break
@@ -510,6 +510,11 @@ export default class WLGroupModule {
     const buildMsgRet = WeilaPBGroupWrapper.buildGetGroupInfoReq(Long.fromValue(groupId), 0)
     if (buildMsgRet.resultCode === 0) {
       const rsp = (await this.coreInterface.sendPbMsg(buildMsgRet)) as WL.Group.IRspGetGroupInfo
+      if (!rsp?.groupAttribute) {
+        wlerr('获取群信息失败，服务端未返回群属性:', { groupId, rsp })
+        return undefined
+      }
+
       const groupInfos = WeilaDB.getInstance().convertFromGroupRaw([rsp.groupAttribute])
       const memberInfos = WeilaDB.getInstance().convertFromMemberRaw(groupId, rsp.memberInfoList)
       await WeilaDB.getInstance().putGroup(groupInfos[0])

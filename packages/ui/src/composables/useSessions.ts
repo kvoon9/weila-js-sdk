@@ -50,21 +50,6 @@ export function useSessions(getCore: () => WeilaCore | null) {
 
     try {
       sessions.value = await core.weila_getSessionsFromDb()
-      console.log(`[Weila:UI:useSessions] fetchSessions completed, count=${sessions.value.length}`, sessions.value.map(s => ({
-        sessionId: s.sessionId,
-        sessionName: s.sessionName,
-        sessionType: s.sessionType,
-        lastMsgId: s.lastMsgId,
-        readMsgId: s.readMsgId,
-        unreadCount: s.unreadCount,
-        latestUpdate: s.latestUpdate,
-        lastMsg: s.lastMsgData ? {
-          msgId: s.lastMsgData.msgId,
-          msgType: s.lastMsgData.msgType,
-          text: s.lastMsgData.textData?.substring(0, 50),
-          created: s.lastMsgData.created,
-        } : null,
-      })))
     } catch (e) {
       error.value = e instanceof Error ? e : new Error(String(e))
       console.log('[Weila:UI:useSessions] fetchSessions error:', e)
@@ -94,28 +79,22 @@ export function useSessions(getCore: () => WeilaCore | null) {
     // WL_EXT_DATA_PREPARE_IND: initial data loaded - 登录后数据同步完成
     if (eventId === WL_ExtEventID.WL_EXT_DATA_PREPARE_IND) {
       if (eventData?.state !== WL_DataPrepareState.PREPARE_SUCC_END) return
-      console.log('[Weila:UI:useSessions] event: WL_EXT_DATA_PREPARE_IND success -> fetching sessions')
       dataPrepared.value = true
       void fetchSessions(sessions.value.length === 0)
     }
     // WL_EXT_NEW_SESSION_OPEN_IND: new session created
     else if (eventId === WL_ExtEventID.WL_EXT_NEW_SESSION_OPEN_IND) {
-      if (isRealtimePttData(eventData)) return
-      console.log('[Weila:UI:useSessions] event: WL_EXT_NEW_SESSION_OPEN_IND -> fetching sessions')
       scheduleBackgroundRefresh()
     }
     else if (eventId === WL_ExtEventID.WL_EXT_NEW_MSG_RECV_IND) {
       if (isRealtimePttData(eventData)) return
-      console.log('[Weila:UI:useSessions] event: WL_EXT_NEW_MSG_RECV_IND -> fetching sessions')
       scheduleBackgroundRefresh()
     }
     else if (eventId === WL_ExtEventID.WL_EXT_MSG_SEND_IND) {
-      console.log('[Weila:UI:useSessions] event: WL_EXT_MSG_SEND_IND -> fetching sessions')
       scheduleBackgroundRefresh()
     }
     else if (eventId === WL_ExtEventID.WL_EXT_SESSION_UPDATED_IND) {
       if (isRealtimePttData(eventData)) return
-      console.log('[Weila:UI:useSessions] event: WL_EXT_SESSION_UPDATED_IND -> fetching sessions')
       scheduleBackgroundRefresh()
     }
   }
@@ -133,7 +112,10 @@ export function useSessions(getCore: () => WeilaCore | null) {
             backgroundRefreshTimer = null
           }
         })
-        void fetchSessions(true)
+        const currentSessions = newCore.weila_getSessions()
+        if (currentSessions.length > 0) {
+          void fetchSessions(true)
+        }
       }
     },
     { immediate: true },
