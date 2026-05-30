@@ -150,6 +150,7 @@ interface WL_SessionProfileUpdate {
 interface WL_Profile {
   name?: string
   avatar?: string
+  weilaNum?: string
 }
 
 type WL_ProfileResolver = (

@@ -75,7 +75,8 @@ function getSenderAvatar(msg: WL_IDbMsgData) {
 function getSenderLabel(msg: WL_IDbMsgData) {
   const sender = getSender(msg)
   const name = getSenderName(msg)
-  const weilaNum = sender?.weilaNum
+  const senderId = String(msg.senderId)
+  const weilaNum = sender?.weilaNum && sender.weilaNum !== senderId ? sender.weilaNum : ''
 
   return weilaNum ? `${name} (${weilaNum})` : name
 }

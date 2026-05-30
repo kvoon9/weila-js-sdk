@@ -966,19 +966,32 @@ class WeilaCore implements WL_CoreInterface {
    */
   public async weila_getUserInfo(userId: number): Promise<WL_IDbUserInfo | undefined> {
     let userInfo = await WeilaDB.getInstance().getUser(userId)
-    if ((userInfo?.nick && userInfo.avatar) || !this.profileResolver) {
+    const hasResolvedProfile = Boolean(
+      userInfo?.nick
+      && userInfo.avatar
+      && userInfo.weilaNum
+      && userInfo.weilaNum !== String(userId),
+    )
+
+    if (hasResolvedProfile || !this.profileResolver) {
       return userInfo
     }
 
     const profile = await this.resolveProfile(userId)
-    if (!profile?.name && !profile?.avatar) {
+    if (!profile?.name && !profile?.avatar && !profile?.weilaNum) {
       return userInfo
     }
+
+    const weilaNum = profile.weilaNum || (
+      userInfo?.weilaNum && userInfo.weilaNum !== String(userId)
+        ? userInfo.weilaNum
+        : ''
+    )
 
     userInfo = {
       ...userInfo,
       userId,
-      weilaNum: userInfo?.weilaNum || String(userId),
+      weilaNum,
       sex: userInfo?.sex ?? 0,
       nick: profile.name || userInfo?.nick || String(userId),
       pinyinName: userInfo?.pinyinName || '',
