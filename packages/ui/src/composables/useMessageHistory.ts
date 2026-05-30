@@ -81,11 +81,19 @@ export function useMessageHistory(
     }
   }
 
+  function getMessageIdentity(msg: WL_IDbMsgData): string {
+    if (msg.msgId > 0) {
+      return `${msg.sessionId}_${msg.sessionType}_${msg.msgId}`
+    }
+
+    return msg.combo_id || `${msg.sessionId}_${msg.sessionType}_${msg.msgId}`
+  }
+
   function dedupeMessages(nextMessages: WL_IDbMsgData[]): WL_IDbMsgData[] {
     const byId = new Map<string, WL_IDbMsgData>()
 
     for (const msg of nextMessages) {
-      const id = msg.combo_id || `${msg.sessionId}_${msg.sessionType}_${msg.msgId}`
+      const id = getMessageIdentity(msg)
       const existing = byId.get(id)
       byId.set(id, existing ? mergeMessage(existing, msg) : msg)
     }
@@ -96,7 +104,8 @@ export function useMessageHistory(
   async function appendRealtimeMessage(msg: WL_IDbMsgData) {
     if (!isCurrentSessionMessage(msg)) return
 
-    const existingIdx = messages.value.findIndex((m) => m.combo_id === msg.combo_id)
+    const msgIdentity = getMessageIdentity(msg)
+    const existingIdx = messages.value.findIndex((m) => getMessageIdentity(m) === msgIdentity)
     if (existingIdx !== -1) {
       const existing = messages.value[existingIdx]
       const updated = mergeMessage(existing, msg)
@@ -138,9 +147,9 @@ export function useMessageHistory(
       if (cursor === 0) {
         messages.value = dedupedResult
       } else {
-        const existingIds = new Set(messages.value.map((m) => m.combo_id))
+        const existingIds = new Set(messages.value.map(getMessageIdentity))
         messages.value = dedupeMessages([
-          ...dedupedResult.filter((m) => !existingIds.has(m.combo_id)),
+          ...dedupedResult.filter((m) => !existingIds.has(getMessageIdentity(m))),
           ...messages.value,
         ])
       }

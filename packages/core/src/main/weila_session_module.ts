@@ -476,8 +476,8 @@ export default class WLSessionModule {
                 msgData,
               )
               await this.updateSessionByNewMsgData(audioMsgData, isNewAudioItem)
-              //发送通知消息出去
-              this.coreInterface.sendExtEvent(WL_ExtEventID.WL_EXT_NEW_MSG_RECV_IND, audioMsgData)
+              // PTT 分片用于实时播放和本地聚合，服务端随后会下发同一 msgId 的 AUDIO 消息。
+              // 避免把同一条语音按“实时分片”和“最终音频”各通知一次。
             } else if (msgData.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_TEXT_TYPE) {
               msgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_READ
               this.isTTSPermit(msgData)
