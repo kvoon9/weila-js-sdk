@@ -481,7 +481,11 @@ async function handlePttStop() {
       <SessionList v-if="core" :sessions="sessions" :active-session-id="selectedSessionId"
         :active-session-type="selectedSessionType" :loading="sessionsLoading" :error="sessionsError"
         :deleting-session-key="deletingSessionKey" @select="handleSelectSession" @delete="handleDeleteSession"
-        @refresh="refreshSessions" />
+        @refresh="refreshSessions">
+        <template #header-actions>
+          <slot name="session-header-actions" />
+        </template>
+      </SessionList>
       <div v-else class="flex items-center justify-center h-full text-neutral-500">{{ t('chat.loadingSdk') }}</div>
     </div>
 
