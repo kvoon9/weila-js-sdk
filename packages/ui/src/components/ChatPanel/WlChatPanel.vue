@@ -491,9 +491,14 @@ async function handlePttStop() {
 
     <div class="flex-1 p-4 overflow-y-auto">
       <div v-if="selectedSession">
-        <h2 class="text-lg font-semibold mb-4">
-          {{ selectedSession.sessionName || selectedSession.sessionId }}
-        </h2>
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold">
+            {{ selectedSession.sessionName || selectedSession.sessionId }}
+          </h2>
+          <div class="flex items-center gap-2">
+            <slot name="session-actions" :session="selectedSession" />
+          </div>
+        </div>
 
         <div class="relative">
           <div v-if="realtimePttMessage"
