@@ -100,6 +100,10 @@ function handleRefresh() {
         :deleting="`${session.sessionId}-${session.sessionType}` === deletingSessionKey" @click="handleSelect"
         @delete="handleDelete" />
     </div>
+
+    <div v-if="$slots.footer" class="border-t border-neutral-100 p-3">
+      <slot name="footer" />
+    </div>
   </div>
 </template>
 

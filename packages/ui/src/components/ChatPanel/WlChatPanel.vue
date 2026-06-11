@@ -485,6 +485,9 @@ async function handlePttStop() {
         <template #header-actions>
           <slot name="session-header-actions" />
         </template>
+        <template #footer>
+          <slot name="session-footer" />
+        </template>
       </SessionList>
       <div v-else class="flex items-center justify-center h-full text-neutral-500">{{ t('chat.loadingSdk') }}</div>
     </div>
