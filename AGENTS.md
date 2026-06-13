@@ -41,21 +41,25 @@ Run these commands from the root directory using pnpm:
   ```bash
   pnpm install
   ```
+- **Build all packages** (cached, dependency-aware):
+  ```bash
+  pnpm run build
+  ```
 - **Build core SDK**:
   ```bash
-  pnpm --filter @weilasdk/core run build
+  pnpm run build:core
   ```
-- **Run Vue3 playground in dev mode**:
+- **Build UI package**:
   ```bash
-  pnpm --filter @weilasdk/playground-vue3 run dev
+  pnpm run build:ui
+  ```
+- **Run Vue3 playground in dev mode** (also watches workspace dependencies):
+  ```bash
+  pnpm run dev
   ```
 - **Type check all packages**:
   ```bash
-  pnpm -r run typecheck
-  ```
-- **Build all packages**:
-  ```bash
-  pnpm run build
+  pnpm run typecheck
   ```
 
 ## Package Descriptions

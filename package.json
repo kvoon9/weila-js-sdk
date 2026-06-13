@@ -2,21 +2,21 @@
   "name": "@weilasdk/monorepo",
   "private": true,
   "scripts": {
-    "build": "pnpm -r run build",
-    "build:core": "pnpm --filter @weilasdk/core run build",
-    "build:core:w": "pnpm --filter @weilasdk/core run build:watch",
-    "build:ui": "pnpm --filter @weilasdk/ui run build",
-    "dev": "pnpm --filter @weilasdk/playground-vue3 run dev",
-    "dev:ui": "pnpm --filter @weilasdk/ui run dev",
-    "story": "pnpm --filter @weilasdk/ui run story",
+    "build": "turbo run build",
+    "build:core": "turbo run build --filter=@weilasdk/core",
+    "build:core:w": "turbo run dev --filter=@weilasdk/core",
+    "build:ui": "turbo run build --filter=@weilasdk/ui",
+    "dev": "turbo run dev",
+    "dev:ui": "turbo run dev --filter=@weilasdk/ui",
+    "story": "turbo run story --filter=@weilasdk/ui",
     "up": "pnpm dlx taze -Ir major",
-    "build:story": "pnpm --filter @weilasdk/ui run build:story",
-    "typecheck": "pnpm -r run typecheck",
+    "build:story": "turbo run build:story",
+    "typecheck": "turbo run typecheck",
     "lint": "oxlint --type-aware",
     "lint:fix": "oxlint --type-aware --fix",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
-    "preview": "pnpm --filter @weilasdk/playground-vue3 run build && pnpm --filter @weilasdk/playground-vue3 run preview"
+    "preview": "turbo run build --filter=@weilasdk/playground-vue3 && pnpm --filter @weilasdk/playground-vue3 run preview"
   },
   "devDependencies": {
     "@antfu/ni": "catalog:",
@@ -25,7 +25,8 @@
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",
     "simple-git-hooks": "catalog:",
-    "taze": "catalog:"
+    "taze": "catalog:",
+    "turbo": "^2.9.18"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm exec lint-staged"

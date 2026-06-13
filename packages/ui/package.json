@@ -20,7 +20,6 @@
     "./dist/index.css": "./dist/index.css"
   },
   "scripts": {
-    "postinstall": "pnpm build",
     "test": "vitest",
     "test:run": "vitest run",
     "test:ui": "vitest --ui",

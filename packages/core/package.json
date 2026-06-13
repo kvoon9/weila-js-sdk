@@ -31,8 +31,8 @@
     "build": "webpack --config webpack.config.js --progress --node-env production",
     "build:dev": "webpack --config webpack.config.js --progress --node-env development",
     "build:watch": "pnpm build --watch",
-    "typecheck": "tsc --noEmit",
-    "postinstall": "pnpm build"
+    "dev": "webpack --config webpack.config.js --watch --node-env development",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "ali-oss": "^6.16.0",
