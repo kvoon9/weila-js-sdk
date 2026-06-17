@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { WL_IDbSession } from '@weilasdk/core'
-import { WL_IDbMsgDataType } from '@weilasdk/core'
+import { isGroupSessionType, isIndividualSessionType, WL_IDbMsgDataType } from '@weilasdk/core'
 import WlAvatar from '../Avatar/WlAvatar.vue'
 import { useWeilaUiI18n } from '../../i18n'
 
@@ -70,6 +70,17 @@ const sessionTypeLabel = computed(() => {
   }
 })
 
+const isIndividual = computed(() => isIndividualSessionType(props.session.sessionType))
+const isGroup = computed(() => isGroupSessionType(props.session.sessionType))
+const memberCount = computed(() => {
+  const extra = props.session.extra
+  if (extra && typeof extra === 'object' && 'memberCount' in extra) {
+    const count = Number(extra.memberCount)
+    return Number.isFinite(count) ? count : 0
+  }
+  return 0
+})
+
 const messagePreview = computed(() => {
   const msg = props.session.lastMsgData
   if (!msg) return sessionTypeLabel.value
@@ -124,8 +135,15 @@ function handleDelete() {
     <!-- Content -->
     <div class="flex-1 min-w-0">
       <div class="flex items-center justify-between">
-        <span class="text-sm font-medium text-neutral-900 truncate">
-          {{ sessionName }}
+        <span class="flex items-center gap-1 min-w-0">
+          <span class="text-sm font-medium text-neutral-900 truncate">
+            {{ sessionName }}
+          </span>
+          <span
+            class="text-xs text-neutral-400 flex-shrink-0"
+            :class="isIndividual ? 'icon-[carbon--user]' : isGroup ? 'icon-[carbon--group]' : ''"
+          />
+          <span v-if="isGroup" class="text-xs text-neutral-400 flex-shrink-0">({{ memberCount }})</span>
         </span>
         <span class="text-xs text-neutral-500 flex-shrink-0 ml-2">
           {{ lastMessageTime }}
