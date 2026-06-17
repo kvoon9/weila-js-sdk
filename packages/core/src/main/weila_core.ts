@@ -1077,7 +1077,7 @@ class WeilaCore implements WL_CoreInterface {
       }
     }
     sessions.forEach((session) => {
-      void this.resolveEmptySessionProfile(session)
+      void this.resolveSessionProfile(session)
     })
     console.log(`[Weila:getSessionsFromDb] final sessions count=${sessions.length}`, sessions.map(s => ({
       sessionId: s.sessionId,
@@ -1098,9 +1098,16 @@ class WeilaCore implements WL_CoreInterface {
     return sessions
   }
 
-  private async resolveEmptySessionProfile(session: WL_IDbSession): Promise<void> {
-    if (session.sessionName?.trim()) return
+  /**
+   * 触发 session 列表刷新。
+   * 当 web 接口修改了群/成员资料但服务端没有推送 SDK 事件时，
+   * 可以调用此方法通知 UI 重新拉取 session 列表（resolver 会覆盖名称/头像）。
+   */
+  public weila_refreshSessionList(): void {
+    this.sendExtEvent(WL_ExtEventID.WL_EXT_SESSION_UPDATED_IND, {} as WL_IDbSession)
+  }
 
+  private async resolveSessionProfile(session: WL_IDbSession): Promise<void> {
     const key = `${session.sessionId}_${session.sessionType}`
     if (this.resolvingSessionProfileKeys.has(key)) return
 

@@ -295,7 +295,7 @@ export default class WLGroupModule {
 
                 await WeilaDB.getInstance().putGroup(groupInfo)
                 wllog('群属性变更了:', groupId)
-                // 通知群变更
+                // 通知群变更，UI 监听到后会重新拉取 session 列表，resolver 会覆盖名称/头像
                 this.coreInterface.sendExtEvent(WL_ExtEventID.WL_EXT_GROUP_MODIFIED_IND, groupInfo)
               })
               .catch((reason) => {
@@ -927,3 +927,4 @@ export default class WLGroupModule {
     return Promise.reject('创建消息失败:' + buildMsgRet.resultCode)
   }
 }
+

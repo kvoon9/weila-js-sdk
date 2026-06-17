@@ -97,6 +97,10 @@ export function useSessions(getCore: () => WeilaCore | null) {
       if (isRealtimePttData(eventData)) return
       scheduleBackgroundRefresh()
     }
+    else if (eventId === WL_ExtEventID.WL_EXT_GROUP_MODIFIED_IND) {
+      // 群资料变更后清空了 session 缓存，需要重新拉取让 resolver 刷新
+      scheduleBackgroundRefresh()
+    }
   }
 
   // Watch for weilaCore changes
