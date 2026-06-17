@@ -1128,6 +1128,8 @@ class WeilaCore implements WL_CoreInterface {
           ? {
               sessionName: groupProfile.name,
               sessionAvatar: groupProfile.avatar,
+              memberCount: groupProfile.memberCount,
+              extra: groupProfile.extra,
             }
           : null
       } else if (this.sessionProfileResolver) {
@@ -1137,9 +1139,20 @@ class WeilaCore implements WL_CoreInterface {
       const sessionName = profile?.sessionName?.trim()
       if (!sessionName) return
 
+      // 把 resolver 提供的额外信息（如群人数）合并到 session.extra
+      let extra = session.extra
+      if (profile?.memberCount !== undefined || profile?.extra !== undefined) {
+        extra = {
+          ...(session.extra && typeof session.extra === 'object' ? session.extra : {}),
+          ...(profile?.memberCount !== undefined ? { memberCount: profile.memberCount } : {}),
+          ...(profile?.extra !== undefined ? profile.extra : {}),
+        }
+      }
+
       await this.weila_updateSessionProfile(session.sessionId, session.sessionType, {
         ...profile,
         sessionName,
+        extra,
       })
     } catch (err) {
       wlerr('补全会话资料失败:', err)

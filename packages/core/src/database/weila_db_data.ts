@@ -144,6 +144,7 @@ interface WL_IDbSessionSettingParams {
 interface WL_SessionProfileUpdate {
   sessionName?: string
   sessionAvatar?: string
+  memberCount?: number
   extra?: any
 }
 
@@ -151,6 +152,8 @@ interface WL_Profile {
   name?: string
   avatar?: string
   weilaNum?: string
+  memberCount?: number
+  extra?: any
 }
 
 type WL_ProfileResolver = (
