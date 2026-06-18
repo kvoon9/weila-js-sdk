@@ -189,10 +189,13 @@ export function useMessageHistory(
   )
 
   watch(
-    getSession,
-    (session) => {
+    () => {
+      const session = getSession()
+      return session ? `${session.sessionId}_${session.sessionType}` : ''
+    },
+    (sessionKey) => {
       reset()
-      if (session) void loadMore(0)
+      if (sessionKey) void loadMore(0)
     },
     { immediate: true },
   )

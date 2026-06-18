@@ -69,6 +69,26 @@ interface WL_ActiveSessionInfo {
   sessionType: number
 }
 
+function isDeepEqual(a: unknown, b: unknown): boolean {
+  if (a === b) return true
+  if (typeof a !== 'object' || typeof b !== 'object') return false
+  if (a === null || b === null) return false
+
+  const aObj = a as Record<string, unknown>
+  const bObj = b as Record<string, unknown>
+  const aKeys = Object.keys(aObj)
+  const bKeys = Object.keys(bObj)
+
+  if (aKeys.length !== bKeys.length) return false
+
+  for (const key of aKeys) {
+    if (!Object.prototype.hasOwnProperty.call(bObj, key)) return false
+    if (!isDeepEqual(aObj[key], bObj[key])) return false
+  }
+
+  return true
+}
+
 export default class WLSessionModule {
   private sessionList: WL_IDbSession[] = []
   private token: string | null
@@ -162,7 +182,7 @@ export default class WLSessionModule {
       changed = true
     }
 
-    if (profile.extra !== undefined) {
+    if (profile.extra !== undefined && !isDeepEqual(session.extra, profile.extra)) {
       session.extra = profile.extra
       changed = true
     }
