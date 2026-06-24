@@ -19,14 +19,13 @@ Settings in `.npmrc`:
 ## Monorepo Structure
 
 ```
-wl-js-sdk/
+weila-js-sdk/
 ├── packages/
 │   ├── core/        # @weilasdk/core  — TypeScript SDK (Webpack 5)
 │   └── ui/          # @weilasdk/ui    — Vue 3 组件库 (tsdown + unplugin-vue)
 ├── playgrounds/
 │   └── vue3/        # @weilasdk/playground-vue3 — Vue3 + Vite dev environment
 ├── .agents/skills/  # Agent skills (repo-level)
-├── .claude/skills/  # Claude skills (repo-level)
 ├── skills-lock.json
 ├── weilasdk-integration.skill
 ├── tsconfig.base.json  # Shared TS config
