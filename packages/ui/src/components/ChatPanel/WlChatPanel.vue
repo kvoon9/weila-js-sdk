@@ -39,6 +39,7 @@ export interface WlChatPanelProps {
   selectedSessionId?: string
   selectedSessionType?: number
   messageListHeight?: string
+  beforeSend?: (session: WL_IDbSession) => boolean | Promise<boolean>
 }
 
 const props = withDefaults(defineProps<WlChatPanelProps>(), {
@@ -57,6 +58,7 @@ const emit = defineEmits<{
   'trigger-map-picker': []
   'location-click': [location: { latitude: number; longitude: number; name: string; address: string }]
   'ptt-error': [payload: { session: WL_IDbSession, error?: unknown }]
+  'send-blocked': []
 }>()
 
 const messageInput = ref('')
@@ -332,8 +334,16 @@ function normalizeLocation(location: WL_IDbLocationShared): WL_IDbLocationShared
   }
 }
 
+async function checkSendAllowed(): Promise<boolean> {
+  if (!selectedSession.value || !props.beforeSend) return true
+  const allowed = await props.beforeSend(selectedSession.value)
+  if (!allowed) emit('send-blocked')
+  return allowed
+}
+
 async function sendMessage() {
   if (!props.core || !selectedSession.value || !messageInput.value.trim()) return
+  if (!(await checkSendAllowed())) return
 
   const text = messageInput.value.trim()
   messageInput.value = ''
@@ -352,6 +362,7 @@ async function sendMessage() {
 
 async function sendLocation(location: WL_IDbLocationShared): Promise<boolean> {
   if (!props.core || !selectedSession.value) return false
+  if (!(await checkSendAllowed())) return false
   const normalizedLocation = normalizeLocation(location)
 
   try {
@@ -382,6 +393,7 @@ async function handleImageSelected(e: Event) {
   const file = input.files?.[0]
   input.value = ''
   if (!file || !selectedSession.value) return
+  if (!(await checkSendAllowed())) return
 
   try {
     await props.core?.weila_sendImage(
@@ -401,6 +413,7 @@ async function handleFileSelected(e: Event) {
   const file = input.files?.[0]
   input.value = ''
   if (!file || !selectedSession.value) return
+  if (!(await checkSendAllowed())) return
 
   try {
     await props.core?.weila_sendFile(
@@ -420,6 +433,7 @@ async function handleVideoSelected(e: Event) {
   const file = input.files?.[0]
   input.value = ''
   if (!file || !selectedSession.value) return
+  if (!(await checkSendAllowed())) return
 
   try {
     await props.core?.weila_sendVideo(
@@ -439,6 +453,7 @@ async function handlePttStart() {
     console.warn('[WlChatPanel] No session selected')
     return
   }
+  if (!(await checkSendAllowed())) return
 
   const session = toRaw(selectedSession.value)
   pttStatus.value = 'processing'
