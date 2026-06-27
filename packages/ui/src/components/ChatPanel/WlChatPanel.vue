@@ -170,9 +170,7 @@ watch(selectedSession, () => {
   wlMsgListRef.value?.resetScrollState()
 })
 
-const activeHistorySession = computed(() =>
-  isSelectedSessionInvalid.value ? undefined : selectedSession.value ?? undefined,
-)
+const activeHistorySession = computed(() => selectedSession.value ?? undefined)
 
 const {
   messages,
@@ -537,7 +535,7 @@ async function handlePttStop() {
           </div>
         </div>
 
-        <div class="relative min-h-0 flex-1">
+        <div class="relative flex min-h-0 flex-1 flex-col">
           <div v-if="realtimePttMessage"
             class="absolute left-3 right-3 top-3 z-10 flex items-center gap-3 rounded-lg border border-blue-100 bg-blue-50/95 px-3 py-2 text-blue-700 shadow-sm backdrop-blur">
             <span class="icon-[carbon--volume-up-filled] size-5 shrink-0" />
@@ -555,10 +553,9 @@ async function handlePttStop() {
             </div>
           </div>
 
-          <WlMsgList ref="wlMsgListRef" class="h-full bg-neutral-100"
+          <WlMsgList ref="wlMsgListRef" class="min-h-0 flex-1 bg-neutral-100"
             :messages="messages" :current-user-id="currentUserId" :sender-infos="messageSenderInfos" :has-more="hasMore"
             :loading="messagesLoading" :playing-audio-id="playingAudioId"
-            :style="{ height: isSelectedSessionInvalid ? '100%' : messageListHeight }"
             :warning="isSelectedSessionInvalid ? t('chat.sessionUnavailable') : undefined" @audio-play="handleAudioPlay"
             @audio-pause="handleAudioPause" @load-more="loadMore()" @image-click="handleImageClick"
             @file-click="openUrl" @video-click="handleVideoClick" @location-click="openLocation" />
