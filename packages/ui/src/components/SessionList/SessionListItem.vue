@@ -9,11 +9,13 @@ interface Props {
   session: WL_IDbSession
   active?: boolean
   deleting?: boolean
+  disabled?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   active: false,
   deleting: false,
+  disabled: false,
 })
 
 const emit = defineEmits<{
@@ -138,7 +140,7 @@ function handleDelete() {
     <div class="flex-1 min-w-0">
       <div class="flex items-center justify-between">
         <span class="flex items-center gap-1 min-w-0">
-          <span class="text-sm font-medium text-neutral-900 truncate">
+          <span class="text-sm font-medium truncate" :class="disabled ? 'text-neutral-400 line-through' : 'text-neutral-900'">
             {{ sessionName }}
           </span>
           <span

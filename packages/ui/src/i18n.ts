@@ -75,6 +75,7 @@ export const weilaUiMessages = {
       inputPlaceholder: "输入消息...",
       send: "发送",
       selectSession: "请选择一个频道",
+      sessionUnavailable: "该频道已失效",
     },
     time: {
       yesterday: "昨天 {time}",
@@ -135,6 +136,7 @@ export const weilaUiMessages = {
       inputPlaceholder: "Type a message...",
       send: "Send",
       selectSession: "Select a session to start chatting",
+      sessionUnavailable: "This channel is unavailable",
     },
     time: {
       yesterday: "Yesterday {time}",

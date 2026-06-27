@@ -30,7 +30,7 @@ import WlImagePreview from '../ImagePreview/WlImagePreview.vue'
 import WlVideoPreview from '../VideoPreview/WlVideoPreview.vue'
 import WlChatComposer from './WlChatComposer.vue'
 import { useMessageHistory } from '../../composables/useMessageHistory'
-import { useSessions } from '../../composables/useSessions'
+import { useSessions, type BatchSessionProfileResolver } from '../../composables/useSessions'
 import { useWeilaUiI18n } from '../../i18n'
 
 export interface WlChatPanelProps {
@@ -39,6 +39,7 @@ export interface WlChatPanelProps {
   selectedSessionId?: string
   selectedSessionType?: number
   messageListHeight?: string
+  batchResolveSessionProfiles?: BatchSessionProfileResolver
   beforeSend?: (session: WL_IDbSession) => boolean | Promise<boolean>
 }
 
@@ -59,6 +60,7 @@ const emit = defineEmits<{
   'location-click': [location: { latitude: number; longitude: number; name: string; address: string }]
   'ptt-error': [payload: { session: WL_IDbSession, error?: unknown }]
   'send-blocked': []
+  'invalid-sessions-change': [keys: Set<string>]
 }>()
 
 const messageInput = ref('')
@@ -90,7 +92,8 @@ const {
   error: sessionsError,
   refresh: refreshSessions,
   refreshSilently: refreshSessionsSilently,
-} = useSessions(() => props.core)
+  invalidSessionKeys,
+} = useSessions(() => props.core, props.batchResolveSessionProfiles)
 
 const selectedSession = computed(() => {
   if (!props.selectedSessionId) return null
@@ -99,6 +102,22 @@ const selectedSession = computed(() => {
     return props.selectedSessionType === undefined || s.sessionType === props.selectedSessionType
   }) ?? null
 })
+
+const selectedSessionKey = computed(() => {
+  if (!props.selectedSessionId || props.selectedSessionType === undefined)
+    return null
+  return `${props.selectedSessionId}_${props.selectedSessionType}`
+})
+
+const isSelectedSessionInvalid = computed(() => {
+  const key = selectedSessionKey.value
+  return key ? invalidSessionKeys.has(key) : false
+})
+
+watchEffect(
+  () => { emit('invalid-sessions-change', new Set(invalidSessionKeys)) },
+  { flush: 'post' }, // ponytail: skip emit before mount
+)
 
 const realtimePttTitle = computed(() => {
   const msg = realtimePttMessage.value
@@ -151,6 +170,10 @@ watch(selectedSession, () => {
   wlMsgListRef.value?.resetScrollState()
 })
 
+const activeHistorySession = computed(() =>
+  isSelectedSessionInvalid.value ? undefined : selectedSession.value ?? undefined,
+)
+
 const {
   messages,
   senderInfos,
@@ -159,15 +182,11 @@ const {
   loadMore,
 } = useMessageHistory(
   () => props.core,
-  () => selectedSession.value ?? undefined,
+  () => activeHistorySession.value,
   {
     shouldAppendMessage: (msg) => !isRealtimePttMessage(msg),
   },
 )
-
-watchEffect(() => {
-  console.log('messages.value', messages.value)
-})
 
 async function finishRealtimePttPlayback() {
   const completedMessageId = realtimePttMessage.value?.combo_id
@@ -220,11 +239,11 @@ watch(
 )
 
 watch(
-  [() => props.core, () => selectedSession.value?.sessionId, () => selectedSession.value?.sessionType],
-  ([core, sessionId, sessionType]) => {
+  [() => props.core, () => selectedSession.value?.sessionId, () => selectedSession.value?.sessionType, isSelectedSessionInvalid],
+  ([core, sessionId, sessionType, isInvalid]) => {
     if (!core) return
 
-    if (!sessionId || sessionType === undefined) {
+    if (!sessionId || sessionType === undefined || isInvalid) {
       core.weila_clearActiveSession()
       return
     }
@@ -495,8 +514,8 @@ async function handlePttStop() {
     <div class="w-80 border-r border-neutral-200 overflow-hidden flex flex-col bg-white">
       <SessionList v-if="core" :sessions="sessions" :active-session-id="selectedSessionId"
         :active-session-type="selectedSessionType" :loading="sessionsLoading" :error="sessionsError"
-        :deleting-session-key="deletingSessionKey" @select="handleSelectSession" @delete="handleDeleteSession"
-        @refresh="refreshSessions">
+        :deleting-session-key="deletingSessionKey" :disabled-session-keys="invalidSessionKeys"
+        @select="handleSelectSession" @delete="handleDeleteSession" @refresh="refreshSessions">
         <template #header-actions>
           <slot name="session-header-actions" />
         </template>
@@ -507,9 +526,9 @@ async function handlePttStop() {
       <div v-else class="flex items-center justify-center h-full text-neutral-500">{{ t('chat.loadingSdk') }}</div>
     </div>
 
-    <div class="flex-1 p-4 overflow-y-auto">
-      <div v-if="selectedSession">
-        <div class="flex items-center justify-between mb-4">
+    <div class="flex-1 overflow-hidden p-4">
+      <div v-if="selectedSession" class="flex h-full flex-col gap-4">
+        <div v-if="!isSelectedSessionInvalid" class="flex flex-none items-center justify-between">
           <h2 class="text-lg font-semibold">
             {{ selectedSession.sessionName || selectedSession.sessionId }}
           </h2>
@@ -518,7 +537,7 @@ async function handlePttStop() {
           </div>
         </div>
 
-        <div class="relative">
+        <div class="relative min-h-0 flex-1">
           <div v-if="realtimePttMessage"
             class="absolute left-3 right-3 top-3 z-10 flex items-center gap-3 rounded-lg border border-blue-100 bg-blue-50/95 px-3 py-2 text-blue-700 shadow-sm backdrop-blur">
             <span class="icon-[carbon--volume-up-filled] size-5 shrink-0" />
@@ -536,19 +555,22 @@ async function handlePttStop() {
             </div>
           </div>
 
-          <WlMsgList ref="wlMsgListRef" :style="{ height: messageListHeight }" class="bg-neutral-100"
+          <WlMsgList ref="wlMsgListRef" class="h-full bg-neutral-100"
             :messages="messages" :current-user-id="currentUserId" :sender-infos="messageSenderInfos" :has-more="hasMore"
-            :loading="messagesLoading" :playing-audio-id="playingAudioId" @audio-play="handleAudioPlay"
+            :loading="messagesLoading" :playing-audio-id="playingAudioId"
+            :style="{ height: isSelectedSessionInvalid ? '100%' : messageListHeight }"
+            :warning="isSelectedSessionInvalid ? t('chat.sessionUnavailable') : undefined" @audio-play="handleAudioPlay"
             @audio-pause="handleAudioPause" @load-more="loadMore()" @image-click="handleImageClick"
             @file-click="openUrl" @video-click="handleVideoClick" @location-click="openLocation" />
         </div>
 
-        <WlChatComposer v-model="messageInput" :ptt-status="pttStatus" :disabled="!selectedSession"
+        <WlChatComposer v-if="!isSelectedSessionInvalid" v-model="messageInput" :ptt-status="pttStatus"
+          class="flex-none"
           @send="sendMessage" @emoji-select="handleEmojiSelect" @image-selected="handleImageSelected"
           @file-selected="handleFileSelected" @video-selected="handleVideoSelected"
           @trigger-map-picker="triggerMapPicker" @ptt-start="handlePttStart" @ptt-stop="handlePttStop" />
       </div>
-      <div v-else class="flex items-center justify-center h-full text-neutral-400">
+      <div v-else class="flex h-full items-center justify-center text-neutral-400">
         <p>{{ t('chat.selectSession') }}</p>
       </div>
     </div>

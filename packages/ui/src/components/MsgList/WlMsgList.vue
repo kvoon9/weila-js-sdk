@@ -30,6 +30,8 @@ export interface WlMsgListProps {
   loading?: boolean
   /** 当前正在播放的音频消息 combo_id */
   playingAudioId?: string | null
+  /** 置顶警告文案 */
+  warning?: string
 }
 
 const props = withDefaults(defineProps<WlMsgListProps>(), {
@@ -37,6 +39,7 @@ const props = withDefaults(defineProps<WlMsgListProps>(), {
   hasMore: false,
   loading: false,
   playingAudioId: null,
+  warning: '',
 })
 
 const emit = defineEmits<{
@@ -159,6 +162,14 @@ watch(
 
 <template>
   <div ref="listRef" class="flex flex-col h-full bg-neutral-100 overflow-y-auto px-4 py-3" @scroll="onScroll">
+    <div
+      v-if="warning"
+      class="sticky top-0 z-10 mb-2 w-full flex items-center gap-2 rounded-md border border-orange-200 bg-orange-50 px-3 py-2 text-orange-700 shadow-sm"
+    >
+      <span class="icon-[carbon--warning-filled] size-5 shrink-0" />
+      <span class="text-sm">{{ warning }}</span>
+    </div>
+
     <!-- Load more banner -->
     <div v-if="hasMore || loading" class="flex justify-center py-2 cursor-pointer" @click="emit('load-more')">
       <span v-if="loading" class="icon-[carbon--rotate] size-5 text-neutral-400 animate-spin [animation-direction:reverse]" />

@@ -22,6 +22,7 @@ export { default as WlChatComposer } from './components/ChatPanel/WlChatComposer
 
 // Composables
 export { useSessions } from './composables/useSessions'
+export type { BatchSessionProfileResolver } from './composables/useSessions'
 export { useMessageHistory } from './composables/useMessageHistory'
 export { useSessionLastMessages } from './composables/useSessionLastMessages'
 export { framesToDuration } from './composables/useAudio'

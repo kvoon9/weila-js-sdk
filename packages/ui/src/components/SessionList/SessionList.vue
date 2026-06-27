@@ -13,6 +13,7 @@ interface Props {
   loading?: boolean
   error?: Error | null
   filter?: 'all' | 'personal' | 'group'
+  disabledSessionKeys?: Set<string>
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -97,7 +98,8 @@ function handleRefresh() {
       <SessionListItem v-for="session in filteredSessions" :key="`${session.sessionId}-${session.sessionType}`"
         :session="session"
         :active="session.sessionId === activeSessionId && (activeSessionType === undefined || session.sessionType === activeSessionType)"
-        :deleting="`${session.sessionId}-${session.sessionType}` === deletingSessionKey" @click="handleSelect"
+        :deleting="`${session.sessionId}-${session.sessionType}` === deletingSessionKey"
+        :disabled="disabledSessionKeys?.has(`${session.sessionId}_${session.sessionType}`) ?? false" @click="handleSelect"
         @delete="handleDelete" />
     </div>
 
