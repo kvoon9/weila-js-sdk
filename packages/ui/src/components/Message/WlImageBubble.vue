@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { WL_IDbMsgData, WL_IDbUserInfo } from '@weilasdk/core'
+import type { WL_IDbMsgData, WL_IDbUserInfo } from '@vois/weila-sdk-core'
 import { useWeilaUiI18n } from '../../i18n'
 
 export interface WlImageBubbleProps {

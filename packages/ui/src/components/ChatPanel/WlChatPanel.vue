@@ -16,14 +16,14 @@ import type {
   WL_IDbMsgData,
   WL_IDbSession,
   WL_PttPlayInd,
-} from '@weilasdk/core'
+} from '@vois/weila-sdk-core'
 import {
   WL_ExtEventID,
   WL_IDbMsgDataType,
   WL_PttAudioPlaySource,
   WL_PttAudioPlayState,
   isIndividualSessionType,
-} from '@weilasdk/core'
+} from '@vois/weila-sdk-core'
 import SessionList from '../SessionList/SessionList.vue'
 import WlMsgList from '../MsgList/WlMsgList.vue'
 import WlImagePreview from '../ImagePreview/WlImagePreview.vue'

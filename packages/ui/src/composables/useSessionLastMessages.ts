@@ -1,5 +1,5 @@
 import { ref, watch, type Ref } from 'vue'
-import type { WeilaCore, WL_IDbSession, WL_IDbMsgData } from '@weilasdk/core'
+import type { WeilaCore, WL_IDbSession, WL_IDbMsgData } from '@vois/weila-sdk-core'
 
 /**
  * Composable for fetching and caching last messages for sessions

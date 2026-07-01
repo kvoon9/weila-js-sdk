@@ -1,13 +1,13 @@
 import { computed, reactive, ref, watch } from 'vue'
-import type { WeilaCore } from '@weilasdk/core'
-import type { WL_IDbMsgData, WL_IDbSession, WL_ExtEventCallback } from '@weilasdk/core'
+import type { WeilaCore } from '@vois/weila-sdk-core'
+import type { WL_IDbMsgData, WL_IDbSession, WL_ExtEventCallback } from '@vois/weila-sdk-core'
 import {
   WL_DataPrepareState,
   WL_ExtEventID,
   WL_IDbMsgDataType,
   isGroupSessionType,
   isIndividualSessionType,
-} from '@weilasdk/core'
+} from '@vois/weila-sdk-core'
 
 const BACKGROUND_REFRESH_DEBOUNCE_MS = 200
 

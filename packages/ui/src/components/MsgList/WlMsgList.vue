@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, useTemplateRef, watch, nextTick } from 'vue'
-import type { WL_IDbMsgData, WL_IDbUserInfo } from '@weilasdk/core'
-import { WL_IDbMsgDataStatus, WL_IDbMsgDataType } from '@weilasdk/core'
+import type { WL_IDbMsgData, WL_IDbUserInfo } from '@vois/weila-sdk-core'
+import { WL_IDbMsgDataStatus, WL_IDbMsgDataType } from '@vois/weila-sdk-core'
 import WlAudioBubble from '../Message/WlAudioBubble.vue'
 import WlTextBubble from '../Message/WlTextBubble.vue'
 import WlImageBubble from '../Message/WlImageBubble.vue'

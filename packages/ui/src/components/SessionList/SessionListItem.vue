@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { WL_IDbSession } from '@weilasdk/core'
-import { isGroupSessionType, isIndividualSessionType, WL_IDbMsgDataType } from '@weilasdk/core'
+import type { WL_IDbSession } from '@vois/weila-sdk-core'
+import { isGroupSessionType, isIndividualSessionType, WL_IDbMsgDataType } from '@vois/weila-sdk-core'
 import WlAvatar from '../Avatar/WlAvatar.vue'
 import { useWeilaUiI18n } from '../../i18n'
 

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/vue3'
 import { SessionList } from '../index'
-import type { WL_IDbSession } from '@weilasdk/core'
+import type { WL_IDbSession } from '@vois/weila-sdk-core'
 
 const mockSessions: WL_IDbSession[] = [
   {

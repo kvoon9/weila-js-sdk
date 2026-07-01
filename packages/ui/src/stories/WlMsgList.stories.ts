@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/vue3'
 import WlMsgList from '../components/MsgList/WlMsgList.vue'
-import type { WL_IDbMsgData, WL_IDbUserInfo } from '@weilasdk/core'
+import type { WL_IDbMsgData, WL_IDbUserInfo } from '@vois/weila-sdk-core'
 
 const realMessages: WL_IDbMsgData[] = [
   {

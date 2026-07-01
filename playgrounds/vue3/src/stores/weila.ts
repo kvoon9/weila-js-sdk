@@ -9,9 +9,9 @@ import {
   setConfigData,
   WL_ConfigID,
   WL_ExtEventID,
-} from '@weilasdk/core'
-import type { WL_IDbUserInfo } from '@weilasdk/core'
-import type { WL_ExtEventCallback } from '@weilasdk/core'
+} from '@vois/weila-sdk-core'
+import type { WL_IDbUserInfo } from '@vois/weila-sdk-core'
+import type { WL_ExtEventCallback } from '@vois/weila-sdk-core'
 
 // Encrypt with md5-based key derivation
 function encrypt(str: string): string {

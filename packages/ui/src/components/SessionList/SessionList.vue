@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { WL_IDbSession } from '@weilasdk/core'
-import { isGroupSessionType, isIndividualSessionType } from '@weilasdk/core'
+import type { WL_IDbSession } from '@vois/weila-sdk-core'
+import { isGroupSessionType, isIndividualSessionType } from '@vois/weila-sdk-core'
 import SessionListItem from './SessionListItem.vue'
 import { useWeilaUiI18n } from '../../i18n'
 

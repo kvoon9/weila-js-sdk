@@ -8,7 +8,7 @@ export default defineConfig({
   platform: 'neutral',
   dts: { vue: true },
   plugins: [Vue({ isProduction: true })],
-  external: ['vue', '@weilasdk/core'],
+  external: ['vue', '@vois/weila-sdk-core'],
   hooks: {
     'build:done'() {
       execSync('node scripts/build-css.mjs', { stdio: 'inherit' })

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { WL_IDbMsgData } from "@weilasdk/core";
-import { calculateAudioDuration } from "@weilasdk/core";
+import type { WL_IDbMsgData } from "@vois/weila-sdk-core";
+import { calculateAudioDuration } from "@vois/weila-sdk-core";
 
 export interface WlAudioBubbleProps {
   /** 消息数据 */

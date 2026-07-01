@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/vue3'
 import WlVideoBubble from './WlVideoBubble.vue'
 import WlTextBubble from './WlTextBubble.vue'
-import type { WL_IDbMsgData } from '@weilasdk/core'
-import { WL_IDbMsgDataType } from '@weilasdk/core'
+import type { WL_IDbMsgData } from '@vois/weila-sdk-core'
+import { WL_IDbMsgDataType } from '@vois/weila-sdk-core'
 
 const createVideoMsg = (overrides?: Partial<WL_IDbMsgData>): WL_IDbMsgData => ({
   created: 1772600000,

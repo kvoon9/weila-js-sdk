@@ -2,9 +2,9 @@ import { defineQuery, useQuery } from '@pinia/colada'
 import { useWeilaStore } from '../stores/weila'
 import { storeToRefs } from 'pinia'
 import { watch } from 'vue'
-import type { WL_IDbFriend } from '@weilasdk/core'
-import { WL_ExtEventID } from '@weilasdk/core'
-import type { WL_ExtEventCallback } from '@weilasdk/core'
+import type { WL_IDbFriend } from '@vois/weila-sdk-core'
+import { WL_ExtEventID } from '@vois/weila-sdk-core'
+import type { WL_ExtEventCallback } from '@vois/weila-sdk-core'
 
 export const useFriends = defineQuery(() => {
   const { core } = storeToRefs(useWeilaStore())

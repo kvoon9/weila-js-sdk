@@ -4,7 +4,7 @@ import { storeToRefs } from 'pinia'
 import ContactList from './ContactList.vue'
 import { useRouter } from 'vue-router'
 import { useWeilaStore } from '../../stores/weila'
-import { WL_IDbSessionType } from '@weilasdk/core'
+import { WL_IDbSessionType } from '@vois/weila-sdk-core'
 
 interface ContactItem {
   userId: string

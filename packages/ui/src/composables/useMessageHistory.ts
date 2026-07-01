@@ -5,8 +5,8 @@ import type {
   WL_IDbMsgData,
   WL_IDbSession,
   WL_IDbUserInfo,
-} from '@weilasdk/core'
-import { WL_ExtEventID, isGroupSessionType } from '@weilasdk/core'
+} from '@vois/weila-sdk-core'
+import { WL_ExtEventID, isGroupSessionType } from '@vois/weila-sdk-core'
 
 const PAGE_SIZE = 20
 

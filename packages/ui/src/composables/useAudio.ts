@@ -1,4 +1,4 @@
-import { calculateAudioDuration } from '@weilasdk/core'
+import { calculateAudioDuration } from '@vois/weila-sdk-core'
 
 /**
  * 将 Opus 帧数转换为音频时长（秒）

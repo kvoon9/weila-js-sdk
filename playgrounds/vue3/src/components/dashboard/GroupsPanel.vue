@@ -6,8 +6,8 @@ import { storeToRefs } from 'pinia'
 import GroupList from './GroupList.vue'
 import CreateGroupModal from './CreateGroupModal.vue'
 import type { GroupItem } from '../../queries/groups'
-import type { WL_IDbGroupMember, WL_IDbGroup } from '@weilasdk/core'
-import { WL_IDbSessionType, WL_IDbGroupType, WL_IDbGroupPublicType } from '@weilasdk/core'
+import type { WL_IDbGroupMember, WL_IDbGroup } from '@vois/weila-sdk-core'
+import { WL_IDbSessionType, WL_IDbGroupType, WL_IDbGroupPublicType } from '@vois/weila-sdk-core'
 
 const router = useRouter()
 const weila = useWeilaStore()

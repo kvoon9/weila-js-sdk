@@ -1,4 +1,4 @@
-// @weilasdk/ui - Weila SDK Vue 组件库
+// @vois/weila-sdk-ui - Weila SDK Vue 组件库
 
 // Components
 export { default as WlStatusIndicator } from './components/WlStatusIndicator.vue'

@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import type { Ref } from 'vue'
-import type { WeilaCore } from '@weilasdk/core'
+import type { WeilaCore } from '@vois/weila-sdk-core'
 
 export function useFriendSearch(weilaCore: Ref<WeilaCore | null>) {
   const searchResults = ref<Array<{ userId: string; name: string; avatar?: string }>>([])

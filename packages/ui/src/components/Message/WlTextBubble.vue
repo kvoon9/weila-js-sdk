@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { WL_IDbMsgData, WL_IDbUserInfo } from '@weilasdk/core'
+import type { WL_IDbMsgData, WL_IDbUserInfo } from '@vois/weila-sdk-core'
 import WLEmoji from '@/components/Emoji/WLEmoji.vue'
 import { parseTextWithEmoji } from '@/utils'
 

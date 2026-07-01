@@ -2,8 +2,8 @@
 import { computed, ref, triggerRef } from 'vue'
 import { useRouteQuery } from '@vueuse/router'
 import { storeToRefs } from 'pinia'
-import type { WL_IDbSession } from '@weilasdk/core'
-import { WlChatPanel } from '@weilasdk/ui'
+import type { WL_IDbSession } from '@vois/weila-sdk-core'
+import { WlChatPanel } from '@vois/weila-sdk-ui'
 import { useWeilaStore } from '../../stores/weila'
 import ConfirmModal from '../ui/ConfirmModal.vue'
 
