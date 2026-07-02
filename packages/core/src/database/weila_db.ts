@@ -59,6 +59,7 @@ class WeilaDB extends Dexie {
   service: Dexie.Table<WL_IDbService, number>
   service_staffs: Dexie.Table<WL_IDbServiceStaff, number>
   loginUserId: number
+  private cleanedWithdrawSessions: Set<string> = new Set()
   static appAuthInfo?: { appKey: string; appId: string }
 
   private static instance: WeilaDB = null
@@ -354,20 +355,6 @@ class WeilaDB extends Dexie {
   public async getSessions(): Promise<WL_IDbSession[]> {
     const list = await this.sessions.toCollection().toArray()
     wllog(list)
-    console.log(`[Weila:DB:getSessions] count=${list.length}`, list.map(s => ({
-      sessionId: s.sessionId,
-      sessionName: s.sessionName,
-      sessionType: s.sessionType,
-      lastMsgId: s.lastMsgId,
-      readMsgId: s.readMsgId,
-      latestUpdate: s.latestUpdate,
-      lastMsgData: s.lastMsgData ? {
-        combo_id: s.lastMsgData.combo_id,
-        msgId: s.lastMsgData.msgId,
-        msgType: s.lastMsgData.msgType,
-        textData: s.lastMsgData.textData?.substring(0, 50),
-      } : null,
-    })))
     return list
   }
 
@@ -378,13 +365,6 @@ class WeilaDB extends Dexie {
   ): Promise<WL_IDbSession | undefined> {
     const id = sessionId + '_' + sessionType
     const session = await this.sessions.get(id)
-    console.log(`[Weila:DB:getSession] id=${id}`, session ? {
-      sessionId: session.sessionId,
-      sessionName: session.sessionName,
-      sessionType: session.sessionType,
-      lastMsgId: session.lastMsgId,
-      readMsgId: session.readMsgId,
-    } : 'not found')
     return session
   }
 
@@ -955,30 +935,67 @@ class WeilaDB extends Dexie {
     })
   }
 
+  private getWithdrawSessionKey(sessionId: string, sessionType: number): string {
+    return `${sessionId}_${sessionType}`
+  }
+
+  /**
+   * 处理并清理本地数据库中遗留的撤回控制消息。
+   * 将控制消息指向的原消息标记为已撤回，并删除控制消息本身。
+   */
+  @AsyncTime()
+  private async applyWithdrawControlMessages(sessionId: string, sessionType: number): Promise<void> {
+    const key = `${sessionId}_${sessionType}`
+    if (this.cleanedWithdrawSessions.has(key)) {
+      return
+    }
+    this.cleanedWithdrawSessions.add(key)
+
+    const controls = await this.msgDatas
+      .where('msgType')
+      .equals(WL_IDbMsgDataType.WL_DB_MSG_DATA_WITHDRAW_TYPE)
+      .and((x) => x.sessionId === sessionId && x.sessionType === sessionType)
+      .toArray()
+
+    if (!controls.length) {
+      return
+    }
+
+    await this.transaction('rw', this.msgDatas, async () => {
+      for (const control of controls) {
+        if (control.withdrawMsgId) {
+          const target = await this.getMsgDataByMsgId(
+            sessionId,
+            sessionType,
+            control.withdrawMsgId,
+          )
+          if (target) {
+            target.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_WITHDRAW
+            await this.msgDatas.put(target)
+          }
+        }
+        await this.msgDatas.delete(control.combo_id)
+      }
+    })
+  }
+
   @AsyncTime()
   public async getLastMsgDatas(
     sessionId: string,
     sessionType: number,
     count: number,
   ): Promise<WL_IDbMsgData[]> {
+    await this.applyWithdrawControlMessages(sessionId, sessionType)
     wllog('获取最后%d条消息:', count)
     const result = await this.msgDatas
       .orderBy('created')
       .and((x) => {
         return x.sessionId === sessionId && x.sessionType === sessionType
+          && x.msgType !== WL_IDbMsgDataType.WL_DB_MSG_DATA_WITHDRAW_TYPE
       })
       .reverse()
       .limit(count)
       .toArray()
-    console.log(`[Weila:DB:getLastMsgDatas] sessionId=${sessionId}, sessionType=${sessionType}, count=${count}, returned=${result.length}`, result.map(m => ({
-      combo_id: m.combo_id,
-      msgId: m.msgId,
-      msgType: m.msgType,
-      senderId: m.senderId,
-      textData: m.textData?.substring(0, 50),
-      created: m.created,
-      status: m.status,
-    })))
     return result
   }
 
@@ -989,6 +1006,7 @@ class WeilaDB extends Dexie {
     fromMsgId: number,
     count: number,
   ): Promise<WL_IDbMsgData[]> {
+    await this.applyWithdrawControlMessages(sessionId, sessionType)
     if (fromMsgId < count) {
       count = fromMsgId
     }
@@ -997,19 +1015,11 @@ class WeilaDB extends Dexie {
       .orderBy('created')
       .and((x) => {
         return x.sessionId === sessionId && x.sessionType === sessionType && x.msgId <= fromMsgId
+          && x.msgType !== WL_IDbMsgDataType.WL_DB_MSG_DATA_WITHDRAW_TYPE
       })
       .reverse()
       .limit(count)
       .toArray()
-    console.log(`[Weila:DB:getMsgDatasWithRange] sessionId=${sessionId}, sessionType=${sessionType}, fromMsgId=${fromMsgId}, count=${count}, returned=${result.length}`, result.map(m => ({
-      combo_id: m.combo_id,
-      msgId: m.msgId,
-      msgType: m.msgType,
-      senderId: m.senderId,
-      textData: m.textData?.substring(0, 50),
-      created: m.created,
-      status: m.status,
-    })))
     return result
   }
 
@@ -1072,13 +1082,6 @@ class WeilaDB extends Dexie {
         return x.sessionId === sessionId && x.sessionType === sessionType
       })
       .last()
-    console.log(`[Weila:DB:getLastMsgData] sessionId=${sessionId}, sessionType=${sessionType}`, msg ? {
-      combo_id: msg.combo_id,
-      msgId: msg.msgId,
-      msgType: msg.msgType,
-      textData: msg.textData?.substring(0, 50),
-      created: msg.created,
-    } : 'not found')
     return msg
   }
 

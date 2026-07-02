@@ -10,10 +10,10 @@
   },
   "dependencies": {
     "@pinia/colada": "catalog:",
+    "@vois/weila-sdk-core": "1.1.3",
+    "@vois/weila-sdk-ui": "0.0.2",
     "@vueuse/core": "catalog:",
     "@vueuse/router": "catalog:",
-    "@weilasdk/core": "workspace:*",
-    "@weilasdk/ui": "workspace:*",
     "md5": "catalog:",
     "pinia": "catalog:",
     "vue": "catalog:",

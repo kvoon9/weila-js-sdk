@@ -21,8 +21,11 @@ const { t } = useWeilaUiI18n()
 <template>
   <div
     class="max-w-[70%] rounded-xl px-3 py-2 text-sm overflow-hidden break-all"
-    :class="isSelf ? 'bg-blue-500 text-blue-200' : 'bg-white text-neutral-400'"
+    :class="isSelf ? 'bg-blue-500 text-blue-100' : 'bg-white text-neutral-400'"
   >
-    <div>{{ t('message.unsupported') }}</div>
+    <div v-if="msg.status === 5 || msg.msgType === 10" class="italic">
+      {{ isSelf ? t('message.withdrawnByMe') : t('message.withdrawnByOther') }}
+    </div>
+    <div v-else>{{ t('message.unsupported') }}</div>
   </div>
 </template>

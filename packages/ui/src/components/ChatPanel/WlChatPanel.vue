@@ -45,6 +45,10 @@ export interface WlChatPanelProps {
   showForward?: boolean
   /** 自定义是否允许转发的判断 */
   canForward?: (msg: WL_IDbMsgData) => boolean
+  /** 是否显示消息撤回按钮（仅自己发送的消息） */
+  showWithdraw?: boolean
+  /** 自定义是否允许撤回的判断 */
+  canWithdraw?: (msg: WL_IDbMsgData) => boolean
 }
 
 const props = withDefaults(defineProps<WlChatPanelProps>(), {
@@ -54,6 +58,8 @@ const props = withDefaults(defineProps<WlChatPanelProps>(), {
   messageListHeight: '400px',
   showForward: false,
   canForward: undefined,
+  showWithdraw: false,
+  canWithdraw: undefined,
 })
 
 const { t } = useWeilaUiI18n()
@@ -69,6 +75,8 @@ const emit = defineEmits<{
   'invalid-sessions-change': [keys: Set<string>]
   /** 转发消息 */
   'forward': [msg: WL_IDbMsgData]
+  /** 撤回消息 */
+  'withdraw': [msg: WL_IDbMsgData]
 }>()
 
 const messageInput = ref('')
@@ -564,11 +572,11 @@ async function handlePttStop() {
           <WlMsgList ref="wlMsgListRef" class="min-h-0 flex-1 bg-neutral-100"
             :messages="messages" :current-user-id="currentUserId" :sender-infos="messageSenderInfos" :has-more="hasMore"
             :loading="messagesLoading" :playing-audio-id="playingAudioId" :show-forward="showForward"
-            :can-forward="canForward"
+            :can-forward="canForward" :show-withdraw="showWithdraw" :can-withdraw="canWithdraw"
             :warning="isSelectedSessionInvalid ? t('chat.sessionUnavailable') : undefined" @audio-play="handleAudioPlay"
             @audio-pause="handleAudioPause" @load-more="loadMore()" @image-click="handleImageClick"
             @file-click="openUrl" @video-click="handleVideoClick" @location-click="openLocation"
-            @forward="emit('forward', $event)" />
+            @forward="emit('forward', $event)" @withdraw="emit('withdraw', $event)" />
         </div>
 
         <WlChatComposer v-if="!isSelectedSessionInvalid" v-model="messageInput" :ptt-status="pttStatus"

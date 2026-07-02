@@ -590,7 +590,6 @@ export default class WLSessionModule {
     }
 
     if (buildResult.resultCode === 0) {
-      console.time('getMsgDataFromServer')
       const rspGetMsg = (await this.coreInterface.sendPbMsg(buildResult)) as WL.Session.IRspGetMsg
       wllog('从服务器获取:' + rspGetMsg.msgList.length + ' 条记录')
       let msgDatas = WeilaDB.getInstance().convertFromMsgDataRaws(
@@ -602,9 +601,26 @@ export default class WLSessionModule {
         msgData.combo_id = getMsgDataIdByCombo(msgData, 0)
       }
 
-      msgDatas = msgDatas.filter((value) => {
-        return value.msgType !== WL_IDbMsgDataType.WL_DB_MSG_DATA_WITHDRAW_TYPE
-      })
+      // 先处理服务器历史中的撤回控制消息：把原消息标记为已撤回，控制消息本身不保留。
+      const nonWithdrawMsgDatas: WL_IDbMsgData[] = []
+      for (const msgData of msgDatas) {
+        if (msgData.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_WITHDRAW_TYPE) {
+          if (msgData.withdrawMsgId) {
+            const target = await WeilaDB.getInstance().getMsgDataByMsgId(
+              msgData.sessionId,
+              msgData.sessionType,
+              msgData.withdrawMsgId,
+            )
+            if (target) {
+              target.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_WITHDRAW
+              await WeilaDB.getInstance().putMsgData(target)
+            }
+          }
+          continue
+        }
+        nonWithdrawMsgDatas.push(msgData)
+      }
+      msgDatas = nonWithdrawMsgDatas
 
       const comboIdList = msgDatas.map((value) => {
         return value.combo_id
@@ -635,8 +651,6 @@ export default class WLSessionModule {
 
       await WeilaDB.getInstance().putMsgDatas(msgDatas)
       wllog('从服务器中获取会话%d条消息成功', msgDatas.length)
-
-      console.timeEnd('getMsgDataFromServer')
       return true
     }
 
@@ -813,7 +827,7 @@ export default class WLSessionModule {
   public async sendMsgData(
     sessionId: string,
     sessionType: number,
-    data: string | WL_IDbAudioData | WL_IDbFileData | WL_IDbLocationShared | WL_IDbPttData,
+    data: string | number | WL_IDbAudioData | WL_IDbFileData | WL_IDbLocationShared | WL_IDbPttData,
     msgType: WL_IDbMsgDataType,
     msgData?: WL_IDbMsgData,
   ): Promise<boolean> {
@@ -902,12 +916,39 @@ export default class WLSessionModule {
         false,
         data as WL_IDbPttData,
       )
+    } else if (msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_WITHDRAW_TYPE) {
+      dbMsgData.withdrawMsgId = data as number
+      buildResult = WeilaPBSessionWrapper.buildWithDrawMsgReq(
+        Long.fromValue(sessionId),
+        sessionType,
+        this.coreInterface.getLoginUserInfo().userId,
+        false,
+        data as number,
+      )
     }
 
     if (buildResult.resultCode === 0) {
       try {
         const rspMsg = (await this.coreInterface.sendPbMsg(buildResult)) as WL.Session.IRspMsg
         await WeilaDB.getInstance().delMsgDataByComboId(dbMsgData.combo_id)
+
+        // 撤回消息发送成功，立即将原消息标记为已撤回
+        if (msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_WITHDRAW_TYPE) {
+          const withdrawMsgId = data as number
+          const originalMsg = await WeilaDB.getInstance().getMsgDataByMsgId(
+            sessionId,
+            sessionType,
+            withdrawMsgId,
+          )
+          if (originalMsg) {
+            originalMsg.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_WITHDRAW
+            await WeilaDB.getInstance().putMsgData(originalMsg)
+            this.coreInterface.sendExtEvent(
+              WL_ExtEventID.WL_EXT_NEW_MSG_RECV_IND,
+              originalMsg,
+            )
+          }
+        }
 
         wllog('发送消息成功,返回结果id:', rspMsg.msgId)
         dbMsgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_SENT
@@ -926,10 +967,14 @@ export default class WLSessionModule {
         dbMsgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_UNSENT
         return Promise.reject(e)
       } finally {
-        // 不管消息发送成功与否，都存入数据库，并对外发布此消息。
-        await WeilaDB.getInstance().putMsgData(dbMsgData)
-        // 通知消息发送
-        this.coreInterface.sendExtEvent(WL_ExtEventID.WL_EXT_MSG_SEND_IND, dbMsgData)
+        // 撤回消息本身只是协议控制消息，不需要作为会话消息展示，
+        // 原消息已在前面的逻辑中标记为已撤回并通知 UI。
+        if (msgType !== WL_IDbMsgDataType.WL_DB_MSG_DATA_WITHDRAW_TYPE) {
+          // 不管消息发送成功与否，都存入数据库，并对外发布此消息。
+          await WeilaDB.getInstance().putMsgData(dbMsgData)
+          // 通知消息发送
+          this.coreInterface.sendExtEvent(WL_ExtEventID.WL_EXT_MSG_SEND_IND, dbMsgData)
+        }
       }
     }
 

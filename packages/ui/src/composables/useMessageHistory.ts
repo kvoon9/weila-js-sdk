@@ -6,7 +6,7 @@ import type {
   WL_IDbSession,
   WL_IDbUserInfo,
 } from '@vois/weila-sdk-core'
-import { WL_ExtEventID, isGroupSessionType } from '@vois/weila-sdk-core'
+import { WL_ExtEventID, WL_IDbMsgDataStatus, WL_IDbMsgDataType, isGroupSessionType } from '@vois/weila-sdk-core'
 
 const PAGE_SIZE = 20
 
@@ -101,8 +101,33 @@ export function useMessageHistory(
     return [...byId.values()]
   }
 
+  function applyWithdrawState(msg: WL_IDbMsgData): boolean {
+    if (
+      msg.msgType !== WL_IDbMsgDataType.WL_DB_MSG_DATA_WITHDRAW_TYPE
+      || !msg.withdrawMsgId
+    ) {
+      return false
+    }
+
+    const targetIdentity = `${msg.sessionId}_${msg.sessionType}_${msg.withdrawMsgId}`
+    const targetIdx = messages.value.findIndex((m) => getMessageIdentity(m) === targetIdentity)
+    if (targetIdx === -1) return false
+
+    const target = messages.value[targetIdx]
+    if (target.status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_WITHDRAW) return true
+
+    messages.value = [
+      ...messages.value.slice(0, targetIdx),
+      { ...target, status: WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_WITHDRAW },
+      ...messages.value.slice(targetIdx + 1),
+    ]
+    return true
+  }
+
   async function appendRealtimeMessage(msg: WL_IDbMsgData) {
     if (!isCurrentSessionMessage(msg)) return
+
+    if (applyWithdrawState(msg)) return
 
     const msgIdentity = getMessageIdentity(msg)
     const existingIdx = messages.value.findIndex((m) => getMessageIdentity(m) === msgIdentity)
@@ -140,9 +165,19 @@ export function useMessageHistory(
         PAGE_SIZE,
       )
 
+      // 防御性处理：如果底层返回了撤回控制消息，应用状态并过滤掉，不加入列表。
+      const visibleResult: WL_IDbMsgData[] = []
+      for (const msg of result) {
+        if (msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_WITHDRAW_TYPE) {
+          applyWithdrawState(msg)
+          continue
+        }
+        visibleResult.push(msg)
+      }
+
       hasMore.value = result.length === PAGE_SIZE
 
-      const dedupedResult = dedupeMessages(result)
+      const dedupedResult = dedupeMessages(visibleResult)
 
       if (cursor === 0) {
         messages.value = dedupedResult

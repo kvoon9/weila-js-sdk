@@ -65,6 +65,9 @@ export const weilaUiMessages = {
       unsupported: "[不支持的消息类型]",
       forward: "转发",
       copy: "复制",
+      withdraw: "撤回",
+      withdrawnByMe: "你撤回了一条消息",
+      withdrawnByOther: "对方撤回了一条消息",
     },
     chat: {
       loadingSdk: "正在加载 SDK...",
@@ -128,6 +131,7 @@ export const weilaUiMessages = {
       unsupported: "[Unsupported message type]",
       forward: "Forward",
       copy: "Copy",
+      withdraw: "Withdraw",
     },
     chat: {
       loadingSdk: "Loading SDK...",

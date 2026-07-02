@@ -36,6 +36,10 @@ export interface WlMsgListProps {
   showForward?: boolean
   /** 自定义是否允许转发的判断 */
   canForward?: (msg: WL_IDbMsgData) => boolean
+  /** 是否显示撤回按钮（仅自己发送的消息） */
+  showWithdraw?: boolean
+  /** 自定义是否允许撤回的判断 */
+  canWithdraw?: (msg: WL_IDbMsgData) => boolean
 }
 
 const props = withDefaults(defineProps<WlMsgListProps>(), {
@@ -46,6 +50,8 @@ const props = withDefaults(defineProps<WlMsgListProps>(), {
   warning: '',
   showForward: false,
   canForward: undefined,
+  showWithdraw: false,
+  canWithdraw: undefined,
 })
 
 const emit = defineEmits<{
@@ -65,6 +71,8 @@ const emit = defineEmits<{
   'location-click': [location: { latitude: number; longitude: number; name: string; address: string }]
   /** 转发消息 */
   'forward': [msg: WL_IDbMsgData]
+  /** 撤回消息 */
+  'withdraw': [msg: WL_IDbMsgData]
 }>()
 
 /** 列表容器 ref */
@@ -126,6 +134,7 @@ const isSupportedCopyType = (msg: WL_IDbMsgData) => isText(msg)
 
 const isWithdrawMsg = (msg: WL_IDbMsgData) =>
   msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_WITHDRAW_TYPE
+  || msg.status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_WITHDRAW
 
 function canShowForward(msg: WL_IDbMsgData) {
   if (!props.showForward) return false
@@ -134,7 +143,13 @@ function canShowForward(msg: WL_IDbMsgData) {
 }
 
 function canShowCopy(msg: WL_IDbMsgData) {
-  return isSupportedCopyType(msg) && !!msg.textData
+  return isSupportedCopyType(msg) && !!msg.textData && !isWithdrawMsg(msg)
+}
+
+function canShowWithdraw(msg: WL_IDbMsgData) {
+  if (!props.showWithdraw || !isSelf(msg)) return false
+  if (props.canWithdraw) return props.canWithdraw(msg)
+  return !isWithdrawMsg(msg)
 }
 
 const copiedMsgIds = ref<Set<string>>(new Set())
@@ -245,8 +260,17 @@ watch(
             <span v-else-if="getStatusIcon(msg) === 'sent'" class="icon-[carbon--checkmark] size-3 shrink-0 text-neutral-400" />
           </div>
 
+          <!-- Withdrawn Message -->
+          <div
+            v-if="isWithdrawMsg(msg)"
+            class="max-w-[70%] rounded-xl px-3 py-2 text-sm overflow-hidden break-all italic"
+            :class="isSelf(msg) ? 'bg-blue-500 text-blue-100' : 'bg-white text-neutral-400'"
+          >
+            <div>{{ isSelf(msg) ? t('message.withdrawnByMe') : t('message.withdrawnByOther') }}</div>
+          </div>
+
           <!-- Text Message -->
-          <WlTextBubble v-if="isText(msg)" :msg="msg" :is-self="isSelf(msg)" :sender="getSender(msg)" />
+          <WlTextBubble v-else-if="isText(msg)" :msg="msg" :is-self="isSelf(msg)" :sender="getSender(msg)" />
 
           <!-- Audio Message -->
           <WlAudioBubble v-else-if="isAudio(msg)" :msg="msg" :is-self="isSelf(msg)"
@@ -275,6 +299,15 @@ watch(
             class="flex items-center gap-2"
             :class="isSelf(msg) ? 'flex-row-reverse' : 'flex-row'"
           >
+            <button
+              v-if="canShowWithdraw(msg)"
+              type="button"
+              class="shrink-0 w-7 h-7 flex items-center justify-center rounded-full text-neutral-400 hover:text-neutral-600 transition-colors"
+              :title="t('message.withdraw')"
+              @click.stop="emit('withdraw', msg)"
+            >
+              <span class="icon-[carbon--undo] size-4" />
+            </button>
             <button
               v-if="canShowForward(msg)"
               type="button"
