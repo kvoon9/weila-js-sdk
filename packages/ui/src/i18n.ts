@@ -63,6 +63,8 @@ export const weilaUiMessages = {
       uploading: "上传中...",
       file: "文件",
       unsupported: "[不支持的消息类型]",
+      forward: "转发",
+      copy: "复制",
     },
     chat: {
       loadingSdk: "正在加载 SDK...",
@@ -124,6 +126,8 @@ export const weilaUiMessages = {
       uploading: "Uploading...",
       file: "File",
       unsupported: "[Unsupported message type]",
+      forward: "Forward",
+      copy: "Copy",
     },
     chat: {
       loadingSdk: "Loading SDK...",

@@ -883,13 +883,15 @@ export default class WLSessionModule {
         data as WL_IDbLocationShared,
       )
     } else if (msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE) {
-      dbMsgData.audioData = data as WL_IDbAudioData
+      const audioData = data as WL_IDbAudioData
+      dbMsgData.audioData = audioData
+      const payload = audioData.data && audioData.data.length > 0 ? audioData.data : audioData.audioUrl
       buildResult = WeilaPBSessionWrapper.buildAudioSessionMsgReq(
         Long.fromValue(sessionId),
         sessionType,
         this.coreInterface.getLoginUserInfo().userId,
         false,
-        data as string,
+        payload,
       )
     } else if (msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_PTT_TYPE) {
       dbMsgData.pttData = data as WL_IDbPttData

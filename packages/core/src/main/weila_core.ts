@@ -1363,6 +1363,36 @@ class WeilaCore implements WL_CoreInterface {
   }
 
   /**
+   * 使用已有的音频数据发送音频消息到指定会话。
+   *
+   * @param sessionId - 会话ID。
+   * @param sessionType - 会话类型（例如，个人聊天，群聊）。
+   * @param audioData - 音频数据对象，包含 data（Uint8Array）、frameCount 和可选的 audioUrl。
+   * @returns 如果消息发送成功，返回一个解析为 `true` 的 Promise；如果状态不正确，则返回一个带有错误消息的拒绝 Promise。
+   * @throws 如果用户未登录，将拒绝并带有错误消息。
+   */
+  public async weila_sendAudioMsgByData(
+    sessionId: string,
+    sessionType: number,
+    audioData: WL_IDbAudioData,
+  ): Promise<boolean> {
+    if (!this.isLoginReady) {
+      return Promise.reject('微喇状态不正确')
+    }
+
+    if (!audioData.data && !audioData.audioUrl) {
+      return Promise.reject('音频数据不能为空')
+    }
+
+    return this.sessionModule.sendMsgData(
+      sessionId,
+      sessionType,
+      audioData,
+      WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE,
+    )
+  }
+
+  /**
    * Sends PTT (Push-To-Talk) audio data for a given session.
    *
    * @param sessionId - The ID of the session to which the audio data will be sent.

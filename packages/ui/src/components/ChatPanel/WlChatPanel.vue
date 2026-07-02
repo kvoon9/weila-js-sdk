@@ -41,6 +41,10 @@ export interface WlChatPanelProps {
   messageListHeight?: string
   batchResolveSessionProfiles?: BatchSessionProfileResolver
   beforeSend?: (session: WL_IDbSession) => boolean | Promise<boolean>
+  /** 是否显示消息转发按钮 */
+  showForward?: boolean
+  /** 自定义是否允许转发的判断 */
+  canForward?: (msg: WL_IDbMsgData) => boolean
 }
 
 const props = withDefaults(defineProps<WlChatPanelProps>(), {
@@ -48,6 +52,8 @@ const props = withDefaults(defineProps<WlChatPanelProps>(), {
   selectedSessionId: '',
   selectedSessionType: undefined,
   messageListHeight: '400px',
+  showForward: false,
+  canForward: undefined,
 })
 
 const { t } = useWeilaUiI18n()
@@ -61,6 +67,8 @@ const emit = defineEmits<{
   'ptt-error': [payload: { session: WL_IDbSession, error?: unknown }]
   'send-blocked': []
   'invalid-sessions-change': [keys: Set<string>]
+  /** 转发消息 */
+  'forward': [msg: WL_IDbMsgData]
 }>()
 
 const messageInput = ref('')
@@ -555,10 +563,12 @@ async function handlePttStop() {
 
           <WlMsgList ref="wlMsgListRef" class="min-h-0 flex-1 bg-neutral-100"
             :messages="messages" :current-user-id="currentUserId" :sender-infos="messageSenderInfos" :has-more="hasMore"
-            :loading="messagesLoading" :playing-audio-id="playingAudioId"
+            :loading="messagesLoading" :playing-audio-id="playingAudioId" :show-forward="showForward"
+            :can-forward="canForward"
             :warning="isSelectedSessionInvalid ? t('chat.sessionUnavailable') : undefined" @audio-play="handleAudioPlay"
             @audio-pause="handleAudioPause" @load-more="loadMore()" @image-click="handleImageClick"
-            @file-click="openUrl" @video-click="handleVideoClick" @location-click="openLocation" />
+            @file-click="openUrl" @video-click="handleVideoClick" @location-click="openLocation"
+            @forward="emit('forward', $event)" />
         </div>
 
         <WlChatComposer v-if="!isSelectedSessionInvalid" v-model="messageInput" :ptt-status="pttStatus"
