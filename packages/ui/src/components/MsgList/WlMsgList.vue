@@ -138,8 +138,9 @@ const isWithdrawMsg = (msg: WL_IDbMsgData) =>
 
 function canShowForward(msg: WL_IDbMsgData) {
   if (!props.showForward) return false
+  if (!isSupportedForwardType(msg) || isWithdrawMsg(msg)) return false
   if (props.canForward) return props.canForward(msg)
-  return isSupportedForwardType(msg) && !isWithdrawMsg(msg)
+  return true
 }
 
 function canShowCopy(msg: WL_IDbMsgData) {
@@ -148,8 +149,9 @@ function canShowCopy(msg: WL_IDbMsgData) {
 
 function canShowWithdraw(msg: WL_IDbMsgData) {
   if (!props.showWithdraw || !isSelf(msg)) return false
+  if (isWithdrawMsg(msg)) return false
   if (props.canWithdraw) return props.canWithdraw(msg)
-  return !isWithdrawMsg(msg)
+  return true
 }
 
 const copiedMsgIds = ref<Set<string>>(new Set())
