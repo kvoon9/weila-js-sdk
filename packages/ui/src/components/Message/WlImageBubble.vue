@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { WL_IDbMsgData, WL_IDbUserInfo } from '@vois/weila-sdk-core'
+import { WL_IDbMsgDataStatus } from '@vois/weila-sdk-core'
 import { useWeilaUiI18n } from '../../i18n'
 
 export interface WlImageBubbleProps {
@@ -20,6 +21,11 @@ const { t } = useWeilaUiI18n()
 const emit = defineEmits<{
   (e: 'click', url: string): void
 }>()
+
+function isUploadFailed() {
+  return props.msg.status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_UNSENT
+    || props.msg.status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR
+}
 </script>
 
 <template>
@@ -28,8 +34,11 @@ const emit = defineEmits<{
       class="max-w-[200px] max-h-[200px] rounded-xl object-cover cursor-pointer" alt="image"
       @click="emit('click', msg.fileInfo!.fileUrl)" />
     <div v-else class="w-[160px] h-[120px] flex flex-col items-center justify-center gap-2">
-      <span class="icon-[carbon--image] size-8" :class="isSelf ? 'text-blue-100' : 'text-neutral-400'" />
-      <span class="text-xs" :class="isSelf ? 'text-blue-100' : 'text-neutral-500'">{{ t('message.uploading') }}</span>
+      <span class="size-8"
+        :class="[isUploadFailed() ? 'icon-[carbon--warning]' : 'icon-[carbon--image]', isSelf ? 'text-blue-100' : 'text-neutral-400']" />
+      <span class="text-xs" :class="isSelf ? 'text-blue-100' : 'text-neutral-500'">
+        {{ isUploadFailed() ? t('message.uploadFailed') : t('message.uploading') }}
+      </span>
     </div>
   </div>
 </template>

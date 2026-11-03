@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { WL_IDbMsgData, WL_IDbUserInfo } from '@vois/weila-sdk-core'
+import { WL_IDbMsgDataStatus } from '@vois/weila-sdk-core'
 import { useWeilaUiI18n } from '../../i18n'
 
 export interface WlVideoBubbleProps {
@@ -20,6 +21,11 @@ const { t } = useWeilaUiI18n()
 const emit = defineEmits<{
   (e: 'click', url: string): void
 }>()
+
+function isUploadFailed() {
+  return props.msg.status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_UNSENT
+    || props.msg.status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR
+}
 </script>
 
 <template>
@@ -57,8 +63,9 @@ const emit = defineEmits<{
         class="absolute inset-0 flex items-center justify-center bg-black/20"
       >
         <div class="flex flex-col items-center gap-2 text-white">
-          <span class="icon-[carbon--rotate] size-6 animate-spin [animation-direction:reverse]" />
-          <span class="text-xs">{{ t('message.uploading') }}</span>
+          <span v-if="isUploadFailed()" class="icon-[carbon--warning] size-6" />
+          <span v-else class="icon-[carbon--rotate] size-6 animate-spin [animation-direction:reverse]" />
+          <span class="text-xs">{{ isUploadFailed() ? t('message.uploadFailed') : t('message.uploading') }}</span>
         </div>
       </div>
 

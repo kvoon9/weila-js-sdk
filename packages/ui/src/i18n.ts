@@ -61,6 +61,7 @@ export const weilaUiMessages = {
     message: {
       loadMore: "加载更多",
       uploading: "上传中...",
+      uploadFailed: "上传失败",
       file: "文件",
       unsupported: "[不支持的消息类型]",
       forward: "转发",
@@ -127,6 +128,7 @@ export const weilaUiMessages = {
     message: {
       loadMore: "Load more",
       uploading: "Uploading...",
+      uploadFailed: "Upload failed",
       file: "File",
       unsupported: "[Unsupported message type]",
       forward: "Forward",

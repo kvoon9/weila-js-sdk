@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { WL_IDbMsgData, WL_IDbUserInfo } from '@vois/weila-sdk-core'
+import { WL_IDbMsgDataStatus } from '@vois/weila-sdk-core'
 import { useWeilaUiI18n } from '../../i18n'
 
 export interface WlFileBubbleProps {
@@ -20,6 +21,11 @@ const { t } = useWeilaUiI18n()
 const emit = defineEmits<{
   (e: 'click', url: string): void
 }>()
+
+function isUploadFailed() {
+  return props.msg.status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_UNSENT
+    || props.msg.status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR
+}
 
 function formatFileSize(bytes?: number): string {
   if (!bytes) return ''
@@ -57,7 +63,9 @@ function formatFileSize(bytes?: number): string {
           {{ msg.fileInfo.fileName || t('message.file') }}
         </div>
         <div class="text-xs mt-0.5" :class="isSelf ? 'text-blue-200' : 'text-neutral-400'">
-          {{ msg.fileInfo?.fileUrl ? formatFileSize(msg.fileInfo.fileSize) : t('message.uploading') }}
+          {{ msg.fileInfo?.fileUrl
+            ? formatFileSize(msg.fileInfo.fileSize)
+            : isUploadFailed() ? t('message.uploadFailed') : t('message.uploading') }}
         </div>
       </div>
     </div>
