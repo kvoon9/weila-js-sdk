@@ -96,8 +96,7 @@ class AliOssHelper {
       const result = await this.getKeysFromServer()
       const interval = this.expireTimeout * 1000 - new Date().getTime()
 
-      this.inited = true
-      this.cacheClient = new OSS({
+      const cacheClient = new OSS({
         region: 'oss-cn-shenzhen',
         accessKeyId: result.accessKeyId,
         accessKeySecret: result.accessKeySecret,
@@ -107,7 +106,7 @@ class AliOssHelper {
         refreshSTSTokenInterval: interval,
       })
 
-      this.avatarClient = new OSS({
+      const avatarClient = new OSS({
         region: 'oss-cn-shenzhen',
         accessKeyId: result.accessKeyId,
         accessKeySecret: result.accessKeySecret,
@@ -116,6 +115,10 @@ class AliOssHelper {
         refreshSTSToken: this.getKeysFromServer.bind(this),
         refreshSTSTokenInterval: interval,
       })
+
+      this.cacheClient = cacheClient
+      this.avatarClient = avatarClient
+      this.inited = true
     }
 
     return true
@@ -176,20 +179,36 @@ class AliOssHelper {
     return url
   }
 
+  private rejectQueuedUploads(reason: any): void {
+    this.isUploading = false
+    for (const uploadParams of this.uploadingQueue.splice(0)) {
+      uploadParams.reject(reason)
+    }
+  }
+
+  private finishUpload(): void {
+    this.isUploading = false
+    setTimeout(this.processUploadData.bind(this), 0)
+  }
+
   private processUploadData(): void {
     this.init()
       .then((_value) => {
-        if (!this.isUploading && this.uploadingQueue.length > 0) {
-          this.isUploading = true
-          const uploadParams = this.uploadingQueue.shift()!
-          let client = null as OSS | null
+        if (this.isUploading || this.uploadingQueue.length === 0) {
+          return
+        }
 
-          if (uploadParams.clientType === WL_UploadClientType.CACHE_BUCKET_TYPE) {
-            client = this.cacheClient
-          } else {
-            client = this.avatarClient
-          }
+        this.isUploading = true
+        const uploadParams = this.uploadingQueue.shift()!
+        let client = null as OSS | null
 
+        if (uploadParams.clientType === WL_UploadClientType.CACHE_BUCKET_TYPE) {
+          client = this.cacheClient
+        } else {
+          client = this.avatarClient
+        }
+
+        try {
           client
             .put(uploadParams.remoteUrl, uploadParams.fileData, { timeout: 30000 })
             .then((objResult) => {
@@ -204,13 +223,16 @@ class AliOssHelper {
               uploadParams.reject(reason)
             })
             .finally(() => {
-              this.isUploading = false
-              setTimeout(this.processUploadData.bind(this), 0)
+              this.finishUpload()
             })
+        } catch (reason) {
+          uploadParams.reject(reason)
+          this.finishUpload()
         }
       })
       .catch((reason) => {
         wlerr('!!!!严重错误，获取key失败!!!!!', reason)
+        this.rejectQueuedUploads(reason)
       })
   }
 
