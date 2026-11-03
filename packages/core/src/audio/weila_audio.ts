@@ -89,17 +89,26 @@ class WLAudio {
 
   public async init(): Promise<boolean> {
     if (!this.isInited) {
-      this.audioContext = new AudioContext({ sampleRate: defaulSampleRate })
-      if (this.audioContext.state !== 'running') {
-        await this.audioContext.resume()
+      const audioContext = new AudioContext({ sampleRate: defaulSampleRate })
+      if (audioContext.state !== 'running') {
+        await audioContext.resume()
       }
 
-      this.isInited = true
+      wllog('audioContext:', audioContext)
+      wllog('audioContext audioWorklet is :', audioContext.audioWorklet)
 
-      wllog('audioContext:', this.audioContext)
-      wllog('audioContext audioWorklet is :', this.audioContext.audioWorklet)
-      await this.audioContext.audioWorklet.addModule(PlayerWorklet)
-      await this.audioContext.audioWorklet.addModule(RecorderWorklet)
+      try {
+        await audioContext.audioWorklet.addModule(PlayerWorklet)
+        await audioContext.audioWorklet.addModule(RecorderWorklet)
+      } catch (error) {
+        // A partially loaded worklet scope cannot be reused, so discard it and
+        // leave isInited false to let the next attempt start clean.
+        await audioContext.close().catch(() => {})
+        throw error
+      }
+
+      this.audioContext = audioContext
+      this.isInited = true
     }
     return true
   }
