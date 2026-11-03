@@ -1,6 +1,6 @@
 /* eslint-disable */
 export { WeilaCore } from './main/weila_core'
-export type { WL_InitOptions, WL_LoginOptions } from './main/weila_core'
+export type { WL_FileUploader, WL_InitOptions, WL_LoginOptions } from './main/weila_core'
 export { createWeilaAudioInitController } from './main/weila_audio_init_controller'
 export type { WL_AudioInitializable, WL_AudioInitController, WL_AudioInitControllerOptions } from './main/weila_audio_init_controller'
 export { installWeilaAudioRuntimePatch } from './main/weila_audio_runtime'

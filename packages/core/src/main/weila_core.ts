@@ -76,7 +76,7 @@ import {
   WL_SubscribeMap,
   WL_SubscribeTopic,
 } from 'main/weila_external_data'
-import { AliOssHelper, WL_UploadResult } from 'main/weila_ali_oss'
+import { AliOssHelper } from 'main/weila_ali_oss'
 import { TextMsgDataParser } from 'proto/weilapb_textmsg_parser'
 import WLBusinessModule from 'main/weila_business_module'
 
@@ -111,6 +111,8 @@ export interface WL_LoginOptions {
   md5?: boolean
 }
 
+export type WL_FileUploader = (file: File, fileName: string) => Promise<string>
+
 class WeilaCore implements WL_CoreInterface {
   readonly maxRetryLoginTimes = 2
   mainFsm?: any
@@ -135,6 +137,7 @@ class WeilaCore implements WL_CoreInterface {
   profileResolver?: WL_ProfileResolver
   groupProfileResolver?: WL_GroupProfileResolver
   sessionProfileResolver?: WL_SessionProfileResolver
+  fileUploader?: WL_FileUploader
   resolvingSessionProfileKeys: Set<string>
 
   constructor() {
@@ -1159,6 +1162,41 @@ class WeilaCore implements WL_CoreInterface {
   }
 
   /**
+   * 设置聊天媒体上传回调。业务层可把图片、文件、视频和位置图片改走自己的上传接口。
+   * 不设置时回退到内置 OSS 上传。
+   */
+  public weila_setFileUploader(uploader?: WL_FileUploader): void {
+    this.fileUploader = uploader
+  }
+
+  private async uploadFileToCache(
+    sessionId: string,
+    sessionType: number,
+    fileName: string,
+    data: File,
+  ): Promise<string> {
+    if (this.fileUploader) {
+      const url = await this.fileUploader(data, fileName)
+      if (!url) {
+        throw new Error('上传失败: 上传接口未返回文件地址')
+      }
+      return url
+    }
+
+    const result = await AliOssHelper.getInstance().uploadToCache(
+      this.loginUserInfo!.userId,
+      sessionId,
+      sessionType,
+      fileName,
+      data,
+    )
+    if (result.statusCode !== 200) {
+      throw new Error('上传失败:' + result.statusCode)
+    }
+    return result.remoteUrl
+  }
+
+  /**
    * 更新本地会话资料字段。用于业务层拿到更准确的会话名称/头像后回写 SDK 缓存。
    * 不接受空白 sessionName，避免把空字符串固化到数据库。
    * @param sessionId 会话id
@@ -1487,29 +1525,28 @@ class WeilaCore implements WL_CoreInterface {
     await WeilaDB.getInstance().putMsgData(msgData)
     this.sendExtEvent(WL_ExtEventID.WL_EXT_MSG_SEND_IND, msgData)
 
-    const uploadResult = await AliOssHelper.getInstance().uploadToCache(
-      this.loginUserInfo!.userId,
-      sessionId,
-      sessionType,
-      filename,
-      data,
-    )
-
-    if (uploadResult.statusCode === 200) {
-      msgData.fileInfo.fileUrl = uploadResult.remoteUrl
-      return this.sessionModule.sendMsgData(
+    try {
+      msgData.fileInfo.fileUrl = await this.uploadFileToCache(
         sessionId,
         sessionType,
-        msgData.fileInfo,
-        msgType,
-        msgData,
+        msgData.fileInfo.fileName || filename,
+        data,
       )
-    } else {
-      wllog('上传文件失败', uploadResult)
+    } catch (error) {
+      wlerr('上传文件失败:', error)
       msgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_UNSENT
+      await WeilaDB.getInstance().putMsgData(msgData)
+      this.sendExtEvent(WL_ExtEventID.WL_EXT_MSG_SEND_IND, msgData)
+      return Promise.reject(error)
     }
 
-    return Promise.reject('上传图片失败:' + uploadResult.statusCode)
+    return this.sessionModule.sendMsgData(
+      sessionId,
+      sessionType,
+      msgData.fileInfo,
+      msgType,
+      msgData,
+    )
   }
 
   /**
@@ -1794,19 +1831,9 @@ class WeilaCore implements WL_CoreInterface {
     imageFile: File,
   ): Promise<string> {
     const name = new Date().toTimeString() + '_map.png'
-    const result: WL_UploadResult = await AliOssHelper.getInstance().uploadToCache(
-      this.loginUserInfo.userId,
-      sessionId,
-      sessionType,
-      name,
-      imageFile,
-    )
-    wllog('weila_uploadImageCache', result)
-    if (result.statusCode === 200) {
-      return result.remoteUrl
-    }
-
-    return Promise.reject(new Error('上传出错'))
+    const url = await this.uploadFileToCache(sessionId, sessionType, name, imageFile)
+    wllog('weila_uploadImageCache', url)
+    return url
   }
 
   /**
