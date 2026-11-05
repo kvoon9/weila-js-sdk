@@ -10,6 +10,9 @@ import {
 } from '@vois/weila-sdk-core'
 
 const BACKGROUND_REFRESH_DEBOUNCE_MS = 200
+// Message events update the session list constantly, but the profile batch
+// only needs to run when the session set changes or the cached names go stale.
+const PROFILE_REFRESH_INTERVAL_MS = 60_000
 
 export interface BatchSessionProfileResult {
   sessionName?: string
@@ -36,6 +39,8 @@ export function useSessions(
   const invalidSessionKeys = reactive(new Set<string>())
   let backgroundRefreshTimer: ReturnType<typeof setTimeout> | null = null
   let fetchPromise: Promise<void> | null = null // ponytail: serialize fetches to avoid stale invalidSessionKeys
+  let lastProfileSyncAt = 0
+  let lastProfileKeys = ''
 
   const sortedSessions = computed(() => {
     return sessions.value.toSorted((a, b) => {
@@ -54,8 +59,21 @@ export function useSessions(
   )
 
   async function applyBatchProfiles(core: WeilaCore, fetchedSessions: WL_IDbSession[]) {
-    if (!batchResolveProfiles)
+    if (!batchResolveProfiles || fetchedSessions.length === 0)
       return
+
+    const keys = fetchedSessions
+      .map(session => `${session.sessionId}_${session.sessionType}`)
+      .sort()
+      .join(',')
+
+    if (keys === lastProfileKeys && Date.now() - lastProfileSyncAt < PROFILE_REFRESH_INTERVAL_MS)
+      return
+
+    // Mark the sync before the request so a failing endpoint does not retry on
+    // every incoming message.
+    lastProfileKeys = keys
+    lastProfileSyncAt = Date.now()
 
     try {
       const profileMap = await batchResolveProfiles(fetchedSessions)
