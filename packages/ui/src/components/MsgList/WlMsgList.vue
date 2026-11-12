@@ -84,7 +84,7 @@ function getSender(msg: WL_IDbMsgData) {
 
 function getSenderName(msg: WL_IDbMsgData) {
   const sender = getSender(msg)
-  return sender?.nick || sender?.weilaNum || String(msg.senderId)
+  return sender?.nick || msg.tag || sender?.weilaNum || String(msg.senderId)
 }
 
 function getSenderAvatar(msg: WL_IDbMsgData) {
