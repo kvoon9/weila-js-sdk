@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-This monorepo contains the Weila Web SDK and its related packages. The project is managed using pnpm workspaces and follows the `@weilasdk` scope.
+This monorepo contains the Weila Web SDK and its related packages. The project is managed using pnpm workspaces. The published packages use the `@vois` scope; the playground keeps `@weilasdk`.
 
 ## Package Manager
 
@@ -21,8 +21,8 @@ Settings in `.npmrc`:
 ```
 weila-js-sdk/
 ├── packages/
-│   ├── core/        # @weilasdk/core  — TypeScript SDK (Webpack 5)
-│   └── ui/          # @weilasdk/ui    — Vue 3 组件库 (tsdown + unplugin-vue)
+│   ├── core/        # @vois/weila-sdk-core  — TypeScript SDK (Webpack 5)
+│   └── ui/          # @vois/weila-sdk-ui    — Vue 3 组件库 (tsdown + unplugin-vue)
 ├── playgrounds/
 │   └── vue3/        # @weilasdk/playground-vue3 — Vue3 + Vite dev environment
 ├── .agents/skills/  # Agent skills (repo-level)
@@ -63,11 +63,11 @@ Run these commands from the root directory using pnpm:
 
 ## Package Descriptions
 
-### @weilasdk/core
+### @vois/weila-sdk-core
 
 The primary TypeScript SDK for the Weila communication platform. It handles WebSocket networking, audio processing (Opus), protobuf messaging, and IndexedDB storage. It outputs UMD bundles using Webpack 5.
 
-### @weilasdk/ui
+### @vois/weila-sdk-ui
 
 Vue 3 component library built with tsdown and unplugin-vue. Outputs ESM/CJS bundles with extracted CSS and full TypeScript declarations. See `packages/ui/README.md` for details.
 
@@ -102,7 +102,7 @@ Browse all Carbon icons: https://icon-sets.iconify.design/carbon/
 ### Adding New Icon Sets
 
 ```bash
-pnpm --filter @weilasdk/ui add -D @iconify-json/{set-name}
+pnpm --filter @vois/weila-sdk-ui add -D @iconify-json/{set-name}
 ```
 
 No additional config needed — `@iconify/tailwind4` auto-discovers installed `@iconify-json/*` packages.
@@ -113,7 +113,7 @@ A development environment using Vue 3.5 and Vite 6. It includes pre-configured p
 
 ## Inter-package Dependencies
 
-Packages within the monorepo depend on each other using the `workspace:*` protocol. For example, both `ui` and `playground-vue3` list `@weilasdk/core` as a dependency via `workspace:*`.
+Packages within the monorepo depend on each other using the `workspace:*` protocol. For example, `ui` lists `@vois/weila-sdk-core` as a `workspace:*` dependency, while `playground-vue3` pins published versions.
 
 ## Shared Config
 
