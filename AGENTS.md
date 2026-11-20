@@ -65,6 +65,12 @@ Run these commands from the root directory using pnpm:
   pnpm knip
   ```
 
+## Git Hooks
+
+`pnpm install` runs `simple-git-hooks` and installs a pre-commit hook. The hook runs `nano-staged`, which checks staged code with `oxlint --type-aware` and `oxfmt --check`. An unformatted staged file blocks the commit, so run `pnpm fmt` first.
+
+`simple-git-hooks` cannot install from a git worktree because `.git` is a file there. Install from the main checkout or a normal clone. Worktrees share the main checkout's hooks after the first install.
+
 ## Package Descriptions
 
 ### @vois/weila-sdk-core
