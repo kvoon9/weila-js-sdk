@@ -6,6 +6,11 @@
   "workspaces": {
     ".": {
       "entry": ["taze.config.js"]
+    },
+    "packages/core": {
+      // Manual script: copies dist/assets into the consuming app's public/
+      // (documented in packages/core/AGENTS.md, used by UniApp integrations)
+      "entry": ["post-copy.js"]
     }
   },
   "ignore": [
