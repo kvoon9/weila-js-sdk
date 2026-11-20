@@ -18,11 +18,7 @@ export interface WL_AudioInitController {
   isInitialized(): boolean
 }
 
-const DEFAULT_GESTURE_EVENTS: Array<keyof WindowEventMap> = [
-  'pointerdown',
-  'keydown',
-  'touchstart',
-]
+const DEFAULT_GESTURE_EVENTS: Array<keyof WindowEventMap> = ['pointerdown', 'keydown', 'touchstart']
 
 export function createWeilaAudioInitController(
   options: WL_AudioInitControllerOptions,
@@ -34,10 +30,8 @@ export function createWeilaAudioInitController(
   const gestureEvents = options.gestureEvents ?? DEFAULT_GESTURE_EVENTS
 
   function getTargetWindow(): Window | undefined {
-    if (options.targetWindow)
-      return options.targetWindow
-    if (typeof window === 'undefined')
-      return undefined
+    if (options.targetWindow) return options.targetWindow
+    if (typeof window === 'undefined') return undefined
     return window
   }
 
@@ -48,8 +42,7 @@ export function createWeilaAudioInitController(
 
   function disarmInitListener(): void {
     const targetWindow = getTargetWindow()
-    if (!listenerArmed || !targetWindow)
-      return
+    if (!listenerArmed || !targetWindow) return
 
     listenerArmed = false
     for (const eventName of gestureEvents)
@@ -58,19 +51,15 @@ export function createWeilaAudioInitController(
 
   async function ensureInitialized(): Promise<boolean> {
     const core = options.getCore()
-    if (!core)
-      return false
-    if (initialized)
-      return true
-    if (initPromise)
-      return initPromise
+    if (!core) return false
+    if (initialized) return true
+    if (initPromise) return initPromise
 
     initPromise = core
       .weila_audioInit()
       .then((result) => {
         setInitialized(Boolean(result))
-        if (initialized)
-          disarmInitListener()
+        if (initialized) disarmInitListener()
         return result
       })
       .catch((error) => {
@@ -86,8 +75,7 @@ export function createWeilaAudioInitController(
 
   function armInitListener(): void {
     const targetWindow = getTargetWindow()
-    if (initialized || listenerArmed || !targetWindow)
-      return
+    if (initialized || listenerArmed || !targetWindow) return
 
     listenerArmed = true
     for (const eventName of gestureEvents)

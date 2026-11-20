@@ -31,13 +31,7 @@ onUnmounted(() => {
   <Teleport to="body">
     <div v-if="open" class="wl-video-preview" @click="handleClose">
       <div class="wl-video-preview__container" @click.stop>
-        <video
-          :src="props.src"
-          class="wl-video-preview__video"
-          controls
-          playsinline
-          autoplay
-        />
+        <video :src="props.src" class="wl-video-preview__video" controls playsinline autoplay />
       </div>
     </div>
   </Teleport>

@@ -19,8 +19,7 @@ function unwrapCascadeLayers() {
       layer(atRule) {
         if (atRule.nodes?.length) {
           atRule.replaceWith(...atRule.nodes)
-        }
-        else {
+        } else {
           atRule.remove()
         }
       },
@@ -35,20 +34,15 @@ const [sourceCss, componentCss, floatingVueCss] = await Promise.all([
   readFile(floatingVueCssPath, 'utf8'),
 ])
 
-const tailwindCss = await postcss([
-  tailwindcss(),
-  autoprefixer(),
-  unwrapCascadeLayers(),
-]).process(sourceCss, {
-  from: sourceCssPath,
-  to: distCssPath,
-})
+const tailwindCss = await postcss([tailwindcss(), autoprefixer(), unwrapCascadeLayers()]).process(
+  sourceCss,
+  {
+    from: sourceCssPath,
+    to: distCssPath,
+  },
+)
 
 await writeFile(
   distCssPath,
-  [
-    tailwindCss.css,
-    componentCss,
-    floatingVueCss,
-  ].filter(Boolean).join('\n'),
+  [tailwindCss.css, componentCss, floatingVueCss].filter(Boolean).join('\n'),
 )

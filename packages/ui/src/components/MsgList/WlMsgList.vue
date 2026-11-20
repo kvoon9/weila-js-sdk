@@ -68,11 +68,13 @@ const emit = defineEmits<{
   /** 视频点击 */
   'video-click': [url: string]
   /** 位置点击 */
-  'location-click': [location: { latitude: number; longitude: number; name: string; address: string }]
+  'location-click': [
+    location: { latitude: number; longitude: number; name: string; address: string },
+  ]
   /** 转发消息 */
-  'forward': [msg: WL_IDbMsgData]
+  forward: [msg: WL_IDbMsgData]
   /** 撤回消息 */
-  'withdraw': [msg: WL_IDbMsgData]
+  withdraw: [msg: WL_IDbMsgData]
 }>()
 
 /** 列表容器 ref */
@@ -115,7 +117,11 @@ function getStatusIcon(msg: WL_IDbMsgData) {
   if (status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_UNSENT) return 'unsent'
   if (status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR) return 'error'
   if (status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_READ) return 'read'
-  if (status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_SENT || status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_NEW) return 'sent'
+  if (
+    status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_SENT ||
+    status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_NEW
+  )
+    return 'sent'
   return null
 }
 
@@ -133,8 +139,8 @@ const isSupportedForwardType = (msg: WL_IDbMsgData) =>
 const isSupportedCopyType = (msg: WL_IDbMsgData) => isText(msg)
 
 const isWithdrawMsg = (msg: WL_IDbMsgData) =>
-  msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_WITHDRAW_TYPE
-  || msg.status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_WITHDRAW
+  msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_WITHDRAW_TYPE ||
+  msg.status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_WITHDRAW
 
 function canShowForward(msg: WL_IDbMsgData) {
   if (!props.showForward) return false
@@ -159,8 +165,7 @@ const copiedMsgIds = ref<Set<string>>(new Set())
 const COPY_FEEDBACK_DURATION = 1500
 
 async function handleCopyText(msg: WL_IDbMsgData) {
-  if (!msg.textData || copiedMsgIds.value.has(msg.combo_id))
-    return
+  if (!msg.textData || copiedMsgIds.value.has(msg.combo_id)) return
 
   try {
     await navigator.clipboard.writeText(msg.textData)
@@ -168,8 +173,7 @@ async function handleCopyText(msg: WL_IDbMsgData) {
     setTimeout(() => {
       copiedMsgIds.value.delete(msg.combo_id)
     }, COPY_FEEDBACK_DURATION)
-  }
-  catch (err) {
+  } catch (err) {
     console.error('[WlMsgList] Failed to copy text:', err)
   }
 }
@@ -197,7 +201,12 @@ function handleVideoClick(url: string) {
   emit('video-click', url)
 }
 
-function handleLocationClick(location: { latitude: number; longitude: number; name: string; address: string }) {
+function handleLocationClick(location: {
+  latitude: number
+  longitude: number
+  name: string
+  address: string
+}) {
   emit('location-click', location)
 }
 
@@ -205,7 +214,7 @@ function scrollToBottom(behavior: ScrollBehavior = 'smooth') {
   if (!listRef.value) return
   listRef.value.scrollTo({
     top: listRef.value.scrollHeight,
-    behavior
+    behavior,
   })
 }
 
@@ -225,10 +234,15 @@ watch(
       nextTick(() => scrollToBottom('instant'))
     }
   },
-)</script>
+)
+</script>
 
 <template>
-  <div ref="listRef" class="flex flex-col h-full bg-neutral-100 overflow-y-auto px-4 py-3" @scroll="onScroll">
+  <div
+    ref="listRef"
+    class="flex flex-col h-full bg-neutral-100 overflow-y-auto px-4 py-3"
+    @scroll="onScroll"
+  >
     <div
       v-if="warning"
       class="sticky top-0 z-10 mb-2 w-full flex items-center gap-2 rounded-md border border-orange-200 bg-orange-50 px-3 py-2 text-orange-700 shadow-sm"
@@ -238,16 +252,32 @@ watch(
     </div>
 
     <!-- Load more banner -->
-    <div v-if="hasMore || loading" class="flex justify-center py-2 cursor-pointer" @click="emit('load-more')">
-      <span v-if="loading" class="icon-[carbon--rotate] size-5 text-neutral-400 animate-spin [animation-direction:reverse]" />
-      <span v-else class="text-sm text-blue-500 hover:text-blue-600">{{ t('message.loadMore') }}</span>
+    <div
+      v-if="hasMore || loading"
+      class="flex justify-center py-2 cursor-pointer"
+      @click="emit('load-more')"
+    >
+      <span
+        v-if="loading"
+        class="icon-[carbon--rotate] size-5 text-neutral-400 animate-spin [animation-direction:reverse]"
+      />
+      <span v-else class="text-sm text-blue-500 hover:text-blue-600">{{
+        t('message.loadMore')
+      }}</span>
     </div>
 
-    <div v-for="msg in messages" :key="msg.combo_id" class="group flex items-start gap-2 py-3"
-      :class="isSelf(msg) ? 'justify-end' : 'justify-start'">
+    <div
+      v-for="msg in messages"
+      :key="msg.combo_id"
+      class="group flex items-start gap-2 py-3"
+      :class="isSelf(msg) ? 'justify-end' : 'justify-start'"
+    >
       <WlAvatar v-if="!isSelf(msg)" :src="getSenderAvatar(msg)" :name="getSenderName(msg)" />
 
-      <div class="flex items-start gap-1 min-w-0" :class="isSelf(msg) ? 'flex-row-reverse' : 'flex-row'">
+      <div
+        class="flex items-start gap-1 min-w-0"
+        :class="isSelf(msg) ? 'flex-row-reverse' : 'flex-row'"
+      >
         <!-- bubble column + actions -->
         <div class="min-w-0 flex flex-col gap-1" :class="isSelf(msg) ? 'items-end' : 'items-start'">
           <div
@@ -256,10 +286,22 @@ watch(
           >
             <span v-if="!isSelf(msg)" class="truncate">{{ getSenderLabel(msg) }}</span>
             <span class="shrink-0 text-neutral-400">{{ getMsgTime(msg) }}</span>
-            <span v-if="getStatusIcon(msg) === 'sending'" class="icon-[carbon--rotate] size-3 shrink-0 animate-spin [animation-direction:reverse] text-neutral-400" />
-            <span v-else-if="getStatusIcon(msg) === 'unsent' || getStatusIcon(msg) === 'error'" class="icon-[carbon--warning] size-3 shrink-0 text-orange-400" />
-            <span v-else-if="getStatusIcon(msg) === 'read'" class="icon-[carbon--checkmark] size-3 shrink-0 text-green-500" />
-            <span v-else-if="getStatusIcon(msg) === 'sent'" class="icon-[carbon--checkmark] size-3 shrink-0 text-neutral-400" />
+            <span
+              v-if="getStatusIcon(msg) === 'sending'"
+              class="icon-[carbon--rotate] size-3 shrink-0 animate-spin [animation-direction:reverse] text-neutral-400"
+            />
+            <span
+              v-else-if="getStatusIcon(msg) === 'unsent' || getStatusIcon(msg) === 'error'"
+              class="icon-[carbon--warning] size-3 shrink-0 text-orange-400"
+            />
+            <span
+              v-else-if="getStatusIcon(msg) === 'read'"
+              class="icon-[carbon--checkmark] size-3 shrink-0 text-green-500"
+            />
+            <span
+              v-else-if="getStatusIcon(msg) === 'sent'"
+              class="icon-[carbon--checkmark] size-3 shrink-0 text-neutral-400"
+            />
           </div>
 
           <!-- Withdrawn Message -->
@@ -268,31 +310,64 @@ watch(
             class="max-w-[70%] rounded-xl px-3 py-2 text-sm overflow-hidden break-all italic"
             :class="isSelf(msg) ? 'bg-blue-500 text-blue-100' : 'bg-white text-neutral-400'"
           >
-            <div>{{ isSelf(msg) ? t('message.withdrawnByMe') : t('message.withdrawnByOther') }}</div>
+            <div>
+              {{ isSelf(msg) ? t('message.withdrawnByMe') : t('message.withdrawnByOther') }}
+            </div>
           </div>
 
           <!-- Text Message -->
-          <WlTextBubble v-else-if="isText(msg)" :msg="msg" :is-self="isSelf(msg)" :sender="getSender(msg)" />
+          <WlTextBubble
+            v-else-if="isText(msg)"
+            :msg="msg"
+            :is-self="isSelf(msg)"
+            :sender="getSender(msg)"
+          />
 
           <!-- Audio Message -->
-          <WlAudioBubble v-else-if="isAudio(msg)" :msg="msg" :is-self="isSelf(msg)"
-            :playing="playingAudioId === msg.combo_id" @play="emit('audio-play', msg)" @pause="emit('audio-pause', msg)" />
+          <WlAudioBubble
+            v-else-if="isAudio(msg)"
+            :msg="msg"
+            :is-self="isSelf(msg)"
+            :playing="playingAudioId === msg.combo_id"
+            @play="emit('audio-play', msg)"
+            @pause="emit('audio-pause', msg)"
+          />
 
           <!-- Image Message -->
-          <WlImageBubble v-else-if="isImage(msg)" :msg="msg" :is-self="isSelf(msg)"
-            :sender="getSender(msg)" @click="handleImageClick" />
+          <WlImageBubble
+            v-else-if="isImage(msg)"
+            :msg="msg"
+            :is-self="isSelf(msg)"
+            :sender="getSender(msg)"
+            @click="handleImageClick"
+          />
 
           <!-- Location Message -->
-          <WlLocationBubble v-else-if="isLocation(msg) && msg.location" :msg="msg" :is-self="isSelf(msg)"
-            :sender="getSender(msg)" @click="handleLocationClick" />
+          <WlLocationBubble
+            v-else-if="isLocation(msg) && msg.location"
+            :msg="msg"
+            :is-self="isSelf(msg)"
+            :sender="getSender(msg)"
+            @click="handleLocationClick"
+          />
 
           <!-- File Message -->
-          <WlFileBubble v-else-if="isFile(msg)" :msg="msg" :is-self="isSelf(msg)" :sender="getSender(msg)"
-            @click="handleFileClick" />
+          <WlFileBubble
+            v-else-if="isFile(msg)"
+            :msg="msg"
+            :is-self="isSelf(msg)"
+            :sender="getSender(msg)"
+            @click="handleFileClick"
+          />
 
           <!-- Video Message -->
-          <WlVideoBubble v-else-if="isVideo(msg)" :msg="msg" :is-self="isSelf(msg)"
-            :sender="getSender(msg)" @click="handleVideoClick" />
+          <WlVideoBubble
+            v-else-if="isVideo(msg)"
+            :msg="msg"
+            :is-self="isSelf(msg)"
+            :sender="getSender(msg)"
+            @click="handleVideoClick"
+          />
 
           <!-- Unsupported Message Type -->
           <WlUnknownBubble v-else :msg="msg" :is-self="isSelf(msg)" :sender="getSender(msg)" />
@@ -327,7 +402,11 @@ watch(
               :title="t('message.copy')"
               @click.stop="handleCopyText(msg)"
             >
-              <span :class="isCopied(msg) ? 'icon-[carbon--checkmark] size-4' : 'icon-[carbon--copy] size-4'" />
+              <span
+                :class="
+                  isCopied(msg) ? 'icon-[carbon--checkmark] size-4' : 'icon-[carbon--copy] size-4'
+                "
+              />
             </button>
           </div>
         </div>
@@ -336,9 +415,11 @@ watch(
       <WlAvatar v-if="isSelf(msg)" :src="getSenderAvatar(msg)" :name="getSenderName(msg)" />
     </div>
 
-    <button v-if="showScrollButton"
+    <button
+      v-if="showScrollButton"
       class="absolute bottom-4 right-4 w-10 h-10 bg-blue-500 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-600"
-      @click="() => scrollToBottom()">
+      @click="() => scrollToBottom()"
+    >
       ↓
     </button>
   </div>

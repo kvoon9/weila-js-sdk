@@ -131,12 +131,9 @@ export default class WLPttFsm {
 
   private getPttAudioItemId(msgData: WL_IDbMsgData): string {
     if (msgData.pttData) {
-      return [
-        msgData.sessionId,
-        msgData.sessionType,
-        msgData.senderId,
-        msgData.pttData.seq,
-      ].join('_')
+      return [msgData.sessionId, msgData.sessionType, msgData.senderId, msgData.pttData.seq].join(
+        '_',
+      )
     }
 
     return msgData.combo_id

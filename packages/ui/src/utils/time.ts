@@ -35,7 +35,11 @@ export function formatMsgTime(timestamp: number, translate?: WeilaUiTranslate): 
   // Yesterday
   const yesterday = new Date(now)
   yesterday.setDate(yesterday.getDate() - 1)
-  if (year === yesterday.getFullYear() && month === yesterday.getMonth() && day === yesterday.getDate()) {
+  if (
+    year === yesterday.getFullYear() &&
+    month === yesterday.getMonth() &&
+    day === yesterday.getDate()
+  ) {
     return t('time.yesterday', { time: timeStr })
   }
 
@@ -78,4 +82,3 @@ export function formatTimeAgo(timestamp: number, translate?: WeilaUiTranslate): 
   // Fall back to absolute time
   return formatMsgTime(timestamp, t)
 }
-

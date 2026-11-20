@@ -954,10 +954,10 @@ class WeilaCore implements WL_CoreInterface {
   public async weila_getUserInfo(userId: number): Promise<WL_IDbUserInfo | undefined> {
     let userInfo = await WeilaDB.getInstance().getUser(userId)
     const hasResolvedProfile = Boolean(
-      userInfo?.nick
-      && userInfo.avatar
-      && userInfo.weilaNum
-      && userInfo.weilaNum !== String(userId),
+      userInfo?.nick &&
+      userInfo.avatar &&
+      userInfo.weilaNum &&
+      userInfo.weilaNum !== String(userId),
     )
 
     if (hasResolvedProfile || !this.profileResolver) {
@@ -969,11 +969,9 @@ class WeilaCore implements WL_CoreInterface {
       return userInfo
     }
 
-    const weilaNum = profile.weilaNum || (
-      userInfo?.weilaNum && userInfo.weilaNum !== String(userId)
-        ? userInfo.weilaNum
-        : ''
-    )
+    const weilaNum =
+      profile.weilaNum ||
+      (userInfo?.weilaNum && userInfo.weilaNum !== String(userId) ? userInfo.weilaNum : '')
 
     userInfo = {
       ...userInfo,
@@ -1048,7 +1046,10 @@ class WeilaCore implements WL_CoreInterface {
     // Fill in lastMsgData for sessions that don't have it
     for (const session of sessions) {
       if (!session.lastMsgData) {
-        const lastMsg = await WeilaDB.getInstance().getLastMsgData(session.sessionId, session.sessionType)
+        const lastMsg = await WeilaDB.getInstance().getLastMsgData(
+          session.sessionId,
+          session.sessionType,
+        )
         if (lastMsg) {
           session.lastMsgData = lastMsg
         }
@@ -1155,9 +1156,7 @@ class WeilaCore implements WL_CoreInterface {
    * 设置会话资料补全回调。业务层可在企业会话缺少名称/头像时提供资料来源。
    * 传入 undefined 可取消补全。
    */
-  public weila_setSessionProfileResolver(
-    resolver?: WL_SessionProfileResolver,
-  ): void {
+  public weila_setSessionProfileResolver(resolver?: WL_SessionProfileResolver): void {
     this.sessionProfileResolver = resolver
   }
 
@@ -1236,7 +1235,11 @@ class WeilaCore implements WL_CoreInterface {
    * @param sessionType 会话类型
    * @param msgId 已读消息ID
    */
-  public async weila_setSessionMsgRead(sessionId: string, sessionType: number, msgId: number): Promise<boolean> {
+  public async weila_setSessionMsgRead(
+    sessionId: string,
+    sessionType: number,
+    msgId: number,
+  ): Promise<boolean> {
     return this.sessionModule.setSessionMsgRead(sessionId, sessionType, msgId)
   }
 

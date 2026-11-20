@@ -36,8 +36,8 @@
 | Playground 接入 @weilasdk/ui + 环境变量 + HMR 验证 | 高     | ✅   |
 | oxlint + oxfmt 统一配置                            | 中     | ✅   |
 | SessionList 完善：未读计数、最后消息预览、时间戳   | 高     | ✅   |
-| WlTextBubble 文本消息气泡 (收/发样式、时间、状态) | 高     | ✅   |
-| WlMsgInput 消息输入框 (文本 + 发送 + 回车)        | 高     | ✅   |
+| WlTextBubble 文本消息气泡 (收/发样式、时间、状态)  | 高     | ✅   |
+| WlMsgInput 消息输入框 (文本 + 发送 + 回车)         | 高     | ✅   |
 
 **里程碑**：UI 开发环境就绪，会话列表 + 文本消息基础组件完成
 
@@ -61,10 +61,10 @@
 
 | 任务                                         | 优先级 | 状态 |
 | -------------------------------------------- | ------ | ---- |
-| WlFileBubble 文件消息 (文件名、大小、下载)    | 中     | ✅   |
+| WlFileBubble 文件消息 (文件名、大小、下载)   | 中     | ✅   |
 | WlVideoBubble 视频消息 (封面 + 播放)         | 中     | ✅   |
 | WlEmojiPicker 表情选择器 + 集成到 WlMsgInput | 中     | ✅   |
-| WlLocationBubble 位置消息                     | 中     | ✅   |
+| WlLocationBubble 位置消息                    | 中     | ✅   |
 | WlVoiceRecorder 语音录制 (波形 + 计时)       | 中     | ⬜   |
 
 **里程碑**：支持文本/图片/音频/文件/视频/位置/表情 7 种消息类型

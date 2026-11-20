@@ -3,22 +3,22 @@ packages:
   - playgrounds/*
 
 catalog:
-  "@iconify-json/carbon": ^1.2.20
-  "@iconify/tailwind4": ^1.2.3
-  "@pinia/colada": ^1.1.0
-  "@storybook/addon-a11y": ^10.3.5
-  "@storybook/addon-docs": ^10.3.5
-  "@storybook/addon-onboarding": ^10.3.5
-  "@storybook/addon-vitest": ^10.3.5
-  "@storybook/vue3": ^10.3.5
-  "@storybook/vue3-vite": ^10.3.5
-  "@tailwindcss/postcss": ^4.2.2
-  "@tailwindcss/vite": ^4.2.2
-  "@vitejs/plugin-vue": ^6.0.6
-  "@vitest/browser-playwright": ^4.1.4
-  "@vue/test-utils": ^2.4.6
-  "@vueuse/core": ^14.2.1
-  "@vueuse/router": ^14.2.1
+  '@iconify-json/carbon': ^1.2.20
+  '@iconify/tailwind4': ^1.2.3
+  '@pinia/colada': ^1.1.0
+  '@storybook/addon-a11y': ^10.3.5
+  '@storybook/addon-docs': ^10.3.5
+  '@storybook/addon-onboarding': ^10.3.5
+  '@storybook/addon-vitest': ^10.3.5
+  '@storybook/vue3': ^10.3.5
+  '@storybook/vue3-vite': ^10.3.5
+  '@tailwindcss/postcss': ^4.2.2
+  '@tailwindcss/vite': ^4.2.2
+  '@vitejs/plugin-vue': ^6.0.6
+  '@vitest/browser-playwright': ^4.1.4
+  '@vue/test-utils': ^2.4.6
+  '@vueuse/core': ^14.2.1
+  '@vueuse/router': ^14.2.1
   autoprefixer: ^10.5.0
   jsdom: ^29.0.2
   knip: ^6.46.1

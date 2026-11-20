@@ -103,9 +103,10 @@ function inheritSessionProfile(session: WL_IDbSession, existingSession?: WL_IDbS
     return
   }
 
-  const extra = existingSession.extra && typeof existingSession.extra === 'object'
-    ? { ...existingSession.extra }
-    : {}
+  const extra =
+    existingSession.extra && typeof existingSession.extra === 'object'
+      ? { ...existingSession.extra }
+      : {}
   const { sessionName, sessionAvatar } = getSessionExtraProfile(extra)
 
   if (!sessionName && existingSession.sessionName) {
@@ -156,13 +157,9 @@ interface WL_Profile {
   extra?: any
 }
 
-type WL_ProfileResolver = (
-  userId: number,
-) => Promise<WL_Profile | null | undefined>
+type WL_ProfileResolver = (userId: number) => Promise<WL_Profile | null | undefined>
 
-type WL_GroupProfileResolver = (
-  groupId: string,
-) => Promise<WL_Profile | null | undefined>
+type WL_GroupProfileResolver = (groupId: string) => Promise<WL_Profile | null | undefined>
 
 type WL_SessionProfileResolver = (
   session: WL_IDbSession,

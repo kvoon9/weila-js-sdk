@@ -927,4 +927,3 @@ export default class WLGroupModule {
     return Promise.reject('创建消息失败:' + buildMsgRet.resultCode)
   }
 }
-

@@ -23,8 +23,10 @@ const emit = defineEmits<{
 }>()
 
 function isUploadFailed() {
-  return props.msg.status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_UNSENT
-    || props.msg.status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR
+  return (
+    props.msg.status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_UNSENT ||
+    props.msg.status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR
+  )
 }
 
 function formatFileSize(bytes?: number): string {
@@ -41,7 +43,7 @@ function formatFileSize(bytes?: number): string {
     class="max-w-[70%] rounded-xl overflow-hidden"
     :class="[
       isSelf ? 'bg-blue-500' : 'bg-white',
-      msg.fileInfo?.fileUrl ? 'cursor-pointer' : 'opacity-60'
+      msg.fileInfo?.fileUrl ? 'cursor-pointer' : 'opacity-60',
     ]"
     @click="msg.fileInfo?.fileUrl && emit('click', msg.fileInfo!.fileUrl)"
   >
@@ -63,9 +65,13 @@ function formatFileSize(bytes?: number): string {
           {{ msg.fileInfo.fileName || t('message.file') }}
         </div>
         <div class="text-xs mt-0.5" :class="isSelf ? 'text-blue-200' : 'text-neutral-400'">
-          {{ msg.fileInfo?.fileUrl
-            ? formatFileSize(msg.fileInfo.fileSize)
-            : isUploadFailed() ? t('message.uploadFailed') : t('message.uploading') }}
+          {{
+            msg.fileInfo?.fileUrl
+              ? formatFileSize(msg.fileInfo.fileSize)
+              : isUploadFailed()
+                ? t('message.uploadFailed')
+                : t('message.uploading')
+          }}
         </div>
       </div>
     </div>

@@ -22,7 +22,7 @@ function getFallback(name: string) {
 }
 
 function handleImageError(event: Event) {
-  (event.currentTarget as HTMLImageElement).style.display = 'none'
+  ;(event.currentTarget as HTMLImageElement).style.display = 'none'
 }
 </script>
 

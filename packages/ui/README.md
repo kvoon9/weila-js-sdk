@@ -61,16 +61,18 @@ createApp(App)
 可以传入 `messages` 覆盖或补充内置文案。缺失 key 会 fallback 到 `zh-CN`，再 fallback 到 key 本身：
 
 ```ts
-app.use(createWeilaUi({
-  locale: 'en',
-  messages: {
-    en: {
-      chat: {
-        send: 'Send now',
+app.use(
+  createWeilaUi({
+    locale: 'en',
+    messages: {
+      en: {
+        chat: {
+          send: 'Send now',
+        },
       },
     },
-  },
-}))
+  }),
+)
 ```
 
 也可以在局部组件树内覆盖配置：

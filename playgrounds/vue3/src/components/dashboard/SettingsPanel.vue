@@ -42,6 +42,21 @@ async function loadGeneralSettings() {
 }
 
 // Update general setting
+function toggleDnd() {
+  doNotDisturb.value = !doNotDisturb.value
+  updateGeneralSetting('dnd', doNotDisturb.value)
+}
+
+function toggleTts() {
+  ttsEnabled.value = !ttsEnabled.value
+  updateGeneralSetting('tts', ttsEnabled.value)
+}
+
+function toggleLocation() {
+  locationSharing.value = !locationSharing.value
+  updateGeneralSetting('location', locationSharing.value)
+}
+
 async function updateGeneralSetting(key: string, value: boolean) {
   if (!core.value) return
   try {
@@ -100,16 +115,16 @@ onMounted(() => {
               </div>
             </div>
             <button
-              @click="doNotDisturb = !doNotDisturb; updateGeneralSetting('dnd', doNotDisturb)"
+              @click="toggleDnd"
               :class="[
                 'relative w-12 h-6 rounded-full transition-colors duration-200',
-                doNotDisturb ? 'bg-blue-500' : 'bg-neutral-300'
+                doNotDisturb ? 'bg-blue-500' : 'bg-neutral-300',
               ]"
             >
               <span
                 :class="[
                   'absolute top-1 w-4 h-4 bg-white rounded-full transition-transform duration-200',
-                  doNotDisturb ? 'translate-x-7' : 'translate-x-1'
+                  doNotDisturb ? 'translate-x-7' : 'translate-x-1',
                 ]"
               ></span>
             </button>
@@ -125,16 +140,16 @@ onMounted(() => {
               </div>
             </div>
             <button
-              @click="ttsEnabled = !ttsEnabled; updateGeneralSetting('tts', ttsEnabled)"
+              @click="toggleTts"
               :class="[
                 'relative w-12 h-6 rounded-full transition-colors duration-200',
-                ttsEnabled ? 'bg-blue-500' : 'bg-neutral-300'
+                ttsEnabled ? 'bg-blue-500' : 'bg-neutral-300',
               ]"
             >
               <span
                 :class="[
                   'absolute top-1 w-4 h-4 bg-white rounded-full transition-transform duration-200',
-                  ttsEnabled ? 'translate-x-7' : 'translate-x-1'
+                  ttsEnabled ? 'translate-x-7' : 'translate-x-1',
                 ]"
               ></span>
             </button>
@@ -150,16 +165,16 @@ onMounted(() => {
               </div>
             </div>
             <button
-              @click="locationSharing = !locationSharing; updateGeneralSetting('location', locationSharing)"
+              @click="toggleLocation"
               :class="[
                 'relative w-12 h-6 rounded-full transition-colors duration-200',
-                locationSharing ? 'bg-blue-500' : 'bg-neutral-300'
+                locationSharing ? 'bg-blue-500' : 'bg-neutral-300',
               ]"
             >
               <span
                 :class="[
                   'absolute top-1 w-4 h-4 bg-white rounded-full transition-transform duration-200',
-                  locationSharing ? 'translate-x-7' : 'translate-x-1'
+                  locationSharing ? 'translate-x-7' : 'translate-x-1',
                 ]"
               ></span>
             </button>
@@ -189,16 +204,17 @@ onMounted(() => {
         </h2>
         <div class="bg-white rounded-xl border border-neutral-200 p-4">
           <div class="flex items-center gap-4 mb-4">
-            <img
-              v-if="userInfo?.avatar"
-              :src="userInfo.avatar"
-              class="w-16 h-16 rounded-full"
-            />
-            <div v-else class="w-16 h-16 rounded-full bg-neutral-300 flex items-center justify-center">
+            <img v-if="userInfo?.avatar" :src="userInfo.avatar" class="w-16 h-16 rounded-full" />
+            <div
+              v-else
+              class="w-16 h-16 rounded-full bg-neutral-300 flex items-center justify-center"
+            >
               <span class="text-xl text-neutral-600">{{ userInfo?.nick?.[0] || 'U' }}</span>
             </div>
             <div>
-              <div class="font-semibold text-lg text-neutral-800">{{ userInfo?.nick || 'User' }}</div>
+              <div class="font-semibold text-lg text-neutral-800">
+                {{ userInfo?.nick || 'User' }}
+              </div>
               <div class="text-neutral-500">Weila ID: {{ userInfo?.weilaNum || 'N/A' }}</div>
             </div>
           </div>
@@ -217,11 +233,7 @@ onMounted(() => {
           Device Management
         </h2>
         <div class="bg-white rounded-xl border border-neutral-200 divide-y divide-neutral-100">
-          <div
-            v-for="device in devices"
-            :key="device.id"
-            class="flex items-center gap-3 px-4 py-3"
-          >
+          <div v-for="device in devices" :key="device.id" class="flex items-center gap-3 px-4 py-3">
             <span class="icon-[carbon--mobile] text-neutral-500"></span>
             <div class="flex-1">
               <div class="font-medium text-neutral-800">{{ device.name || 'Unknown Device' }}</div>
