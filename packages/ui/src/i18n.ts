@@ -158,7 +158,7 @@ export const weilaUiMessages = {
   },
 } satisfies Record<string, WeilaUiMessages>;
 
-export const weilaUiI18nKey: InjectionKey<WeilaUiI18nContext> = Symbol("weila-ui-i18n");
+const weilaUiI18nKey: InjectionKey<WeilaUiI18nContext> = Symbol("weila-ui-i18n");
 
 const fallbackContext = createWeilaUiI18nContext();
 

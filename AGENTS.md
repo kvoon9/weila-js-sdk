@@ -60,6 +60,10 @@ Run these commands from the root directory using pnpm:
   ```bash
   pnpm run typecheck
   ```
+- **Find unused files, exports and dependencies** (must report zero findings):
+  ```bash
+  pnpm knip
+  ```
 
 ## Package Descriptions
 

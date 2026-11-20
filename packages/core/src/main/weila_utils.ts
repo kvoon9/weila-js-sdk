@@ -49,21 +49,6 @@ async function fetchWithTimeout(
   return Promise.race<Response>([timeoutPromise(timeout ? timeout : 30000), fetchPromise()])
 }
 
-function parsePbErrResult(msg: string): WL_PbMsgErrorInfo | null {
-  if (msg.search('RET_CODE:') !== -1 && msg.search('-MESSAGE:') !== -1) {
-    const pattern = /RET_CODE:([a-zA-Z0-9].*)-MESSAGE:(.*):END/i
-    const match = msg.match(pattern)
-    if (match && match.length === 3) {
-      const errorInfo = {} as WL_PbMsgErrorInfo
-      errorInfo.resultCode = parseInt(match[1])
-      errorInfo.errorMsg = match[2]
-      return errorInfo
-    }
-  }
-
-  return null
-}
-
 function getPbResultCodeMassage(resultCode: number): string {
   let msg = ''
   switch (resultCode) {
@@ -864,8 +849,6 @@ function getMsgDataIdByCombo(msgData: WL_IDbMsgData, seq: number): string {
 export {
   fetchWithTimeout,
   getPbResultCodeMassage,
-  parsePbErrResult,
-  getResultCodeFromError,
   getErrorMsg,
   AsyncTime,
   SyncTime,

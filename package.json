@@ -14,12 +14,13 @@
     "typecheck": "turbo run typecheck",
     "lint": "oxlint --type-aware",
     "lint:fix": "oxlint --type-aware --fix",
+    "knip": "knip",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
     "preview": "turbo run build --filter=@weilasdk/playground-vue3 && pnpm --filter @weilasdk/playground-vue3 run preview"
   },
   "devDependencies": {
-    "@antfu/ni": "catalog:",
+    "knip": "catalog:",
     "lint-staged": "catalog:",
     "oxfmt": "catalog:",
     "oxlint": "catalog:",

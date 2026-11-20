@@ -14,14 +14,13 @@
     "@vois/weila-sdk-ui": "0.0.2",
     "@vueuse/core": "catalog:",
     "@vueuse/router": "catalog:",
-    "md5": "catalog:",
     "pinia": "catalog:",
     "vue": "catalog:",
     "vue-router": "catalog:"
   },
   "devDependencies": {
+    "@iconify/tailwind4": "catalog:",
     "@tailwindcss/vite": "catalog:",
-    "@types/md5": "catalog:",
     "@vitejs/plugin-vue": "catalog:",
     "tailwindcss": "catalog:",
     "typescript": "^6.0.2",

@@ -79,11 +79,3 @@ export function formatTimeAgo(timestamp: number, translate?: WeilaUiTranslate): 
   return formatMsgTime(timestamp, t)
 }
 
-/**
- * Check if two timestamps should show a time separator between messages
- * (i.e., if the gap is more than 5 minutes)
- */
-export function shouldShowTimeSeparator(timestamp1: number, timestamp2: number): boolean {
-  const diffMinutes = Math.abs(timestamp2 - timestamp1) / 60
-  return diffMinutes >= 5
-}
