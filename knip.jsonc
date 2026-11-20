@@ -1,0 +1,17 @@
+{
+  // knip finds unused files, exports and dependencies across the monorepo.
+  // Run: pnpm knip  (gate must stay green; fix new findings, don't ignore them)
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  // Consumed by `pnpm run up` (taze reads this config at its own entry point)
+  "workspaces": {
+    ".": {
+      "entry": ["taze.config.js"]
+    }
+  },
+  "ignore": [
+    // Generated build output, gitignored but present on disk after builds
+    "**/dist/**",
+    // AudioWorklet bundles fetched at runtime by URL (see docs/AUDIO_PLAYBACK_FLOW.md)
+    "playgrounds/vue3/public/**"
+  ]
+}
