@@ -518,7 +518,7 @@ class WLAudio {
     return new Promise<boolean>((resolve, reject) => {
       // @ts-ignore
       // oxfmt-ignore
-      navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
+      navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia
       // @ts-ignore
       navigator.getUserMedia(
         { audio: true },
