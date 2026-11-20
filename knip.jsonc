@@ -5,7 +5,9 @@
   // Consumed by `pnpm run up` (taze reads this config at its own entry point)
   "workspaces": {
     ".": {
-      "entry": ["taze.config.js"],
+      // taze reads its config at its own entry point. The commit-hook spec runs
+      // from `node --test` and has no importer.
+      "entry": ["taze.config.js", "scripts/*.spec.mjs"],
     },
     "packages/core": {
       // Manual script: copies dist/assets into the consuming app's public/
