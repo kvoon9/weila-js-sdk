@@ -18,11 +18,13 @@
     "knip": "knip",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
-    "preview": "turbo run build --filter=@weilasdk/playground-vue3 && pnpm --filter @weilasdk/playground-vue3 run preview"
+    "preview": "turbo run build --filter=@weilasdk/playground-vue3 && pnpm --filter @weilasdk/playground-vue3 run preview",
+    "prepare": "simple-git-hooks",
+    "lint:staged": "nano-staged"
   },
   "devDependencies": {
     "knip": "catalog:",
-    "lint-staged": "catalog:",
+    "nano-staged": "catalog:",
     "oxfmt": "catalog:",
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",
@@ -31,13 +33,14 @@
     "turbo": "^2.9.18"
   },
   "simple-git-hooks": {
-    "pre-commit": "pnpm exec lint-staged"
+    "pre-commit": "pnpm exec nano-staged"
   },
-  "lint-staged": {
-    "*": [
+  "nano-staged": {
+    "*.{js,jsx,ts,tsx,mjs,cjs,vue}": [
       "oxlint --type-aware",
-      "oxfmt"
-    ]
+      "oxfmt --check"
+    ],
+    "*.{json,jsonc,md,mdx,css,pcss,html,yml,yaml}": "oxfmt --check"
   },
   "engines": {
     "node": ">=18",
