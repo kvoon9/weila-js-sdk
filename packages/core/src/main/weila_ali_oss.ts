@@ -306,4 +306,4 @@ class AliOssHelper {
   }
 }
 
-export { AliOssHelper, WL_UploadResult }
+export { AliOssHelper }

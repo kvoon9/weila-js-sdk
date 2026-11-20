@@ -15,7 +15,7 @@ export interface GroupItem {
   role?: 'owner' | 'admin' | 'member'
 }
 
-export function mapGroupToItem(group: WL_IDbGroup): GroupItem {
+function mapGroupToItem(group: WL_IDbGroup): GroupItem {
   return {
     groupId: group.groupId,
     name: group.name,

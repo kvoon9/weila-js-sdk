@@ -14,7 +14,7 @@ const BACKGROUND_REFRESH_DEBOUNCE_MS = 200
 // only needs to run when the session set changes or the cached names go stale.
 const PROFILE_REFRESH_INTERVAL_MS = 60_000
 
-export interface BatchSessionProfileResult {
+interface BatchSessionProfileResult {
   sessionName?: string
   sessionAvatar?: string
   memberCount?: number

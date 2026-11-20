@@ -482,4 +482,4 @@ const fsmEvents = {
   FSM_REL_TALK_EVT: 'FSM_REL_TALK_EVT',
 }
 
-export { mainFsm, loginProcedureFsm, pttFsm, fsmEvents }
+export { mainFsm, pttFsm, fsmEvents }
