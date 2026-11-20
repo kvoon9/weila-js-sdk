@@ -102,7 +102,9 @@ describe('weila ui i18n', () => {
         'time.daysAgo': '{days}d ago',
       }
 
-      return (messages[key] ?? key).replace(/\{(\w+)\}/g, (_, name) => String(params[name] ?? `{${name}}`))
+      return (messages[key] ?? key).replace(/\{(\w+)\}/g, (_, name) =>
+        String(params[name] ?? `{${name}}`),
+      )
     }
 
     const nowSeconds = Math.floor(Date.now() / 1000)

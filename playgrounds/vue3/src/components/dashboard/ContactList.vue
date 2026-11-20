@@ -184,7 +184,9 @@ function getInitials(name: string): string {
     <!-- Search Bar -->
     <div class="p-3 border-b border-neutral-200">
       <div class="relative">
-        <span class="icon-[carbon--search] absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"></span>
+        <span
+          class="icon-[carbon--search] absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"
+        ></span>
         <input
           :value="searchQuery"
           type="text"
@@ -192,7 +194,10 @@ function getInitials(name: string): string {
           class="w-full pl-9 pr-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
           @input="(e) => handleSearchInput((e.target as HTMLInputElement).value)"
         />
-        <span v-if="searching" class="icon-[carbon--in-progress] absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 animate-spin"></span>
+        <span
+          v-if="searching"
+          class="icon-[carbon--in-progress] absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 animate-spin"
+        ></span>
       </div>
     </div>
 
@@ -204,7 +209,9 @@ function getInitials(name: string): string {
           :key="tab"
           :class="[
             'px-3 py-1 text-sm rounded-full transition-colors',
-            filterTab === tab ? 'bg-blue-500 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200',
+            filterTab === tab
+              ? 'bg-blue-500 text-white'
+              : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200',
           ]"
           @click="filterTab = tab"
         >
@@ -222,7 +229,10 @@ function getInitials(name: string): string {
 
     <!-- Contact List -->
     <div class="flex-1 overflow-y-auto">
-      <div v-if="displayedContacts.length === 0" class="flex items-center justify-center h-full text-neutral-400 text-sm">
+      <div
+        v-if="displayedContacts.length === 0"
+        class="flex items-center justify-center h-full text-neutral-400 text-sm"
+      >
         <span v-if="searchQuery">No contacts found</span>
         <span v-else>No contacts yet</span>
       </div>
@@ -286,10 +296,7 @@ function getInitials(name: string): string {
 
     <!-- Add Friend Modal -->
     <Teleport to="body">
-      <div
-        v-if="showAddFriendModal"
-        class="fixed inset-0 z-50 flex items-center justify-center"
-      >
+      <div v-if="showAddFriendModal" class="fixed inset-0 z-50 flex items-center justify-center">
         <!-- Backdrop -->
         <div class="absolute inset-0 bg-black/50" @click="closeAddFriendModal"></div>
 
@@ -319,7 +326,9 @@ function getInitials(name: string): string {
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-neutral-700 mb-1">Remark (optional)</label>
+              <label class="block text-sm font-medium text-neutral-700 mb-1"
+                >Remark (optional)</label
+              >
               <input
                 v-model="addFriendRemark"
                 type="text"
@@ -332,7 +341,9 @@ function getInitials(name: string): string {
           </div>
 
           <!-- Footer -->
-          <div class="flex justify-end gap-2 px-4 py-3 border-t border-neutral-200 bg-neutral-50 rounded-b-lg">
+          <div
+            class="flex justify-end gap-2 px-4 py-3 border-t border-neutral-200 bg-neutral-50 rounded-b-lg"
+          >
             <button
               class="px-4 py-2 text-sm text-neutral-600 hover:text-neutral-800 transition-colors"
               @click="closeAddFriendModal"

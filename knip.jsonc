@@ -5,23 +5,23 @@
   // Consumed by `pnpm run up` (taze reads this config at its own entry point)
   "workspaces": {
     ".": {
-      "entry": ["taze.config.js"]
+      "entry": ["taze.config.js"],
     },
     "packages/core": {
       // Manual script: copies dist/assets into the consuming app's public/
       // (documented in packages/core/AGENTS.md, used by UniApp integrations)
-      "entry": ["post-copy.js"]
+      "entry": ["post-copy.js"],
     },
     "packages/ui": {
       // Icons are resolved at build time from CSS: `@plugin "@iconify/tailwind4"`
       // auto-discovers installed @iconify-json/* packages (see style.postcss.css)
-      "ignoreDependencies": ["@iconify-json/carbon"]
-    }
+      "ignoreDependencies": ["@iconify-json/carbon"],
+    },
   },
   "ignore": [
     // Generated build output, gitignored but present on disk after builds
     "**/dist/**",
     // AudioWorklet bundles fetched at runtime by URL (see docs/AUDIO_PLAYBACK_FLOW.md)
-    "playgrounds/vue3/public/**"
-  ]
+    "playgrounds/vue3/public/**",
+  ],
 }

@@ -492,9 +492,8 @@ export default class WLSessionModule {
             const isPttMsg = msgData.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_PTT_TYPE
 
             if (isPttMsg) {
-              const { msgData: audioMsgData, isNewAudioItem } = await this.pttFsm.putPttMsgData(
-                msgData,
-              )
+              const { msgData: audioMsgData, isNewAudioItem } =
+                await this.pttFsm.putPttMsgData(msgData)
               await this.updateSessionByNewMsgData(audioMsgData, isNewAudioItem)
               // PTT 分片用于实时播放和本地聚合，服务端随后会下发同一 msgId 的 AUDIO 消息。
               // 避免把同一条语音按“实时分片”和“最终音频”各通知一次。
@@ -734,10 +733,7 @@ export default class WLSessionModule {
     this.activeSession = null
   }
 
-  private async syncSessionsByType(
-    type: number,
-    settingId: WL_IDbSettingID,
-  ): Promise<boolean> {
+  private async syncSessionsByType(type: number, settingId: WL_IDbSettingID): Promise<boolean> {
     const dbInstance = WeilaDB.getInstance()
     let settingItem = await dbInstance.getSettingItem(settingId)
     let latestTime = 0
@@ -899,7 +895,8 @@ export default class WLSessionModule {
     } else if (msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE) {
       const audioData = data as WL_IDbAudioData
       dbMsgData.audioData = audioData
-      const payload = audioData.data && audioData.data.length > 0 ? audioData.data : audioData.audioUrl
+      const payload =
+        audioData.data && audioData.data.length > 0 ? audioData.data : audioData.audioUrl
       buildResult = WeilaPBSessionWrapper.buildAudioSessionMsgReq(
         Long.fromValue(sessionId),
         sessionType,
@@ -943,10 +940,7 @@ export default class WLSessionModule {
           if (originalMsg) {
             originalMsg.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_WITHDRAW
             await WeilaDB.getInstance().putMsgData(originalMsg)
-            this.coreInterface.sendExtEvent(
-              WL_ExtEventID.WL_EXT_NEW_MSG_RECV_IND,
-              originalMsg,
-            )
+            this.coreInterface.sendExtEvent(WL_ExtEventID.WL_EXT_NEW_MSG_RECV_IND, originalMsg)
           }
         }
 
@@ -1300,7 +1294,10 @@ export default class WLSessionModule {
       let groupInfo = await WeilaDB.getInstance().getGroup(sessionId)
       if (!groupInfo) {
         try {
-          groupInfo = await this.coreInterface.executeCoreFunc('weila_getGroupFromServer', sessionId)
+          groupInfo = await this.coreInterface.executeCoreFunc(
+            'weila_getGroupFromServer',
+            sessionId,
+          )
         } catch (err) {
           wlerr('申请话权前获取群信息失败:', { sessionId, sessionType, err })
         }

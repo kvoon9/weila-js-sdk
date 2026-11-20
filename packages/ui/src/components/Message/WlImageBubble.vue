@@ -23,19 +23,30 @@ const emit = defineEmits<{
 }>()
 
 function isUploadFailed() {
-  return props.msg.status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_UNSENT
-    || props.msg.status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR
+  return (
+    props.msg.status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_UNSENT ||
+    props.msg.status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR
+  )
 }
 </script>
 
 <template>
   <div class="max-w-[70%] rounded-xl overflow-hidden" :class="isSelf ? 'bg-blue-500' : 'bg-white'">
-    <img v-if="msg.fileInfo?.fileUrl" :src="msg.fileInfo.fileUrl"
-      class="max-w-[200px] max-h-[200px] rounded-xl object-cover cursor-pointer" alt="image"
-      @click="emit('click', msg.fileInfo!.fileUrl)" />
+    <img
+      v-if="msg.fileInfo?.fileUrl"
+      :src="msg.fileInfo.fileUrl"
+      class="max-w-[200px] max-h-[200px] rounded-xl object-cover cursor-pointer"
+      alt="image"
+      @click="emit('click', msg.fileInfo!.fileUrl)"
+    />
     <div v-else class="w-[160px] h-[120px] flex flex-col items-center justify-center gap-2">
-      <span class="size-8"
-        :class="[isUploadFailed() ? 'icon-[carbon--warning]' : 'icon-[carbon--image]', isSelf ? 'text-blue-100' : 'text-neutral-400']" />
+      <span
+        class="size-8"
+        :class="[
+          isUploadFailed() ? 'icon-[carbon--warning]' : 'icon-[carbon--image]',
+          isSelf ? 'text-blue-100' : 'text-neutral-400',
+        ]"
+      />
       <span class="text-xs" :class="isSelf ? 'text-blue-100' : 'text-neutral-500'">
         {{ isUploadFailed() ? t('message.uploadFailed') : t('message.uploading') }}
       </span>

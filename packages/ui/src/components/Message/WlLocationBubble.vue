@@ -16,7 +16,10 @@ const props = withDefaults(defineProps<WlLocationBubbleProps>(), {
 })
 
 const emit = defineEmits<{
-  (e: 'click', location: { latitude: number; longitude: number; name: string; address: string }): void
+  (
+    e: 'click',
+    location: { latitude: number; longitude: number; name: string; address: string },
+  ): void
 }>()
 
 function handleClick() {

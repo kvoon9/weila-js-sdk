@@ -40,10 +40,8 @@ const buttonClass = computed(() => [
 
 const handleClick = () => {
   if (props.disabled || props.status === 'processing') return
-  if (props.status === 'idle')
-    emit('start')
-  else
-    emit('stop')
+  if (props.status === 'idle') emit('start')
+  else emit('stop')
 }
 
 const handleContextMenu = (e: Event) => {

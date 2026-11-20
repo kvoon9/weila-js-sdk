@@ -136,13 +136,13 @@ await weila.weila_audioInit()
 
 ### 3.1 初始化与配置
 
-| 方法                                               | 说明                                   |
-| -------------------------------------------------- | -------------------------------------- |
+| 方法                                                                          | 说明                                                  |
+| ----------------------------------------------------------------------------- | ----------------------------------------------------- |
 | `weila_init(options?: { webSock?: string; appId?: string; appKey?: string })` | 初始化 SDK，加载资源，可传入服务器地址与 App 认证信息 |
-| `weila_setWebSock(addr: string)`                   | 设置 WebSocket 服务器地址              |
-| `weila_setAuthInfo(appId: string, appKey: string)` | 设置 App 认证信息                      |
-| `weila_audioInit()`                                | 初始化音频系统（必须在用户事件中调用） |
-| `weila_onEvent(callback: WL_ExtEventCallback)`     | 注册事件回调                           |
+| `weila_setWebSock(addr: string)`                                              | 设置 WebSocket 服务器地址                             |
+| `weila_setAuthInfo(appId: string, appKey: string)`                            | 设置 App 认证信息                                     |
+| `weila_audioInit()`                                                           | 初始化音频系统（必须在用户事件中调用）                |
+| `weila_onEvent(callback: WL_ExtEventCallback)`                                | 注册事件回调                                          |
 
 ### 3.2 登录与登出
 

@@ -72,21 +72,35 @@ function getInitials(name: string): string {
       <!-- Contact Detail -->
       <div v-else class="flex-1 flex flex-col overflow-hidden">
         <!-- Header -->
-        <div class="px-6 py-4 border-b border-neutral-200 flex items-center justify-between bg-white shrink-0">
+        <div
+          class="px-6 py-4 border-b border-neutral-200 flex items-center justify-between bg-white shrink-0"
+        >
           <div class="flex items-center gap-4">
-            <div class="w-14 h-14 rounded-full bg-neutral-200 flex items-center justify-center overflow-hidden">
-              <img v-if="selectedContact.avatar" :src="selectedContact.avatar" :alt="selectedContact.name"
-                class="w-full h-full object-cover" />
-              <span v-else class="text-lg font-medium text-neutral-500">{{ getInitials(selectedContact.name) }}</span>
+            <div
+              class="w-14 h-14 rounded-full bg-neutral-200 flex items-center justify-center overflow-hidden"
+            >
+              <img
+                v-if="selectedContact.avatar"
+                :src="selectedContact.avatar"
+                :alt="selectedContact.name"
+                class="w-full h-full object-cover"
+              />
+              <span v-else class="text-lg font-medium text-neutral-500">{{
+                getInitials(selectedContact.name)
+              }}</span>
             </div>
             <div>
-              <h2 class="text-lg font-semibold text-neutral-900">{{ selectedContact.remark || selectedContact.name }}</h2>
+              <h2 class="text-lg font-semibold text-neutral-900">
+                {{ selectedContact.remark || selectedContact.name }}
+              </h2>
               <p class="text-sm text-neutral-500">
                 <span v-if="selectedContact.remark" class="mr-2">{{ selectedContact.name }}</span>
                 <span
                   :class="[
                     'px-2 py-0.5 rounded text-xs',
-                    selectedContact.isOnline ? 'bg-green-100 text-green-700' : 'bg-neutral-100 text-neutral-500',
+                    selectedContact.isOnline
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-neutral-100 text-neutral-500',
                   ]"
                 >
                   {{ selectedContact.isOnline ? '在线' : '离线' }}
@@ -94,7 +108,10 @@ function getInitials(name: string): string {
               </p>
             </div>
           </div>
-          <button @click="handleCloseDetail" class="p-1.5 rounded hover:bg-neutral-100 text-neutral-500">
+          <button
+            @click="handleCloseDetail"
+            class="p-1.5 rounded hover:bg-neutral-100 text-neutral-500"
+          >
             <span class="icon-[carbon--close] text-xl"></span>
           </button>
         </div>
@@ -107,7 +124,10 @@ function getInitials(name: string): string {
               <span class="text-sm font-medium text-neutral-500 w-16">用户ID</span>
               <span class="text-sm text-neutral-900">{{ selectedContact.userId }}</span>
             </div>
-            <div v-if="selectedContact.remark" class="flex items-center gap-3 p-3 rounded-lg bg-neutral-50">
+            <div
+              v-if="selectedContact.remark"
+              class="flex items-center gap-3 p-3 rounded-lg bg-neutral-50"
+            >
               <span class="text-sm font-medium text-neutral-500 w-16">备注</span>
               <span class="text-sm text-neutral-900">{{ selectedContact.remark }}</span>
             </div>

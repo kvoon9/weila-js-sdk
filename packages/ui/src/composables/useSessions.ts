@@ -59,11 +59,10 @@ export function useSessions(
   )
 
   async function applyBatchProfiles(core: WeilaCore, fetchedSessions: WL_IDbSession[]) {
-    if (!batchResolveProfiles || fetchedSessions.length === 0)
-      return
+    if (!batchResolveProfiles || fetchedSessions.length === 0) return
 
     const keys = fetchedSessions
-      .map(session => `${session.sessionId}_${session.sessionType}`)
+      .map((session) => `${session.sessionId}_${session.sessionType}`)
       .sort()
       .join(',')
 
@@ -96,15 +95,13 @@ export function useSessions(
           })
         }
       }
-    }
-    catch (e) {
+    } catch (e) {
       console.warn('[Weila:UI:useSessions] batch resolve profiles failed:', e)
     }
   }
 
   async function fetchSessions(showLoading = sessions.value.length === 0) {
-    if (fetchPromise)
-      return fetchPromise // ponytail: serialise overlapping calls
+    if (fetchPromise) return fetchPromise // ponytail: serialise overlapping calls
 
     const core = getCore()
     if (!core) {
@@ -119,12 +116,10 @@ export function useSessions(
       try {
         sessions.value = await core.weila_getSessionsFromDb()
         await applyBatchProfiles(core, sessions.value)
-      }
-      catch (e) {
+      } catch (e) {
         error.value = e instanceof Error ? e : new Error(String(e))
         console.log('[Weila:UI:useSessions] fetchSessions error:', e)
-      }
-      finally {
+      } finally {
         if (showLoading) loading.value = false
         fetchPromise = null
       }
@@ -143,10 +138,11 @@ export function useSessions(
   }
 
   function isRealtimePttData(data: unknown) {
-    const msg = (data as WL_IDbSession | undefined)?.lastMsgData ?? data as WL_IDbMsgData | undefined
+    const msg =
+      (data as WL_IDbSession | undefined)?.lastMsgData ?? (data as WL_IDbMsgData | undefined)
     return Boolean(
-      msg?.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_PTT_TYPE
-      || (msg?.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE && msg?.pttData),
+      msg?.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_PTT_TYPE ||
+      (msg?.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE && msg?.pttData),
     )
   }
 
@@ -159,19 +155,15 @@ export function useSessions(
     // WL_EXT_NEW_SESSION_OPEN_IND: new session created
     else if (eventId === WL_ExtEventID.WL_EXT_NEW_SESSION_OPEN_IND) {
       scheduleBackgroundRefresh()
-    }
-    else if (eventId === WL_ExtEventID.WL_EXT_NEW_MSG_RECV_IND) {
+    } else if (eventId === WL_ExtEventID.WL_EXT_NEW_MSG_RECV_IND) {
       if (isRealtimePttData(eventData)) return
       scheduleBackgroundRefresh()
-    }
-    else if (eventId === WL_ExtEventID.WL_EXT_MSG_SEND_IND) {
+    } else if (eventId === WL_ExtEventID.WL_EXT_MSG_SEND_IND) {
       scheduleBackgroundRefresh()
-    }
-    else if (eventId === WL_ExtEventID.WL_EXT_SESSION_UPDATED_IND) {
+    } else if (eventId === WL_ExtEventID.WL_EXT_SESSION_UPDATED_IND) {
       if (isRealtimePttData(eventData)) return
       scheduleBackgroundRefresh()
-    }
-    else if (eventId === WL_ExtEventID.WL_EXT_GROUP_MODIFIED_IND) {
+    } else if (eventId === WL_ExtEventID.WL_EXT_GROUP_MODIFIED_IND) {
       // 群资料变更后清空了 session 缓存，需要重新拉取让 resolver 刷新
       scheduleBackgroundRefresh()
     }

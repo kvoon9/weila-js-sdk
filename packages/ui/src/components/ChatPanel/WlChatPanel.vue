@@ -1,13 +1,5 @@
 <script setup lang="ts">
-import {
-  computed,
-  nextTick,
-  onBeforeUnmount,
-  ref,
-  toRaw,
-  watch,
-  watchEffect,
-} from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, toRaw, watch, watchEffect } from 'vue'
 
 import type {
   WeilaCore,
@@ -69,14 +61,16 @@ const emit = defineEmits<{
   'update:selectedSessionType': [sessionType: number | undefined]
   'delete-session': [session: WL_IDbSession]
   'trigger-map-picker': []
-  'location-click': [location: { latitude: number; longitude: number; name: string; address: string }]
-  'ptt-error': [payload: { session: WL_IDbSession, error?: unknown }]
+  'location-click': [
+    location: { latitude: number; longitude: number; name: string; address: string },
+  ]
+  'ptt-error': [payload: { session: WL_IDbSession; error?: unknown }]
   'send-blocked': []
   'invalid-sessions-change': [keys: Set<string>]
   /** 转发消息 */
-  'forward': [msg: WL_IDbMsgData]
+  forward: [msg: WL_IDbMsgData]
   /** 撤回消息 */
-  'withdraw': [msg: WL_IDbMsgData]
+  withdraw: [msg: WL_IDbMsgData]
 }>()
 
 const messageInput = ref('')
@@ -94,11 +88,10 @@ const realtimePttMessageIds = new Set<string>()
 
 function isRealtimePttMessage(msg: WL_IDbMsgData | undefined) {
   return Boolean(
-    msg && (
-      msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_PTT_TYPE
-      || (msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE && msg.pttData)
-      || realtimePttMessageIds.has(msg.combo_id)
-    ),
+    msg &&
+    (msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_PTT_TYPE ||
+      (msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE && msg.pttData) ||
+      realtimePttMessageIds.has(msg.combo_id)),
   )
 }
 
@@ -113,15 +106,16 @@ const {
 
 const selectedSession = computed(() => {
   if (!props.selectedSessionId) return null
-  return sessions.value.find((s) => {
-    if (s.sessionId !== props.selectedSessionId) return false
-    return props.selectedSessionType === undefined || s.sessionType === props.selectedSessionType
-  }) ?? null
+  return (
+    sessions.value.find((s) => {
+      if (s.sessionId !== props.selectedSessionId) return false
+      return props.selectedSessionType === undefined || s.sessionType === props.selectedSessionType
+    }) ?? null
+  )
 })
 
 const selectedSessionKey = computed(() => {
-  if (!props.selectedSessionId || props.selectedSessionType === undefined)
-    return null
+  if (!props.selectedSessionId || props.selectedSessionType === undefined) return null
   return `${props.selectedSessionId}_${props.selectedSessionType}`
 })
 
@@ -131,7 +125,9 @@ const isSelectedSessionInvalid = computed(() => {
 })
 
 watchEffect(
-  () => { emit('invalid-sessions-change', new Set(invalidSessionKeys)) },
+  () => {
+    emit('invalid-sessions-change', new Set(invalidSessionKeys))
+  },
   { flush: 'post' }, // ponytail: skip emit before mount
 )
 
@@ -141,10 +137,12 @@ const realtimePttTitle = computed(() => {
     ? sessions.value.find((s) => s.sessionId === msg.sessionId && s.sessionType === msg.sessionType)
     : null
 
-  return realtimeSession?.sessionName
-    || selectedSession.value?.sessionName
-    || realtimePttMessage.value?.sessionId
-    || t('session.unknown')
+  return (
+    realtimeSession?.sessionName ||
+    selectedSession.value?.sessionName ||
+    realtimePttMessage.value?.sessionId ||
+    t('session.unknown')
+  )
 })
 
 const messageSenderInfos = computed(() => {
@@ -253,7 +251,12 @@ watch(
 )
 
 watch(
-  [() => props.core, () => selectedSession.value?.sessionId, () => selectedSession.value?.sessionType, isSelectedSessionInvalid],
+  [
+    () => props.core,
+    () => selectedSession.value?.sessionId,
+    () => selectedSession.value?.sessionType,
+    isSelectedSessionInvalid,
+  ],
   ([core, sessionId, sessionType, isInvalid]) => {
     if (!core) return
 
@@ -304,7 +307,12 @@ function handleVideoClick(url: string) {
   previewVideoOpen.value = true
 }
 
-function openLocation(location: { latitude: number; longitude: number; name: string; address: string }) {
+function openLocation(location: {
+  latitude: number
+  longitude: number
+  name: string
+  address: string
+}) {
   emit('location-click', location)
 }
 
@@ -319,8 +327,8 @@ async function deleteSession(session: WL_IDbSession): Promise<boolean> {
     await props.core.weila_deleteSession(deletingSessionId, deletingSessionType)
 
     if (
-      selectedSession.value?.sessionId === deletingSessionId
-      && selectedSession.value?.sessionType === deletingSessionType
+      selectedSession.value?.sessionId === deletingSessionId &&
+      selectedSession.value?.sessionType === deletingSessionType
     ) {
       emit('update:selectedSessionId', '')
       emit('update:selectedSessionType', undefined)
@@ -352,11 +360,11 @@ defineExpose({
 
 function normalizeLocation(location: WL_IDbLocationShared): WL_IDbLocationShared {
   const mapUrl = location.mapUrl?.trim()
-  const hasImageMapUrl = !!mapUrl && (
-    /\.(?:apng|avif|gif|jpe?g|png|webp)(?:[?#].*)?$/i.test(mapUrl)
-    || /^https:\/\/restapi\.amap\.com\/v3\/staticmap(?:\?|$)/i.test(mapUrl)
-    || /^https:\/\/maps\.googleapis\.com\/maps\/api\/staticmap(?:\?|$)/i.test(mapUrl)
-  )
+  const hasImageMapUrl =
+    !!mapUrl &&
+    (/\.(?:apng|avif|gif|jpe?g|png|webp)(?:[?#].*)?$/i.test(mapUrl) ||
+      /^https:\/\/restapi\.amap\.com\/v3\/staticmap(?:\?|$)/i.test(mapUrl) ||
+      /^https:\/\/maps\.googleapis\.com\/maps\/api\/staticmap(?:\?|$)/i.test(mapUrl))
 
   return {
     ...location,
@@ -492,10 +500,7 @@ async function handlePttStart() {
   pttStatus.value = 'processing'
 
   try {
-    const success = await props.core.weila_requestTalk(
-      session.sessionId,
-      session.sessionType,
-    )
+    const success = await props.core.weila_requestTalk(session.sessionId, session.sessionType)
 
     pttStatus.value = success ? 'recording' : 'idle'
     if (!success) {
@@ -526,10 +531,19 @@ async function handlePttStop() {
 <template>
   <div class="wl-chat-panel flex flex-1 h-full overflow-hidden">
     <div class="w-80 border-r border-neutral-200 overflow-hidden flex flex-col bg-white">
-      <SessionList v-if="core" :sessions="sessions" :active-session-id="selectedSessionId"
-        :active-session-type="selectedSessionType" :loading="sessionsLoading" :error="sessionsError"
-        :deleting-session-key="deletingSessionKey" :disabled-session-keys="invalidSessionKeys"
-        @select="handleSelectSession" @delete="handleDeleteSession" @refresh="refreshSessions">
+      <SessionList
+        v-if="core"
+        :sessions="sessions"
+        :active-session-id="selectedSessionId"
+        :active-session-type="selectedSessionType"
+        :loading="sessionsLoading"
+        :error="sessionsError"
+        :deleting-session-key="deletingSessionKey"
+        :disabled-session-keys="invalidSessionKeys"
+        @select="handleSelectSession"
+        @delete="handleDeleteSession"
+        @refresh="refreshSessions"
+      >
         <template #header-actions>
           <slot name="session-header-actions" />
         </template>
@@ -537,7 +551,9 @@ async function handlePttStop() {
           <slot name="session-footer" />
         </template>
       </SessionList>
-      <div v-else class="flex items-center justify-center h-full text-neutral-500">{{ t('chat.loadingSdk') }}</div>
+      <div v-else class="flex items-center justify-center h-full text-neutral-500">
+        {{ t('chat.loadingSdk') }}
+      </div>
     </div>
 
     <div class="flex-1 overflow-hidden p-4">
@@ -552,38 +568,70 @@ async function handlePttStop() {
         </div>
 
         <div class="relative flex min-h-0 flex-1 flex-col">
-          <div v-if="realtimePttMessage"
-            class="absolute left-3 right-3 top-3 z-10 flex items-center gap-3 rounded-lg border border-blue-100 bg-blue-50/95 px-3 py-2 text-blue-700 shadow-sm backdrop-blur">
+          <div
+            v-if="realtimePttMessage"
+            class="absolute left-3 right-3 top-3 z-10 flex items-center gap-3 rounded-lg border border-blue-100 bg-blue-50/95 px-3 py-2 text-blue-700 shadow-sm backdrop-blur"
+          >
             <span class="icon-[carbon--volume-up-filled] size-5 shrink-0" />
             <div class="min-w-0 flex-1">
               <p class="truncate text-sm font-medium">{{ realtimePttTitle }}</p>
               <p class="text-xs text-blue-600">
-                {{ realtimePttPlaying ? t('chat.realtimePttPlaying') : t('chat.realtimePttFinishing') }}
+                {{
+                  realtimePttPlaying ? t('chat.realtimePttPlaying') : t('chat.realtimePttFinishing')
+                }}
               </p>
             </div>
             <div class="flex h-6 items-center gap-1">
-              <span v-for="index in 5" :key="index"
+              <span
+                v-for="index in 5"
+                :key="index"
                 class="wl-realtime-ptt-bar h-2.5 w-1 rounded-full bg-blue-500"
                 :class="{ 'wl-realtime-ptt-bar-paused': !realtimePttPlaying }"
-                :style="{ animationDelay: `${index * 90}ms` }" />
+                :style="{ animationDelay: `${index * 90}ms` }"
+              />
             </div>
           </div>
 
-          <WlMsgList ref="wlMsgListRef" class="min-h-0 flex-1 bg-neutral-100"
-            :messages="messages" :current-user-id="currentUserId" :sender-infos="messageSenderInfos" :has-more="hasMore"
-            :loading="messagesLoading" :playing-audio-id="playingAudioId" :show-forward="showForward"
-            :can-forward="canForward" :show-withdraw="showWithdraw" :can-withdraw="canWithdraw"
-            :warning="isSelectedSessionInvalid ? t('chat.sessionUnavailable') : undefined" @audio-play="handleAudioPlay"
-            @audio-pause="handleAudioPause" @load-more="loadMore()" @image-click="handleImageClick"
-            @file-click="openUrl" @video-click="handleVideoClick" @location-click="openLocation"
-            @forward="emit('forward', $event)" @withdraw="emit('withdraw', $event)" />
+          <WlMsgList
+            ref="wlMsgListRef"
+            class="min-h-0 flex-1 bg-neutral-100"
+            :messages="messages"
+            :current-user-id="currentUserId"
+            :sender-infos="messageSenderInfos"
+            :has-more="hasMore"
+            :loading="messagesLoading"
+            :playing-audio-id="playingAudioId"
+            :show-forward="showForward"
+            :can-forward="canForward"
+            :show-withdraw="showWithdraw"
+            :can-withdraw="canWithdraw"
+            :warning="isSelectedSessionInvalid ? t('chat.sessionUnavailable') : undefined"
+            @audio-play="handleAudioPlay"
+            @audio-pause="handleAudioPause"
+            @load-more="loadMore()"
+            @image-click="handleImageClick"
+            @file-click="openUrl"
+            @video-click="handleVideoClick"
+            @location-click="openLocation"
+            @forward="emit('forward', $event)"
+            @withdraw="emit('withdraw', $event)"
+          />
         </div>
 
-        <WlChatComposer v-if="!isSelectedSessionInvalid" v-model="messageInput" :ptt-status="pttStatus"
+        <WlChatComposer
+          v-if="!isSelectedSessionInvalid"
+          v-model="messageInput"
+          :ptt-status="pttStatus"
           class="flex-none"
-          @send="sendMessage" @emoji-select="handleEmojiSelect" @image-selected="handleImageSelected"
-          @file-selected="handleFileSelected" @video-selected="handleVideoSelected"
-          @trigger-map-picker="triggerMapPicker" @ptt-start="handlePttStart" @ptt-stop="handlePttStop" />
+          @send="sendMessage"
+          @emoji-select="handleEmojiSelect"
+          @image-selected="handleImageSelected"
+          @file-selected="handleFileSelected"
+          @video-selected="handleVideoSelected"
+          @trigger-map-picker="triggerMapPicker"
+          @ptt-start="handlePttStart"
+          @ptt-stop="handlePttStop"
+        />
       </div>
       <div v-else class="flex h-full items-center justify-center text-neutral-400">
         <p>{{ t('chat.selectSession') }}</p>

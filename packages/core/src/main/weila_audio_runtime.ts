@@ -10,8 +10,7 @@ interface WL_PatchedWindow extends Window {
 }
 
 function patchAudioWorkletAddModule(options: Required<WL_AudioRuntimePatchOptions>): void {
-  if (typeof AudioWorklet === 'undefined' || !AudioWorklet.prototype?.addModule)
-    return
+  if (typeof AudioWorklet === 'undefined' || !AudioWorklet.prototype?.addModule) return
 
   const originalAddModule = AudioWorklet.prototype.addModule
   const workletRedirects = [options.playerWorkletUrl, options.recorderWorkletUrl]
@@ -21,7 +20,10 @@ function patchAudioWorkletAddModule(options: Required<WL_AudioRuntimePatchOption
   }
   let workletCallIndex = 0
 
-  AudioWorklet.prototype.addModule = async function (moduleURL: string | URL, ...args: [WorkletOptions?]) {
+  AudioWorklet.prototype.addModule = async function (
+    moduleURL: string | URL,
+    ...args: [WorkletOptions?]
+  ) {
     const url = String(moduleURL)
 
     if (url.startsWith('blob:') && workletCallIndex < workletRedirects.length) {
@@ -30,20 +32,18 @@ function patchAudioWorkletAddModule(options: Required<WL_AudioRuntimePatchOption
 
     const fileName = url.split('/').pop()
     const redirectTarget = fileName ? workletMap[fileName] : undefined
-    if (redirectTarget)
-      return originalAddModule.call(this, redirectTarget, ...args)
+    if (redirectTarget) return originalAddModule.call(this, redirectTarget, ...args)
 
     return originalAddModule.call(this, moduleURL, ...args)
   }
 }
 
 function patchAudioWorkletNodePortStart(): void {
-  if (typeof window === 'undefined' || typeof window.AudioWorkletNode === 'undefined')
-    return
+  if (typeof window === 'undefined' || typeof window.AudioWorkletNode === 'undefined') return
 
   const OriginalAudioWorkletNode = window.AudioWorkletNode
 
-  window.AudioWorkletNode = (function AudioWorkletNode(
+  window.AudioWorkletNode = function AudioWorkletNode(
     context: BaseAudioContext,
     name: string,
     options?: AudioWorkletNodeOptions,
@@ -51,18 +51,16 @@ function patchAudioWorkletNodePortStart(): void {
     const node = new OriginalAudioWorkletNode(context, name, options)
     node.port.start()
     return node
-  } as unknown) as typeof AudioWorkletNode
+  } as unknown as typeof AudioWorkletNode
 
   window.AudioWorkletNode.prototype = OriginalAudioWorkletNode.prototype
 }
 
 export function installWeilaAudioRuntimePatch(options: WL_AudioRuntimePatchOptions = {}): void {
-  if (typeof window === 'undefined')
-    return
+  if (typeof window === 'undefined') return
 
   const patchedWindow = window as WL_PatchedWindow
-  if (patchedWindow[PATCH_MARK])
-    return
+  if (patchedWindow[PATCH_MARK]) return
 
   patchedWindow[PATCH_MARK] = true
   patchAudioWorkletAddModule({

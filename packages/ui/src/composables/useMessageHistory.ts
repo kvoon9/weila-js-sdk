@@ -6,7 +6,12 @@ import type {
   WL_IDbSession,
   WL_IDbUserInfo,
 } from '@vois/weila-sdk-core'
-import { WL_ExtEventID, WL_IDbMsgDataStatus, WL_IDbMsgDataType, isGroupSessionType } from '@vois/weila-sdk-core'
+import {
+  WL_ExtEventID,
+  WL_IDbMsgDataStatus,
+  WL_IDbMsgDataType,
+  isGroupSessionType,
+} from '@vois/weila-sdk-core'
 
 const PAGE_SIZE = 20
 
@@ -77,7 +82,9 @@ export function useMessageHistory(
       audioData,
       pttData: audioData
         ? undefined
-        : base.pttData ? { ...fallback.pttData, ...base.pttData } : fallback.pttData,
+        : base.pttData
+          ? { ...fallback.pttData, ...base.pttData }
+          : fallback.pttData,
     }
   }
 
@@ -102,10 +109,7 @@ export function useMessageHistory(
   }
 
   function applyWithdrawState(msg: WL_IDbMsgData): boolean {
-    if (
-      msg.msgType !== WL_IDbMsgDataType.WL_DB_MSG_DATA_WITHDRAW_TYPE
-      || !msg.withdrawMsgId
-    ) {
+    if (msg.msgType !== WL_IDbMsgDataType.WL_DB_MSG_DATA_WITHDRAW_TYPE || !msg.withdrawMsgId) {
       return false
     }
 

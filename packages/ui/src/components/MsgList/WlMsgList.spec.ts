@@ -38,21 +38,26 @@ describe('wlMsgList sender label', () => {
     const wrapper = mount(WlMsgList, {
       props: {
         currentUserId: 1531720,
-        senderInfos: new Map([[1875437, {
-          userId: 1875437,
-          nick: '王刚',
-          weilaNum: '70001598',
-          avatar: '',
-          countryCode: '86',
-          created: 0,
-          email: '',
-          phone: '',
-          pinyinName: '',
-          sex: 0,
-          signature: '',
-          status: 0,
-          userType: 0,
-        }]]),
+        senderInfos: new Map([
+          [
+            1875437,
+            {
+              userId: 1875437,
+              nick: '王刚',
+              weilaNum: '70001598',
+              avatar: '',
+              countryCode: '86',
+              created: 0,
+              email: '',
+              phone: '',
+              pinyinName: '',
+              sex: 0,
+              signature: '',
+              status: 0,
+              userType: 0,
+            },
+          ],
+        ]),
         messages: [textMessage({ tag: '波刚' })],
       },
     })

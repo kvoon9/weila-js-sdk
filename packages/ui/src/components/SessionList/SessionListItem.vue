@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { WL_IDbSession } from '@vois/weila-sdk-core'
-import { isGroupSessionType, isIndividualSessionType, WL_IDbMsgDataType } from '@vois/weila-sdk-core'
+import {
+  isGroupSessionType,
+  isIndividualSessionType,
+  WL_IDbMsgDataType,
+} from '@vois/weila-sdk-core'
 import WlAvatar from '../Avatar/WlAvatar.vue'
 import { useWeilaUiI18n } from '../../i18n'
 
@@ -122,9 +126,7 @@ function handleDelete() {
 <template>
   <div
     class="session-list-item group flex items-center gap-3 p-3 cursor-pointer rounded-lg transition-colors"
-    :class="[
-      active ? 'bg-neutral-100' : 'hover:bg-neutral-50'
-    ]"
+    :class="[active ? 'bg-neutral-100' : 'hover:bg-neutral-50']"
     @click="handleClick"
   >
     <WlAvatar
@@ -140,14 +142,19 @@ function handleDelete() {
     <div class="flex-1 min-w-0">
       <div class="flex items-center justify-between">
         <span class="flex items-center gap-1 min-w-0">
-          <span class="text-sm font-medium truncate" :class="disabled ? 'text-neutral-400 line-through' : 'text-neutral-900'">
+          <span
+            class="text-sm font-medium truncate"
+            :class="disabled ? 'text-neutral-400 line-through' : 'text-neutral-900'"
+          >
             {{ sessionName }}
           </span>
           <span
             class="text-xs text-neutral-400 flex-shrink-0"
             :class="isIndividual ? 'icon-[carbon--user]' : isGroup ? 'icon-[carbon--group]' : ''"
           />
-          <span v-if="isGroup" class="text-xs text-neutral-400 flex-shrink-0">({{ memberCount }})</span>
+          <span v-if="isGroup" class="text-xs text-neutral-400 flex-shrink-0"
+            >({{ memberCount }})</span
+          >
         </span>
         <span class="text-xs text-neutral-500 flex-shrink-0 ml-2">
           {{ lastMessageTime }}

@@ -63,15 +63,11 @@ onMounted(async () => {
     <div class="flex items-center justify-center w-12 h-12 mx-auto mb-4 rounded-full bg-yellow-100">
       <span class="icon-[carbon--warning] text-yellow-600 text-2xl"></span>
     </div>
-    <h3 class="text-lg font-medium text-gray-900 text-center mb-2">
-      Logged Out Unexpectedly
-    </h3>
+    <h3 class="text-lg font-medium text-gray-900 text-center mb-2">Logged Out Unexpectedly</h3>
     <p class="text-sm text-gray-500 text-center mb-2">
       {{ weila.kickoutReasonText }}
     </p>
-    <p class="text-xs text-gray-400 text-center mb-4">
-      Reason code: {{ weila.kickoutReason }}
-    </p>
+    <p class="text-xs text-gray-400 text-center mb-4">Reason code: {{ weila.kickoutReason }}</p>
 
     <template #actions>
       <button

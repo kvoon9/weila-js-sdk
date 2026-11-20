@@ -24,12 +24,13 @@ const createVideoMsg = (overrides?: Partial<WL_IDbMsgData>): WL_IDbMsgData => ({
   ...overrides,
 })
 
-const msg = (textData: string, senderId: number = 1600000) => ({
-  textData,
-  msgType: WL_IDbMsgDataType.WL_DB_MSG_DATA_TEXT_TYPE,
-  senderId,
-  combo_id: `test_${Date.now()}`,
-} as unknown as WL_IDbMsgData)
+const msg = (textData: string, senderId: number = 1600000) =>
+  ({
+    textData,
+    msgType: WL_IDbMsgDataType.WL_DB_MSG_DATA_TEXT_TYPE,
+    senderId,
+    combo_id: `test_${Date.now()}`,
+  }) as unknown as WL_IDbMsgData
 
 const meta: Meta<typeof WlVideoBubble> = {
   title: 'Components/WlVideoBubble',

@@ -23,8 +23,10 @@ const emit = defineEmits<{
 }>()
 
 function isUploadFailed() {
-  return props.msg.status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_UNSENT
-    || props.msg.status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR
+  return (
+    props.msg.status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_UNSENT ||
+    props.msg.status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR
+  )
 }
 </script>
 
@@ -35,17 +37,17 @@ function isUploadFailed() {
     @click="msg.fileInfo?.fileUrl && emit('click', msg.fileInfo.fileUrl)"
   >
     <!-- Video Thumbnail -->
-    <div class="relative max-w-[200px]" :class="msg.fileInfo?.fileUrl ? 'cursor-pointer' : 'opacity-60'">
+    <div
+      class="relative max-w-[200px]"
+      :class="msg.fileInfo?.fileUrl ? 'cursor-pointer' : 'opacity-60'"
+    >
       <img
         v-if="msg.fileInfo?.fileThumbnail"
         :src="msg.fileInfo.fileThumbnail"
         class="w-full h-full object-cover"
         alt="video thumbnail"
       />
-      <div
-        v-else
-        class="w-[200px] h-[150px] bg-neutral-300 flex items-center justify-center"
-      >
+      <div v-else class="w-[200px] h-[150px] bg-neutral-300 flex items-center justify-center">
         <span class="icon-[carbon--video] size-12 text-neutral-500" />
       </div>
 
@@ -58,14 +60,16 @@ function isUploadFailed() {
           <span class="icon-[carbon--play-filled] size-6 text-neutral-800 ml-1" />
         </div>
       </div>
-      <div
-        v-else
-        class="absolute inset-0 flex items-center justify-center bg-black/20"
-      >
+      <div v-else class="absolute inset-0 flex items-center justify-center bg-black/20">
         <div class="flex flex-col items-center gap-2 text-white">
           <span v-if="isUploadFailed()" class="icon-[carbon--warning] size-6" />
-          <span v-else class="icon-[carbon--rotate] size-6 animate-spin [animation-direction:reverse]" />
-          <span class="text-xs">{{ isUploadFailed() ? t('message.uploadFailed') : t('message.uploading') }}</span>
+          <span
+            v-else
+            class="icon-[carbon--rotate] size-6 animate-spin [animation-direction:reverse]"
+          />
+          <span class="text-xs">{{
+            isUploadFailed() ? t('message.uploadFailed') : t('message.uploading')
+          }}</span>
         </div>
       </div>
 

@@ -1,6 +1,7 @@
 {
   "name": "@weilasdk/monorepo",
   "private": true,
+  "description": "Weila Web SDK monorepo (@weilasdk/core, @weilasdk/ui)",
   "scripts": {
     "build": "turbo run build",
     "build:core": "turbo run build --filter=@vois/weila-sdk-core",

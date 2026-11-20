@@ -13,26 +13,43 @@ async function handleLogout() {
   await weila.logout()
   router.push('/')
 }
+
+async function logoutAndHide(hide: () => void) {
+  hide()
+  await handleLogout()
+}
 </script>
 
 <template>
   <div class="flex flex-col h-screen">
     <!-- Header Bar -->
-    <div class="h-14 border-b border-neutral-200 flex items-center justify-between px-4 bg-white shrink-0">
+    <div
+      class="h-14 border-b border-neutral-200 flex items-center justify-between px-4 bg-white shrink-0"
+    >
       <div class="flex items-center gap-3">
         <!-- User Avatar Dropdown -->
         <Dropdown class="user-menu-dropdown" :distance="8" placement="bottom-start">
           <button class="focus:outline-none">
             <img v-if="userInfo?.avatar" :src="userInfo.avatar" class="w-8 h-8 rounded-full" />
-            <div v-else class="w-8 h-8 rounded-full bg-neutral-300 flex items-center justify-center">
+            <div
+              v-else
+              class="w-8 h-8 rounded-full bg-neutral-300 flex items-center justify-center"
+            >
               <span class="text-sm text-neutral-600">{{ userInfo?.nick?.[0] || 'U' }}</span>
             </div>
           </button>
           <template #popper="{ hide }">
             <div class="p-4 w-64">
               <div class="flex items-center gap-3 mb-3">
-                <img v-if="userInfo?.avatar" :src="userInfo.avatar" class="w-12 h-12 rounded-full" />
-                <div v-else class="w-12 h-12 rounded-full bg-neutral-300 flex items-center justify-center">
+                <img
+                  v-if="userInfo?.avatar"
+                  :src="userInfo.avatar"
+                  class="w-12 h-12 rounded-full"
+                />
+                <div
+                  v-else
+                  class="w-12 h-12 rounded-full bg-neutral-300 flex items-center justify-center"
+                >
                   <span class="text-lg text-neutral-600">{{ userInfo?.nick?.[0] || 'U' }}</span>
                 </div>
                 <div>
@@ -45,8 +62,10 @@ async function handleLogout() {
                 <div v-if="userInfo?.email">Email: {{ userInfo.email }}</div>
                 <div>User ID: {{ userInfo?.userId }}</div>
               </div>
-              <button @click="handleLogout(); hide()"
-                class="w-full px-3 py-2 text-sm bg-neutral-100 text-neutral-700 rounded-lg hover:bg-neutral-200 transition-colors">
+              <button
+                @click="logoutAndHide(hide)"
+                class="w-full px-3 py-2 text-sm bg-neutral-100 text-neutral-700 rounded-lg hover:bg-neutral-200 transition-colors"
+              >
                 Logout
               </button>
             </div>

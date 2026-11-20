@@ -22,12 +22,7 @@ export function useSessionLastMessages(
     }
 
     try {
-      const msgs = await core.weila_getMsgDatas(
-        session.sessionId,
-        session.sessionType,
-        0,
-        1,
-      )
+      const msgs = await core.weila_getMsgDatas(session.sessionId, session.sessionType, 0, 1)
       lastMessages.value[key] = msgs[0] || null
       return lastMessages.value[key]
     } catch {

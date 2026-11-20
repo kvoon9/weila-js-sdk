@@ -52,8 +52,8 @@ export const useWeilaStore = defineStore('weila', () => {
     setInitialized: (initialized) => {
       audioInitialized.value = initialized
     },
-    onDeferredInitError: error => console.warn('[Weila] Deferred audio init failed:', error),
-    onInitialInitError: error =>
+    onDeferredInitError: (error) => console.warn('[Weila] Deferred audio init failed:', error),
+    onInitialInitError: (error) =>
       console.warn(
         '[Weila] Audio init requires a user gesture, retrying on next interaction:',
         error,

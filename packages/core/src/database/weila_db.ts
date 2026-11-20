@@ -944,7 +944,10 @@ class WeilaDB extends Dexie {
    * 将控制消息指向的原消息标记为已撤回，并删除控制消息本身。
    */
   @AsyncTime()
-  private async applyWithdrawControlMessages(sessionId: string, sessionType: number): Promise<void> {
+  private async applyWithdrawControlMessages(
+    sessionId: string,
+    sessionType: number,
+  ): Promise<void> {
     const key = `${sessionId}_${sessionType}`
     if (this.cleanedWithdrawSessions.has(key)) {
       return
@@ -964,11 +967,7 @@ class WeilaDB extends Dexie {
     await this.transaction('rw', this.msgDatas, async () => {
       for (const control of controls) {
         if (control.withdrawMsgId) {
-          const target = await this.getMsgDataByMsgId(
-            sessionId,
-            sessionType,
-            control.withdrawMsgId,
-          )
+          const target = await this.getMsgDataByMsgId(sessionId, sessionType, control.withdrawMsgId)
           if (target) {
             target.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_WITHDRAW
             await this.msgDatas.put(target)
@@ -990,8 +989,11 @@ class WeilaDB extends Dexie {
     const result = await this.msgDatas
       .orderBy('created')
       .and((x) => {
-        return x.sessionId === sessionId && x.sessionType === sessionType
-          && x.msgType !== WL_IDbMsgDataType.WL_DB_MSG_DATA_WITHDRAW_TYPE
+        return (
+          x.sessionId === sessionId &&
+          x.sessionType === sessionType &&
+          x.msgType !== WL_IDbMsgDataType.WL_DB_MSG_DATA_WITHDRAW_TYPE
+        )
       })
       .reverse()
       .limit(count)
@@ -1014,8 +1016,12 @@ class WeilaDB extends Dexie {
     const result = await this.msgDatas
       .orderBy('created')
       .and((x) => {
-        return x.sessionId === sessionId && x.sessionType === sessionType && x.msgId <= fromMsgId
-          && x.msgType !== WL_IDbMsgDataType.WL_DB_MSG_DATA_WITHDRAW_TYPE
+        return (
+          x.sessionId === sessionId &&
+          x.sessionType === sessionType &&
+          x.msgId <= fromMsgId &&
+          x.msgType !== WL_IDbMsgDataType.WL_DB_MSG_DATA_WITHDRAW_TYPE
+        )
       })
       .reverse()
       .limit(count)

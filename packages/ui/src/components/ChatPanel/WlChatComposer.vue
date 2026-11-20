@@ -20,7 +20,7 @@ const props = withDefaults(defineProps<WlChatComposerProps>(), {
 
 const emit = defineEmits<{
   'update:modelValue': [value: string]
-  'send': []
+  send: []
   'emoji-select': [emoji: string]
   'image-selected': [event: Event]
   'file-selected': [event: Event]
@@ -35,6 +35,26 @@ const { t } = useWeilaUiI18n()
 const imageInputRef = useTemplateRef<HTMLInputElement>('imageInput')
 const fileInputRef = useTemplateRef<HTMLInputElement>('fileInput')
 const videoInputRef = useTemplateRef<HTMLInputElement>('videoInput')
+
+function pickMap(hide: () => void) {
+  emit('trigger-map-picker')
+  hide()
+}
+
+function pickImage(hide: () => void) {
+  triggerImagePicker()
+  hide()
+}
+
+function pickFile(hide: () => void) {
+  triggerFilePicker()
+  hide()
+}
+
+function pickVideo(hide: () => void) {
+  triggerVideoPicker()
+  hide()
+}
 
 function triggerImagePicker() {
   if (props.disabled) return
@@ -55,30 +75,41 @@ function triggerVideoPicker() {
 <template>
   <div class="mt-4 flex gap-2 items-center">
     <Dropdown class="media-dropdown" :distance="8" placement="top-start">
-      <button class="p-2 border-0 bg-transparent rounded-lg hover:bg-neutral-100 disabled:opacity-50" type="button"
-        :disabled="disabled">
+      <button
+        class="p-2 border-0 bg-transparent rounded-lg hover:bg-neutral-100 disabled:opacity-50"
+        type="button"
+        :disabled="disabled"
+      >
         <span class="icon-[carbon--add] text-xl"></span>
       </button>
       <template #popper="{ hide }">
         <div class="py-1 min-w-36">
-          <button type="button"
+          <button
+            type="button"
             class="w-full px-4 py-2 border-0 bg-transparent text-left hover:bg-neutral-50 flex items-center gap-2"
-            @click="triggerImagePicker(); hide()">
+            @click="pickImage(hide)"
+          >
             <span class="icon-[carbon--image]"></span> {{ t('chat.sendImage') }}
           </button>
-          <button type="button"
+          <button
+            type="button"
             class="w-full px-4 py-2 border-0 bg-transparent text-left hover:bg-neutral-50 flex items-center gap-2"
-            @click="triggerFilePicker(); hide()">
+            @click="pickFile(hide)"
+          >
             <span class="icon-[carbon--document]"></span> {{ t('chat.sendFile') }}
           </button>
-          <button type="button"
+          <button
+            type="button"
             class="w-full px-4 py-2 border-0 bg-transparent text-left hover:bg-neutral-50 flex items-center gap-2"
-            @click="triggerVideoPicker(); hide()">
+            @click="pickVideo(hide)"
+          >
             <span class="icon-[carbon--video]"></span> {{ t('chat.sendVideo') }}
           </button>
-          <button type="button"
+          <button
+            type="button"
             class="w-full px-4 py-2 border-0 bg-transparent text-left hover:bg-neutral-50 flex items-center gap-2"
-            @click="emit('trigger-map-picker'); hide()">
+            @click="pickMap(hide)"
+          >
             <span class="icon-[carbon--location]"></span> {{ t('chat.sendLocation') }}
           </button>
         </div>
@@ -86,18 +117,45 @@ function triggerVideoPicker() {
     </Dropdown>
 
     <WLEmojiPicker @select="emit('emoji-select', $event)" />
-    <input :value="modelValue" type="text" :placeholder="t('chat.inputPlaceholder')"
+    <input
+      :value="modelValue"
+      type="text"
+      :placeholder="t('chat.inputPlaceholder')"
       class="flex-1 px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-      :disabled="disabled" @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
-      @keyup.enter="emit('send')" />
-    <button type="button" class="wl-chat-composer__send-button" :disabled="disabled" @click="emit('send')">
+      :disabled="disabled"
+      @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
+      @keyup.enter="emit('send')"
+    />
+    <button
+      type="button"
+      class="wl-chat-composer__send-button"
+      :disabled="disabled"
+      @click="emit('send')"
+    >
       {{ t('chat.send') }}
     </button>
-    <WlPttButton :status="pttStatus" size="md" :disabled="disabled" @start="emit('ptt-start')"
-      @stop="emit('ptt-stop')" />
-    <input ref="imageInput" type="file" accept="image/*" class="hidden" @change="emit('image-selected', $event)" />
+    <WlPttButton
+      :status="pttStatus"
+      size="md"
+      :disabled="disabled"
+      @start="emit('ptt-start')"
+      @stop="emit('ptt-stop')"
+    />
+    <input
+      ref="imageInput"
+      type="file"
+      accept="image/*"
+      class="hidden"
+      @change="emit('image-selected', $event)"
+    />
     <input ref="fileInput" type="file" class="hidden" @change="emit('file-selected', $event)" />
-    <input ref="videoInput" type="file" accept="video/*" class="hidden" @change="emit('video-selected', $event)" />
+    <input
+      ref="videoInput"
+      type="file"
+      accept="video/*"
+      class="hidden"
+      @change="emit('video-selected', $event)"
+    />
   </div>
 </template>
 

@@ -85,7 +85,7 @@ function validateWasmData(data: ArrayBuffer, url: string): void {
   const isWasm = bytes[0] === 0x00 && bytes[1] === 0x61 && bytes[2] === 0x73 && bytes[3] === 0x6d
   if (!isWasm) {
     const magic = Array.from(bytes)
-      .map(byte => byte.toString(16).padStart(2, '0'))
+      .map((byte) => byte.toString(16).padStart(2, '0'))
       .join(' ')
     throw new Error(`获取 WASM 资源失败:${url} 返回的不是 WASM 文件，magic=${magic}`)
   }

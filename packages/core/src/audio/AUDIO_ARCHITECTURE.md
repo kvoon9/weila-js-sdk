@@ -21,14 +21,15 @@ packages/core/src/audio/
 
 ```typescript
 enum WLPlayerType {
-  WL_PTT_STREAM_PLAYER,   // 0: 流式播放（实时语音）
-  WL_PTT_HISTORY_PLAYER,  // 1: 历史播放（消息回放）
-  WL_PTT_SINGLE_PLAYER,  // 2: 单次播放
-  WL_PTT_PLAYER_NUM,      // 3: 播放器数量
+  WL_PTT_STREAM_PLAYER, // 0: 流式播放（实时语音）
+  WL_PTT_HISTORY_PLAYER, // 1: 历史播放（消息回放）
+  WL_PTT_SINGLE_PLAYER, // 2: 单次播放
+  WL_PTT_PLAYER_NUM, // 3: 播放器数量
 }
 ```
 
 **特点**：
+
 - 三个独立的播放器，可以同时播放不同的音频
 - 每个播放器有独立的状态机
 - 状态互不影响
@@ -39,16 +40,16 @@ enum WLPlayerType {
 
 ```typescript
 enum WLPlayerState {
-  WL_PLAYER_OPENING,    // 正在打开
-  WL_PLAYER_STOPPED,    // 已停止（就绪）
-  WL_PLAYER_STARTING,   // 正在开始
-  WL_PLAYER_STARTED,    // 已启动（播放中）
-  WL_PLAYER_STOPPING,   // 正在停止
-  WL_PLAYER_PAUSING,    // 正在暂停
-  WL_PLAYER_PAUSED,     // 已暂停
-  WL_PLAYER_RESUMING,   // 正在恢复
-  WL_PLAYER_CLOSING,    // 正在关闭
-  WL_PLAYER_CLOSED,     // 已关闭
+  WL_PLAYER_OPENING, // 正在打开
+  WL_PLAYER_STOPPED, // 已停止（就绪）
+  WL_PLAYER_STARTING, // 正在开始
+  WL_PLAYER_STARTED, // 已启动（播放中）
+  WL_PLAYER_STOPPING, // 正在停止
+  WL_PLAYER_PAUSING, // 正在暂停
+  WL_PLAYER_PAUSED, // 已暂停
+  WL_PLAYER_RESUMING, // 正在恢复
+  WL_PLAYER_CLOSING, // 正在关闭
+  WL_PLAYER_CLOSED, // 已关闭
 }
 ```
 
@@ -101,6 +102,7 @@ await audio.openPlayer(playerType: WLPlayerType, sampleRate: number)
 **前置条件**：`playState === WL_PLAYER_CLOSED`
 
 **流程**：
+
 1. 创建 `AudioWorkletNode`（weila_player_processor）
 2. 加载 Opus WASM 解码器
 3. 发送 `OPEN_REQ`，等待 `OPEN_RSP`
@@ -114,6 +116,7 @@ await audio.startPlay(playerType: WLPlayerType)
 **前置条件**：`playState === WL_PLAYER_STOPPED`
 
 **流程**：
+
 1. 创建 `AudioBufferSourceNode`（循环静音缓冲）
 2. 连接音频节点：`Source -> WorkletNode -> Destination`
 3. 发送 `START_REQ`，等待 `START_RSP`
@@ -132,7 +135,7 @@ audio.putPlayerOpusData(playerType: WLPlayerType, opusData: Uint8Array[])
 ### 5. 结束播放
 
 ```typescript
-audio.putPlayerOpusData(playerType, null)  // 通知最后一帧
+audio.putPlayerOpusData(playerType, null) // 通知最后一帧
 ```
 
 - 发送 `END_DATA` 事件
@@ -141,11 +144,12 @@ audio.putPlayerOpusData(playerType, null)  // 通知最后一帧
 ### 6. 暂停 / 恢复
 
 ```typescript
-await audio.pausePlay(playerType)   // 暂停
-await audio.resumePlay(playerType)   // 恢复
+await audio.pausePlay(playerType) // 暂停
+await audio.resumePlay(playerType) // 恢复
 ```
 
 **前置条件**：
+
 - `pausePlay`: `playState === WL_PLAYER_STARTED || WL_PLAYER_STARTING`
 - `resumePlay`: `playState === WL_PLAYER_PAUSED || WL_PLAYER_PAUSING`
 
@@ -158,6 +162,7 @@ await audio.stopPlay(playerType)
 **前置条件**：`STARTED | STARTING | PAUSING | PAUSED | RESUMING`
 
 **流程**：
+
 1. 断开音频节点连接
 2. 发送 `STOP_REQ`，等待 `STOP_RSP`
 3. 状态变为 `WL_PLAYER_STOPPED`
@@ -176,22 +181,22 @@ await audio.closePlayer(playerType)
 
 ### 播放器事件（Request/Response）
 
-| Request | Response | 说明 |
-|---------|----------|------|
-| `WL_WORKLET_NODE_OPEN_REQ` | `WL_WORKLET_NODE_OPEN_RSP` | 打开播放器 |
-| `WL_WORKLET_NODE_START_REQ` | `WL_WORKLET_NODE_START_RSP` | 开始播放 |
-| `WL_WORKLET_NODE_PAUSE_REQ` | `WL_WORKLET_NODE_PAUSE_RSP` | 暂停播放 |
-| `WL_WORKLET_NODE_RESUME_REQ` | `WL_WORKLET_NODE_RESUME_RSP` | 恢复播放 |
-| `WL_WORKLET_NODE_STOP_REQ` | `WL_WORKLET_NODE_STOP_RSP` | 停止播放 |
-| `WL_WORKLET_NODE_CLOSE_REQ` | `WL_WORKLET_NODE_CLOSE_RSP` | 关闭播放器 |
+| Request                      | Response                     | 说明       |
+| ---------------------------- | ---------------------------- | ---------- |
+| `WL_WORKLET_NODE_OPEN_REQ`   | `WL_WORKLET_NODE_OPEN_RSP`   | 打开播放器 |
+| `WL_WORKLET_NODE_START_REQ`  | `WL_WORKLET_NODE_START_RSP`  | 开始播放   |
+| `WL_WORKLET_NODE_PAUSE_REQ`  | `WL_WORKLET_NODE_PAUSE_RSP`  | 暂停播放   |
+| `WL_WORKLET_NODE_RESUME_REQ` | `WL_WORKLET_NODE_RESUME_RSP` | 恢复播放   |
+| `WL_WORKLET_NODE_STOP_REQ`   | `WL_WORKLET_NODE_STOP_RSP`   | 停止播放   |
+| `WL_WORKLET_NODE_CLOSE_REQ`  | `WL_WORKLET_NODE_CLOSE_RSP`  | 关闭播放器 |
 
 ### 数据事件（单向）
 
-| Event | Direction | 说明 |
-|-------|-----------|------|
-| `WL_WORKLET_NODE_PUT_DATA` | JS -> Worklet | 写入 Opus 数据 |
-| `WL_WORKLET_NODE_END_DATA` | JS -> Worklet | 通知数据结束 |
-| `WL_WORKLET_NODE_FINISH_PLAY` | Worklet -> JS | 播放完成通知 |
+| Event                         | Direction     | 说明           |
+| ----------------------------- | ------------- | -------------- |
+| `WL_WORKLET_NODE_PUT_DATA`    | JS -> Worklet | 写入 Opus 数据 |
+| `WL_WORKLET_NODE_END_DATA`    | JS -> Worklet | 通知数据结束   |
+| `WL_WORKLET_NODE_FINISH_PLAY` | Worklet -> JS | 播放完成通知   |
 
 ### 主动通知事件
 
@@ -251,9 +256,9 @@ await audio.closePlayer(WLPlayerType.WL_PTT_SINGLE_PLAYER)
 
 ```typescript
 // 同时播放三路音频
-await audio.startPlay(WLPlayerType.WL_PTT_STREAM_PLAYER)   // 实时语音
-await audio.startPlay(WLPlayerType.WL_PTT_HISTORY_PLAYER)  // 历史消息
-await audio.startPlay(WLPlayerType.WL_PTT_SINGLE_PLAYER)   // 单次提示音
+await audio.startPlay(WLPlayerType.WL_PTT_STREAM_PLAYER) // 实时语音
+await audio.startPlay(WLPlayerType.WL_PTT_HISTORY_PLAYER) // 历史消息
+await audio.startPlay(WLPlayerType.WL_PTT_SINGLE_PLAYER) // 单次提示音
 ```
 
 ---

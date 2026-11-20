@@ -52,7 +52,12 @@ async function handleDeleteSessionConfirm() {
   }
 }
 
-function handleLocationClick(location: { latitude: number; longitude: number; name: string; address: string }) {
+function handleLocationClick(location: {
+  latitude: number
+  longitude: number
+  name: string
+  address: string
+}) {
   // eslint-disable-next-line no-console
   console.log('[Playground] Location clicked:', location)
 }
@@ -70,9 +75,7 @@ function handleLocationClick(location: { latitude: number; longitude: number; na
   />
   <ConfirmModal :visible="isDeleteSessionModalVisible" @cancel="handleDeleteSessionCancel">
     <h3 class="text-lg font-semibold text-gray-900 mb-2">Delete session</h3>
-    <p class="text-sm text-gray-600 mb-6">
-      Delete session {{ pendingDeleteSessionName }}?
-    </p>
+    <p class="text-sm text-gray-600 mb-6">Delete session {{ pendingDeleteSessionName }}?</p>
     <template #actions>
       <div class="flex justify-end gap-3">
         <button
