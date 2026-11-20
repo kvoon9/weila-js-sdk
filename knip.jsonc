@@ -11,6 +11,11 @@
       // Manual script: copies dist/assets into the consuming app's public/
       // (documented in packages/core/AGENTS.md, used by UniApp integrations)
       "entry": ["post-copy.js"]
+    },
+    "packages/ui": {
+      // Icons are resolved at build time from CSS: `@plugin "@iconify/tailwind4"`
+      // auto-discovers installed @iconify-json/* packages (see style.postcss.css)
+      "ignoreDependencies": ["@iconify-json/carbon"]
     }
   },
   "ignore": [

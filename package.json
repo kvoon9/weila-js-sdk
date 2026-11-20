@@ -20,7 +20,6 @@
     "preview": "turbo run build --filter=@weilasdk/playground-vue3 && pnpm --filter @weilasdk/playground-vue3 run preview"
   },
   "devDependencies": {
-    "@antfu/ni": "catalog:",
     "knip": "catalog:",
     "lint-staged": "catalog:",
     "oxfmt": "catalog:",
