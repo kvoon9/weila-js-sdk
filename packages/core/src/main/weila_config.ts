@@ -109,7 +109,7 @@ class WLConfig {
     for (let item of configItemInfo) {
       wllog('id:%d url:%s', item.id, item.url)
       const configDataItem = {} as IConfigData
-      let dbItem = {} as IConfigItem
+      let dbItem: IConfigItem | undefined
       let responseData: any
       configDataItem.latestTime = new Date().getTime()
       configDataItem.version = item.version
@@ -149,7 +149,7 @@ class WLConfig {
         dbItem.data = configDataItem
       }
 
-      await db.configTable.bulkPut([dbItem], null, { allKeys: true })
+      await db.configTable.bulkPut([dbItem], undefined, { allKeys: true })
     }
 
     return true
@@ -180,7 +180,8 @@ class WLConfig {
     const db = new WLConfigDB()
     try {
       const item = await db.configTable.get(id)
-      return item.data as IConfigData
+
+      return item?.data as IConfigData | undefined
     } catch (e) {
       wlerr('获取配置信息出错:' + e)
       throw e

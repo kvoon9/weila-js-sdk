@@ -705,7 +705,7 @@ function getAppKeyAndId(): any {
 }
 
 function getWebsocketAddr(): string {
-  return process.env.WSS
+  return process.env.WSS ?? ''
 }
 
 function decompositionAudioData(pttData: Uint8Array): WL_PttPayload[] {
