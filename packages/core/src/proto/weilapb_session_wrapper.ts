@@ -228,12 +228,10 @@ class WeilaPBSessionWrapper {
         }
         break
 
-      default:
-        {
-          buildMsgRet.resultCode = -1
-          return buildMsgRet
-        }
-        break
+      default: {
+        buildMsgRet.resultCode = -1
+        return buildMsgRet
+      }
     }
 
     return BuildWeilaMsg.buildWeilaMsgReq(

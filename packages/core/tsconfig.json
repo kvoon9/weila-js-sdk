@@ -12,7 +12,8 @@
       "db/*": ["./src/database/*"],
       "proto/*": ["./src/proto/*"],
       "audio/*": ["./src/audio/*"]
-    }
+    },
+    "rootDir": "src"
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]

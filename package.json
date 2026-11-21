@@ -16,8 +16,9 @@
     "typecheck:tsc": "turbo run typecheck:tsc",
     "typecheck:parity": "node packages/core/scripts/typecheck-parity.mjs",
     "test:run": "turbo run test:run",
-    "lint": "oxlint --type-aware",
+    "lint": "node packages/core/scripts/lint-budget.mjs",
     "lint:fix": "oxlint --type-aware --fix",
+    "lint:budget": "node packages/core/scripts/lint-budget.mjs --write",
     "knip": "knip",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
@@ -28,6 +29,8 @@
     "contract:check": "node packages/core/scripts/artifact-contract.mjs"
   },
   "devDependencies": {
+    "@oxlint/plugins": "catalog:",
+    "eslint-plugin-slop": "catalog:",
     "knip": "catalog:",
     "nano-staged": "catalog:",
     "oxfmt": "catalog:",

@@ -13,7 +13,7 @@ describe('WeilaRingBuffer', () => {
 
     const rest = new Int16Array(4)
     expect(ring.pull(rest)).toBe(1)
-    expect([...rest.slice(0, 1)]).toEqual([3])
+    expect(rest[0]).toBe(3)
   })
 
   it('wraps writes across the end of the buffer', () => {
