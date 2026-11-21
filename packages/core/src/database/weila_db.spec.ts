@@ -1,6 +1,7 @@
 // eslint-disable-next-line import/no-unassigned-import
 import 'fake-indexeddb/auto'
 import { afterEach, describe, expect, it } from 'vitest'
+import { Dexie } from 'dexie'
 import { WL } from 'proto/weilapb'
 import { WeilaDB } from './weila_db'
 import {
@@ -130,6 +131,23 @@ describe('WeilaDB transactions', () => {
 })
 
 describe('WeilaDB migration guard', () => {
+  it('allows Dexie to patch a same-version schema extension', async () => {
+    const userId = nextUserId()
+    const partial = new Dexie(`WL_${userId}_DB`)
+    partial.version(CURRENT_DB_VERSION).stores({ sessions: 'combo_id_type, status' })
+    await partial.open()
+    partial.close()
+
+    const db = openDb(userId, CURRENT_DB_VERSION)
+    await db.open()
+
+    expect(db.backendDB().version).toBe(CURRENT_DB_VERSION * 10 + 1)
+    const session = makeSession('4500')
+    await db.putSession(session)
+
+    await expect(db.getSession(session.sessionId, session.sessionType)).resolves.toEqual(session)
+  })
+
   it('refuses to reopen a newer database at an older schema version', async () => {
     const userId = nextUserId()
     const session = makeSession('4400')

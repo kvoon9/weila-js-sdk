@@ -148,7 +148,7 @@ class WeilaDB extends Dexie {
         throw this.downgradeError
       }
       const installedVersion = this.backendDB().version / 10
-      if (installedVersion > this.declaredVersion) {
+      if (Math.floor(installedVersion) > this.declaredVersion) {
         _wlerr(
           '拒绝降级打开数据库 %s: 已安装版本 %d, 当前 SDK 声明版本 %d (Dexie VersionError)',
           this.name,
