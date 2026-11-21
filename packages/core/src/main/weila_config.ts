@@ -188,4 +188,5 @@ class WLConfig {
   }
 }
 
-export { WLConfig, WL_ConfigID, SetConfigDataParam, setConfigData }
+export { WLConfig, WL_ConfigID, setConfigData }
+export type { SetConfigDataParam }
