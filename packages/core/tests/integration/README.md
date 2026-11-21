@@ -36,5 +36,12 @@ The script builds the package first, then runs Playwright with `playwright.integ
 - Text send, with the stored row at status `SENT` and the send event.
 - Audio send by data, with the stored row's frame count and status.
 - Cross-account receive: one account sends a text and an audio message, the peer receives both and emits the new message event.
+- Location send and receive.
+- Session settings, read state, and the active session.
 
 Later passes add the receive side with a second account, the group, friend, and device domains, and the PTT and connection state machine regressions.
+
+## Known limitations
+
+- **Cross-enterprise messaging is server-restricted.** A friend relationship across enterprises can be created. Search, invite, and answer all succeed, and both accounts list each other as friends. Sending a message still returns `RESULT_REQUEST_LIMITED` (result code 22). Keep message tests inside one enterprise. Do not add a cross-enterprise send test until the platform changes this policy.
+- **Received audio is server-normalized.** The sender's local row keeps the frame count it sent. The receiver gets an `audioUrl` on the CDN and `frameCount` 0. Assert the URL and a recent `created` time, not the sent frame count.

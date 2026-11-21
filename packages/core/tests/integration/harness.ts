@@ -226,6 +226,108 @@ export class CoreSession {
     )
   }
 
+  async sendPosition(
+    sessionId: string,
+    sessionType: number,
+    position: {
+      locationType: string
+      latitude: number
+      longitude: number
+      name: string
+      address: string
+    },
+  ): Promise<boolean> {
+    return this.page.evaluate(
+      (args) => {
+        return window.weilaCore.weila_sendPosition(args.sessionId, args.sessionType, args.position)
+      },
+      { sessionId, sessionType, position },
+    )
+  }
+
+  async getSessionFromDb(
+    sessionId: string,
+    sessionType: number,
+  ): Promise<{ comboId: string; readMsgId: number; lastMsgId: number } | null> {
+    return this.page.evaluate(
+      async (args) => {
+        const session = await window.weilaCore.weila_getSessionFromDb(
+          args.sessionId,
+          args.sessionType,
+        )
+
+        return session
+          ? {
+              comboId: String(session.combo_id_type ?? ''),
+              readMsgId: Number(session.readMsgId ?? 0),
+              lastMsgId: Number(session.lastMsgId ?? 0),
+            }
+          : null
+      },
+      { sessionId, sessionType },
+    )
+  }
+
+  async getSessionSetting(
+    sessionId: string,
+    sessionType: number,
+  ): Promise<{ mute: boolean; tts: boolean } | null> {
+    return this.page.evaluate(
+      async (args) => {
+        const setting = await window.weilaCore.weila_getSessionSetting(
+          args.sessionId,
+          args.sessionType,
+        )
+
+        return setting ? { mute: Boolean(setting.mute), tts: Boolean(setting.tts) } : null
+      },
+      { sessionId, sessionType },
+    )
+  }
+
+  async updateSessionSetting(
+    sessionId: string,
+    sessionType: number,
+    params: { mute?: boolean; tts?: boolean },
+  ): Promise<boolean> {
+    return this.page.evaluate(
+      (args) => {
+        return window.weilaCore.weila_updateSessionSetting(
+          args.sessionId,
+          args.sessionType,
+          args.params,
+        )
+      },
+      { sessionId, sessionType, params },
+    )
+  }
+
+  async setSessionMsgRead(sessionId: string, sessionType: number, msgId: number): Promise<boolean> {
+    return this.page.evaluate(
+      (args) => {
+        return window.weilaCore.weila_setSessionMsgRead(
+          args.sessionId,
+          args.sessionType,
+          args.msgId,
+        )
+      },
+      { sessionId, sessionType, msgId },
+    )
+  }
+
+  async setActiveSession(sessionId: string, sessionType: number): Promise<boolean> {
+    return this.page.evaluate(
+      (args) => {
+        return window.weilaCore.weila_setActiveSession(args.sessionId, args.sessionType)
+      },
+      { sessionId, sessionType },
+    )
+  }
+
+  async clearActiveSession(): Promise<void> {
+    await this.page.evaluate(() => window.weilaCore.weila_clearActiveSession())
+  }
+
   async sendText(sessionId: string, sessionType: number, text: string): Promise<boolean> {
     return this.page.evaluate(
       (args) => {
