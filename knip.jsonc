@@ -17,7 +17,10 @@
       // (documented in packages/core/AGENTS.md, used by UniApp integrations)
       "entry": ["post-copy.js", "scripts/*.spec.mjs"],
       // Vendored Oxlint plugin. It is loaded by Oxlint, not imported by package code.
-      "ignore": ["tools/oxlint/anti-slop/**"],
+      // weilapb.js is generated protocol code; its default export is unused.
+      "ignore": ["tools/oxlint/anti-slop/**", "src/proto/weilapb.js"],
+      // Invoked by `src/proto/proto_raws/buildjs.sh` through `pnpm exec`, which knip cannot see.
+      "ignoreDependencies": ["protobufjs-cli"],
     },
     "packages/ui": {
       // Icons are resolved at build time from CSS: `@plugin "@iconify/tailwind4"`
