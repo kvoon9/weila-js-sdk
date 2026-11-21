@@ -15,8 +15,8 @@ async function fetchWithTimeout(
 ): Promise<Response> {
   const controller = new AbortController()
   const signal = controller.signal
-  let timerId = null as any
-  const localInit = init ? init : ({} as RequestInit)
+  let timerId: ReturnType<typeof setTimeout> | undefined
+  const localInit: RequestInit = init ?? {}
   localInit.signal = signal
 
   wllog('fetch url:', input)
@@ -817,7 +817,7 @@ function getWebsocketAddr(): string {
 function decompositionAudioData(pttData: Uint8Array): WL_PttPayload[] {
   let offset = 0
   let sizeOfOpusData = 0
-  let codedDataList = [] as WL_PttPayload[]
+  const codedDataList: WL_PttPayload[] = []
 
   let frames = 0,
     prevFrames = 0
@@ -841,9 +841,11 @@ function decompositionAudioData(pttData: Uint8Array): WL_PttPayload[] {
     frames++
 
     if ((frames + 1) % 25 === 0) {
-      const payload = {} as WL_PttPayload
-      payload.frameCount = frames - prevFrames
-      payload.data = new Uint8Array(pttData.slice(prevOffset, offset))
+      const payload: WL_PttPayload = {
+        frameCount: frames - prevFrames,
+        data: new Uint8Array(pttData.slice(prevOffset, offset)),
+      }
+
       codedDataList.push(payload)
       prevOffset = offset
       prevFrames = frames
@@ -851,9 +853,11 @@ function decompositionAudioData(pttData: Uint8Array): WL_PttPayload[] {
   }
 
   if (prevOffset < offset) {
-    const payload = {} as WL_PttPayload
-    payload.frameCount = frames - prevFrames
-    payload.data = new Uint8Array(pttData.slice(prevOffset, offset))
+    const payload: WL_PttPayload = {
+      frameCount: frames - prevFrames,
+      data: new Uint8Array(pttData.slice(prevOffset, offset)),
+    }
+
     codedDataList.push(payload)
   }
 

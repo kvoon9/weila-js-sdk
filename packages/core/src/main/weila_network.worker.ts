@@ -15,13 +15,21 @@ const wllog = getLogger('NET:info')
 const wlerr = getLogger('NET:err')
 
 class Network {
-  private readonly ctx: Worker = self as any
+  // SAFETY: the worker bundle aliases this module to a module worker; `self` is the
+  // DedicatedWorkerGlobalScope at runtime, and these two members are its full use here.
+  private readonly ctx: {
+    addEventListener(type: 'message', listener: (event: MessageEvent) => void): void
+    postMessage(message: WL_NetworkEvent, options?: StructuredSerializeOptions): void
+  } = self as unknown as {
+    addEventListener(type: 'message', listener: (event: MessageEvent) => void): void
+    postMessage(message: WL_NetworkEvent, options?: StructuredSerializeOptions): void
+  }
   private readonly maxRecvBufSize = 1024 * 1024
   private socket?: WebSocket
   private recvBuffer: Uint8Array
   private currentRecv: number
   private isConnected: boolean
-  private sendingPbMsgList: Uint8Array[]
+  private sendingPbMsgList: Uint8Array<ArrayBuffer>[]
   private webSockAddr?: string
 
   constructor() {
@@ -39,25 +47,29 @@ class Network {
     wllog('SOCKET打开处理:', JSON.stringify(event))
 
     if (this.socket) {
-      const netEvent = {} as WL_NetworkEvent
-      netEvent.eventId = WL_NetworkEventID.NET_STATE_IND_EVT
+      let eventData: WL_NetworkState | undefined
 
       if (this.socket.readyState === WebSocket.CONNECTING) {
         wllog('SOCKET连接中...')
-        netEvent.eventData = WL_NetworkState.NET_CONNECTING_STATE
+        eventData = WL_NetworkState.NET_CONNECTING_STATE
       } else if (this.socket.readyState === WebSocket.OPEN) {
         wllog('SOCKET已连接')
-        netEvent.eventData = WL_NetworkState.NET_CONNECTED_STATE
+        eventData = WL_NetworkState.NET_CONNECTED_STATE
         this.isConnected = true
       }
 
-      this.ctx.postMessage(netEvent, [])
+      const netEvent: WL_NetworkEvent = {
+        eventId: WL_NetworkEventID.NET_STATE_IND_EVT,
+        eventData,
+      }
+
+      this.ctx.postMessage(netEvent, { transfer: [] })
     }
   }
 
-  private onSocketRecv(event: Event): void {
+  private onSocketRecv(event: MessageEvent): void {
     if (this.currentRecv < this.maxRecvBufSize) {
-      const recvData = new Uint8Array((event as MessageEvent).data)
+      const recvData = new Uint8Array(event.data)
 
       if (recvData.length > 0) {
         this.recvBuffer.set(recvData, this.currentRecv)
@@ -70,19 +82,20 @@ class Network {
             const headerValue = weilaHeader.getValue()
 
             if (this.currentRecv >= headerValue.length) {
-              const wlMsgData = {} as WL_PbMsgData
-              wlMsgData.header = headerValue
-              wlMsgData.pbMsgData = this.recvBuffer.slice(
-                WeilaMsgHeader.msgHeaderLen,
-                headerValue.length,
-              )
+              const wlMsgData: WL_PbMsgData = {
+                header: headerValue,
+                pbMsgData: this.recvBuffer.slice(WeilaMsgHeader.msgHeaderLen, headerValue.length),
+              }
+
               this.recvBuffer.copyWithin(0, headerValue.length, this.currentRecv)
               this.currentRecv -= headerValue.length
 
-              const netEvent = {} as WL_NetworkEvent
-              netEvent.eventId = WL_NetworkEventID.NET_MSG_RECV_IND_EVT
-              netEvent.eventData = wlMsgData
-              this.ctx.postMessage(netEvent, [])
+              const netEvent: WL_NetworkEvent = {
+                eventId: WL_NetworkEventID.NET_MSG_RECV_IND_EVT,
+                eventData: wlMsgData,
+              }
+
+              this.ctx.postMessage(netEvent, { transfer: [] })
             } else {
               break
             }
@@ -100,30 +113,34 @@ class Network {
     }
   }
 
-  private onSocketClose(event: Event): void {
+  private onSocketClose(event: CloseEvent): void {
     wllog('SOCKET关闭:', JSON.stringify(event))
 
     if (this.socket) {
-      const closeEvent = event as CloseEvent
+      const closeEvent = event
       this.socket = undefined
       wllog('错误码:', closeEvent.code, closeEvent.reason)
     }
 
-    const netEvent = {} as WL_NetworkEvent
-    netEvent.eventId = WL_NetworkEventID.NET_STATE_IND_EVT
-    netEvent.eventData = WL_NetworkState.NET_DISCONNECTED_STATE
+    const netEvent: WL_NetworkEvent = {
+      eventId: WL_NetworkEventID.NET_STATE_IND_EVT,
+      eventData: WL_NetworkState.NET_DISCONNECTED_STATE,
+    }
+
     this.isConnected = false
-    this.ctx.postMessage(netEvent, [])
+    this.ctx.postMessage(netEvent, { transfer: [] })
   }
 
   private disconnect(code: number, reason?: string) {
     wllog('disconnect ', code, reason)
 
     if (this.socket) {
-      const netEvent = {} as WL_NetworkEvent
-      netEvent.eventId = WL_NetworkEventID.NET_STATE_IND_EVT
-      netEvent.eventData = WL_NetworkState.NET_DISCONNECTING_STATE
-      this.ctx.postMessage(netEvent, [])
+      const netEvent: WL_NetworkEvent = {
+        eventId: WL_NetworkEventID.NET_STATE_IND_EVT,
+        eventData: WL_NetworkState.NET_DISCONNECTING_STATE,
+      }
+
+      this.ctx.postMessage(netEvent, { transfer: [] })
 
       this.socket.close(code, reason || 'normal close')
       this.socket = undefined
@@ -135,11 +152,13 @@ class Network {
     wlerr('SOCKET错误:' + event)
     this.disconnect(3000, JSON.stringify(event))
 
-    const netEvent = {} as WL_NetworkEvent
-    netEvent.eventId = WL_NetworkEventID.NET_EXCEPTION_IND_EVT
-    netEvent.eventData = JSON.stringify(event)
+    const netEvent: WL_NetworkEvent = {
+      eventId: WL_NetworkEventID.NET_EXCEPTION_IND_EVT,
+      eventData: JSON.stringify(event),
+    }
+
     this.isConnected = false
-    this.ctx.postMessage(netEvent, [])
+    this.ctx.postMessage(netEvent, { transfer: [] })
   }
 
   private connect() {
@@ -157,11 +176,14 @@ class Network {
     } catch (e) {
       wlerr('连接WS Socket 出异常', e)
       this.socket = undefined
-      const netEvent = {} as WL_NetworkEvent
-      netEvent.eventId = WL_NetworkEventID.NET_EXCEPTION_IND_EVT
-      netEvent.eventData = e
+
+      const netEvent: WL_NetworkEvent = {
+        eventId: WL_NetworkEventID.NET_EXCEPTION_IND_EVT,
+        eventData: e,
+      }
+
       this.isConnected = false
-      this.ctx.postMessage(netEvent, [])
+      this.ctx.postMessage(netEvent, { transfer: [] })
     }
   }
 
@@ -172,14 +194,14 @@ class Network {
 
       if (this.isConnected && socket && socket.readyState === WebSocket.OPEN) {
         wllog('发送了数据')
-        socket.send(data as BufferSource)
+        socket.send(data)
         setTimeout(this.processSending.bind(this), 0)
       }
     }
   }
 
-  private onMessage(event: any): void {
-    const netEvent = event.data as WL_NetworkEvent
+  private onMessage(event: MessageEvent): void {
+    const netEvent: WL_NetworkEvent = event.data
 
     switch (netEvent.eventId) {
       case WL_NetworkEventID.NET_WEBSOCK_ADDR_SET_EVT:

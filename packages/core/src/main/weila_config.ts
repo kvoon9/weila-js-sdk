@@ -52,7 +52,7 @@ const configItemInfo = [
 ]
 
 interface IConfigData {
-  resource_url?: string
+  resource_url?: string | null
   resource_data?: Uint8Array
   version: number
   latestTime: number
@@ -60,7 +60,7 @@ interface IConfigData {
 
 interface IConfigItem {
   id: number
-  data: any
+  data: IConfigData
 }
 
 class WLConfigDB extends Dexie {
@@ -112,22 +112,25 @@ const WLConfig = {
 
     for (let item of configItemInfo) {
       wllog('id:%d url:%s', item.id, item.url)
-      const configDataItem = {} as IConfigData
+
+      const configDataItem: IConfigData = {
+        latestTime: new Date().getTime(),
+        version: item.version,
+      }
+
       let dbItem: IConfigItem | undefined
       let responseData: any
-      configDataItem.latestTime = new Date().getTime()
-      configDataItem.version = item.version
 
       dbItem = await db.configTable.get(item.id)
 
       if (dbItem) {
-        const configItem = dbItem.data as IConfigData
+        const configItem = dbItem.data
 
         if (configItem.version >= item.version) {
           continue
         }
       } else {
-        dbItem = {} as IConfigItem
+        dbItem = { id: item.id, data: configDataItem }
       }
 
       if (item.dataType === 'data_url') {
@@ -135,10 +138,9 @@ const WLConfig = {
         dbItem = await new Promise<IConfigItem>((resolve, reject) => {
           const reader = new FileReader()
           reader.onloadend = () => {
-            configDataItem.resource_url = reader.result as string
-            const dbDataItem = {} as IConfigItem
-            dbDataItem.data = configDataItem
-            dbDataItem.id = item.id
+            configDataItem.resource_url =
+              reader.result instanceof ArrayBuffer ? null : reader.result
+            const dbDataItem: IConfigItem = { id: item.id, data: configDataItem }
             resolve(dbDataItem)
           }
 
@@ -192,7 +194,7 @@ const WLConfig = {
     try {
       const item = await db.configTable.get(id)
 
-      return item?.data as IConfigData | undefined
+      return item?.data
     } catch (e) {
       wlerr('获取配置信息出错:' + e)
       throw e

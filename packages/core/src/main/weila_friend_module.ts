@@ -35,7 +35,7 @@ export default class WLFriendModule {
   }
 
   private onPbMsgHandler(data: any): void {
-    const serverMessage = data as WL.Service.IServiceMessage
+    const serverMessage: WL.Service.IServiceMessage = data
     const serviceHead = serverMessage.serviceHead
 
     if (!serviceHead) return
@@ -128,11 +128,11 @@ export default class WLFriendModule {
 
         if (!changeFriendInfo) return
 
-        const rspFriendInfo = changeFriendInfo as WL.Friend.IFriendInfo
+        const rspFriendInfo = changeFriendInfo
         WeilaDB.getInstance()
           .getFriendInfo(changeFriendInfo.userId ?? 0)
           .then(async (value) => {
-            const friendInfo: WL_IDbFriendInfo = value as WL_IDbFriendInfo
+            const friendInfo: WL_IDbFriendInfo = value!
 
             if (rspFriendInfo.tts !== undefined) {
               friendInfo.tts = rspFriendInfo.tts === 1
@@ -185,22 +185,28 @@ export default class WLFriendModule {
 
           if (!inviteeUserInfo) return
 
-          const inviteInfo = ntfFriendInvite.inviteInfo as WL.Friend.FriendInviteInfo
+          const inviteInfo = ntfFriendInvite.inviteInfo!
           const userInfos = await WeilaDB.getInstance().convertFromUserRaw([inviteeUserInfo])
-          const inviteNotifyData = {} as WL_FriendInviteInfo
           await WeilaDB.getInstance().putUserInfo(userInfos[0])
-          inviteNotifyData.inviterUserInfo = await WeilaDB.getInstance().getUser(
-            userInfos[0].userId,
-          )
-          inviteNotifyData.inviteDetail = inviteInfo.detail
-          inviteNotifyData.status = WL_AnswerStatus.ANSWER_NORMAL
-          inviteNotifyData.createdTime = Long.fromValue(inviteInfo.created).toNumber()
 
-          const notification: WL_IDbNotification = {} as WL_IDbNotification
-          notification.notificationType = WL_IDbNotificationType.FRIEND_INVITE_NOTIFICATION
-          notification.data = inviteNotifyData
-          notification.createTime = new Date().getTime()
-          notification.id = await WeilaDB.getInstance().putNotification(notification)
+          const inviteNotifyData: WL_FriendInviteInfo = {
+            inviterUserInfo: await WeilaDB.getInstance().getUser(userInfos[0].userId),
+            inviteDetail: inviteInfo.detail ?? '',
+            status: WL_AnswerStatus.ANSWER_NORMAL,
+            createdTime: Long.fromValue(inviteInfo.created!).toNumber(),
+          }
+
+          const notificationData: Omit<WL_IDbNotification, 'id'> = {
+            notificationType: WL_IDbNotificationType.FRIEND_INVITE_NOTIFICATION,
+            data: inviteNotifyData,
+            createTime: new Date().getTime(),
+          }
+
+          const notification: WL_IDbNotification = {
+            ...notificationData,
+            id: await WeilaDB.getInstance().putNotification(notificationData),
+          }
+
           this.coreInterface.sendExtEvent(WL_ExtEventID.WL_EXT_NEW_NOTIFICATION_IND, notification)
         })()
       } else if (
@@ -211,17 +217,24 @@ export default class WLFriendModule {
 
           if (!ntfFriendAnswerInvite) return
 
-          const friendAnswerInfo = {} as WL_FriendAnswerInviteInfo
-          friendAnswerInfo.status = dbEnum<WL_AnswerStatus>(ntfFriendAnswerInvite.status)
-          friendAnswerInfo.inviteeUserInfo = await WeilaDB.getInstance().getUser(
-            ntfFriendAnswerInvite.inviteeId ?? 0,
-          )
+          const friendAnswerInfo: WL_FriendAnswerInviteInfo = {
+            status: dbEnum<WL_AnswerStatus>(ntfFriendAnswerInvite.status),
+            inviteeUserInfo: await WeilaDB.getInstance().getUser(
+              ntfFriendAnswerInvite.inviteeId ?? 0,
+            ),
+          }
 
-          const notification: WL_IDbNotification = {} as WL_IDbNotification
-          notification.notificationType = WL_IDbNotificationType.FRIEND_ANSWER_NOTIFICATION
-          notification.data = friendAnswerInfo
-          notification.createTime = new Date().getTime()
-          notification.id = await WeilaDB.getInstance().putNotification(notification)
+          const notificationData: Omit<WL_IDbNotification, 'id'> = {
+            notificationType: WL_IDbNotificationType.FRIEND_ANSWER_NOTIFICATION,
+            data: friendAnswerInfo,
+            createTime: new Date().getTime(),
+          }
+
+          const notification: WL_IDbNotification = {
+            ...notificationData,
+            id: await WeilaDB.getInstance().putNotification(notificationData),
+          }
+
           this.coreInterface.sendExtEvent(WL_ExtEventID.WL_EXT_NEW_NOTIFICATION_IND, notification)
         })()
       } else if (serviceHead.commandId === WL.Friend.FriendCommandId.FRIEND_COMMAND_NEW_FRIEND) {
@@ -233,15 +246,16 @@ export default class WLFriendModule {
 
         if (!newFriendInfo) return
 
-        const friendInfo = {} as WL_IDbFriendInfo
-        friendInfo.userId = newFriendInfo.userId ?? 0
-        friendInfo.tts = newFriendInfo.tts === 1
-        friendInfo.status = dbEnum<WL_IDbFriendStatus>(newFriendInfo.status)
-        friendInfo.desc = newFriendInfo.desc ?? ''
-        friendInfo.label = newFriendInfo.label ?? ''
-        friendInfo.blockedStatus = newFriendInfo.shieldStatus === 1
-        friendInfo.locationShared = newFriendInfo.locationShare === 1
-        friendInfo.remark = newFriendInfo.remark ?? ''
+        const friendInfo: WL_IDbFriendInfo = {
+          userId: newFriendInfo.userId ?? 0,
+          tts: newFriendInfo.tts === 1,
+          status: dbEnum<WL_IDbFriendStatus>(newFriendInfo.status),
+          desc: newFriendInfo.desc ?? '',
+          label: newFriendInfo.label ?? '',
+          blockedStatus: newFriendInfo.shieldStatus === 1,
+          locationShared: newFriendInfo.locationShare === 1,
+          remark: newFriendInfo.remark ?? '',
+        }
 
         ;(async () => {
           await WeilaDB.getInstance().putFriendInfo(friendInfo)
@@ -276,20 +290,19 @@ export default class WLFriendModule {
     let lastUpdateTime = 0
 
     if (friendSetting) {
-      lastUpdateTime = friendSetting.data as number
+      lastUpdateTime = friendSetting.data
     } else {
-      friendSetting = {} as WL_IDbSetting
-      friendSetting.id = WL_IDbSettingID.SETTING_FRIEND_LATEST_UPDATE
+      friendSetting = { id: WL_IDbSettingID.SETTING_FRIEND_LATEST_UPDATE, data: undefined }
     }
 
     const buildResult = WeilaPbFriendWrapper.buildGetFriendInfoReq(Long.fromValue(lastUpdateTime))
     wllog('最近更新时间:', lastUpdateTime)
 
     if (buildResult.resultCode === 0) {
-      const rspGetFriendInfo = (await this.coreInterface.sendPbMsg(
+      const rspGetFriendInfo: WL.Friend.IRspGetFriendInfo = await this.coreInterface.sendPbMsg(
         buildResult,
         30000,
-      )) as WL.Friend.IRspGetFriendInfo
+      )
 
       const friendRaws = rspGetFriendInfo.friendInfos ?? []
 
@@ -340,9 +353,8 @@ export default class WLFriendModule {
     const buildResult = WeilaPbFriendWrapper.buildGetFriendUserInfoReq(userIds)
 
     if (buildResult.resultCode === 0) {
-      const rspGetFriendUser = (await this.coreInterface.sendPbMsg(
-        buildResult,
-      )) as WL.Friend.IRspGetFriendUserInfo
+      const rspGetFriendUser: WL.Friend.IRspGetFriendUserInfo =
+        await this.coreInterface.sendPbMsg(buildResult)
 
       const userInfoRaws = WeilaDB.getInstance().convertFromUserRaw(
         rspGetFriendUser.userInfos ?? [],
@@ -373,8 +385,8 @@ export default class WLFriendModule {
   }
 
   public async deleteFriends(userIds: number[], subUserId?: number): Promise<boolean> {
-    const deleteUserIds = [] as number[]
-    const sendPromises = [] as Promise<any>[]
+    const deleteUserIds: number[] = []
+    const sendPromises: Promise<any>[] = []
 
     for (const userId of userIds) {
       const buildMsgRet = WeilaPbFriendWrapper.buildDeleteFriendReq(userId, subUserId)
@@ -398,9 +410,8 @@ export default class WLFriendModule {
     const buildMsgRet = WeilaPbFriendWrapper.buildGetOnlineFriendsReq()
 
     if (buildMsgRet.resultCode === 0) {
-      const rspGetOnlineFriend = (await this.coreInterface.sendPbMsg(
-        buildMsgRet,
-      )) as WL.Friend.RspGetOnlineFriend
+      const rspGetOnlineFriend: WL.Friend.RspGetOnlineFriend =
+        await this.coreInterface.sendPbMsg(buildMsgRet)
 
       return WeilaDB.getInstance().getFriends(rspGetOnlineFriend.userIds)
     }
@@ -425,7 +436,7 @@ export default class WLFriendModule {
     subUserId: number,
     detail: string,
   ): Promise<boolean> {
-    const sendPromises = [] as Promise<any>[]
+    const sendPromises: Promise<any>[] = []
 
     for (let inviteeId of inviteeIds) {
       const buildMsgRet = WeilaPbFriendWrapper.buildFriendInviteReq(
@@ -467,14 +478,11 @@ export default class WLFriendModule {
         })
 
         for (let friendInfo of friendInfos) {
-          const friend: WL_IDbFriend = {} as WL_IDbFriend
-          friend.friendInfo = friendInfo
+          const friend: WL_IDbFriend = { friendInfo, userInfo: null }
           const index = userIds.indexOf(friendInfo.userId)
 
           if (index !== -1) {
             friend.userInfo = userInfos[index]
-          } else {
-            friend.userInfo = null
           }
 
           friends.push(friend)

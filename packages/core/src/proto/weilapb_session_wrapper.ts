@@ -138,7 +138,7 @@ const WeilaPBSessionWrapper = {
     msgId: number,
     msgType: WL_IDbMsgDataType,
   ): WLBuildMsgRet {
-    const buildMsgRet = { resultCode: 0 } as WLBuildMsgRet
+    const buildMsgRet: WLBuildMsgRet = { resultCode: 0 }
     const sessionMsg = new WL.Session.SessionMessage()
     sessionMsg.reqMsg = new WL.Session.ReqMsg()
 
@@ -153,17 +153,45 @@ const WeilaPBSessionWrapper = {
     switch (msgType) {
       case WL_IDbMsgDataType.WL_DB_MSG_DATA_TEXT_TYPE:
       case WL_IDbMsgDataType.WL_DB_MSG_DATA_IMAGE_TYPE:
+        {
+          sessionMsg.reqMsg.msgData.msgType = WL.Session.MessageType.MSG_TYPE_TEXT
+          sessionMsg.reqMsg.msgData.textData = TextMsgDataParser.encodeSessionTextMsg({
+            dataType: msgType,
+            data,
+          })
+        }
+
+        break
+
       case WL_IDbMsgDataType.WL_DB_MSG_DATA_VIDEO_TYPE:
       case WL_IDbMsgDataType.WL_DB_MSG_DATA_FILE_TYPE:
+        {
+          sessionMsg.reqMsg.msgData.msgType = WL.Session.MessageType.MSG_TYPE_TEXT
+          sessionMsg.reqMsg.msgData.textData = TextMsgDataParser.encodeSessionTextMsg({
+            dataType: msgType,
+            data,
+          })
+        }
+
+        break
+
       case WL_IDbMsgDataType.WL_DB_MSG_DATA_LOCATION_TYPE:
+        {
+          sessionMsg.reqMsg.msgData.msgType = WL.Session.MessageType.MSG_TYPE_TEXT
+          sessionMsg.reqMsg.msgData.textData = TextMsgDataParser.encodeSessionTextMsg({
+            dataType: msgType,
+            data,
+          })
+        }
+
+        break
+
       case WL_IDbMsgDataType.WL_DB_MSG_DATA_COMMAND_TYPE:
         {
-          const msgData = data as WL_IDbFileData | WL_IDbLocationShared | string
           sessionMsg.reqMsg.msgData.msgType = WL.Session.MessageType.MSG_TYPE_TEXT
-          sessionMsg.reqMsg.msgData.textData = TextMsgDataParser.encodeSessionTextMsg(
-            msgData,
-            msgType,
-          )
+          sessionMsg.reqMsg.msgData.textData = TextMsgDataParser.encodeSessionTextMsg({
+            dataType: msgType,
+          })
         }
 
         break
@@ -176,7 +204,8 @@ const WeilaPBSessionWrapper = {
           if (typeof data === 'string') {
             sessionMsg.reqMsg.msgData.audioData.url = data
           } else {
-            sessionMsg.reqMsg.msgData.audioData.payload = (data as Uint8Array).slice()
+            const audioPayload: Uint8Array = data
+            sessionMsg.reqMsg.msgData.audioData.payload = audioPayload.slice()
           }
         }
 
@@ -184,7 +213,7 @@ const WeilaPBSessionWrapper = {
 
       case WL_IDbMsgDataType.WL_DB_MSG_DATA_PTT_TYPE:
         {
-          const pttData = data as WL_IDbPttData
+          const pttData: WL_IDbPttData = data
           sessionMsg.reqMsg.msgData.msgType = WL.Session.MessageType.MSG_TYPE_PTT
           sessionMsg.reqMsg.msgData.pttData = new WL.Session.PttData()
           sessionMsg.reqMsg.msgData.pttData.marker = pttData.mark
@@ -202,7 +231,7 @@ const WeilaPBSessionWrapper = {
       case WL_IDbMsgDataType.WL_DB_MSG_DATA_SERVICE_TYPE:
         {
           sessionMsg.reqMsg.msgData.msgType = WL.Session.MessageType.MSG_TYPE_SERVICE
-          sessionMsg.reqMsg.msgData.serviceData = data as string
+          sessionMsg.reqMsg.msgData.serviceData = data
         }
 
         break
@@ -211,7 +240,7 @@ const WeilaPBSessionWrapper = {
         {
           sessionMsg.reqMsg.msgData.msgType = WL.Session.MessageType.MSG_TYPE_SWITCH
           sessionMsg.reqMsg.msgData.switchData = new WL.Session.SwitchData()
-          sessionMsg.reqMsg.msgData.switchData.serviceData = data as string
+          sessionMsg.reqMsg.msgData.switchData.serviceData = data
         }
 
         break
@@ -219,7 +248,7 @@ const WeilaPBSessionWrapper = {
       case WL_IDbMsgDataType.WL_DB_MSG_DATA_WITHDRAW_TYPE:
         {
           sessionMsg.reqMsg.msgData.msgType = WL.Session.MessageType.MSG_TYPE_REVOCATION
-          sessionMsg.reqMsg.msgData.revocationMsgId = data as number
+          sessionMsg.reqMsg.msgData.revocationMsgId = data
         }
 
         break
