@@ -1,9 +1,20 @@
 import { assign, createMachine, raise } from 'xstate'
+import type { StateNodeConfig } from 'xstate'
 import type { WeilaCore } from 'main/weila_core'
 import { WL_LoginParam } from 'main/weila_internal_data'
 import { WLPlayerType } from 'audio/weila_audio_data'
 
-const loginProcedureFsm = {
+interface MainFsmContext {
+  loginParam: WL_LoginParam | null
+  core: WeilaCore | null
+}
+
+type MainFsmEvent = { type: string; data?: any }
+
+const loginProcedureFsm: Record<
+  string,
+  StateNodeConfig<MainFsmContext, MainFsmEvent, any, any, any, any, any, any, any, any, any>
+> = {
   loginProcedure: {
     entry: (_context: any, _event: any) => {},
     initial: 'connecting',
@@ -84,11 +95,6 @@ const loginProcedureFsm = {
   },
 }
 
-interface MainFsmContext {
-  loginParam: WL_LoginParam | null
-  core: WeilaCore | null
-}
-
 const initialMainFsmContext: MainFsmContext = {
   loginParam: null,
   core: null,
@@ -97,7 +103,7 @@ const initialMainFsmContext: MainFsmContext = {
 interface MainFsmTypes {
   context: MainFsmContext
   input: MainFsmContext
-  events: { type: string; data?: any }
+  events: MainFsmEvent
 }
 
 const mainFsm = createMachine({
