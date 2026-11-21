@@ -20,7 +20,9 @@
     "fmt:check": "oxfmt --check",
     "preview": "turbo run build --filter=@weilasdk/playground-vue3 && pnpm --filter @weilasdk/playground-vue3 run preview",
     "prepare": "simple-git-hooks",
-    "lint:staged": "nano-staged"
+    "lint:staged": "nano-staged",
+    "contract:baseline": "node packages/core/scripts/artifact-contract.mjs --write",
+    "contract:check": "node packages/core/scripts/artifact-contract.mjs"
   },
   "devDependencies": {
     "knip": "catalog:",

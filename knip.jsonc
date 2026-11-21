@@ -12,7 +12,7 @@
     "packages/core": {
       // Manual script: copies dist/assets into the consuming app's public/
       // (documented in packages/core/AGENTS.md, used by UniApp integrations)
-      "entry": ["post-copy.js"],
+      "entry": ["post-copy.js", "scripts/*.spec.mjs"],
     },
     "packages/ui": {
       // Icons are resolved at build time from CSS: `@plugin "@iconify/tailwind4"`
