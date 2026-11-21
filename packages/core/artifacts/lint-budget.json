@@ -72,6 +72,7 @@
     "packages/ui/src/stories/SessionList.stories.ts": 3,
     "packages/ui/src/stories/SessionListItem.stories.ts": 3,
     "packages/ui/src/stories/WlMsgList.stories.ts": 26,
-    "packages/ui/src/stories/WlTextBubble.stories.ts": 1
+    "packages/ui/src/stories/WlTextBubble.stories.ts": 1,
+    "packages/core/src/proto/weilapb_contract.spec.ts": 2
   }
 }
