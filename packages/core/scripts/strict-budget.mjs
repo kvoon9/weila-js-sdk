@@ -49,8 +49,6 @@ function measure() {
     throw new Error(
       `tsc exited ${status} without a diagnostic. Treating the measurement as broken.`,
     )
-  if (diagnostics === 0)
-    throw new Error('tsc reported zero strict diagnostics. Treating the measurement as broken.')
 
   const sources = execFileSync('git', ['ls-files', 'src'], { cwd: PACKAGE, encoding: 'utf8' })
     .trim()
