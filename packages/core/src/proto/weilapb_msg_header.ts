@@ -77,6 +77,7 @@ export default class WeilaMsgHeader {
     data.setInt16(offset, this.value.seqNum)
     offset += 2
     data.setInt16(offset, 0)
+
     return buffer
   }
 }

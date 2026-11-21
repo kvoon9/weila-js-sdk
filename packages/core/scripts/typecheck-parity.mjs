@@ -11,6 +11,7 @@ const KNOWN = join(PACKAGE, 'artifacts/typecheck-known-differences.json')
 
 function loadedTypeScriptVersion(fromPackage) {
   const entry = require.resolve(fromPackage, { paths: [PACKAGE] })
+
   return createRequire(entry)('typescript/package.json').version
 }
 
@@ -21,6 +22,7 @@ function run(binary, args) {
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
     })
+
     return { status: 0, output }
   } catch (error) {
     return { status: error.status ?? 1, output: `${error.stdout ?? ''}${error.stderr ?? ''}` }
@@ -35,11 +37,13 @@ function diagnostics(output) {
 
 const problems = []
 const coreTypeScript = require(join(PACKAGE, 'node_modules/typescript/package.json')).version
+
 if (!coreTypeScript.startsWith('7.'))
   problems.push(`core resolves typescript ${coreTypeScript}, expected 7.x`)
 
 for (const tool of ['vue-tsc', 'tsdown']) {
   const version = loadedTypeScriptVersion(tool)
+
   if (!version.startsWith('6.'))
     problems.push(`${tool} resolves typescript ${version}, expected 6.x`)
 }
@@ -51,15 +55,18 @@ const tscDiagnostics = diagnostics(tsc.output)
 
 if (tsrs.status !== 0 && tsrsDiagnostics.length === 0)
   problems.push(`tsrs exited ${tsrs.status} without diagnostics`)
+
 if (tsc.status !== 0 && tscDiagnostics.length === 0)
   problems.push(`tsc exited ${tsc.status} without diagnostics`)
 
 const known = existsSync(KNOWN) ? JSON.parse(readFileSync(KNOWN, 'utf8')) : []
 const expected = new Set(known)
+
 for (const entry of tscDiagnostics) {
   if (!tsrsDiagnostics.includes(entry) && !expected.has(entry))
     problems.push(`tsrs missed ${entry}`)
 }
+
 for (const entry of tsrsDiagnostics) {
   if (!tscDiagnostics.includes(entry) && !expected.has(entry))
     problems.push(`tsrs reported ${entry} but tsc did not`)
@@ -68,5 +75,7 @@ for (const entry of tsrsDiagnostics) {
 console.log(
   `core typescript ${coreTypeScript}, tsrs diagnostics ${tsrsDiagnostics.length}, tsc diagnostics ${tscDiagnostics.length}`,
 )
+
 for (const problem of problems) console.error(problem)
+
 process.exitCode = problems.length ? 1 : 0

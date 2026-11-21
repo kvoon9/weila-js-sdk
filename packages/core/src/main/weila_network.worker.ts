@@ -37,6 +37,7 @@ class Network {
 
   private onSocketOpen(event: Event): void {
     wllog('SOCKET打开处理:', JSON.stringify(event))
+
     if (this.socket) {
       const netEvent = {} as WL_NetworkEvent
       netEvent.eventId = WL_NetworkEventID.NET_STATE_IND_EVT
@@ -57,13 +58,17 @@ class Network {
   private onSocketRecv(event: Event): void {
     if (this.currentRecv < this.maxRecvBufSize) {
       const recvData = new Uint8Array((event as MessageEvent).data)
+
       if (recvData.length > 0) {
         this.recvBuffer.set(recvData, this.currentRecv)
         this.currentRecv += recvData.length
+
         while (this.currentRecv >= WeilaMsgHeader.msgHeaderLen) {
           const weilaHeader = WeilaMsgHeader.parseFromBuffer(this.recvBuffer)
+
           if (weilaHeader) {
             const headerValue = weilaHeader.getValue()
+
             if (this.currentRecv >= headerValue.length) {
               const wlMsgData = {} as WL_PbMsgData
               wlMsgData.header = headerValue
@@ -83,9 +88,11 @@ class Network {
             }
           } else {
             wlerr('!!!!!!!!!!!!!!!严重错误，收到错误的数据!!!!!!!!!!!!!!!!!!!!')
+
             let buf = this.recvBuffer.reduce((previousValue, currentValue) => {
               return previousValue + currentValue.toString(16).padStart(2, '0')
             }, '')
+
             wllog(buf)
           }
         }
@@ -95,6 +102,7 @@ class Network {
 
   private onSocketClose(event: Event): void {
     wllog('SOCKET关闭:', JSON.stringify(event))
+
     if (this.socket) {
       const closeEvent = event as CloseEvent
       this.socket = undefined
@@ -110,6 +118,7 @@ class Network {
 
   private disconnect(code: number, reason?: string) {
     wllog('disconnect ', code, reason)
+
     if (this.socket) {
       const netEvent = {} as WL_NetworkEvent
       netEvent.eventId = WL_NetworkEventID.NET_STATE_IND_EVT
@@ -171,23 +180,27 @@ class Network {
 
   private onMessage(event: any): void {
     const netEvent = event.data as WL_NetworkEvent
+
     switch (netEvent.eventId) {
       case WL_NetworkEventID.NET_WEBSOCK_ADDR_SET_EVT:
         {
           this.webSockAddr = netEvent.eventData
         }
+
         break
 
       case WL_NetworkEventID.NET_CONNECT_EVT:
         {
           this.connect()
         }
+
         break
 
       case WL_NetworkEventID.NET_DISCONNECT_EVT:
         {
           this.disconnect(1000, '正常断网')
         }
+
         break
 
       case WL_NetworkEventID.NET_SEND_DATA_EVT:
@@ -195,10 +208,12 @@ class Network {
           this.sendingPbMsgList.push(netEvent.eventData)
           setTimeout(this.processSending.bind(this), 0)
         }
+
         break
     }
   }
 }
 
 const network = new Network()
+
 network.start()

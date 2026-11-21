@@ -6,6 +6,7 @@ module.exports = function workletInlineLoader() {
   const file = path.resolve(__dirname, 'dist/worklets', name)
   const source = fs.readFileSync(file, 'utf8')
   this.cacheable(true)
+
   return [
     `const source = ${JSON.stringify(source)}`,
     "export default URL.createObjectURL(new Blob([source], { type: 'application/javascript' }))",

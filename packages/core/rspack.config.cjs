@@ -10,11 +10,15 @@ const ENV_KEYS = ['APPID', 'APPKEY', 'WSS']
 function readEnv() {
   const file = path.resolve(ROOT, '.env')
   const values = {}
+
   if (!fs.existsSync(file)) return values
+
   for (const line of fs.readFileSync(file, 'utf8').split(/\r?\n/)) {
     const match = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/)
+
     if (match) values[match[1]] = match[2].replace(/^['"]|['"]$/g, '')
   }
+
   return values
 }
 
@@ -27,6 +31,7 @@ function buildId() {
 }
 
 const env = readEnv()
+
 for (const key of ENV_KEYS) {
   if (!(key in env))
     console.warn(

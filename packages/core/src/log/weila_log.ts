@@ -19,6 +19,7 @@ function initLogger(modules: string): void {
 function getLogger(loggerName: string): Debugger {
   const logger = debug(loggerName)
   logger.log = console.log.bind(console)
+
   return logger
 }
 

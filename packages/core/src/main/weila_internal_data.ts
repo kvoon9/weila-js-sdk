@@ -10,6 +10,7 @@ interface WL_PromiseCallback {
 
 const default_user_logo =
   'https://weilaavatar.oss-cn-shenzhen.aliyuncs.com/default/user_avatar_default.png'
+
 const default_group_logo = 'https://weilaavatar.oss-cn-shenzhen.aliyuncs.com/default/session.png'
 
 enum WL_NetworkState {

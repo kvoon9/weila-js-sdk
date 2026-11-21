@@ -39,8 +39,10 @@ test('wasm and wav assets are served with a body', async () => {
   for (const asset of baseline.assets as string[]) {
     const result = await page.evaluate(async (path) => {
       const response = await fetch(`/dist/assets/${path}`)
+
       return { status: response.status, bytes: (await response.arrayBuffer()).byteLength }
     }, asset)
+
     expect(result.status, asset).toBe(200)
     expect(result.bytes, asset).toBeGreaterThan(0)
   }
@@ -50,16 +52,19 @@ test('WeilaCore constructs in the browser', async () => {
   const result = await page.evaluate(() => {
     try {
       new window.__sdk.WeilaCore()
+
       return 'ok'
     } catch (error) {
       return String(error)
     }
   })
+
   expect(result).toBe('ok')
 })
 
 test('worklet bundles register their processors', () => {
   const registered: string[] = []
+
   const sandbox = {
     AudioWorkletProcessor: class {},
     Blob,
@@ -69,6 +74,7 @@ test('worklet bundles register their processors', () => {
     sampleRate: 48000,
     URL,
   }
+
   for (const file of ['weila_player.worklet.iife.js', 'weila_recorder.worklet.iife.js'])
     vm.runInNewContext(readFileSync(join(PACKAGE, 'dist/worklets', file), 'utf8'), sandbox)
   expect(registered).toEqual(['weila_player_processor', 'weila_recorder_processor'])

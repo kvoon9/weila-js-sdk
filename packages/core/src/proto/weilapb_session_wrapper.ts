@@ -15,6 +15,7 @@ class WeilaPBSessionWrapper {
     const sessionMessage = new WL.Session.SessionMessage()
     sessionMessage.reqGetSession = new WL.Session.ReqGetSession()
     sessionMessage.reqGetSession.latestUpdated = updateTime
+
     if (type !== undefined) {
       sessionMessage.reqGetSession.type = type
     }
@@ -176,18 +177,21 @@ class WeilaPBSessionWrapper {
             msgType,
           )
         }
+
         break
 
       case WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE:
         {
           sessionMsg.reqMsg.msgData.msgType = WL.Session.MessageType.MSG_TYPE_AUDIO
           sessionMsg.reqMsg.msgData.audioData = new WL.Session.AudioData()
+
           if (typeof data === 'string') {
             sessionMsg.reqMsg.msgData.audioData.url = data
           } else {
             sessionMsg.reqMsg.msgData.audioData.payload = (data as Uint8Array).slice()
           }
         }
+
         break
 
       case WL_IDbMsgDataType.WL_DB_MSG_DATA_PTT_TYPE:
@@ -204,6 +208,7 @@ class WeilaPBSessionWrapper {
           sessionMsg.reqMsg.msgData.pttData.monitor = 0
           sessionMsg.reqMsg.msgData.pttData.source = WL.Session.AudioSourceType.PTT_SOURCE_APP
         }
+
         break
 
       case WL_IDbMsgDataType.WL_DB_MSG_DATA_SERVICE_TYPE:
@@ -211,6 +216,7 @@ class WeilaPBSessionWrapper {
           sessionMsg.reqMsg.msgData.msgType = WL.Session.MessageType.MSG_TYPE_SERVICE
           sessionMsg.reqMsg.msgData.serviceData = data as string
         }
+
         break
 
       case WL_IDbMsgDataType.WL_DB_MSG_DATA_SWITCH_TYPE:
@@ -219,6 +225,7 @@ class WeilaPBSessionWrapper {
           sessionMsg.reqMsg.msgData.switchData = new WL.Session.SwitchData()
           sessionMsg.reqMsg.msgData.switchData.serviceData = data as string
         }
+
         break
 
       case WL_IDbMsgDataType.WL_DB_MSG_DATA_WITHDRAW_TYPE:
@@ -226,10 +233,12 @@ class WeilaPBSessionWrapper {
           sessionMsg.reqMsg.msgData.msgType = WL.Session.MessageType.MSG_TYPE_REVOCATION
           sessionMsg.reqMsg.msgData.revocationMsgId = data as number
         }
+
         break
 
       default: {
         buildMsgRet.resultCode = -1
+
         return buildMsgRet
       }
     }
@@ -289,6 +298,7 @@ class WeilaPBSessionWrapper {
     const msgType = isFile
       ? WL_IDbMsgDataType.WL_DB_MSG_DATA_FILE_TYPE
       : WL_IDbMsgDataType.WL_DB_MSG_DATA_VIDEO_TYPE
+
     return this.buildMsgDataReq(sessionId, sessionType, senderId, autoReply, fileInfo, 0, msgType)
   }
 

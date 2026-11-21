@@ -14,10 +14,12 @@ function patchAudioWorkletAddModule(options: Required<WL_AudioRuntimePatchOption
 
   const originalAddModule = AudioWorklet.prototype.addModule
   const workletRedirects = [options.playerWorkletUrl, options.recorderWorkletUrl]
+
   const workletMap: Record<string, string> = {
     'weila_player.worklet.js': options.playerWorkletUrl,
     'weila_recorder.worklet.js': options.recorderWorkletUrl,
   }
+
   let workletCallIndex = 0
 
   AudioWorklet.prototype.addModule = async function (
@@ -32,6 +34,7 @@ function patchAudioWorkletAddModule(options: Required<WL_AudioRuntimePatchOption
 
     const fileName = url.split('/').pop()
     const redirectTarget = fileName ? workletMap[fileName] : undefined
+
     if (redirectTarget) return originalAddModule.call(this, redirectTarget, ...args)
 
     return originalAddModule.call(this, moduleURL, ...args)
@@ -50,6 +53,7 @@ function patchAudioWorkletNodePortStart(): void {
   ) {
     const node = new OriginalAudioWorkletNode(context, name, options)
     node.port.start()
+
     return node
   } as unknown as typeof AudioWorkletNode
 
@@ -60,6 +64,7 @@ export function installWeilaAudioRuntimePatch(options: WL_AudioRuntimePatchOptio
   if (typeof window === 'undefined') return
 
   const patchedWindow = window as WL_PatchedWindow
+
   if (patchedWindow[PATCH_MARK]) return
 
   patchedWindow[PATCH_MARK] = true

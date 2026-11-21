@@ -38,6 +38,7 @@ export default class WLLocationModule {
     const sessionInfo = {} as WLSessionInfo
     sessionInfo.sessionId = Long.fromValue(sessionId)
     sessionInfo.sessionType = sessionType
+
     const getLocationReq: WLBuildMsgRet = WeilaPbLocationWrapper.buildGetLocationReq(
       sessionInfo,
       [],
@@ -46,6 +47,7 @@ export default class WLLocationModule {
     if (getLocationReq.resultCode === 0) {
       const rspLocation: WL.Location.IRspGetLocation =
         await this.coreInterface.sendPbMsg(getLocationReq)
+
       const locationInfos: WL_IDbLocationInfo[] = []
 
       for (const info of rspLocation.locationInfos ?? []) {

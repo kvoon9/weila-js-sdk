@@ -7,6 +7,7 @@ class WeilaPbUserWrapper {
     const userMessage = new WL.User.UserMessage()
     userMessage.reqGetUserInfo = new WL.User.ReqGetUserInfo()
     userMessage.reqGetUserInfo.key = key
+
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_USER,
       WL.User.UserCommandId.USER_COMMAND_GET_USERINFO,
@@ -22,6 +23,7 @@ class WeilaPbUserWrapper {
     userMessage.reqChangeUserInfo.nick = changeUserInfo.nick
     userMessage.reqChangeUserInfo.sex = changeUserInfo.sex
     userMessage.reqChangeUserInfo.signature = changeUserInfo.signature
+
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_USER,
       WL.User.UserCommandId.USER_COMMAND_CHANGE_USERINFO,
@@ -33,6 +35,7 @@ class WeilaPbUserWrapper {
   public static buildGetConfigReq(): WLBuildMsgRet {
     const userMessage = new WL.User.UserMessage()
     userMessage.reqGetConfig = new WL.User.ReqGetConfig()
+
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_USER,
       WL.User.UserCommandId.USER_COMMAND_GET_CONFIG,
@@ -52,6 +55,7 @@ class WeilaPbUserWrapper {
     userMessage.reqSetConfig.name = key
     userMessage.reqSetConfig.userId = userId
     userMessage.reqSetConfig.content = value
+
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_USER,
       WL.User.UserCommandId.USER_COMMAND_SET_CONFIG,

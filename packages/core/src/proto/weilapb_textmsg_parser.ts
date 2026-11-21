@@ -62,6 +62,7 @@ class TextMsgDataParser {
 
   private static getCK(): lib.WordArray {
     const k = []
+
     for (let j = 0; j < 3; j++) {
       for (let i = 1; i < 11; i++) {
         if (i === 10) {
@@ -71,8 +72,10 @@ class TextMsgDataParser {
         }
       }
     }
+
     k.push(1)
     k.push(2)
+
     return enc.Utf8.parse(k.join(''))
   }
 
@@ -93,6 +96,7 @@ class TextMsgDataParser {
     if (extStr === undefined) {
       extStr = ''
     }
+
     extStr = extStr.toLowerCase()
 
     switch (extStr) {
@@ -100,6 +104,7 @@ class TextMsgDataParser {
         {
           fileFormatUrl += this.FILE_TYPE_TXT
         }
+
         break
 
       case '.doc':
@@ -107,66 +112,77 @@ class TextMsgDataParser {
         {
           fileFormatUrl += this.FILE_TYPE_DOC
         }
+
         break
 
       case '.ppt':
         {
           fileFormatUrl += this.FILE_TYPE_PPT
         }
+
         break
 
       case '.pdf':
         {
           fileFormatUrl += this.FILE_TYPE_PDF
         }
+
         break
 
       case '.xls':
         {
           fileFormatUrl += this.FILE_TYPE_XLS
         }
+
         break
 
       case '.mp3':
         {
           fileFormatUrl += this.FILE_TYPE_MP3
         }
+
         break
 
       case '.wav':
         {
           fileFormatUrl += this.FILE_TYPE_WAV
         }
+
         break
 
       case '.html':
         {
           fileFormatUrl += this.FILE_TYPE_HTML
         }
+
         break
 
       case '.rar':
         {
           fileFormatUrl += this.FILE_TYPE_RAR
         }
+
         break
 
       case '.zip':
         {
           fileFormatUrl += this.FILE_TYPE_ZIP
         }
+
         break
 
       case '.raw':
         {
           fileFormatUrl += this.FILE_TYPE_RAW
         }
+
         break
 
       default:
         {
           fileFormatUrl += this.FILE_TYPE_UNKOWN
         }
+
         break
     }
 
@@ -182,6 +198,7 @@ class TextMsgDataParser {
     const fileFormatUrl = this.getExtendFileFormatUrl(filePath)
 
     let filename = '未知文件'
+
     if (filePath !== '') {
       filename = enc.Base64.stringify(enc.Utf8.parse(filePath))
     } else {
@@ -211,6 +228,7 @@ class TextMsgDataParser {
         {
           extendText = data as string
         }
+
         break
 
       // 图片信息,先上传,成功后再上传
@@ -218,6 +236,7 @@ class TextMsgDataParser {
         {
           extendText = this.EXTEND_START_FLAG + (data as string) + this.EXTEND_END_FLAG
         }
+
         break
 
       case WL_IDbMsgDataType.WL_DB_MSG_DATA_VIDEO_TYPE:
@@ -231,6 +250,7 @@ class TextMsgDataParser {
             this.SERVICE_TYPE_VIDEO,
           )
         }
+
         break
 
       case WL_IDbMsgDataType.WL_DB_MSG_DATA_FILE_TYPE:
@@ -244,6 +264,7 @@ class TextMsgDataParser {
             this.SERVICE_TYPE_FILE,
           )
         }
+
         break
 
       case WL_IDbMsgDataType.WL_DB_MSG_DATA_LOCATION_TYPE:
@@ -266,12 +287,14 @@ class TextMsgDataParser {
             enc.Base64.stringify(enc.Utf8.parse(locationInfo.address ?? ''))
           extendText += this.EXTEND_END_FLAG
         }
+
         break
 
       case WL_IDbMsgDataType.WL_DB_MSG_DATA_COMMAND_TYPE:
         {
           // TODO: 暂时未实现
         }
+
         break
     }
 
@@ -279,6 +302,7 @@ class TextMsgDataParser {
       const textWordArray = enc.Utf8.parse(extendText)
       const bufferLen = textWordArray.sigBytes + 4
       let left = 0
+
       if (bufferLen % 16 > 0) {
         left = 16 - (bufferLen % 16)
       }
@@ -310,6 +334,7 @@ class TextMsgDataParser {
 
     // 1. 解密 AES.decrypt(encrypted(string类型), key(WordArray类型), cfg({mode: , pad:, });
     let decryptedHexText
+
     try {
       decryptedHexText = AES.decrypt(data, this.getCK(), {
         mode: mode.ECB,
@@ -337,23 +362,28 @@ class TextMsgDataParser {
     if (this.EXTEND_MSG_PATTERN.test(extendText)) {
       const result = this.EXTEND_MSG_PATTERN.exec(extendText)
       this.EXTEND_MSG_PATTERN.exec('') // 还原正则模板
+
       if (result && result[1]) {
         if (/\?/.test(result[1])) {
           const params = result[1].match(/([^=&?]*=[^=&]*)/g)
+
           if (params && params.length) {
             for (const p of params) {
               const pair = p.split('=')
+
               if (pair && pair.length === 2) {
                 switch (pair[0]) {
                   case this.SERVICE_TYPE_KEY:
                     {
                       const urlPattern = /(http[s]?:\/\/.*)\?/
                       let fileUrl: string
+
                       if (urlPattern.test(result[1])) {
                         fileUrl = urlPattern.exec(result[1])![1]
                       } else {
                         fileUrl = ''
                       }
+
                       if (pair[1] === this.SERVICE_TYPE_LOCATION) {
                         dbMsgData.msgType = WL_IDbMsgDataType.WL_DB_MSG_DATA_LOCATION_TYPE
                         dbMsgData.location = {} as WL_IDbLocationShared
@@ -368,12 +398,14 @@ class TextMsgDataParser {
                         dbMsgData.fileInfo.fileUrl = fileUrl
                       }
                     }
+
                     break
 
                   case this.LOCATION_TYPE_KEY:
                     {
                       ensureLocation(dbMsgData).locationType = pair[1]
                     }
+
                     break
 
                   case this.LATITUDE_KEY:
@@ -384,6 +416,7 @@ class TextMsgDataParser {
                         ensureLocation(dbMsgData).latitude = 0
                       }
                     }
+
                     break
 
                   case this.LONGITUDE_KEY:
@@ -394,24 +427,28 @@ class TextMsgDataParser {
                         ensureLocation(dbMsgData).longitude = 0
                       }
                     }
+
                     break
 
                   case this.LOCATION_NAME_KEY:
                     {
                       ensureLocation(dbMsgData).name = getStringFromBase64(pair[1])
                     }
+
                     break
 
                   case this.LOCATION_ADDRESS_KEY:
                     {
                       ensureLocation(dbMsgData).address = getStringFromBase64(pair[1])
                     }
+
                     break
 
                   case this.FILE_URL_KEY:
                     {
                       dbMsgData.fileInfo!.fileUrl = pair[1]
                     }
+
                     break
 
                   case this.FILE_NAME_KEY:
@@ -421,6 +458,7 @@ class TextMsgDataParser {
                         dbMsgData.fileInfo!.fileName!,
                       )
                     }
+
                     break
 
                   case this.FILE_SIZE_KEY:
@@ -431,6 +469,7 @@ class TextMsgDataParser {
                         dbMsgData.fileInfo!.fileSize = 0
                       }
                     }
+
                     break
                 }
               }
@@ -447,6 +486,7 @@ class TextMsgDataParser {
     } else if (this.CMD_MSG_PATTERN.test(extendText)) {
       const result = this.CMD_MSG_PATTERN.exec(extendText)
       this.CMD_MSG_PATTERN.exec('') // 还原模板
+
       if (result && result[1]) {
         dbMsgData.msgType = WL_IDbMsgDataType.WL_DB_MSG_DATA_COMMAND_TYPE
         dbMsgData.command = result[1]

@@ -38,6 +38,7 @@ class WeilaPBLoginWrapper {
   public static buildLogoutReq(): WLBuildMsgRet {
     const loginMsg = new WL.Login.LoginMessage()
     loginMsg.reqLogout = new WL.Login.ReqLogout()
+
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_LOGIN,
       WL.Login.LoginCommandId.LOGIN_COMMAND_LOGOUT,
@@ -50,6 +51,7 @@ class WeilaPBLoginWrapper {
     const loginMsg = new WL.Login.LoginMessage()
     loginMsg.reqHeartbeat = new WL.Login.ReqHeartbeat()
     loginMsg.reqHeartbeat.serverTime = Long.fromNumber(Date.now(), true)
+
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_LOGIN,
       WL.Login.LoginCommandId.LOGIN_COMMAND_HEARTBEAT,
@@ -62,6 +64,7 @@ class WeilaPBLoginWrapper {
     const loginMsg = new WL.Login.LoginMessage()
     loginMsg.reqBindExtension = new WL.Login.ReqBindExtension()
     loginMsg.reqBindExtension.verificationCode = verifyCode
+
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_LOGIN,
       WL.Login.LoginCommandId.LOGIN_COMMAND_BIND_EXTENSION,
@@ -73,6 +76,7 @@ class WeilaPBLoginWrapper {
   public static buildUnbindExtensionReq(subUserId: number): WLBuildMsgRet {
     const loginMsg = new WL.Login.LoginMessage()
     loginMsg.reqUnbindExtension = new WL.Login.ReqUnbindExtension()
+
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_LOGIN,
       WL.Login.LoginCommandId.LOGIN_COMMAND_UNBIND_EXTENSION,
@@ -85,6 +89,7 @@ class WeilaPBLoginWrapper {
   public static buildGetExtensionInfoReq(subUserId: number): WLBuildMsgRet {
     const loginMsg = new WL.Login.LoginMessage()
     loginMsg.reqGetExtensionInfo = new WL.Login.ReqGetExtensionInfo()
+
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_LOGIN,
       WL.Login.LoginCommandId.LOGIN_COMMAND_GET_EXTENSIONINFO,
@@ -97,6 +102,7 @@ class WeilaPBLoginWrapper {
   public static buildGetExtensionListReq(): WLBuildMsgRet {
     const loginMsg = new WL.Login.LoginMessage()
     loginMsg.reqGetExtensionList = new WL.Login.ReqGetExtensionList()
+
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_LOGIN,
       WL.Login.LoginCommandId.LOGIN_COMMAND_GET_EXTENSIONLIST,
@@ -114,6 +120,7 @@ class WeilaPBLoginWrapper {
     loginMsg.reqSetExtensionConfig = new WL.Login.ReqSetExtensionConfig()
     loginMsg.reqSetExtensionConfig.name = configKey
     loginMsg.reqSetExtensionConfig.content = configValue
+
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_LOGIN,
       WL.Login.LoginCommandId.LOGIN_COMMAND_SET_EXTENSION_CONFIG,
@@ -126,6 +133,7 @@ class WeilaPBLoginWrapper {
   public static buildShutdownExtensionReq(subUserId: number): WLBuildMsgRet {
     const loginMsg = new WL.Login.LoginMessage()
     loginMsg.reqShutdownExtension = new WL.Login.ReqShutdownExtension()
+
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_LOGIN,
       WL.Login.LoginCommandId.LOGIN_COMMAND_SHUTDOWN_EXTENSION,
@@ -138,6 +146,7 @@ class WeilaPBLoginWrapper {
   public static buildLockExtensionReq(subUserId: number): WLBuildMsgRet {
     const loginMsg = new WL.Login.LoginMessage()
     loginMsg.reqLockExtension = new WL.Login.ReqLockExtension()
+
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_LOGIN,
       WL.Login.LoginCommandId.LOGIN_COMMAND_LOCK_EXTENSION,
@@ -150,6 +159,7 @@ class WeilaPBLoginWrapper {
   public static buildUnlockExtensionReq(subUserId: number): WLBuildMsgRet {
     const loginMsg = new WL.Login.LoginMessage()
     loginMsg.reqUnlockExtension = new WL.Login.ReqUnlockExtension()
+
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_LOGIN,
       WL.Login.LoginCommandId.LOGIN_COMMAND_UNLOCK_EXTENSION,
@@ -163,6 +173,7 @@ class WeilaPBLoginWrapper {
     const loginMsg = new WL.Login.LoginMessage()
     loginMsg.reqToken = new WL.Login.ReqToken()
     loginMsg.reqToken.token = token
+
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_LOGIN,
       WL.Login.LoginCommandId.LOGIN_COMMAND_TOKEN,
@@ -174,6 +185,7 @@ class WeilaPBLoginWrapper {
   public static buildRefreshTokenReq(): WLBuildMsgRet {
     const loginMsg = new WL.Login.LoginMessage()
     loginMsg.reqRefreshAccessToken = new WL.Login.ReqRefreshAccessToken()
+
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_LOGIN,
       WL.Login.LoginCommandId.LOGIN_COMMAND_REFRESH_ACCESS_TOKEN,

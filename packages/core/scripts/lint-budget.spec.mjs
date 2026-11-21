@@ -12,6 +12,7 @@ void test('collect counts errors and warnings by file', () => {
     ],
     '/repo',
   )
+
   assert.equal(result.errors, 1)
   assert.deepEqual(result.files, { 'packages/core/a.ts': 2, 'packages/core/b.ts': 1 })
   assert.equal(totalWarnings(result), 3)

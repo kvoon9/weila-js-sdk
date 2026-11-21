@@ -5,10 +5,12 @@ class WeilaRingPlayer {
 
   public static async weila_playRing(id: number): Promise<boolean> {
     let url = ''
+
     if (this.ringCache.has(id)) {
       url = this.ringCache.get(id) ?? ''
     } else {
       const configData = await WLConfig.getConfigData(id)
+
       if (configData) {
         url = configData.resource_url ?? ''
       } else {

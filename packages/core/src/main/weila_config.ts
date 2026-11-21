@@ -83,10 +83,12 @@ interface SetConfigDataParam {
 function validateWasmData(data: ArrayBuffer, url: string): void {
   const bytes = new Uint8Array(data, 0, Math.min(data.byteLength, 4))
   const isWasm = bytes[0] === 0x00 && bytes[1] === 0x61 && bytes[2] === 0x73 && bytes[3] === 0x6d
+
   if (!isWasm) {
     const magic = Array.from(bytes)
       .map((byte) => byte.toString(16).padStart(2, '0'))
       .join(' ')
+
     throw new Error(`获取 WASM 资源失败:${url} 返回的不是 WASM 文件，magic=${magic}`)
   }
 }
@@ -94,6 +96,7 @@ function validateWasmData(data: ArrayBuffer, url: string): void {
 function setConfigData(params: SetConfigDataParam[]) {
   for (let param of params) {
     wllog('setConfigData id:%d url:%s', param.id, param.url)
+
     for (let item of configItemInfo) {
       if (param.id === item.id) {
         item.url = param.url
@@ -106,6 +109,7 @@ function setConfigData(params: SetConfigDataParam[]) {
 class WLConfig {
   public static async loadResource(): Promise<boolean> {
     const db = new WLConfigDB()
+
     for (let item of configItemInfo) {
       wllog('id:%d url:%s', item.id, item.url)
       const configDataItem = {} as IConfigData
@@ -115,8 +119,10 @@ class WLConfig {
       configDataItem.version = item.version
 
       dbItem = await db.configTable.get(item.id)
+
       if (dbItem) {
         const configItem = dbItem.data as IConfigData
+
         if (configItem.version >= item.version) {
           continue
         }
@@ -135,6 +141,7 @@ class WLConfig {
             dbDataItem.id = item.id
             resolve(dbDataItem)
           }
+
           reader.addEventListener('error', () => {
             reject('reading blog error')
           })
@@ -142,6 +149,7 @@ class WLConfig {
         })
       } else if (item.dataType === 'buffer') {
         responseData = await this.fetchUrl(item.url, 'arraybuffer')
+
         if (item.id === WL_ConfigID.WL_RES_DATA_OPUS_WASM_ID)
           validateWasmData(responseData, item.url)
         configDataItem.resource_data = new Uint8Array(responseData)
@@ -163,12 +171,14 @@ class WLConfig {
       xhr.open('GET', url)
       xhr.onloadend = () => {
         wllog('获取数据结束:', xhr.readyState)
+
         if (xhr.readyState === XMLHttpRequest.DONE) {
           resolve(xhr.response)
         } else {
           reject(new Error('获取资源失败:' + xhr.statusText))
         }
       }
+
       xhr.addEventListener('error', () => {
         reject('获取资源异常:' + xhr.statusText)
       })
@@ -178,6 +188,7 @@ class WLConfig {
 
   public static async getConfigData(id: WL_ConfigID): Promise<IConfigData | undefined> {
     const db = new WLConfigDB()
+
     try {
       const item = await db.configTable.get(id)
 
@@ -190,4 +201,5 @@ class WLConfig {
 }
 
 export { WLConfig, WL_ConfigID, setConfigData }
+
 export type { SetConfigDataParam }

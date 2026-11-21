@@ -17,18 +17,23 @@ export function countSuppressions(source) {
 
 export function compareBudget(current, budget, origin) {
   const problems = []
+
   if (current.diagnostics > budget.diagnostics)
     problems.push(`${current.diagnostics} strict diagnostics, budget ${budget.diagnostics}`)
+
   if (current.suppressions > budget.suppressions)
     problems.push(`${current.suppressions} TypeScript suppressions, budget ${budget.suppressions}`)
+
   if (origin && current.diagnostics > origin.diagnostics)
     problems.push(`strict diagnostics went up against origin/main (${origin.diagnostics})`)
+
   return problems
 }
 
 function measure() {
   let output = ''
   let status = 0
+
   try {
     output = execFileSync(
       join(PACKAGE, 'node_modules/.bin/tsc'),
@@ -45,6 +50,7 @@ function measure() {
   }
 
   const diagnostics = countDiagnostics(output)
+
   if (status !== 0 && diagnostics === 0)
     throw new Error(
       `tsc exited ${status} without a diagnostic. Treating the measurement as broken.`,
@@ -62,16 +68,19 @@ function measure() {
 
 function main() {
   const current = measure()
+
   if (process.argv.includes('--write')) {
     mkdirSync(dirname(BUDGET), { recursive: true })
     writeFileSync(BUDGET, `${JSON.stringify(current, null, 2)}\n`)
     console.log(
       `Wrote ${relative(PACKAGE, BUDGET)} with ${current.diagnostics} strict diagnostics and ${current.suppressions} suppressions.`,
     )
+
     return
   }
 
   const problems = []
+
   if (!existsSync(BUDGET))
     problems.push(`Missing ${relative(PACKAGE, BUDGET)}. Run with --write first.`)
   else problems.push(...compareBudget(current, JSON.parse(readFileSync(BUDGET, 'utf8')), null))
@@ -79,6 +88,7 @@ function main() {
   console.log(
     `Strict budget: ${current.diagnostics} diagnostics, ${current.suppressions} suppressions.`,
   )
+
   for (const problem of problems) console.error(problem)
   process.exitCode = problems.length ? 1 : 0
 }

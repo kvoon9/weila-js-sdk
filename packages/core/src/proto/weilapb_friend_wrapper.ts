@@ -8,6 +8,7 @@ class WeilaPbFriendWrapper {
     const friendMessage = new WL.Friend.FriendMessage()
     friendMessage.reqGetFriendInfo = new WL.Friend.ReqGetFriendInfo()
     friendMessage.reqGetFriendInfo.latestUpdated = latestUpdated
+
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_FRIEND,
       WL.Friend.FriendCommandId.FRIEND_COMMAND_GET_FRIENDINFO,
@@ -20,6 +21,7 @@ class WeilaPbFriendWrapper {
     const friendMessage = new WL.Friend.FriendMessage()
     friendMessage.reqGetFriendUserInfo = new WL.Friend.ReqGetFriendUserInfo()
     friendMessage.reqGetFriendUserInfo.userIds = Array.from(userIdList)
+
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_FRIEND,
       WL.Friend.FriendCommandId.FRIEND_COMMAND_GET_FRIEND_USERINFO,
@@ -32,6 +34,7 @@ class WeilaPbFriendWrapper {
     const friendMessage = new WL.Friend.FriendMessage()
     friendMessage.reqGetFriendInviteInfo = new WL.Friend.ReqGetFriendInviteInfo()
     friendMessage.reqGetFriendInviteInfo.latestUpdated = latestUpdated
+
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_FRIEND,
       WL.Friend.FriendCommandId.FRIEND_COMMAND_GET_FRIEND_INVITEINFO,
@@ -54,6 +57,7 @@ class WeilaPbFriendWrapper {
     if (remark !== undefined) {
       friendMessage.reqFriendInvite.remark = remark
     }
+
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_FRIEND,
       WL.Friend.FriendCommandId.FRIEND_COMMAND_FRIEND_INVITE,
@@ -73,6 +77,7 @@ class WeilaPbFriendWrapper {
     friendMessage.reqAnswerFriendInvite.inviterId = inviterId
     friendMessage.reqAnswerFriendInvite.status = status
     friendMessage.reqAnswerFriendInvite.remark = remark
+
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_FRIEND,
       WL.Friend.FriendCommandId.FRIEND_COMMAND_ANSWER_FRIEND_INVITE,
@@ -85,6 +90,7 @@ class WeilaPbFriendWrapper {
     const friendMessage = new WL.Friend.FriendMessage()
     friendMessage.reqDeleteFriend = new WL.Friend.ReqDeleteFriend()
     friendMessage.reqDeleteFriend.userId = userId
+
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_FRIEND,
       WL.Friend.FriendCommandId.FRIEND_COMMAND_DELETE_FRIEND,
@@ -107,6 +113,7 @@ class WeilaPbFriendWrapper {
     friendMessage.reqChangeFriendInfo.remark = changeFriendInfo.remark
     friendMessage.reqChangeFriendInfo.shieldStatus = changeFriendInfo.bannedStatus ? 1 : 0
     friendMessage.reqChangeFriendInfo.tts = changeFriendInfo.tts ? 1 : 0
+
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_FRIEND,
       WL.Friend.FriendCommandId.FRIEND_COMMAND_CHANGE_FRIENDINFO,
@@ -120,6 +127,7 @@ class WeilaPbFriendWrapper {
     friendMessage.reqGetFriendBlackList = new WL.Friend.ReqGetFriendBlackList()
     friendMessage.reqGetFriendBlackList.pageIndex = pageIndex
     friendMessage.reqGetFriendBlackList.pageSize = pageCount
+
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_FRIEND,
       WL.Friend.FriendCommandId.FRIEND_COMMAND_GET_BLACKLIST,
@@ -136,6 +144,7 @@ class WeilaPbFriendWrapper {
     friendMessage.reqChangeFriendBlackList = new WL.Friend.ReqChangeFriendBlackList()
     friendMessage.reqChangeFriendBlackList.type = actionType
     friendMessage.reqChangeFriendBlackList.userIds = Array.from(userIdList)
+
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_FRIEND,
       WL.Friend.FriendCommandId.FRIEND_COMMAND_CHANGE_BLACKLIST,
@@ -147,6 +156,7 @@ class WeilaPbFriendWrapper {
   public static buildGetOnlineFriendsReq(): WLBuildMsgRet {
     const friendMessage = new WL.Friend.FriendMessage()
     friendMessage.reqGetOnlineFriend = new WL.Friend.ReqGetOnlineFriend()
+
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_FRIEND,
       WL.Friend.FriendCommandId.FRIEND_COMMAND_GET_ONLINE_FRIEND,
@@ -159,6 +169,7 @@ class WeilaPbFriendWrapper {
     const friendMessage = new WL.Friend.FriendMessage()
     friendMessage.reqGetFriendInfo = new WL.Friend.ReqGetFriendInfo()
     friendMessage.reqGetFriendInfo.latestUpdated = Long.fromValue(0)
+
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_FRIEND,
       WL.Friend.FriendCommandId.FRIEND_COMMAND_GET_FRIENDINFO,

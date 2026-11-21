@@ -115,6 +115,7 @@ export default class WLPttFsm {
       historyPlayOrigin: '',
       talkOrigin: '',
     }
+
     this.pttFsm = pttFsm.provide({
       actions: {
         onIdle: this.onIdle.bind(this),
@@ -172,6 +173,7 @@ export default class WLPttFsm {
 
   private rememberCompletedAudio(id: string, msgData: WL_IDbMsgData): void {
     this.recentCompletedAudioMap.set(id, msgData)
+
     if (this.recentCompletedAudioMap.size > WLPttFsm.RECENT_COMPLETED_PTT_LIMIT) {
       const [oldestId] = this.recentCompletedAudioMap.keys()
       this.recentCompletedAudioMap.delete(oldestId)
@@ -185,23 +187,27 @@ export default class WLPttFsm {
 
   getPttAudioSource(playerType: WLPlayerType): WL_PttAudioPlaySource {
     let source = WL_PttAudioPlaySource.PTT_AUDIO_SRC_HISTORY
+
     switch (playerType) {
       case WLPlayerType.WL_PTT_HISTORY_PLAYER:
         {
           source = WL_PttAudioPlaySource.PTT_AUDIO_SRC_HISTORY
         }
+
         break
 
       case WLPlayerType.WL_PTT_SINGLE_PLAYER:
         {
           source = WL_PttAudioPlaySource.PTT_AUDIO_SRC_SINGLE
         }
+
         break
 
       case WLPlayerType.WL_PTT_STREAM_PLAYER:
         {
           source = WL_PttAudioPlaySource.PTT_AUDIO_SRC_STREAM
         }
+
         break
     }
 
@@ -211,6 +217,7 @@ export default class WLPttFsm {
   onPttPayloadPlaying({ context, event }: PttActionArgs) {
     wllog('进入了Playing状态', event, context)
     const audioItem = event.data as WL_PttAudioItem
+
     if (event.type === 'FSM_FEED_PTT_PAYLOAD_EVT') {
       this.feedAudioPayload(audioItem, audioItem.playerType)
     } else if (event.type === 'FSM_PLAY_NEXT_PTT_ITEM_EVT') {
@@ -238,6 +245,7 @@ export default class WLPttFsm {
   onPlayItemFinish({ event }: PttActionArgs) {
     wllog('onPlayItemFinish', event.type)
     const audioItemId = this.playingAudioList.shift()
+
     if (audioItemId !== undefined) {
       this.playingAudioMap.delete(audioItemId)
     }
@@ -288,6 +296,7 @@ export default class WLPttFsm {
               )
               setTimeout(() => {
                 const audioItem = this.singlePttPlayItem
+
                 if (!audioItem) return
                 this.feedAudioPayload(audioItem, audioItem.playerType)
               }, this.PLAY_DELAY)
@@ -314,6 +323,7 @@ export default class WLPttFsm {
   onEnterRealtime({ event }: PttActionArgs) {
     const audioItem = event.data as WL_PttAudioItem
     wllog('onEnterRealtime', event.type, event)
+
     if (event.type === 'FSM_PLAY_REALTIME_EVT') {
       this.streamPttPlayItem = audioItem
       this.audioManager
@@ -327,8 +337,10 @@ export default class WLPttFsm {
               this.audioManager.startPlay(audioItem.playerType).then((startRet) => {
                 wllog('播放器开始:', startRet)
                 const streamItem = this.streamPttPlayItem
+
                 if (!streamItem) return
                 streamItem.msgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_READ
+
                 if (streamItem.shouldSave) {
                   WeilaDB.getInstance()
                     .putMsgData(streamItem.msgData)
@@ -369,6 +381,7 @@ export default class WLPttFsm {
   async startTalking(event: PttFsmEvent): Promise<boolean> {
     this.talkingInfo = event.data
     await this.audioManager.openRecorder(16000, 20000)
+
     try {
       await WeilaRingPlayer.weila_playRing(WL_ConfigID.WL_RES_RING_START_RECORD_ID)
     } catch (_e) {
@@ -379,6 +392,7 @@ export default class WLPttFsm {
       await this.audioManager.startRecord()
     } catch (_e) {
       await this.audioManager.closeRecorder()
+
       return Promise.reject(_e)
     }
 
@@ -389,6 +403,7 @@ export default class WLPttFsm {
     if (this.talkingInfo && !this.talkingInfo.stopByErr) {
       this.packetLastPttMsg()
     }
+
     try {
       await this.audioManager.stopRecord()
     } finally {
@@ -397,8 +412,10 @@ export default class WLPttFsm {
       } catch (_e) {
         wlerr('播放结束铣声错误', _e)
       }
+
       await this.audioManager.closeRecorder()
     }
+
     return true
   }
 
@@ -426,6 +443,7 @@ export default class WLPttFsm {
                     wllog('播放器开始:', _startRet)
 
                     const historyItems = this.historyPttPlayItems
+
                     if (!historyItems) return
                     this.onPlayInd(
                       historyItems[this.historyPttPlayIndex],
@@ -435,6 +453,7 @@ export default class WLPttFsm {
 
                     setTimeout(() => {
                       const items = this.historyPttPlayItems
+
                       if (!items) return
                       this.feedAudioPayload(
                         items[this.historyPttPlayIndex],
@@ -481,6 +500,7 @@ export default class WLPttFsm {
 
   onRequestTalkResult({ event }: PttActionArgs) {
     wllog('onRequestTalkResult', event)
+
     if (this.talkingInfo && this.talkingInfo.callback) {
       if (event.type.startsWith('xstate.error.actor')) {
         this.talkingInfo.callback.reject(event.error)
@@ -550,6 +570,7 @@ export default class WLPttFsm {
       audioItem.payloadList.length,
       audioItem.isCompleted,
     )
+
     if (audioItem && audioItem.playIndex < audioItem.payloadList.length) {
       const opusData = audioItem.payloadList[audioItem.playIndex++]
       const opusRawDataList = getOpusDataListFromPttData(opusData.data)
@@ -560,9 +581,11 @@ export default class WLPttFsm {
 
     if (audioItem.playIndex === audioItem.payloadList.length && audioItem.isCompleted) {
       this.audioManager.putPlayerOpusData(playerType, null)
+
       return true
     } else if (audioItem.payloadList.length > audioItem.playIndex) {
       this.pttFsmService.send({ type: fsmEvents.FSM_FEED_PTT_PAYLOAD_EVT, data: audioItem })
+
       return true
     }
 
@@ -578,11 +601,13 @@ export default class WLPttFsm {
           wllog('播放完毕...')
           this.pttFsmService.send({ type: fsmEvents.FSM_PTT_ITEM_PLAY_END_EVT })
         }
+
         break
 
       case WLAudioEvent.WL_AUDIO_OPUS_CODED_DATA_IND:
         {
           const talkingInfo = this.talkingInfo
+
           if (!talkingInfo) break
 
           if (
@@ -593,11 +618,13 @@ export default class WLPttFsm {
           }
 
           talkingInfo.frameBufferCache.push(data)
+
           if (talkingInfo.frameBufferCache.length >= 25) {
             this.packetPttMsg(talkingInfo.frameBufferCache.slice(0, WLPttFsm.FRAME_COUNT), false)
             talkingInfo.frameBufferCache.splice(0, WLPttFsm.FRAME_COUNT)
           }
         }
+
         break
     }
   }
@@ -612,6 +639,7 @@ export default class WLPttFsm {
     if (msgData.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_PTT_TYPE) {
       const pttData = msgData.pttData
       const audioData = audioItem.msgData.audioData
+
       if (!pttData || !audioData?.data) return
 
       const newBufferLength = audioData.data.length + pttData.data.length
@@ -633,6 +661,7 @@ export default class WLPttFsm {
       msgData.sessionId,
       msgData.sessionType,
     )
+
     if (sessionSetting) {
       return !sessionSetting.mute
     }
@@ -642,16 +671,21 @@ export default class WLPttFsm {
 
   async getNextPlayingItem(): Promise<WL_PttAudioItem> {
     wllog('getNextPlayingItem', this.playingAudioList.length)
+
     if (this.playingAudioList.length) {
       // 跳过不能播放的项，并把不能播且未收集完的项存入等待队列
       let result = false
+
       while (this.playingAudioList.length) {
         const audioItem = this.playingAudioMap.get(this.playingAudioList[0])
         wllog('getNextPlayingItem 1', this.playingAudioList, this.playingAudioMap)
+
         if (audioItem) {
           result = await this.canAudioMsgDataPlay(audioItem.msgData)
+
           if (result) {
             audioItem.msgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_READ
+
             if (audioItem.shouldSave) {
               WeilaDB.getInstance()
                 .putMsgData(audioItem.msgData)
@@ -659,11 +693,13 @@ export default class WLPttFsm {
                   wllog('更新成功:', audioItem.msgData)
                 })
             }
+
             break
           } else {
             this.playingAudioMap.delete(this.playingAudioList[0])
             this.playingAudioList.shift()
             wllog('getNextPlayingItem 2', this.playingAudioList, this.playingAudioMap)
+
             if (!audioItem.isCompleted) {
               this.waitingAudioMap.set(audioItem.id, audioItem)
             }
@@ -675,6 +711,7 @@ export default class WLPttFsm {
 
       if (result) {
         const nextItem = this.playingAudioMap.get(this.playingAudioList[0])
+
         if (nextItem) return nextItem
       }
     }
@@ -688,13 +725,16 @@ export default class WLPttFsm {
       this.pttFsmService.getSnapshot().value,
       this.pttFsmService.getSnapshot().historyValue,
     )
+
     if (
       this.pttFsmService.getSnapshot().matches('idle') ||
       this.pttFsmService.getSnapshot().matches('realtimePlaying.waitPayload')
     ) {
       wllog('当前播放数据:', this.playingAudioList.length)
+
       try {
         let audioItem = null
+
         if (this.streamPttPlayItem) {
           audioItem = this.streamPttPlayItem
         } else {
@@ -715,6 +755,7 @@ export default class WLPttFsm {
   putAudioMsgData(msgData: WL_IDbMsgData, shouldSave: boolean) {
     if (msgData.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE) {
       const msgAudioData = msgData.audioData
+
       if (!msgAudioData) return
 
       const audioItem = {} as WL_PttAudioItem
@@ -778,24 +819,28 @@ export default class WLPttFsm {
         audioItem.msgData.pttData = undefined
         audioItem.msgData.msgType = WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE
         this.rememberCompletedAudio(audioItem.id, audioItem.msgData)
+
         try {
           await WeilaDB.getInstance().putMsgData(audioItem.msgData)
           wllog('超时保存消息成功')
         } catch (e) {
           wlerr('超时保存消息失败', e)
         }
+
         this.waitingAudioMap.delete(audioItem.id)
       }, 30000)
     }
 
     if (msgData.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_PTT_TYPE) {
       const pttData = msgData.pttData
+
       if (!pttData) {
         return { msgData, isNewAudioItem: false }
       }
 
       const id = this.getPttAudioItemId(msgData)
       const recentMsgData = this.recentCompletedAudioMap.get(id)
+
       if (recentMsgData && !this.waitingAudioMap.has(id) && !this.playingAudioMap.has(id)) {
         return {
           msgData: recentMsgData,
@@ -808,14 +853,17 @@ export default class WLPttFsm {
         const audioItem: WL_PttAudioItem = this.waitingAudioMap.get(id)!
         audioItem.msgData.msgId = Math.max(audioItem.msgData.msgId || 0, msgData.msgId || 0)
         audioItem.msgData.created = Math.max(audioItem.msgData.created || 0, msgData.created || 0)
+
         if (audioItem.recvWaitTimerId) {
           clearTimeout(audioItem.recvWaitTimerId)
           audioItem.recvWaitTimerId = null
         }
+
         this.fillPttAudioData(audioItem, msgData)
         audioItem.msgData.msgType = WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE
         audioItem.isCompleted = pttData.mark === 0x02 || pttData.mark === 0x03
         wllog('消息是完整的？', audioItem.isCompleted, pttData.mark)
+
         if (audioItem.isCompleted) {
           audioItem.msgData.pttData = undefined
           audioItem.msgData.msgType = WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE
@@ -855,10 +903,12 @@ export default class WLPttFsm {
           audioItem = this.playingAudioMap.get(id)!
           audioItem.msgData.msgId = Math.max(audioItem.msgData.msgId || 0, msgData.msgId || 0)
           audioItem.msgData.created = Math.max(audioItem.msgData.created || 0, msgData.created || 0)
+
           if (audioItem.recvWaitTimerId) {
             clearTimeout(audioItem.recvWaitTimerId)
             audioItem.recvWaitTimerId = null
           }
+
           this.fillPttAudioData(audioItem, msgData)
           audioItem.msgData.msgType = WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE
           audioItem.isCompleted = pttData.mark === 0x02 || pttData.mark === 0x03
@@ -930,6 +980,7 @@ export default class WLPttFsm {
     await this.initAudio()
 
     const audioData = msgData.audioData
+
     if (!audioData?.data) return false
 
     const audioItem = {} as WL_PttAudioItem
@@ -942,6 +993,7 @@ export default class WLPttFsm {
     audioItem.priority = 0
 
     this.pttFsmService.send({ type: fsmEvents.FSM_PLAY_SINGLE_EVT, data: audioItem })
+
     return true
   }
 
@@ -957,6 +1009,7 @@ export default class WLPttFsm {
     msgDatas.forEach((value) => {
       if (value.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE) {
         const audioData = value.audioData
+
         if (!audioData?.data) return
 
         const audioItem = {} as WL_PttAudioItem
@@ -996,7 +1049,9 @@ export default class WLPttFsm {
       this.talkingInfo.stopByErr = true
       this.talkingInfo.curMarker = WL_PttPackType.PTT_END_PACK
     }
+
     this.pttFsmService.send({ type: fsmEvents.FSM_REL_TALK_EVT })
+
     return true
   }
 
@@ -1005,12 +1060,15 @@ export default class WLPttFsm {
       this.talkingInfo.stopByErr = false
       this.talkingInfo.curMarker = WL_PttPackType.PTT_END_PACK
     }
+
     this.pttFsmService.send({ type: fsmEvents.FSM_REL_TALK_EVT })
+
     return true
   }
 
   private packetPttMsg(dataList: Uint8Array[], lastPacket: boolean): void {
     const talkingInfo = this.talkingInfo
+
     if (!talkingInfo) return
 
     let offset = 0
@@ -1018,11 +1076,13 @@ export default class WLPttFsm {
     let currentLen = 0
     const wlOpusList = []
     wllog('打包%d ptt语音并发送最后一个包', dataList.length, lastPacket)
+
     while (dataList.length) {
       const opusRawData = dataList.shift()!
       const wlOpusData = new Uint8Array(opusRawData.length + 4)
       const flag = opusRawData[0]
       wlOpusData[0] = flag
+
       if (flag & 0x80) {
         const wlOpusDataView = new DataView(wlOpusData.buffer)
         wlOpusDataView.setUint16(1, opusRawData.length - 1, false)
@@ -1035,6 +1095,7 @@ export default class WLPttFsm {
         totalLen += opusRawData.length + 1
         currentLen = opusRawData.length + 1
       }
+
       wlOpusList.push(wlOpusData.subarray(0, currentLen))
     }
 
@@ -1054,6 +1115,7 @@ export default class WLPttFsm {
 
     if (lastPacket) {
       wllog('最后一帧录音, 分段标志:', talkingInfo.curMarker)
+
       if (talkingInfo.curMarker === WL_PttPackType.PTT_FIRST_PACK) {
         pttMsgData.mark = WL_PttPackType.PTT_WHOLE_PACK
       } else {
@@ -1067,6 +1129,7 @@ export default class WLPttFsm {
 
   private packetLastPttMsg(): void {
     const talkingInfo = this.talkingInfo
+
     if (!talkingInfo) return
 
     if (talkingInfo.frameBufferCache.length > 0) {

@@ -21,6 +21,7 @@ class CompoUint8Array {
     })
 
     let offset = 0
+
     if (this.compoArrays) {
       const newArrays = new Uint8Array(this.compoArrays.length + totalSize)
       newArrays.set(this.compoArrays, 0)
@@ -38,6 +39,7 @@ class CompoUint8Array {
 
   public putArray(array: Uint8Array): void {
     let offset = 0
+
     if (this.compoArrays) {
       const newArrays = new Uint8Array(this.compoArrays.length + array.length)
       newArrays.set(this.compoArrays, 0)
@@ -46,6 +48,7 @@ class CompoUint8Array {
     } else {
       this.compoArrays = new Uint8Array(array.length)
     }
+
     this.lengthList.push(array.length)
     this.compoArrays!.set(array, offset)
   }

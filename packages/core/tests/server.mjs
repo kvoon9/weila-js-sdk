@@ -4,6 +4,7 @@ import { dirname, extname, join, normalize } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const PACKAGE = dirname(dirname(fileURLToPath(import.meta.url)))
+
 const TYPES = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
@@ -15,6 +16,7 @@ const TYPES = {
 export async function startServer() {
   const server = createServer(async (request, response) => {
     const path = normalize(decodeURIComponent(new URL(request.url, 'http://localhost').pathname))
+
     const file =
       path === '/'
         ? join(PACKAGE, 'tests/fixtures/smoke.html')
@@ -26,6 +28,7 @@ export async function startServer() {
 
     if (!file) {
       response.writeHead(404).end()
+
       return
     }
 
@@ -42,6 +45,7 @@ export async function startServer() {
 
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve))
   const { port } = server.address()
+
   return {
     url: `http://127.0.0.1:${port}/`,
     close: () => new Promise((resolve) => server.close(resolve)),

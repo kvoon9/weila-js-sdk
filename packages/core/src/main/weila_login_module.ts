@@ -59,6 +59,7 @@ export default class WLLoginModule {
 
             respond()
           }
+
           break
 
         case WL.Login.LoginCommandId.LOGIN_COMMAND_LOGOUT:
@@ -70,6 +71,7 @@ export default class WLLoginModule {
             )
             WeilaDB.close()
           }
+
           break
 
         case WL.Login.LoginCommandId.LOGIN_COMMAND_HEARTBEAT:
@@ -77,6 +79,7 @@ export default class WLLoginModule {
             wllog('收到心跳响应')
             this.coreInterface.rspPbMsg(serviceHead.seq ?? 0, serviceHead.resultCode ?? 0, null)
           }
+
           break
 
         case WL.Login.LoginCommandId.LOGIN_COMMAND_GET_EXTENSIONLIST:
@@ -87,6 +90,7 @@ export default class WLLoginModule {
               serverMessage.loginMessage ? serverMessage.loginMessage.rspGetExtensionList : null,
             )
           }
+
           break
 
         case WL.Login.LoginCommandId.LOGIN_COMMAND_SET_EXTENSION_CONFIG:
@@ -97,6 +101,7 @@ export default class WLLoginModule {
               serverMessage.loginMessage ? serverMessage.loginMessage.rspSetExtensionConfig : null,
             )
           }
+
           break
 
         case WL.Login.LoginCommandId.LOGIN_COMMAND_BIND_EXTENSION:
@@ -107,6 +112,7 @@ export default class WLLoginModule {
               serverMessage.loginMessage ? serverMessage.loginMessage.rspBindExtension : null,
             )
           }
+
           break
 
         case WL.Login.LoginCommandId.LOGIN_COMMAND_UNBIND_EXTENSION:
@@ -117,6 +123,7 @@ export default class WLLoginModule {
               serverMessage.loginMessage ? serverMessage.loginMessage.rspUnbindExtension : null,
             )
           }
+
           break
       }
     } else if (serviceHead.commandType === WL.Service.CommandType.COMMAND_NOTIFY) {
@@ -151,6 +158,7 @@ export default class WLLoginModule {
               )
             })()
           }
+
           break
 
         case WL.Login.LoginCommandId.LOGIN_COMMAND_KICKOUT:
@@ -160,14 +168,17 @@ export default class WLLoginModule {
             if (!ntf) break
 
             const reason = ntf.reason ?? 0
+
             const kickoutInfo: WL_KickoutInfo = {
               reason,
               reasonText: this.getKickoutReasonText(reason),
             }
+
             this.coreInterface.sendExtEvent(WL_ExtEventID.WL_EXT_KICKOUT_IND, kickoutInfo)
             // 踢出后主动登出，停止 SDK 工作
             this.coreInterface.executeCoreFunc('weila_logout')
           }
+
           break
       }
     }
@@ -194,6 +205,7 @@ export default class WLLoginModule {
   ): Promise<WL_IDbUserInfo> {
     wllog('登录请求:', account, countryCode, md5)
     const appKeyAndId = WeilaDB.getAppAuthInfo() ? WeilaDB.getAppAuthInfo() : getAppKeyAndId()
+
     const wlBuildMsgRet = WeilaPBLoginWrapper.buildLoginAppReq(
       account,
       password,
@@ -202,11 +214,13 @@ export default class WLLoginModule {
       appKeyAndId.appKey,
       md5,
     )
+
     if (wlBuildMsgRet.resultCode === 0) {
       const loginAppRsp = (await this.coreInterface.sendPbMsg(
         wlBuildMsgRet,
         10000,
       )) as WL.Login.IRspLoginApp
+
       // SAFETY: protobufjs 8 types the oneof member as $Properties; the wire format carries IUserInfo.
       const rawUserInfo = loginAppRsp.userInfo as WL.Common.IUserInfo | undefined
 
@@ -221,6 +235,7 @@ export default class WLLoginModule {
       tokenInfo.data = loginAppRsp.token
       await WeilaDB.getInstance().putSettingItem(tokenInfo)
       await WeilaDB.getInstance().putUserInfo(dbUserInfos[0])
+
       return dbUserInfos[0]
     }
 
@@ -229,17 +244,22 @@ export default class WLLoginModule {
 
   public async logoutReq(): Promise<boolean> {
     const wlBuildMsgRet = WeilaPBLoginWrapper.buildLogoutReq()
+
     if (wlBuildMsgRet.resultCode === 0) {
       await this.coreInterface.sendPbMsg(wlBuildMsgRet)
+
       return true
     }
+
     return Promise.reject('创建登出消息失败:' + wlBuildMsgRet.resultCode)
   }
 
   public async sendHeartbeat(): Promise<boolean> {
     const buildRet = WeilaPBLoginWrapper.buildHeartbeatReq()
+
     if (buildRet.resultCode === 0) {
       await this.coreInterface.sendPbMsg(buildRet)
+
       return true
     }
 
@@ -248,14 +268,17 @@ export default class WLLoginModule {
 
   public async refreshToken(): Promise<boolean> {
     const buildRet = WeilaPBLoginWrapper.buildRefreshTokenReq()
+
     if (buildRet.resultCode === 0) {
       const refreshRsp = (await this.coreInterface.sendPbMsg(
         buildRet,
       )) as WL.Login.IRspRefreshAccessToken
+
       const tokenInfo = {} as WL_IDbSetting
       tokenInfo.id = WL_IDbSettingID.SETTING_LOGIN_TOKEN
       tokenInfo.data = refreshRsp.accessToken
       await WeilaDB.getInstance().putSettingItem(tokenInfo)
+
       return true
     }
 
@@ -264,11 +287,13 @@ export default class WLLoginModule {
 
   public async bindDevice(verifyCode: string): Promise<number> {
     const buildMsgRet = WeilaPBLoginWrapper.buildBindExtensionReq(verifyCode)
+
     if (buildMsgRet.resultCode === 0) {
       const rspBindMsg = (await this.coreInterface.sendPbMsg(
         buildMsgRet,
         30000,
       )) as WL.Login.RspBindExtension
+
       return rspBindMsg.extensionState
     }
 
@@ -277,13 +302,16 @@ export default class WLLoginModule {
 
   public async unbindDevice(deviceUserId: number): Promise<number> {
     const buildMsgRet = WeilaPBLoginWrapper.buildUnbindExtensionReq(deviceUserId)
+
     if (buildMsgRet.resultCode === 0) {
       const rspUnbindMsg = (await this.coreInterface.sendPbMsg(
         buildMsgRet,
       )) as WL.Login.RspUnbindExtension
+
       if (rspUnbindMsg.extensionState === WL_IDbExtensionState.EXTENSION_UNBIND) {
         await WeilaDB.getInstance().delExtension(deviceUserId)
       }
+
       return rspUnbindMsg.extensionState
     }
 
@@ -294,18 +322,22 @@ export default class WLLoginModule {
     let subUserVerItem: WL_IDbSetting | undefined = await WeilaDB.getInstance().getSettingItem(
       WL_IDbSettingID.SETTING_SUB_USERINFO_VER_UPDATE,
     )
+
     let version: number = 0
+
     if (subUserVerItem) {
       version = subUserVerItem.data
     }
 
     wllog('initExtension', version)
     const buildMsgRet = WeilaPBLoginWrapper.buildGetExtensionListReq()
+
     if (buildMsgRet.resultCode === 0) {
       const rsp: WL.Login.IRspGetExtensionList = await this.coreInterface.sendPbMsg(
         buildMsgRet,
         30000,
       )
+
       if (rsp.infos && rsp.infos.length > 0) {
         const extensionInfos: WL_IDbExtensionInfo[] = []
         rsp.infos.forEach((value) => {
@@ -336,9 +368,11 @@ export default class WLLoginModule {
   public async getExtensionList(): Promise<WL_IDbExtension[]> {
     const extensionInfos = await WeilaDB.getInstance().getExtensions()
     const extensions: WL_IDbExtension[] = []
+
     let userIds = extensionInfos.map((value) => {
       return value.userId
     })
+
     let supervisorIds = extensionInfos.map((value) => {
       return value.supervisorId
     })
@@ -355,11 +389,13 @@ export default class WLLoginModule {
     for (const ext of extensionInfos) {
       const extension = {} as WL_IDbExtension
       let index = userIds.indexOf(ext.userId)
+
       if (index !== -1) {
         extension.userInfo = userInfos[index]
       }
 
       index = supervisorIds.indexOf(ext.supervisorId)
+
       if (index !== -1) {
         extension.supervisor = supervisors[index]
       }
@@ -378,11 +414,14 @@ export default class WLLoginModule {
   ): Promise<string> {
     const buildMsgRet = WeilaPBLoginWrapper.buildSetExtensionConfig(subUserId, cfgKey, cfgValue)
     wllog('setDeviceConfig', cfgKey, cfgValue, subUserId)
+
     if (buildMsgRet.resultCode === 0) {
       const rspConfig = (await this.coreInterface.sendPbMsg(
         buildMsgRet,
       )) as WL.Login.IRspSetExtensionConfig
+
       wllog('setDeviceConfig', rspConfig)
+
       return rspConfig.config ?? ''
     }
 

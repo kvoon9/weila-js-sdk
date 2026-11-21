@@ -80,7 +80,9 @@ interface WL_ActiveSessionInfo {
 
 function isDeepEqual(a: unknown, b: unknown): boolean {
   if (a === b) return true
+
   if (typeof a !== 'object' || typeof b !== 'object') return false
+
   if (a === null || b === null) return false
 
   const aObj = a as Record<string, unknown>
@@ -92,6 +94,7 @@ function isDeepEqual(a: unknown, b: unknown): boolean {
 
   for (const key of aKeys) {
     if (!Object.prototype.hasOwnProperty.call(bObj, key)) return false
+
     if (!isDeepEqual(aObj[key], bObj[key])) return false
   }
 
@@ -121,6 +124,7 @@ export default class WLSessionModule {
   private async saveSessionInfo(dBSession: WL_IDbSession): Promise<boolean> {
     if (isIndividualSessionType(dBSession.sessionType)) {
       const userInfo = await WeilaDB.getInstance().getUser(parseInt(dBSession.sessionId))
+
       if (userInfo) {
         dBSession.sessionName = userInfo.nick
         dBSession.sessionAvatar = userInfo.avatar
@@ -129,15 +133,18 @@ export default class WLSessionModule {
       const groupInfo: WL_IDbGroup | undefined = await WeilaDB.getInstance().getGroup(
         dBSession.sessionId,
       )
+
       if (groupInfo) {
         dBSession.sessionName = groupInfo.name
         dBSession.sessionAvatar = groupInfo.avatar || default_group_logo
       }
     } else if (isServiceSessionType(dBSession.sessionType)) {
       const idNumber = Long.fromValue(dBSession.sessionId)
+
       const service: WL_IDbService | undefined = await WeilaDB.getInstance().getService(
         idNumber.high,
       )
+
       if (service) {
         dBSession.sessionName = service.name
         dBSession.sessionAvatar = service.avatar
@@ -149,6 +156,7 @@ export default class WLSessionModule {
     }
 
     await WeilaDB.getInstance().putSession(dBSession)
+
     return true
   }
 
@@ -175,12 +183,14 @@ export default class WLSessionModule {
     profile: WL_SessionProfileUpdate,
   ): Promise<WL_IDbSession | undefined> {
     const session = await WeilaDB.getInstance().getSession(sessionId, sessionType)
+
     if (!session) {
       return undefined
     }
 
     let changed = false
     const sessionName = profile.sessionName?.trim()
+
     if (sessionName && session.sessionName !== sessionName) {
       session.sessionName = sessionName
       changed = true
@@ -201,6 +211,7 @@ export default class WLSessionModule {
     }
 
     const index = this.findSessionIndex(sessionId, sessionType)
+
     if (index !== -1) {
       this.sessionList[index] = session
       await this.persistSessionUpdate(this.sessionList[index])
@@ -221,6 +232,7 @@ export default class WLSessionModule {
     session.lastMsgId = msgData.msgId
     session.lastMsgData = msgData
     session.latestUpdate = new Date().getTime() / 1000
+
     if (markRead && msgData.msgId > 0) {
       session.readMsgId = Math.max(session.readMsgId || 0, msgData.msgId)
       session.unreadCount = 0
@@ -243,9 +255,11 @@ export default class WLSessionModule {
       sessionType,
       readMsgId,
     )
+
     if (buildResult.resultCode === 0) {
       const rsp = await this.coreInterface.sendPbMsg(buildResult)
       wllog('设已读的响应结果', rsp)
+
       return true
     }
 
@@ -259,6 +273,7 @@ export default class WLSessionModule {
 
     const session = this.sessionList[index]
     const nextReadMsgId = Math.max(session.readMsgId || 0, msgId)
+
     if (nextReadMsgId <= (session.readMsgId || 0)) {
       return false
     }
@@ -266,6 +281,7 @@ export default class WLSessionModule {
     session.readMsgId = nextReadMsgId
     session.unreadCount = 0
     await this.persistSessionUpdate(session)
+
     return true
   }
 
@@ -280,10 +296,12 @@ export default class WLSessionModule {
       let session: WL_IDbSession = {} as WL_IDbSession
       session.sessionId = msgData.sessionId
       session.sessionType = msgData.sessionType
+
       if (isServiceSessionType(msgData.sessionType)) {
         // 如果是之前没有这个session，说明此服务也不再DB中，所以需要从服务器获取服务的信息
         const serviceSession: WL_IDbServiceSessionInfo | undefined =
           await this.coreInterface.executeCoreFunc('weila_getServiceSession', msgData.sessionId)
+
         if (serviceSession) {
           session.sessionId = msgData.sessionId
           session.sessionType = msgData.sessionType
@@ -306,11 +324,14 @@ export default class WLSessionModule {
 
         session = await WeilaDB.getInstance().fillSessionInfo(session)
       }
+
       this.applySessionMsgData(session, msgData, shouldMarkRead, countUnread)
+
       if (!shouldMarkRead) {
         session.readMsgId = session.readMsgId || 0
         session.unreadCount = session.unreadCount || 0
       }
+
       session.combo_id_type = session.sessionId + '_' + session.sessionType
       await WeilaDB.getInstance().putSession(session)
       this.sessionList.push(session)
@@ -335,6 +356,7 @@ export default class WLSessionModule {
       const weilaTokenItem = await WeilaDB.getInstance().getSettingItem(
         WL_IDbSettingID.SETTING_LOGIN_TOKEN,
       )
+
       const weilaToken = weilaTokenItem?.data ?? ''
       let speakerInfo = ''
       const senderUserInfo = await WeilaDB.getInstance().getUser(msgData.senderId)
@@ -347,6 +369,7 @@ export default class WLSessionModule {
 
       if (isGroupSessionType(msgData.sessionType)) {
         const groupInfo = await WeilaDB.getInstance().getGroup(msgData.sessionId)
+
         if (groupInfo) {
           speakerInfo += '在' + groupInfo.name + '里'
         }
@@ -354,10 +377,12 @@ export default class WLSessionModule {
         const service = await WeilaDB.getInstance().getService(
           Long.fromValue(msgData.sessionId).high,
         )
+
         if (service) {
           speakerInfo += '在' + service.name + '里'
         }
       }
+
       speakerInfo += '说'
 
       const appKeyAndId = WeilaDB.getAppAuthInfo() ? WeilaDB.getAppAuthInfo() : getAppKeyAndId()
@@ -374,6 +399,7 @@ export default class WLSessionModule {
       }
 
       wllog('文字转语音，文字：%s', data.text)
+
       const response = await fetchWithTimeout(
         '/v1/speech/synthesis/ptt-flx?access-token=' + weilaToken,
         {
@@ -385,11 +411,14 @@ export default class WLSessionModule {
 
       if (response.ok) {
         const data = await response.json()
+
         if (data.errcode === 0) {
           let matchResult = data.data.url.match(/(http|https):\/\/([^/]+)\/(.+)/i)
+
           if (matchResult && matchResult.length >= 4) {
             //const pttUrl = "/" + matchResult[3];
             const pttUrl = data.data.url
+
             const audioData = await fetchWithTimeout(pttUrl)
               .then((value) => {
                 if (value.ok) {
@@ -397,6 +426,7 @@ export default class WLSessionModule {
                 }
 
                 wlerr('获取音频数据出错:', value.statusText)
+
                 return null
               })
               .catch((reason) => {
@@ -415,6 +445,7 @@ export default class WLSessionModule {
               audioMsgData.audioData.data = new Uint8Array(audioData.slice(10))
               audioMsgData.audioData.frameCount = getOpusDataFrameCount(audioMsgData.audioData.data)
               audioMsgData.combo_id = getMsgDataIdByCombo(audioMsgData, 0)
+
               return audioMsgData
             } else {
               return Promise.reject('获取音频数据失败')
@@ -449,6 +480,7 @@ export default class WLSessionModule {
               serverMessage.sessionMessage?.rspMsg,
             )
           }
+
           break
 
         case WL.Session.SessionCommandId.SESSION_COMMAND_GET_SESSION:
@@ -459,6 +491,7 @@ export default class WLSessionModule {
               serverMessage.sessionMessage?.rspGetSession,
             )
           }
+
           break
 
         case WL.Session.SessionCommandId.SESSION_COMMAND_GET_MSG:
@@ -469,6 +502,7 @@ export default class WLSessionModule {
               serverMessage.sessionMessage?.rspGetMsg,
             )
           }
+
           break
 
         case WL.Session.SessionCommandId.SESSION_COMMAND_READ_MSG:
@@ -479,12 +513,14 @@ export default class WLSessionModule {
               serverMessage.sessionMessage?.rspMsgRead,
             )
           }
+
           break
 
         case WL.Session.SessionCommandId.SESSION_COMMAND_REMOVE_SESSION:
           {
             this.coreInterface.rspPbMsg(serviceHead.seq ?? 0, serviceHead.resultCode ?? 0, true)
           }
+
           break
       }
     } else if (serviceHead.commandType === WL.Service.CommandType.COMMAND_NOTIFY) {
@@ -501,11 +537,14 @@ export default class WLSessionModule {
 
           if (!msgDataRaw) return
           const loginUserInfo = this.coreInterface.getLoginUserInfo()
+
           const msgDatas = WeilaDB.getInstance().convertFromMsgDataRaws(
             [msgDataRaw],
             loginUserInfo.userId,
           )
+
           wllog('转换后的消息:', msgDatas, msgDatas.length)
+
           if (msgDatas.length) {
             const msgData = msgDatas[0]
             msgData.combo_id = getMsgDataIdByCombo(msgData, 0)
@@ -514,6 +553,7 @@ export default class WLSessionModule {
             if (isPttMsg) {
               const { msgData: audioMsgData, isNewAudioItem } =
                 await this.pttFsm.putPttMsgData(msgData)
+
               await this.updateSessionByNewMsgData(audioMsgData, isNewAudioItem)
               // PTT 分片用于实时播放和本地聚合，服务端随后会下发同一 msgId 的 AUDIO 消息。
               // 避免把同一条语音按“实时分片”和“最终音频”各通知一次。
@@ -537,6 +577,7 @@ export default class WLSessionModule {
             }
 
             wllog('incoming msgdata:', msgData)
+
             if (!isPttMsg) {
               if (msgData.msgType !== WL_IDbMsgDataType.WL_DB_MSG_DATA_WITHDRAW_TYPE) {
                 await this.updateSessionByNewMsgData(msgData)
@@ -554,6 +595,7 @@ export default class WLSessionModule {
                   )
 
                   wllog('withdraw msg is:', withdrawMsgData)
+
                   if (withdrawMsgData) {
                     withdrawMsgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_WITHDRAW
                     //发送通知消息出去
@@ -581,6 +623,7 @@ export default class WLSessionModule {
       msgData.sessionId,
       msgData.sessionType,
     )
+
     if (sessionSetting) {
       return sessionSetting.tts
     }
@@ -615,6 +658,7 @@ export default class WLSessionModule {
       const rspGetMsg = (await this.coreInterface.sendPbMsg(buildResult)) as WL.Session.IRspGetMsg
       const msgList = rspGetMsg.msgList ?? []
       wllog('从服务器获取:' + msgList.length + ' 条记录')
+
       let msgDatas = WeilaDB.getInstance().convertFromMsgDataRaws(
         msgList,
         this.coreInterface.getLoginUserInfo().userId,
@@ -626,6 +670,7 @@ export default class WLSessionModule {
 
       // 先处理服务器历史中的撤回控制消息：把原消息标记为已撤回，控制消息本身不保留。
       const nonWithdrawMsgDatas: WL_IDbMsgData[] = []
+
       for (const msgData of msgDatas) {
         if (msgData.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_WITHDRAW_TYPE) {
           if (msgData.withdrawMsgId) {
@@ -634,15 +679,19 @@ export default class WLSessionModule {
               msgData.sessionType,
               msgData.withdrawMsgId,
             )
+
             if (target) {
               target.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_WITHDRAW
               await WeilaDB.getInstance().putMsgData(target)
             }
           }
+
           continue
         }
+
         nonWithdrawMsgDatas.push(msgData)
       }
+
       msgDatas = nonWithdrawMsgDatas
 
       const comboIdList = msgDatas.map((value) => {
@@ -650,6 +699,7 @@ export default class WLSessionModule {
       })
 
       const oldMsgDatas = await WeilaDB.getInstance().getMsgDataByComboIds(comboIdList)
+
       if (oldMsgDatas.length) {
         const oldMsgComboIds = oldMsgDatas.map((value) => {
           return value.combo_id
@@ -674,6 +724,7 @@ export default class WLSessionModule {
 
       await WeilaDB.getInstance().putMsgDatas(msgDatas)
       wllog('从服务器中获取会话%d条消息成功', msgDatas.length)
+
       return true
     }
 
@@ -720,6 +771,7 @@ export default class WLSessionModule {
     const index = this.findSessionIndex(sessionId, sessionType)
     const currentReadMsgId = index !== -1 ? this.sessionList[index].readMsgId || 0 : 0
     const targetMsgId = Math.max(currentReadMsgId, msgId)
+
     if (targetMsgId <= currentReadMsgId) {
       return true
     }
@@ -729,6 +781,7 @@ export default class WLSessionModule {
     }
 
     await this.syncSessionReadAck(sessionId, sessionType, targetMsgId)
+
     return true
   }
 
@@ -739,12 +792,14 @@ export default class WLSessionModule {
     }
 
     const index = this.findSessionIndex(sessionId, sessionType)
+
     if (index === -1) {
       return true
     }
 
     const session = this.sessionList[index]
     const targetMsgId = session.lastMsgId || 0
+
     if (targetMsgId > (session.readMsgId || 0)) {
       await this.updateSessionReadLocally(index, targetMsgId)
       await this.syncSessionReadAck(sessionId, sessionType, targetMsgId)
@@ -761,9 +816,11 @@ export default class WLSessionModule {
     const dbInstance = WeilaDB.getInstance()
     let settingItem = await dbInstance.getSettingItem(settingId)
     let latestTime = 0
+
     if (settingItem) {
       latestTime = settingItem.data as number
     }
+
     const buildResult = WeilaPBSessionWrapper.buildGetSessionReq(Long.fromValue(latestTime), type)
 
     if (buildResult.resultCode === 0) {
@@ -771,19 +828,24 @@ export default class WLSessionModule {
         buildResult,
         30000,
       )) as WL.Session.IRspGetSession
+
       wllog('buildGetSessionReq type=%d:', type, rspMsg)
+
       if (!settingItem) {
         settingItem = {} as WL_IDbSetting
         settingItem.id = settingId
       }
+
       settingItem.data = Long.fromValue(rspMsg.latestUpdated ?? 0).toNumber()
       await dbInstance.putSettingItem(settingItem)
 
       const sessionInfoList = rspMsg.sessionInfoList ?? []
       wllog('initSessions type=%d:', type, sessionInfoList)
+
       if (sessionInfoList.length) {
         const sessionInfos: WL_IDbSession[] =
           await dbInstance.convertFromSessionRaw(sessionInfoList)
+
         await dbInstance.putSessions(sessionInfos)
         wllog('after convert type=%d:', type, sessionInfos)
       }
@@ -852,15 +914,19 @@ export default class WLSessionModule {
     msgData?: WL_IDbMsgData,
   ): Promise<boolean> {
     let buildResult = null as WLBuildMsgRet | null
+
     const seqSetting = await WeilaDB.getInstance().getSettingItem(
       WL_IDbSettingID.SETTING_MSG_SENDING_SEQ,
     )
+
     const index = this.sessionList.findIndex((value) => {
       return value.sessionId === sessionId && value.sessionType === sessionType
     })
+
     const lastMsgData = await WeilaDB.getInstance().getLastMsgData(sessionId, sessionType)
 
     let dbMsgData = {} as WL_IDbMsgData
+
     if (msgData) {
       dbMsgData = msgData
     } else {
@@ -873,6 +939,7 @@ export default class WLSessionModule {
       dbMsgData.msgId = lastMsgData ? lastMsgData.msgId + 1 : 0
       dbMsgData.autoReply = 0
       dbMsgData.combo_id = getMsgDataIdByCombo(dbMsgData, seqSetting?.data ?? 0)
+
       if (seqSetting) {
         seqSetting.data = (seqSetting.data ?? 0) + 1
         await WeilaDB.getInstance().putSettingItem(seqSetting)
@@ -922,8 +989,10 @@ export default class WLSessionModule {
     } else if (msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE) {
       const audioData = data as WL_IDbAudioData
       dbMsgData.audioData = audioData
+
       const payload =
         audioData.data && audioData.data.length > 0 ? audioData.data : (audioData.audioUrl ?? '')
+
       buildResult = WeilaPBSessionWrapper.buildAudioSessionMsgReq(
         Long.fromValue(sessionId),
         sessionType,
@@ -963,11 +1032,13 @@ export default class WLSessionModule {
         // 撤回消息发送成功，立即将原消息标记为已撤回
         if (msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_WITHDRAW_TYPE) {
           const withdrawMsgId = data as number
+
           const originalMsg = await WeilaDB.getInstance().getMsgDataByMsgId(
             sessionId,
             sessionType,
             withdrawMsgId,
           )
+
           if (originalMsg) {
             originalMsg.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_WITHDRAW
             await WeilaDB.getInstance().putMsgData(originalMsg)
@@ -979,6 +1050,7 @@ export default class WLSessionModule {
         dbMsgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_SENT
         dbMsgData.msgId = rspMsg.msgId ?? 0
         dbMsgData.combo_id = getMsgDataIdByCombo(dbMsgData, 0)
+
         if (index !== -1) {
           this.applySessionMsgData(this.sessionList[index], dbMsgData, true)
           wllog('session:', this.sessionList)
@@ -986,10 +1058,12 @@ export default class WLSessionModule {
         } else {
           await this.startSession(sessionId, sessionType, undefined, dbMsgData.msgId, dbMsgData)
         }
+
         return true
       } catch (e) {
         wlerr('发送会话消息失败:', e)
         dbMsgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_UNSENT
+
         return Promise.reject(e)
       } finally {
         // 撤回消息本身只是协议控制消息，不需要作为会话消息展示，
@@ -1011,18 +1085,22 @@ export default class WLSessionModule {
       Long.fromValue(sessionId),
       sessionType,
     )
+
     if (buildMsgRet.resultCode === 0) {
       try {
         await this.coreInterface.sendPbMsg(buildMsgRet)
       } finally {
         const sessionInfo = await WeilaDB.getInstance().getSession(sessionId, sessionType)
         const index = this.findSessionIndex(sessionId, sessionType)
+
         if (index !== -1) {
           this.sessionList.splice(index, 1)
         }
+
         if (this.isActiveSession(sessionId, sessionType)) {
           this.clearActiveSession()
         }
+
         if (sessionInfo) {
           await WeilaDB.getInstance().delSessions([sessionInfo.combo_id_type])
         }
@@ -1042,11 +1120,14 @@ export default class WLSessionModule {
     lastMsgData?: WL_IDbMsgData,
   ): Promise<WL_IDbSession> {
     const dbSessionInfo = await WeilaDB.getInstance().getSession(sessionId, sessionType)
+
     if (dbSessionInfo) {
       if (extra) {
         dbSessionInfo.extra = extra
+
         if (applySessionExtraProfile(dbSessionInfo)) {
           const index = this.findSessionIndex(sessionId, sessionType)
+
           if (index !== -1) {
             this.sessionList[index] = dbSessionInfo
             await this.persistSessionUpdate(this.sessionList[index])
@@ -1055,6 +1136,7 @@ export default class WLSessionModule {
           }
         }
       }
+
       return dbSessionInfo
     }
 
@@ -1070,6 +1152,7 @@ export default class WLSessionModule {
     sessionInfo.sessionAvatar = default_group_logo
     sessionInfo.status = WL_IDbSessionStatus.SESSION_ACTIVATE
     sessionInfo.extra = extra
+
     if (lastMsgData) {
       sessionInfo.lastMsgData = lastMsgData
     }
@@ -1078,6 +1161,7 @@ export default class WLSessionModule {
     this.sessionList.push(sessionInfo)
 
     this.coreInterface.sendExtEvent(WL_ExtEventID.WL_EXT_NEW_SESSION_OPEN_IND, sessionInfo)
+
     return sessionInfo
   }
 
@@ -1106,6 +1190,7 @@ export default class WLSessionModule {
 
       const timer = setInterval(() => {
         elapsed += checkInterval
+
         if (this.isPttFsmIdle()) {
           clearInterval(timer)
           resolve()
@@ -1125,6 +1210,7 @@ export default class WLSessionModule {
       msgData: audioItem ? audioItem.msgData : null,
       indData,
     }
+
     this.coreInterface.sendExtEvent(WL_ExtEventID.WL_EXT_PTT_PLAY_IND, pttPlayInd)
   }
 
@@ -1149,10 +1235,12 @@ export default class WLSessionModule {
       const seqSetting = await WeilaDB.getInstance().getSettingItem(
         WL_IDbSettingID.SETTING_MSG_SENDING_SEQ,
       )
+
       const lastMsgData = await WeilaDB.getInstance().getLastMsgData(
         burstInfo.sessionId,
         burstInfo.sessionType,
       )
+
       burstInfo.dbMsgData = {} as WL_IDbMsgData
       burstInfo.dbMsgData.audioData = {} as WL_IDbAudioData
       burstInfo.dbMsgData.audioData.data = pttData.data.slice(0)
@@ -1207,6 +1295,7 @@ export default class WLSessionModule {
       } finally {
         const pttRecordInd: WL_PttRecordInd = {} as WL_PttRecordInd
         pttRecordInd.msgData = dbMsgData
+
         if (dbMsgData.status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_SENT) {
           if (pttPacket.mark === WL_PttPackType.PTT_INTER_PACK) {
             pttRecordInd.state = WL_PttRecordState.PTT_AUDIO_RECORDING
@@ -1218,6 +1307,7 @@ export default class WLSessionModule {
             dbMsgData.combo_id = getMsgDataIdByCombo(dbMsgData, 0)
             await WeilaDB.getInstance().putMsgData(dbMsgData)
             const sessionIndex = this.findSessionIndex(burstInfo.sessionId, burstInfo.sessionType)
+
             if (sessionIndex !== -1) {
               this.applySessionMsgData(this.sessionList[sessionIndex], dbMsgData, true)
               await this.persistSessionUpdate(this.sessionList[sessionIndex])
@@ -1266,6 +1356,7 @@ export default class WLSessionModule {
 
     for (let i = 0; i < pttPayloads.length; i++) {
       const pttMsgData = {} as WL_PttPacket
+
       if (i === 0) {
         pttMsgData.mark = WL_PttPackType.PTT_FIRST_PACK
       } else if (i === pttPayloads.length - 1) {
@@ -1301,6 +1392,7 @@ export default class WLSessionModule {
     this.curBurstInfo.packetPayloadList = []
     this.curBurstInfo.sessionId = sessionId
     this.curBurstInfo.sessionType = sessionType
+
     return true
   }
 

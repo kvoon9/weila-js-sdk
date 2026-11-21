@@ -1,6 +1,7 @@
 export function hexStr2Uint8Array(hexStr: string): Uint8Array | undefined {
   if (hexStr.length % 2 === 0) {
     const hexArray = hexStr.match(/.{1,2}/g)
+
     if (hexArray) {
       return Uint8Array.from(hexArray.map((v) => parseInt(v, 16)))
     }
@@ -22,6 +23,7 @@ export function uint8Array2HexStr(arrayBuffer: Uint8Array): string {
 
 export function getStringFromBase64(base64Str: string): string {
   const asciiStr = window.atob(base64Str)
+
   return decodeURIComponent(escape(asciiStr))
 }
 
@@ -42,8 +44,10 @@ export function uint8Array2Utf8Str(arrayBuffer: Uint8Array): string {
   out = ''
   len = arrayBuffer.length
   i = 0
+
   while (i < len) {
     c = arrayBuffer[i++]
+
     switch (c >> 4) {
       case 0:
       case 1:
