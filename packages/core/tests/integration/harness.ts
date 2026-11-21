@@ -8,6 +8,18 @@ import { startServer } from '../server.mjs'
 const PACKAGE = join(dirname(fileURLToPath(import.meta.url)), '../..')
 const ENV_FILE = join(PACKAGE, 'tests/integration/.env.integration')
 
+export interface SessionExtra {
+  sessionName?: string
+  sessionAvatar?: string
+  memberCount?: number
+}
+
+export interface AccountCredentials {
+  account: string
+  password: string
+  countryCode: string
+}
+
 export interface IntegrationEnv {
   account: string
   password: string
@@ -18,6 +30,7 @@ export interface IntegrationEnv {
   md5: boolean
   sessionId?: string
   sessionType?: number
+  peer?: AccountCredentials
 }
 
 export interface LoginSummary {
@@ -37,6 +50,8 @@ interface StoredMessage {
   msgType: number
   status: number
   frameCount?: number
+  audioUrl: string
+  created: number
 }
 
 function loadEnvFile(): void {
@@ -52,6 +67,9 @@ export function readIntegrationEnv(): IntegrationEnv | null {
 
   if (!account || !password || !appId || !appKey) return null
 
+  const peerAccount = process.env.WEILA_TEST_PEER_ACCOUNT
+  const peerPassword = process.env.WEILA_TEST_PEER_PASSWORD
+
   return {
     account,
     password,
@@ -64,6 +82,14 @@ export function readIntegrationEnv(): IntegrationEnv | null {
     sessionType: process.env.WEILA_TEST_SESSION_TYPE
       ? Number(process.env.WEILA_TEST_SESSION_TYPE)
       : undefined,
+    peer:
+      peerAccount && peerPassword
+        ? {
+            account: peerAccount,
+            password: peerPassword,
+            countryCode: process.env.WEILA_TEST_PEER_COUNTRY_CODE ?? '0',
+          }
+        : undefined,
   }
 }
 
@@ -75,50 +101,67 @@ export class CoreSession {
     private readonly browser: Browser,
     readonly page: Page,
     readonly env: IntegrationEnv,
+    readonly credentials: AccountCredentials,
   ) {}
 
-  static async open(env: IntegrationEnv): Promise<CoreSession> {
+  static async open(env: IntegrationEnv, credentials?: AccountCredentials): Promise<CoreSession> {
     const server = await startServer()
     const browser = await chromium.launch()
     const page = await browser.newPage()
     await page.goto(server.url)
     await page.waitForFunction(() => window['__ready'] === true)
 
-    return new CoreSession(server, browser, page, env)
+    return new CoreSession(
+      server,
+      browser,
+      page,
+      env,
+      credentials ?? {
+        account: env.account,
+        password: env.password,
+        countryCode: env.countryCode,
+      },
+    )
   }
 
   async login(): Promise<LoginSummary> {
-    const summary = await this.page.evaluate(async (env) => {
-      const sdk = window['__sdk']
-      window.weilaEvents = []
-      const core = new sdk.WeilaCore()
-      window.weilaCore = core
-      core.weila_onEvent((eventId: number, eventData: any) => {
-        let text = ''
+    const summary = await this.page.evaluate(
+      async (env) => {
+        const sdk = window['__sdk']
+        window.weilaEvents = []
+        const core = new sdk.WeilaCore()
+        window.weilaCore = core
+        core.weila_onEvent((eventId: number, eventData: any) => {
+          let text = ''
 
-        try {
-          text = JSON.stringify(eventData)
-        } catch {
-          text = String(eventData)
+          try {
+            text = JSON.stringify(eventData)
+          } catch {
+            text = String(eventData)
+          }
+
+          window.weilaEvents.push({ eventId, text: text.slice(0, 400) })
+        })
+
+        await core.weila_init({ appId: env.appId, appKey: env.appKey, webSock: env.webSock })
+
+        const user = await core.weila_login(
+          env.credentials.account,
+          env.credentials.password,
+          env.credentials.countryCode,
+          { md5: env.md5 },
+        )
+
+        const token = await core.weila_get_token()
+
+        return {
+          userId: Number(user.userId),
+          userName: String(user.userName ?? ''),
+          tokenLength: String(token ?? '').length,
         }
-
-        window.weilaEvents.push({ eventId, text: text.slice(0, 400) })
-      })
-
-      await core.weila_init({ appId: env.appId, appKey: env.appKey, webSock: env.webSock })
-
-      const user = await core.weila_login(env.account, env.password, env.countryCode, {
-        md5: env.md5,
-      })
-
-      const token = await core.weila_get_token()
-
-      return {
-        userId: Number(user.userId),
-        userName: String(user.userName ?? ''),
-        tokenLength: String(token ?? '').length,
-      }
-    }, this.env)
+      },
+      { ...this.env, credentials: this.credentials },
+    )
 
     this.loginSummary = summary
 
@@ -158,6 +201,28 @@ export class CoreSession {
         sessionType: Number(session.sessionType),
         sessionName: String(session.sessionName ?? ''),
       })),
+    )
+  }
+
+  async startSession(
+    peerId: string,
+    sessionType: number,
+    extra?: SessionExtra,
+  ): Promise<{ sessionId: string; sessionType: number }> {
+    return this.page.evaluate(
+      async (args) => {
+        const session = await window.weilaCore.weila_startNewSession(
+          args.peerId,
+          args.sessionType,
+          args.extra,
+        )
+
+        return {
+          sessionId: String(session?.sessionId ?? ''),
+          sessionType: Number(session?.sessionType ?? 0),
+        }
+      },
+      { peerId, sessionType, extra },
     )
   }
 
@@ -209,6 +274,8 @@ export class CoreSession {
             message.audioData?.frameCount === undefined
               ? undefined
               : Number(message.audioData.frameCount),
+          audioUrl: String(message.audioData?.audioUrl ?? ''),
+          created: Number(message.created ?? 0),
         }))
       },
       { sessionId, sessionType, count },

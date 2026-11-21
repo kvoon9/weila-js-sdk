@@ -35,5 +35,6 @@ The script builds the package first, then runs Playwright with `playwright.integ
 - Login, user identity, token, session sync, and the data prepare and session update events.
 - Text send, with the stored row at status `SENT` and the send event.
 - Audio send by data, with the stored row's frame count and status.
+- Cross-account receive: one account sends a text and an audio message, the peer receives both and emits the new message event.
 
 Later passes add the receive side with a second account, the group, friend, and device domains, and the PTT and connection state machine regressions.
