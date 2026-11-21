@@ -1,4 +1,3 @@
-import { WL_PbMsgErrorInfo } from 'main/weila_external_data'
 import { WL } from 'proto/weilapb'
 import { getLogger } from 'log/weila_log'
 import { WL_PttPayload } from 'main/weila_internal_data'
@@ -665,7 +664,7 @@ function getErrorMsg(errorMsg: string): string {
 }
 
 function AsyncTime(notShow?: boolean) {
-  return (target: any, propertyKey: string, descriptor: PropertyDescriptor) => {
+  return (_target: any, propertyKey: string, descriptor: PropertyDescriptor) => {
     const method = descriptor.value
     if (!notShow) {
       descriptor.value = async function (...args: any[]) {
@@ -685,7 +684,7 @@ function AsyncTime(notShow?: boolean) {
 }
 
 function SyncTime(notShow?: boolean) {
-  return (target: any, propertyKey: string, descriptor: PropertyDescriptor) => {
+  return (_target: any, propertyKey: string, descriptor: PropertyDescriptor) => {
     const method = descriptor.value
     if (!notShow) {
       descriptor.value = function (...args: any[]) {
@@ -756,7 +755,6 @@ function getOpusDataFrameCount(pttData: Uint8Array): number {
   let frameCount = 0
   let offset = 0
   let sizeOfOpusData = 0
-  let _codedDataList = null
 
   while (offset < pttData.length) {
     const flag = pttData[offset]

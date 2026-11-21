@@ -267,7 +267,6 @@ class WeilaCore implements WL_CoreInterface {
       this.waitingTimeoutChecking,
     )
     if (this.sendingPbMsgList.length > 0) {
-      const _shouldCheck = this.waitingRspMap.size === 0
       const sendingItem = this.sendingPbMsgList.shift()!
       const waitingItem = {} as WL_WaitingRspPbMsgInfo
       waitingItem.resolve = sendingItem.resolve
@@ -342,7 +341,7 @@ class WeilaCore implements WL_CoreInterface {
     }
   }
 
-  private async loadResource(context: any, event: any): Promise<any> {
+  private async loadResource(_context: any, event: any): Promise<any> {
     const callback = event.data
     try {
       await WLConfig.loadResource()

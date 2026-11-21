@@ -91,13 +91,11 @@ function isDeepEqual(a: unknown, b: unknown): boolean {
 
 export default class WLSessionModule {
   private sessionList: WL_IDbSession[] = []
-  private token: string | null
   private pttFsm: WLPttFsm | null
   private curBurstInfo: WL_BurstInfo | null
   private activeSession: WL_ActiveSessionInfo | null
 
   constructor(private coreInterface: WL_CoreInterface) {
-    this.token = null
     this.curBurstInfo = null
     this.activeSession = null
     this.coreInterface.registerPbMsgHandler(
@@ -1287,31 +1285,6 @@ export default class WLSessionModule {
 
   public clearActiveSessionState(): void {
     this.clearActiveSession()
-  }
-
-  private async canTalk(sessionId: string, sessionType: number): Promise<boolean> {
-    if (isGroupSessionType(sessionType)) {
-      let groupInfo = await WeilaDB.getInstance().getGroup(sessionId)
-      if (!groupInfo) {
-        try {
-          groupInfo = await this.coreInterface.executeCoreFunc(
-            'weila_getGroupFromServer',
-            sessionId,
-          )
-        } catch (err) {
-          wlerr('申请话权前获取群信息失败:', { sessionId, sessionType, err })
-        }
-      }
-
-      if (!groupInfo) {
-        wlerr('群信息不存在:', { sessionId, sessionType })
-        return true
-      }
-
-      return groupInfo.speechEnable
-    }
-
-    return true
   }
 
   getSessionList(): WL_IDbSession[] {

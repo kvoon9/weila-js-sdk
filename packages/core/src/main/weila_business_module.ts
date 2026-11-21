@@ -27,7 +27,6 @@ import {
 } from 'main/weila_external_data'
 
 const wllog = getLogger('MOD:business:info')
-const _wlerr = getLogger('MOD:business:err')
 
 export default class WLBusinessModule {
   constructor(private coreInterface: WL_CoreInterface) {

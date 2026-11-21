@@ -383,7 +383,7 @@ export default class WLGroupModule {
             const ntfDeleteMember = serverMessage.groupMessage.ntfDeleteMember
             WeilaDB.getInstance()
               .delMemberInfos(ntfDeleteMember.groupId.toString(10), ntfDeleteMember.userIdList)
-              .then((value) => {
+              .then((_value) => {
                 wllog('删除了群成员成功')
                 // 通知外部
                 const info = {} as WL_GroupMemberDeleteInfo
@@ -497,7 +497,6 @@ export default class WLGroupModule {
 
         case WL.Group.GroupCommandId.GROUP_COMMAND_BROADCAST:
           {
-            const _ntfBroadcast = serverMessage.groupMessage.ntfGroupBroadcast
             //TODO: 群通知
           }
           break
@@ -846,7 +845,10 @@ export default class WLGroupModule {
     )
     if (buildMsgRet.resultCode === 0) {
       await this.coreInterface.sendPbMsg(buildMsgRet)
+      return true
     }
+
+    return Promise.reject('创建消息失败:' + buildMsgRet.resultCode)
   }
 
   public async quitGroup(groupId: string, subUserId?: number): Promise<boolean> {
