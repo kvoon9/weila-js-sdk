@@ -13,6 +13,7 @@
     "up": "pnpm dlx taze -Ir major",
     "build:story": "turbo run build:story",
     "typecheck": "turbo run typecheck",
+    "test:run": "turbo run test:run",
     "lint": "oxlint --type-aware",
     "lint:fix": "oxlint --type-aware --fix",
     "knip": "knip",
