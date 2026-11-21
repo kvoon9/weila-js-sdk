@@ -46,24 +46,22 @@ function patchAudioWorkletNodePortStart(): void {
 
   const OriginalAudioWorkletNode = window.AudioWorkletNode
 
-  window.AudioWorkletNode = function AudioWorkletNode(
-    context: BaseAudioContext,
-    name: string,
-    options?: AudioWorkletNodeOptions,
-  ) {
-    const node = new OriginalAudioWorkletNode(context, name, options)
-    node.port.start()
+  const PatchedAudioWorkletNode = new Proxy(OriginalAudioWorkletNode, {
+    construct(target, args) {
+      const node = Reflect.construct(target, args)
+      node.port.start()
 
-    return node
-  } as unknown as typeof AudioWorkletNode
+      return node
+    },
+  })
 
-  window.AudioWorkletNode.prototype = OriginalAudioWorkletNode.prototype
+  window.AudioWorkletNode = PatchedAudioWorkletNode
 }
 
 export function installWeilaAudioRuntimePatch(options: WL_AudioRuntimePatchOptions = {}): void {
   if (typeof window === 'undefined') return
 
-  const patchedWindow = window as WL_PatchedWindow
+  const patchedWindow: WL_PatchedWindow = window
 
   if (patchedWindow[PATCH_MARK]) return
 

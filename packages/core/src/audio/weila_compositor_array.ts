@@ -50,7 +50,7 @@ class CompoUint8Array {
     }
 
     this.lengthList.push(array.length)
-    this.compoArrays!.set(array, offset)
+    this.compoArrays.set(array, offset)
   }
 
   public getCompoArray(): Uint8Array | null {
@@ -63,7 +63,7 @@ class CompoUint8Array {
 
   public parseArrayList(): Uint8Array[] | null {
     if (this.compoArrays) {
-      const arrayList = [] as Uint8Array[]
+      const arrayList: Uint8Array[] = []
       let offset = 0
 
       this.lengthList.forEach((value) => {

@@ -262,9 +262,7 @@ class WLAudio {
       this.sendPlayerEvent(playerType, WLAudioPlayerEvent.WL_WORKLET_NODE_OPEN_REQ, {
         sampleRate: sampleRate,
       })
-      const callback = {} as WLAudioCallback
-      callback.resolve = resolve
-      callback.reject = reject
+      const callback: WLAudioCallback = { resolve, reject, waitRspTimer: undefined }
       callback.waitRspTimer = setTimeout(
         (cb) => {
           if (cb.reject) {
@@ -290,9 +288,7 @@ class WLAudio {
       this.sendPlayerEvent(playerType, reqEvent, data)
 
       if (this.playerWorkNode[playerType]) {
-        const callback = {} as WLAudioCallback
-        callback.resolve = resolve
-        callback.reject = reject
+        const callback: WLAudioCallback = { resolve, reject, waitRspTimer: undefined }
         callback.waitRspTimer = setTimeout(
           (cb) => {
             if (cb.reject) {
@@ -608,9 +604,7 @@ class WLAudio {
             sampleRate: sampleRate,
             bitRate: bitRate,
           })
-          const callback = {} as WLAudioCallback
-          callback.resolve = resolve
-          callback.reject = reject
+          const callback: WLAudioCallback = { resolve, reject, waitRspTimer: undefined }
           callback.waitRspTimer = setTimeout(
             (cb) => {
               if (cb.reject) {
@@ -642,9 +636,7 @@ class WLAudio {
       this.sendRecorderEvent(reqEvent, data)
 
       if (this.recorderWorkNode) {
-        const callback = {} as WLAudioCallback
-        callback.resolve = resolve
-        callback.reject = reject
+        const callback: WLAudioCallback = { resolve, reject, waitRspTimer: undefined }
         callback.waitRspTimer = setTimeout(
           (cb) => {
             if (cb.reject) {

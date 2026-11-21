@@ -5,8 +5,16 @@ import type { Browser, Page } from '@playwright/test'
 import { chromium, expect, test } from '@playwright/test'
 import { startServer } from './server.mjs'
 
+interface ContractBaseline {
+  exports: string[]
+  assets: string[]
+}
+
 const PACKAGE = process.cwd()
-const baseline = JSON.parse(readFileSync(join(PACKAGE, 'artifacts/contract-baseline.json'), 'utf8'))
+
+const baseline: ContractBaseline = JSON.parse(
+  readFileSync(join(PACKAGE, 'artifacts/contract-baseline.json'), 'utf8'),
+)
 
 let server: Awaited<ReturnType<typeof startServer>>
 let browser: Browser
@@ -36,7 +44,7 @@ test('exports match the contract baseline', async () => {
 })
 
 test('wasm and wav assets are served with a body', async () => {
-  for (const asset of baseline.assets as string[]) {
+  for (const asset of baseline.assets) {
     const result = await page.evaluate(async (path) => {
       const response = await fetch(`/dist/assets/${path}`)
 

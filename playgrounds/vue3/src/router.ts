@@ -1,5 +1,11 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 
+declare module 'vue-router' {
+  interface RouteMeta {
+    title?: string
+  }
+}
+
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
@@ -47,7 +53,7 @@ const router = createRouter({
 })
 
 router.afterEach((to) => {
-  document.title = (to.meta.title as string) || 'Weila SDK'
+  document.title = to.meta.title || 'Weila SDK'
 })
 
 export default router
