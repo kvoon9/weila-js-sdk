@@ -54,6 +54,16 @@ import {
 const wllog = getLogger('MOD:session:info')
 const wlerr = getLogger('MOD:session:err')
 
+interface SpeechSynthesisPayload {
+  user_id: number
+  text: string
+  speed: number
+  vol: number
+  et: string
+  app_id: string
+  sign: string
+}
+
 interface WL_BurstInfo {
   sessionId: string
   sessionType: number
@@ -350,15 +360,19 @@ export default class WLSessionModule {
       speakerInfo += '说'
 
       const appKeyAndId = WeilaDB.getAppAuthInfo() ? WeilaDB.getAppAuthInfo() : getAppKeyAndId()
-      const data = {}
-      data['user_id'] = this.coreInterface.getLoginUserInfo().userId
-      data['text'] = speakerInfo + msgData.textData
-      wllog('文字转语音，文字：%s', data['text'])
-      data['speed'] = 8
-      data['vol'] = 6
-      data['et'] = '' + (Math.floor(Date.now() / 1000) + 20)
-      data['app_id'] = appKeyAndId.appId
-      data['sign'] = MD5(data['et'] + appKeyAndId.appKey).toString()
+      const et = '' + (Math.floor(Date.now() / 1000) + 20)
+
+      const data: SpeechSynthesisPayload = {
+        user_id: this.coreInterface.getLoginUserInfo().userId,
+        text: speakerInfo + msgData.textData,
+        speed: 8,
+        vol: 6,
+        et,
+        app_id: appKeyAndId.appId,
+        sign: MD5(et + appKeyAndId.appKey).toString(),
+      }
+
+      wllog('文字转语音，文字：%s', data.text)
       const response = await fetchWithTimeout(
         '/v1/speech/synthesis/ptt-flx?access-token=' + weilaToken,
         {
