@@ -29,7 +29,7 @@
     "packages/ui/src/composables/useSessions.ts": 5,
     "packages/core/src/main/weila_login_module.ts": 91,
     "packages/core/scripts/lint-budget.spec.mjs": 1,
-    "packages/core/src/main/weila_group_module.ts": 216,
+    "packages/core/src/main/weila_group_module.ts": 214,
     "packages/core/src/proto/weilapb_location_wrapper.ts": 7,
     "packages/core/src/main/weila_user_module.ts": 18,
     "packages/core/src/database/weila_db_data.ts": 17,
@@ -74,6 +74,7 @@
     "packages/ui/src/stories/SessionListItem.stories.ts": 3,
     "packages/ui/src/stories/WlMsgList.stories.ts": 26,
     "packages/ui/src/stories/WlTextBubble.stories.ts": 1,
-    "packages/core/src/proto/weilapb_contract.spec.ts": 2
+    "packages/core/src/proto/weilapb_contract.spec.ts": 2,
+    "packages/core/src/fsm/weila_fsm.spec.ts": 2
   }
 }
