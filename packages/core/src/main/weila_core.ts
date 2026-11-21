@@ -214,6 +214,10 @@ class WeilaCore implements WL_CoreInterface {
   }
 
   getLoginUserInfo(): WL_IDbUserInfo {
+    if (!this.loginUserInfo) {
+      throw new Error('尚未登录，无法获取用户信息')
+    }
+
     return this.loginUserInfo
   }
 
@@ -275,10 +279,13 @@ class WeilaCore implements WL_CoreInterface {
       waitingItem.resolve = sendingItem.resolve
       waitingItem.reject = sendingItem.reject
       waitingItem.pbMsgData = {} as WL_PbMsgData
-      waitingItem.pbMsgData.header = sendingItem.buildPbMsg.weilaMsgHeader
+      const weilaMsgHeader = sendingItem.buildPbMsg.weilaMsgHeader
+      if (!weilaMsgHeader) return
+
+      waitingItem.pbMsgData.header = weilaMsgHeader
       waitingItem.pbMsgData.pbMsgData = sendingItem.buildPbMsg.reqData
-      waitingItem.timeout = new Date().getTime() + sendingItem.timeout
-      this.waitingRspMap.set(sendingItem.buildPbMsg.weilaMsgHeader!.seqNum, waitingItem)
+      waitingItem.timeout = new Date().getTime() + (sendingItem.timeout ?? 0)
+      this.waitingRspMap.set(weilaMsgHeader.seqNum, waitingItem)
       this.sendNetworkEvent(WL_NetworkEventID.NET_SEND_DATA_EVT, sendingItem.buildPbMsg.reqData)
     }
 
@@ -317,8 +324,11 @@ class WeilaCore implements WL_CoreInterface {
             const keys = this.waitingRspMap.keys()
             for (let k of keys) {
               const waitingRsp = this.waitingRspMap.get(k)
-              waitingRsp.reject(new Error('网络失去连接'))
-              this.waitingRspMap.delete(k)
+
+              if (waitingRsp) {
+                waitingRsp.reject(new Error('网络失去连接'))
+                this.waitingRspMap.delete(k)
+              }
             }
           }
         }
@@ -329,9 +339,13 @@ class WeilaCore implements WL_CoreInterface {
           const msgData = netEvent.eventData as WL_PbMsgData
           const serverMessage = WL.Service.ServiceMessage.decode(msgData.pbMsgData)
 
-          if (this.pbMsgHandlerList.has(serverMessage.serviceHead.serviceId)) {
-            const handler = this.pbMsgHandlerList.get(serverMessage.serviceHead.serviceId)
-            handler(serverMessage)
+          const serviceHead = serverMessage.serviceHead
+          const serviceId = serviceHead?.serviceId ?? 0
+
+          if (serviceHead && this.pbMsgHandlerList.has(serviceId)) {
+            const handler = this.pbMsgHandlerList.get(serviceId)
+
+            if (handler) handler(serverMessage)
           }
         }
         break
@@ -493,10 +507,12 @@ class WeilaCore implements WL_CoreInterface {
       })
 
       timeoutKeyList.forEach((key) => {
-        let waitingPbMsg = this.waitingRspMap.get(key)
-        waitingPbMsg.reject(new Error('消息超时'))
-        waitingPbMsg = null
-        this.waitingRspMap.delete(key)
+        const waitingPbMsg = this.waitingRspMap.get(key)
+
+        if (waitingPbMsg) {
+          waitingPbMsg.reject(new Error('消息超时'))
+          this.waitingRspMap.delete(key)
+        }
       })
 
       if (this.waitingRspMap.size > 0) {
@@ -678,8 +694,10 @@ class WeilaCore implements WL_CoreInterface {
     }
 
     if (audioMsgData.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE) {
-      if (!audioMsgData.audioData.data && audioMsgData.audioData.audioUrl) {
-        const audioUrl = audioMsgData.audioData.audioUrl.replace(/^http(?!s)/, 'https')
+      const audioData = audioMsgData.audioData
+
+      if (audioData && !audioData.data && audioData.audioUrl) {
+        const audioUrl = audioData.audioUrl.replace(/^http(?!s)/, 'https')
         try {
           audioMsgData.audioData = await this.weila_fetchAudioData(audioUrl)
           if (!audioMsgData.audioData) {
@@ -704,10 +722,14 @@ class WeilaCore implements WL_CoreInterface {
         }
       }
     } else {
+      const pttData = audioMsgData.pttData
+
+      if (!pttData) return false
+
       audioMsgData.msgType = WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE
       audioMsgData.audioData = {
-        frameCount: audioMsgData.pttData.frameCount,
-        data: audioMsgData.pttData.data,
+        frameCount: pttData.frameCount,
+        data: pttData.data,
       }
 
       await WeilaDB.getInstance().putMsgData(audioMsgData)
@@ -739,8 +761,10 @@ class WeilaCore implements WL_CoreInterface {
     })
 
     for (let msgData of audioMsgDatas) {
-      if (!msgData.audioData.data && msgData.audioData.audioUrl) {
-        const audioUrl = msgData.audioData.audioUrl.replace(/^http(?!s)/, 'https')
+      const audioData = msgData.audioData
+
+      if (audioData && !audioData.data && audioData.audioUrl) {
+        const audioUrl = audioData.audioUrl.replace(/^http(?!s)/, 'https')
         msgData.audioData = await this.weila_fetchAudioData(audioUrl)
         if (!msgData.audioData) {
           msgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR
@@ -761,7 +785,7 @@ class WeilaCore implements WL_CoreInterface {
    * 依据消息所在数据库的id获取对应的消息信息
    * @param comboId  数据库中的comboId
    */
-  public async weila_getMsgData(comboId: string): Promise<WL_IDbMsgData> {
+  public async weila_getMsgData(comboId: string): Promise<WL_IDbMsgData | undefined> {
     return WeilaDB.getInstance().getMsgData(comboId)
   }
 
@@ -780,7 +804,8 @@ class WeilaCore implements WL_CoreInterface {
     count: number,
   ): Promise<WL_IDbMsgData[]> {
     const result = await this.sessionModule.getMsgDatas(sessionId, sessionType, fromMsgId, count)
-    return result.toReversed()
+
+    return (result ?? []).toReversed()
   }
 
   /**
@@ -1523,12 +1548,16 @@ class WeilaCore implements WL_CoreInterface {
     msgData.sessionType = sessionType
     msgData.sessionId = sessionId
     msgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_SENDING
-    msgData.senderId = this.loginUserInfo.userId
+    msgData.senderId = this.getLoginUserInfo().userId
     msgData.created = new Date().getTime() / 1000
 
     msgData.autoReply = 0
-    msgData.combo_id = getMsgDataIdByCombo(msgData, seqSetting.data++)
-    await WeilaDB.getInstance().putSettingItem(seqSetting)
+    msgData.combo_id = getMsgDataIdByCombo(msgData, seqSetting?.data ?? 0)
+
+    if (seqSetting) {
+      seqSetting.data = (seqSetting.data ?? 0) + 1
+      await WeilaDB.getInstance().putSettingItem(seqSetting)
+    }
     await WeilaDB.getInstance().putMsgData(msgData)
     this.sendExtEvent(WL_ExtEventID.WL_EXT_MSG_SEND_IND, msgData)
 
@@ -1750,7 +1779,7 @@ class WeilaCore implements WL_CoreInterface {
     if (groupIcon) {
       try {
         const uploadResult = await AliOssHelper.getInstance().uploadToAvatar(
-          this.loginUserInfo.userId,
+          this.getLoginUserInfo().userId,
           true,
           groupIcon,
           100,
@@ -1766,13 +1795,17 @@ class WeilaCore implements WL_CoreInterface {
       }
     }
 
-    const groupInfo: WL_IDbGroup = await this.groupModule.createGroup(
+    const groupInfo = await this.groupModule.createGroup(
       name,
       groupType,
       avatar,
       publicType,
       memberUserIdList,
     )
+
+    if (!groupInfo) {
+      return Promise.reject(new Error('创建群组失败'))
+    }
     if (groupType === WL_IDbGroupType.GROUP_TEMP) {
       await this.weila_startNewSession(groupInfo.groupId, WL_IDbSessionType.SESSION_GROUP_TYPE)
     }
@@ -2096,7 +2129,7 @@ class WeilaCore implements WL_CoreInterface {
     const tokenItem = await WeilaDB.getInstance().getSettingItem(
       WL_IDbSettingID.SETTING_LOGIN_TOKEN,
     )
-    return tokenItem.data
+    return tokenItem?.data ?? ''
   }
 
   /**
@@ -2146,16 +2179,19 @@ class WeilaCore implements WL_CoreInterface {
     } else if (topic === 'messages') {
       const opts = options as WL_SubscribeOptions<WL_MessagesFilter>
       const cb = callback as WL_SubscribeMap['messages']['callback']
+      const filter = opts?.filter
       const handler: WL_ExtEventCallback = (eventId: WL_ExtEventID, eventData: any) => {
         if (
           eventId === WL_ExtEventID.WL_EXT_NEW_MSG_RECV_IND ||
           eventId === WL_ExtEventID.WL_EXT_MSG_SEND_IND
         ) {
           const msgData = eventData as WL_IDbMsgData
+
           if (
             msgData &&
-            msgData.sessionId === opts.filter.sessionId &&
-            msgData.sessionType === opts.filter.sessionType
+            filter &&
+            msgData.sessionId === filter.sessionId &&
+            msgData.sessionType === filter.sessionType
           ) {
             cb(msgData)
           }
@@ -2163,14 +2199,12 @@ class WeilaCore implements WL_CoreInterface {
       }
       this.emitter.on('ext_event', handler)
       // immediately: 从数据库加载历史消息并逐条触发回调
-      if (opts?.immediately) {
-        this.weila_getMsgDatas(opts.filter.sessionId, opts.filter.sessionType, 0, 20).then(
-          (msgs) => {
-            for (const msg of msgs) {
-              cb(msg)
-            }
-          },
-        )
+      if (opts?.immediately && filter) {
+        this.weila_getMsgDatas(filter.sessionId, filter.sessionType, 0, 20).then((msgs) => {
+          for (const msg of msgs) {
+            cb(msg)
+          }
+        })
       }
       return () => {
         this.emitter.off('ext_event', handler)

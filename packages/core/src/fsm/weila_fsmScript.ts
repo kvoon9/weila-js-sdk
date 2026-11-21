@@ -1,4 +1,5 @@
 import { assign, createMachine, send } from 'xstate'
+import type { WeilaCore } from 'main/weila_core'
 import { WL_LoginParam } from 'main/weila_internal_data'
 import { WLPlayerType } from 'audio/weila_audio_data'
 
@@ -77,13 +78,20 @@ const loginProcedureFsm = {
   },
 }
 
+interface MainFsmContext {
+  loginParam: WL_LoginParam | null
+  core: WeilaCore | null
+}
+
+const initialMainFsmContext: MainFsmContext = {
+  loginParam: null,
+  core: null,
+}
+
 const mainFsm = createMachine({
   id: 'main',
   initial: 'uninit',
-  context: {
-    loginParam: null as WL_LoginParam | null,
-    core: null,
-  },
+  context: initialMainFsmContext,
   states: {
     uninit: {
       description: '此时系统未初始化，一些资源没有加载，例如wasm等。\n',

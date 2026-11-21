@@ -19,13 +19,16 @@ export default class WLLocationModule {
   private onPbMsgHandler(data: any): void {
     const serverMessage = data as WL.Service.IServiceMessage
     const serviceHead = serverMessage.serviceHead
+
+    if (!serviceHead) return
+
     if (serviceHead.commandType === WL.Service.CommandType.COMMAND_RESPONSE) {
       if (serviceHead.commandId === WL.Location.LocationCommandId.LOCATION_COMMAND_GET_LOCATION) {
         wllog('获取的消息结果', serverMessage)
         this.coreInterface.rspPbMsg(
-          serviceHead.seq,
-          serviceHead.resultCode,
-          serverMessage.locationMessage.rspGetLocation,
+          serviceHead.seq ?? 0,
+          serviceHead.resultCode ?? 0,
+          serverMessage.locationMessage?.rspGetLocation,
         )
       }
     }
@@ -45,18 +48,19 @@ export default class WLLocationModule {
         await this.coreInterface.sendPbMsg(getLocationReq)
       const locationInfos: WL_IDbLocationInfo[] = []
 
-      for (const info of rspLocation.locationInfos) {
+      for (const info of rspLocation.locationInfos ?? []) {
         const locationInfo: WL_IDbLocationInfo = {} as WL_IDbLocationInfo
-        locationInfo.userId = info.userId
-        locationInfo.clientType = info.clientType
-        locationInfo.locationType = info.locationType
-        locationInfo.altitude = info.locationParam.altitude
-        locationInfo.longitude = info.locationParam.longitude
-        locationInfo.latitude = info.locationParam.latitude
-        locationInfo.radius = info.locationParam.radius
-        locationInfo.speed = info.locationParam.speed
-        locationInfo.direction = info.locationParam.direction
-        locationInfo.timestamp = Long.fromValue(info.locationParam.timestamp).toNumber()
+        const locationParam = info.locationParam
+        locationInfo.userId = info.userId ?? 0
+        locationInfo.clientType = info.clientType ?? 0
+        locationInfo.locationType = info.locationType ?? 0
+        locationInfo.altitude = locationParam?.altitude ?? 0
+        locationInfo.longitude = locationParam?.longitude ?? 0
+        locationInfo.latitude = locationParam?.latitude ?? 0
+        locationInfo.radius = locationParam?.radius ?? 0
+        locationInfo.speed = locationParam?.speed ?? 0
+        locationInfo.direction = locationParam?.direction ?? 0
+        locationInfo.timestamp = Long.fromValue(locationParam?.timestamp ?? 0).toNumber()
 
         locationInfos.push(locationInfo)
       }
