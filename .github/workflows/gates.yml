@@ -28,6 +28,7 @@ jobs:
       - run: pnpm run typecheck --force
       - run: pnpm run typecheck:tsc --force
       - run: pnpm run typecheck:parity
+      - run: pnpm run typecheck:strict-budget
       - run: pnpm knip
       - run: pnpm run lint
       - run: pnpm run test:scripts
