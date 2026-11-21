@@ -56,9 +56,9 @@ const wl_playerName = ['stream ptt', 'history ptt', 'single ptt']
 
 class WLAudio {
   private audioContext: AudioContext | null
-  private playerWorkNode: AudioWorkletNode[] | null
+  private playerWorkNode: (AudioWorkletNode | null)[]
   private recorderWorkNode: AudioWorkletNode | null
-  private playerSource: AudioBufferSourceNode[] | null
+  private playerSource: (AudioBufferSourceNode | null)[]
   private sendingEventListMap: Map<number, WLAudioCallback>
   private micMedia: any
   private micSource: MediaStreamAudioSourceNode | null
@@ -85,6 +85,24 @@ class WLAudio {
     ]
     this.recordState = WLRecorderState.WL_RECORDER_CLOSED
     this.isInited = false
+  }
+
+  private requireAudioContext(): AudioContext {
+    if (!this.audioContext) {
+      throw new Error('audio context is not initialized')
+    }
+
+    return this.audioContext
+  }
+
+  private requirePlayerWorkNode(playerType: WLPlayerType): AudioWorkletNode {
+    const node = this.playerWorkNode[playerType]
+
+    if (!node) {
+      throw new Error('player worklet node is not initialized: ' + playerType)
+    }
+
+    return node
   }
 
   public async init(): Promise<boolean> {
@@ -123,20 +141,21 @@ class WLAudio {
 
   private replyPlayRequest(rspEvent: WLAudioPlayerEvent, data: any): void {
     wllog('响应请求事件:%d, 数据:%O', rspEvent, data)
-    if (this.sendingEventListMap.has(rspEvent)) {
-      const callback = this.sendingEventListMap.get(rspEvent)
-      this.sendingEventListMap.delete(rspEvent)
-      if (callback.waitRspTimer) {
-        clearTimeout(callback.waitRspTimer)
-        callback.waitRspTimer = null
-      }
-      if (data.result) {
-        callback!.resolve(true)
-      } else {
-        if (callback!.reject) {
-          callback!.reject(new Error(data.errorMsg))
-        }
-      }
+    const callback = this.sendingEventListMap.get(rspEvent)
+
+    if (!callback) {
+      return
+    }
+
+    this.sendingEventListMap.delete(rspEvent)
+    if (callback.waitRspTimer) {
+      clearTimeout(callback.waitRspTimer)
+      callback.waitRspTimer = null
+    }
+    if (data.result) {
+      callback.resolve(true)
+    } else if (callback.reject) {
+      callback.reject(new Error(data.errorMsg))
     }
   }
 
@@ -185,10 +204,12 @@ class WLAudio {
   }
 
   private sendPlayerEvent(playerType: WLPlayerType, event: WLAudioPlayerEvent, data: any): void {
-    if (this.playerWorkNode[playerType]) {
+    const node = this.playerWorkNode[playerType]
+
+    if (node) {
       wllog('发送播放器事件:', event)
       // eslint-disable-next-line unicorn/require-post-message-target-origin
-      this.playerWorkNode[playerType].port.postMessage({ event: event, data: data })
+      node.port.postMessage({ event: event, data: data })
     }
   }
 
@@ -201,22 +222,22 @@ class WLAudio {
     try {
       if (this.playerWorkNode[playerType] === null) {
         const configData = await WLConfig.getConfigData(WL_ConfigID.WL_RES_DATA_OPUS_WASM_ID)
-        this.playerWorkNode[playerType] = new AudioWorkletNode(
-          this.audioContext,
-          'weila_player_processor',
-          {
-            channelCount: 2,
-            processorOptions: {
-              wasmData: configData.resource_data,
-              workerName: wl_playerName[playerType],
-              playerType: playerType,
-            },
+
+        if (!configData) {
+          throw new Error('获取 opus wasm 配置失败')
+        }
+
+        const node = new AudioWorkletNode(this.requireAudioContext(), 'weila_player_processor', {
+          channelCount: 2,
+          processorOptions: {
+            wasmData: configData.resource_data,
+            workerName: wl_playerName[playerType],
+            playerType: playerType,
           },
-        )
-        this.playerWorkNode[playerType].port.addEventListener(
-          'message',
-          this.onPlayerMessage.bind(this),
-        )
+        })
+
+        this.playerWorkNode[playerType] = node
+        node.port.addEventListener('message', this.onPlayerMessage.bind(this))
       }
 
       this.playSampleRate[playerType] = sampleRate
@@ -274,22 +295,27 @@ class WLAudio {
 
   private startAudioSource(playerType: WLPlayerType): void {
     if (this.playerSource[playerType] === null) {
-      const audioBuffer = this.audioContext!.createBuffer(1, 16000, this.playSampleRate[playerType])
-      this.playerSource[playerType] = this.audioContext!.createBufferSource()
-      this.playerSource[playerType].buffer = audioBuffer
-      this.playerSource[playerType].loop = true
-      this.playerSource[playerType].connect(this.playerWorkNode[playerType])
-      this.playerWorkNode[playerType].connect(this.audioContext.destination)
-      this.playerSource[playerType].start()
+      const audioContext = this.requireAudioContext()
+      const audioBuffer = audioContext.createBuffer(1, 16000, this.playSampleRate[playerType])
+      const source = audioContext.createBufferSource()
+      this.playerSource[playerType] = source
+      source.buffer = audioBuffer
+      source.loop = true
+      const playerNode = this.requirePlayerWorkNode(playerType)
+      source.connect(playerNode)
+      playerNode.connect(audioContext.destination)
+      source.start()
     }
   }
 
   private stopAudioSource(playerType: WLPlayerType): void {
-    if (this.playerSource[playerType]) {
-      this.playerSource[playerType].stop()
-      this.playerSource[playerType].disconnect()
-      this.playerWorkNode[playerType].disconnect()
-      this.playerSource[playerType].buffer = null
+    const source = this.playerSource[playerType]
+
+    if (source) {
+      source.stop()
+      source.disconnect()
+      this.requirePlayerWorkNode(playerType).disconnect()
+      source.buffer = null
       this.playerSource[playerType] = null
     }
   }
@@ -398,7 +424,7 @@ class WLAudio {
 
       const compoBuffer = compoArray.getCompoArray()
       // eslint-disable-next-line unicorn/require-post-message-target-origin
-      this.playerWorkNode[playerType].port.postMessage(
+      this.requirePlayerWorkNode(playerType).port.postMessage(
         {
           event: WLAudioPlayerEvent.WL_WORKLET_NODE_PUT_DATA,
           data: { buffer: compoBuffer, lengthList: compoArray.getCompoLengthList() },
@@ -421,16 +447,17 @@ class WLAudio {
 
   private replyRecordRequest(rspEvent: WLAudioRecorderEvent, data: any): void {
     wllog('回复录音器请求%d', rspEvent)
-    if (this.sendingEventListMap.has(rspEvent)) {
-      const callback = this.sendingEventListMap.get(rspEvent)
-      this.sendingEventListMap.delete(rspEvent)
-      if (data.result) {
-        callback!.resolve(true)
-      } else {
-        if (callback!.reject) {
-          callback!.reject(new Error(data.errorMsg))
-        }
-      }
+    const callback = this.sendingEventListMap.get(rspEvent)
+
+    if (!callback) {
+      return
+    }
+
+    this.sendingEventListMap.delete(rspEvent)
+    if (data.result) {
+      callback.resolve(true)
+    } else if (callback.reject) {
+      callback.reject(new Error(data.errorMsg))
     }
   }
 
@@ -473,7 +500,13 @@ class WLAudio {
             this.micMedia = null
           }
 
-          this.recorderWorkNode.disconnect()
+          const recorderWorkNode = this.recorderWorkNode
+
+          if (!recorderWorkNode) {
+            throw new Error('recorder worklet node is not initialized')
+          }
+
+          recorderWorkNode.disconnect()
           this.replyRecordRequest(ev.event, ev.data)
         }
         break
@@ -497,15 +530,18 @@ class WLAudio {
       wllog('浏览器:' + navigator.userAgent)
       if (this.recorderWorkNode === null) {
         const configData = await WLConfig.getConfigData(WL_ConfigID.WL_RES_DATA_OPUS_WASM_ID)
+
+        if (!configData) {
+          throw new Error('获取 opus wasm 配置失败')
+        }
+
         // 初始化录音器线程
-        this.recorderWorkNode = new AudioWorkletNode(
-          this.audioContext,
-          'weila_recorder_processor',
-          {
-            processorOptions: { wasmData: configData.resource_data },
-          },
-        )
-        this.recorderWorkNode.port.addEventListener('message', this.onRecorderMessage.bind(this))
+        const node = new AudioWorkletNode(this.requireAudioContext(), 'weila_recorder_processor', {
+          processorOptions: { wasmData: configData.resource_data },
+        })
+
+        this.recorderWorkNode = node
+        node.port.addEventListener('message', this.onRecorderMessage.bind(this))
       }
 
       this.recordState = WLRecorderState.WL_RECORDER_OPENING
@@ -524,7 +560,7 @@ class WLAudio {
         { audio: true },
         (stream: any) => {
           this.micMedia = stream
-          this.micSource = this.audioContext!.createMediaStreamSource(this.micMedia)
+          this.micSource = this.requireAudioContext().createMediaStreamSource(this.micMedia)
           this.sendRecorderEvent(WLAudioRecorderEvent.WL_WORKLET_NODE_OPEN_REQ, {
             sampleRate: sampleRate,
             bitRate: bitRate,
@@ -585,7 +621,7 @@ class WLAudio {
     }
     if (this.micSource && this.recorderWorkNode) {
       this.micSource.connect(this.recorderWorkNode)
-      this.recorderWorkNode.connect(this.audioContext!.destination)
+      this.recorderWorkNode.connect(this.requireAudioContext().destination)
     }
     this.recordState = WLRecorderState.WL_RECORDER_STARTING
     return this.recordOperation(
