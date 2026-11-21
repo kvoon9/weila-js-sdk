@@ -46,10 +46,12 @@ const _wlerr = getLogger('DB:core:err')
 const wlerr = getLogger('DB:core:err')
 
 // Opening without a version never upgrades. `$meta` holds the logical version after Dexie
-// patches a same-version schema, and native divided by ten is the fallback for Dexie 3 databases.
+// patches a same-version schema, and the floored native version is the fallback for Dexie 3
+// databases and for a patch that bumped the native version without writing `$meta`.
 function readInstalledSchemaVersion(dbName: string): Promise<number> {
   return new Promise((resolve, reject) => {
     let creating = false
+    let settled = false
     const request = indexedDB.open(dbName)
 
     request.addEventListener('upgradeneeded', () => {
@@ -58,26 +60,36 @@ function readInstalledSchemaVersion(dbName: string): Promise<number> {
     })
 
     request.addEventListener('blocked', () => {
+      settled = true
       reject(new Error(`数据库 ${dbName} 被其他连接占用`))
     })
 
     request.addEventListener('error', () => {
-      if (creating) {
+      if (creating && request.error?.name === 'AbortError') {
+        settled = true
         resolve(0)
 
         return
       }
 
+      settled = true
       reject(request.error ?? new Error(`无法读取数据库 ${dbName} 的版本`))
     })
 
     request.addEventListener('success', () => {
       const db = request.result
+
+      if (settled) {
+        db.close()
+
+        return
+      }
+
       const nativeVersion = db.version
 
       if (!db.objectStoreNames.contains('$meta')) {
         db.close()
-        resolve(nativeVersion / 10)
+        resolve(Math.floor(nativeVersion / 10))
 
         return
       }
@@ -87,7 +99,9 @@ function readInstalledSchemaVersion(dbName: string): Promise<number> {
       getRequest.addEventListener('success', () => {
         const logicalVersion = getRequest.result
         db.close()
-        resolve(Number.isFinite(logicalVersion) ? Number(logicalVersion) : nativeVersion / 10)
+        resolve(
+          Number.isFinite(logicalVersion) ? Number(logicalVersion) : Math.floor(nativeVersion / 10),
+        )
       })
 
       getRequest.addEventListener('error', () => {
