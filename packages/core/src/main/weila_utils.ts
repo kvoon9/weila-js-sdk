@@ -2,6 +2,7 @@ import { WL } from 'proto/weilapb'
 import { getLogger } from 'log/weila_log'
 import { WL_PttPayload } from 'main/weila_internal_data'
 import { WL_IDbMsgData } from 'db/weila_db_data'
+import { dbEnum } from 'db/db_enum'
 
 const wllog = getLogger('UTIL:info')
 const wlerr = getLogger('UTIL:err')
@@ -48,7 +49,7 @@ async function fetchWithTimeout(
   return Promise.race<Response>([timeoutPromise(timeout ? timeout : 30000), fetchPromise()])
 }
 
-function getPbResultCodeMassage(resultCode: number): string {
+function getPbResultCodeMassage(resultCode: WL.Service.ResultCode): string {
   let msg = ''
 
   switch (resultCode) {
@@ -756,7 +757,7 @@ function getErrorMsg(errorMsg: string): string {
   const retCode = getResultCodeFromError(errorMsg)
 
   if (retCode !== -1) {
-    return getPbResultCodeMassage(retCode)
+    return getPbResultCodeMassage(dbEnum<WL.Service.ResultCode>(retCode))
   }
 
   return errorMsg

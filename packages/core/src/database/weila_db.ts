@@ -42,6 +42,7 @@ import {
   isIndividualSessionType,
   isServiceSessionType,
 } from './weila_db_data'
+import { dbEnum } from './db_enum'
 import { getLogger } from 'log/weila_log'
 import TinyPinyin from 'tiny-pinyin'
 import { default_group_logo } from 'main/weila_internal_data'
@@ -50,12 +51,6 @@ import { AsyncTime, calculateOpusDataFrame, getMsgDataIdByCombo, SyncTime } from
 
 const wllog = getLogger('DB:core:info')
 const _wlerr = getLogger('DB:core:err')
-
-// SAFETY: these DB enums label the same numeric values the proto payload carries, so restoring the
-// enum type here changes only the label; an absent proto field keeps the record's 0 default.
-function dbEnum<T extends number>(value: number | null | undefined): T {
-  return (value ?? 0) as T
-}
 
 // Opening without a version never upgrades. `$meta` holds the logical version after Dexie
 // patches a same-version schema, and the floored native version is the fallback for Dexie 3

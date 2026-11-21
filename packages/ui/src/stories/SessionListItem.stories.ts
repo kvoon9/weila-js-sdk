@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3'
 import { SessionListItem } from '../index'
 import type { WL_IDbSession } from '@vois/weila-sdk-core'
+import { WL_IDbSessionStatus } from '@vois/weila-sdk-core'
 
 const mockSessions: WL_IDbSession[] = [
   {
@@ -12,7 +13,7 @@ const mockSessions: WL_IDbSession[] = [
     lastMsgId: 105,
     readMsgId: 100,
     latestUpdate: Date.now() - 1000 * 60 * 5,
-    status: 0,
+    status: WL_IDbSessionStatus.SESSION_ACTIVATE,
   },
   {
     combo_id_type: '1002_2',
@@ -23,7 +24,7 @@ const mockSessions: WL_IDbSession[] = [
     lastMsgId: 50,
     readMsgId: 30,
     latestUpdate: Date.now() - 1000 * 60 * 60 * 2,
-    status: 0,
+    status: WL_IDbSessionStatus.SESSION_ACTIVATE,
   },
   {
     combo_id_type: '1003_8',
@@ -34,7 +35,7 @@ const mockSessions: WL_IDbSession[] = [
     lastMsgId: 10,
     readMsgId: 10,
     latestUpdate: Date.now() - 1000 * 60 * 60 * 24,
-    status: 0,
+    status: WL_IDbSessionStatus.SESSION_ACTIVATE,
   },
 ]
 

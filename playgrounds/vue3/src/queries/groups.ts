@@ -3,7 +3,7 @@ import { useWeilaStore } from '../stores/weila'
 import { storeToRefs } from 'pinia'
 import { watch } from 'vue'
 import type { WL_IDbGroup } from '@vois/weila-sdk-core'
-import { WL_ExtEventID } from '@vois/weila-sdk-core'
+import { WL_ExtEventID, WL_IDbGroupPublicType } from '@vois/weila-sdk-core'
 import type { WL_ExtEventCallback } from '@vois/weila-sdk-core'
 
 export interface GroupItem {
@@ -21,7 +21,7 @@ function mapGroupToItem(group: WL_IDbGroup): GroupItem {
     name: group.name,
     avatar: group.avatar || undefined,
     memberCount: group.memberCount,
-    isPublic: group.publicType === 0x02, // GROUP_PUBLIC_OPEN
+    isPublic: group.publicType === WL_IDbGroupPublicType.GROUP_PUBLIC_OPEN,
   }
 }
 

@@ -5,11 +5,17 @@ import { WeilaDB } from 'db/weila_db'
 import Long from 'long'
 import {
   WL_IDbGroup,
+  WL_IDbGroupAuthType,
+  WL_IDbGroupPublicType,
+  WL_IDbGroupType,
   WL_IDbMemberInfo,
+  WL_IDbMemberStatus,
+  WL_IDbMemberType,
   WL_IDbNotification,
   WL_IDbNotificationType,
   WL_IDbUserInfo,
 } from 'db/weila_db_data'
+import { dbEnum } from 'db/db_enum'
 
 import { getLogger } from 'log/weila_log'
 import {
@@ -302,7 +308,7 @@ export default class WLGroupModule {
                 }
 
                 if (ntfChangeGroupAttr.type !== undefined) {
-                  groupInfo.groupType = ntfChangeGroupAttr.type ?? 0
+                  groupInfo.groupType = dbEnum<WL_IDbGroupType>(ntfChangeGroupAttr.type)
                 }
 
                 if (ntfChangeGroupAttr.desc !== undefined) {
@@ -322,11 +328,13 @@ export default class WLGroupModule {
                 }
 
                 if (ntfChangeGroupAttr.publicType !== undefined) {
-                  groupInfo.publicType = ntfChangeGroupAttr.publicType ?? 0
+                  groupInfo.publicType = dbEnum<WL_IDbGroupPublicType>(
+                    ntfChangeGroupAttr.publicType,
+                  )
                 }
 
                 if (ntfChangeGroupAttr.authType !== undefined) {
-                  groupInfo.authType = ntfChangeGroupAttr.authType ?? 0
+                  groupInfo.authType = dbEnum<WL_IDbGroupAuthType>(ntfChangeGroupAttr.authType)
                 }
 
                 if (ntfChangeGroupAttr.class !== undefined) {
@@ -384,11 +392,11 @@ export default class WLGroupModule {
 
                 if (memberInfo) {
                   if (ntfMemberInfo.status !== undefined) {
-                    memberInfo.status = ntfMemberInfo.status ?? 0
+                    memberInfo.status = dbEnum<WL_IDbMemberStatus>(ntfMemberInfo.status)
                   }
 
                   if (ntfMemberInfo.type !== undefined) {
-                    memberInfo.memberType = ntfMemberInfo.type ?? 0
+                    memberInfo.memberType = dbEnum<WL_IDbMemberType>(ntfMemberInfo.type)
                   }
 
                   if (ntfMemberInfo.remark !== undefined) {
@@ -537,7 +545,7 @@ export default class WLGroupModule {
 
             ;(async () => {
               const answerGroupJoin = {} as WL_GroupAnswerJoinInfo
-              answerGroupJoin.status = ntfAnswerJoin.status ?? 0
+              answerGroupJoin.status = dbEnum<WL_AnswerStatus>(ntfAnswerJoin.status)
               answerGroupJoin.groupInfo = await WeilaDB.getInstance().getGroup(
                 Long.fromValue(ntfAnswerJoin.groupId ?? 0).toString(10),
               )
@@ -581,7 +589,7 @@ export default class WLGroupModule {
               answerGroupInvite.inviteeUserInfo = await WeilaDB.getInstance().getUser(
                 ntfAnswerInvite.inviteeId ?? 0,
               )
-              answerGroupInvite.status = ntfAnswerInvite.status ?? 0
+              answerGroupInvite.status = dbEnum<WL_AnswerStatus>(ntfAnswerInvite.status)
               answerGroupInvite.updated = Long.fromValue(ntfAnswerInvite.updated ?? 0).toNumber()
 
               const notification: WL_IDbNotification = {} as WL_IDbNotification
@@ -1069,7 +1077,7 @@ export default class WLGroupModule {
     const memberInfo = await WeilaDB.getInstance().getGroupMemberInfo(groupId, memberUserId)
 
     if (memberInfo) {
-      memberInfo.memberType = memberType
+      memberInfo.memberType = dbEnum<WL_IDbMemberType>(memberType)
       const id = WeilaDB.getInstance().putMemberInfo(memberInfo)
       wllog('更新好友[%s]信息', id)
     }

@@ -24,7 +24,7 @@ interface WL_UploadParams {
   resolve: (value: WL_UploadResult) => void
   reject: (err: any) => void
   checkPoint: any
-  clientType: number
+  clientType: WL_UploadClientType
 }
 
 interface WL_UploadResult {

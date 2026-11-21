@@ -13,6 +13,7 @@ import {
   WL_ServiceStatus,
   isServiceSessionType,
 } from 'db/weila_db_data'
+import { dbEnum } from 'db/db_enum'
 import { WeilaPbBusinessWrapper } from 'proto/weilapb_business_wrapper'
 import Long from 'long'
 import { WeilaDB } from 'db/weila_db'
@@ -194,7 +195,7 @@ export default class WLBusinessModule {
             const commonAnswerStaffInvite = {} as WL_CommonAnswerStaffInvite
             commonAnswerStaffInvite.serviceId = ntf.serviceId ?? 0
             commonAnswerStaffInvite.userId = ntf.userId ?? 0
-            commonAnswerStaffInvite.status = ntf.status ?? 0
+            commonAnswerStaffInvite.status = dbEnum<WL_AnswerStatus>(ntf.status)
 
             this.coreInterface.sendExtEvent(
               WL_ExtEventID.WL_EXT_COMMON_ANSWER_INVITE_IND,
@@ -295,7 +296,7 @@ export default class WLBusinessModule {
 
             const staffAnswerSessionInvite = {} as WL_StaffAnswerSessionInvite
             staffAnswerSessionInvite.sessionId = Long.fromValue(ntf.sessionId ?? 0).toString(10)
-            staffAnswerSessionInvite.status = ntf.status ?? 0
+            staffAnswerSessionInvite.status = dbEnum<WL_AnswerStatus>(ntf.status)
             staffAnswerSessionInvite.invitee = {} as WL_IDbServiceStaffInfo
             staffAnswerSessionInvite.invitee.staff = WeilaDB.getInstance().convertFromStaffRaws([
               invitee,

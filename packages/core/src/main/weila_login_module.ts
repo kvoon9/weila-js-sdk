@@ -6,14 +6,21 @@ import {
   WL_IDbExtension,
   WL_IDbExtensionInfo,
   WL_IDbExtensionState,
+  WL_IDbExtensionType,
   WL_IDbSetting,
   WL_IDbSettingID,
   WL_IDbUserInfo,
 } from 'db/weila_db_data'
+import { dbEnum } from 'db/db_enum'
 import Long from 'long'
 import { getLogger } from 'log/weila_log'
 import { getAppKeyAndId } from 'main/weila_utils'
-import { WL_ExtEventID, WL_KickoutInfo, WL_bindAnswerInfo } from 'main/weila_external_data'
+import {
+  WL_AnswerStatus,
+  WL_ExtEventID,
+  WL_KickoutInfo,
+  WL_bindAnswerInfo,
+} from 'main/weila_external_data'
 
 const wllog = getLogger('MOD:login:info')
 const _wlerr = getLogger('MOD:login:err')
@@ -141,7 +148,7 @@ export default class WLLoginModule {
               if (!rawUserInfo) return
 
               const bindAnswerInfo = {} as WL_bindAnswerInfo
-              bindAnswerInfo.status = ntf.status ?? 0
+              bindAnswerInfo.status = dbEnum<WL_AnswerStatus>(ntf.status)
               bindAnswerInfo.userInfo = WeilaDB.getInstance().convertFromUserRaw([rawUserInfo])[0]
               // SAFETY: protobufjs 8 types the oneof member as $Properties; the wire format carries IExtensionInfo.
               const rawExtensionInfo = ntf.extensionInfo as WL.Login.IExtensionInfo | undefined
@@ -185,7 +192,7 @@ export default class WLLoginModule {
   }
 
   private getKickoutReasonText(reason: number): string {
-    switch (reason) {
+    switch (dbEnum<WL.Login.KickoutReason>(reason)) {
       case WL.Login.KickoutReason.KICKOUT_REASON_LOCK:
         return 'Account has been locked'
       case WL.Login.KickoutReason.KICKOUT_REASON_DUPLICATE_CLIENT:
@@ -308,7 +315,10 @@ export default class WLLoginModule {
         buildMsgRet,
       )) as WL.Login.RspUnbindExtension
 
-      if (rspUnbindMsg.extensionState === WL_IDbExtensionState.EXTENSION_UNBIND) {
+      if (
+        dbEnum<WL_IDbExtensionState>(rspUnbindMsg.extensionState) ===
+        WL_IDbExtensionState.EXTENSION_UNBIND
+      ) {
         await WeilaDB.getInstance().delExtension(deviceUserId)
       }
 
@@ -343,7 +353,7 @@ export default class WLLoginModule {
         rsp.infos.forEach((value) => {
           const extensionInfo: WL_IDbExtensionInfo = {} as WL_IDbExtensionInfo
           extensionInfo.imei = value.imei ?? ''
-          extensionInfo.extensionType = value.type ?? 0
+          extensionInfo.extensionType = dbEnum<WL_IDbExtensionType>(value.type)
           extensionInfo.userId = value.userId ?? 0
           extensionInfo.supervisorId = value.managerId ?? 0
           extensionInfo.status = value.status ?? 0

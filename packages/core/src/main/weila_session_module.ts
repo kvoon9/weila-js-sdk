@@ -11,6 +11,7 @@ import {
   WL_IDbServiceSessionInfo,
   WL_IDbSession,
   WL_IDbSessionStatus,
+  WL_IDbSessionType,
   WL_SessionProfileUpdate,
   WL_IDbSetting,
   WL_IDbSettingID,
@@ -19,6 +20,7 @@ import {
   isIndividualSessionType,
   isServiceSessionType,
 } from 'db/weila_db_data'
+import { dbEnum } from 'db/db_enum'
 import {
   default_group_logo,
   WL_CoreInterface,
@@ -162,7 +164,10 @@ export default class WLSessionModule {
 
   private findSessionIndex(sessionId: string, sessionType: number): number {
     return this.sessionList.findIndex((value) => {
-      return value.sessionId === sessionId && value.sessionType === sessionType
+      return (
+        value.sessionId === sessionId &&
+        value.sessionType === dbEnum<WL_IDbSessionType>(sessionType)
+      )
     })
   }
 
@@ -295,7 +300,7 @@ export default class WLSessionModule {
     if (index === -1) {
       let session: WL_IDbSession = {} as WL_IDbSession
       session.sessionId = msgData.sessionId
-      session.sessionType = msgData.sessionType
+      session.sessionType = dbEnum<WL_IDbSessionType>(msgData.sessionType)
 
       if (isServiceSessionType(msgData.sessionType)) {
         // 如果是之前没有这个session，说明此服务也不再DB中，所以需要从服务器获取服务的信息
@@ -304,7 +309,7 @@ export default class WLSessionModule {
 
         if (serviceSession) {
           session.sessionId = msgData.sessionId
-          session.sessionType = msgData.sessionType
+          session.sessionType = dbEnum<WL_IDbSessionType>(msgData.sessionType)
           session.sessionName = serviceSession.service.name
           session.sessionAvatar = serviceSession.service.avatar
           session.extra = serviceSession.serviceSession
@@ -647,7 +652,10 @@ export default class WLSessionModule {
     let readMsgId = 0
 
     const sessionIdx = this.sessionList.findIndex((value) => {
-      return value.sessionId === sessionId && value.sessionType === sessionType
+      return (
+        value.sessionId === sessionId &&
+        value.sessionType === dbEnum<WL_IDbSessionType>(sessionType)
+      )
     })
 
     if (sessionIdx !== -1) {
@@ -920,7 +928,10 @@ export default class WLSessionModule {
     )
 
     const index = this.sessionList.findIndex((value) => {
-      return value.sessionId === sessionId && value.sessionType === sessionType
+      return (
+        value.sessionId === sessionId &&
+        value.sessionType === dbEnum<WL_IDbSessionType>(sessionType)
+      )
     })
 
     const lastMsgData = await WeilaDB.getInstance().getLastMsgData(sessionId, sessionType)
@@ -1142,7 +1153,7 @@ export default class WLSessionModule {
 
     const sessionInfo = {} as WL_IDbSession
     sessionInfo.sessionId = sessionId
-    sessionInfo.sessionType = sessionType
+    sessionInfo.sessionType = dbEnum<WL_IDbSessionType>(sessionType)
     sessionInfo.combo_id_type = sessionId + '_' + sessionType
     sessionInfo.readMsgId = lastMsgId ? lastMsgId : 0
     sessionInfo.unreadCount = 0

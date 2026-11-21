@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3'
 import WlMsgList from '../components/MsgList/WlMsgList.vue'
 import type { WL_IDbMsgData, WL_IDbUserInfo } from '@vois/weila-sdk-core'
+import { WL_IDbMsgDataStatus, WL_IDbMsgDataType } from '@vois/weila-sdk-core'
 
 const realMessages: WL_IDbMsgData[] = [
   {
@@ -11,8 +12,8 @@ const realMessages: WL_IDbMsgData[] = [
     sessionType: 2,
     autoReply: 0,
     tag: '',
-    status: 1,
-    msgType: 0,
+    status: WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_SENT,
+    msgType: WL_IDbMsgDataType.WL_DB_MSG_DATA_TEXT_TYPE,
     textData: 'uwuwu',
     combo_id: '396588_2_173623480_0',
   },
@@ -24,8 +25,8 @@ const realMessages: WL_IDbMsgData[] = [
     sessionType: 2,
     autoReply: 0,
     tag: '',
-    status: 1,
-    msgType: 0,
+    status: WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_SENT,
+    msgType: WL_IDbMsgDataType.WL_DB_MSG_DATA_TEXT_TYPE,
     textData: 'hi',
     combo_id: '396588_2_173623481_0',
   },
@@ -37,8 +38,8 @@ const realMessages: WL_IDbMsgData[] = [
     sessionType: 2,
     autoReply: 0,
     tag: '',
-    status: 1,
-    msgType: 5,
+    status: WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_SENT,
+    msgType: WL_IDbMsgDataType.WL_DB_MSG_DATA_LOCATION_TYPE,
     location: {
       mapUrl:
         'https://weilacache.oss-cn-shenzhen.aliyuncs.com/message/2026-02-27/396588-2/1541034-11-51-47-1.jpg',
@@ -58,8 +59,8 @@ const realMessages: WL_IDbMsgData[] = [
     sessionType: 2,
     autoReply: 0,
     tag: '',
-    status: 1,
-    msgType: 2,
+    status: WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_SENT,
+    msgType: WL_IDbMsgDataType.WL_DB_MSG_DATA_IMAGE_TYPE,
     fileInfo: {
       fileUrl:
         'https://weilacache.oss-cn-shenzhen.aliyuncs.com/message/2026-02-27/396588-2/1541034-11-52-50-3.jpg',
@@ -75,8 +76,8 @@ const realMessages: WL_IDbMsgData[] = [
     sessionType: 2,
     autoReply: 0,
     tag: '',
-    status: 1,
-    msgType: 4,
+    status: WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_SENT,
+    msgType: WL_IDbMsgDataType.WL_DB_MSG_DATA_FILE_TYPE,
     fileInfo: {
       fileUrl:
         'https://weilacache.oss-cn-shenzhen.aliyuncs.com/message/2026-02-27/396588-2/1541034-11-53-34-4.pdf',
@@ -94,8 +95,8 @@ const realMessages: WL_IDbMsgData[] = [
     sessionType: 2,
     autoReply: 0,
     tag: '',
-    status: 1,
-    msgType: 0,
+    status: WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_SENT,
+    msgType: WL_IDbMsgDataType.WL_DB_MSG_DATA_TEXT_TYPE,
     textData: 'hi',
     combo_id: '396588_2_173623485_0',
   },
@@ -107,17 +108,17 @@ const realMessages: WL_IDbMsgData[] = [
     sessionType: 2,
     autoReply: 0,
     tag: '',
-    status: 3,
-    msgType: 0,
+    status: WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_READ,
+    msgType: WL_IDbMsgDataType.WL_DB_MSG_DATA_TEXT_TYPE,
     textData: 'Anyone here?',
     combo_id: '396588_2_173623486_0',
   },
   {
-    msgType: 0,
+    msgType: WL_IDbMsgDataType.WL_DB_MSG_DATA_TEXT_TYPE,
     sessionId: '396588',
     sessionType: 2,
     senderId: 1541034,
-    status: 1,
+    status: WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_SENT,
     created: 1772439918.124,
     msgId: 173623487,
     autoReply: 0,
@@ -125,11 +126,11 @@ const realMessages: WL_IDbMsgData[] = [
     textData: 'h',
   },
   {
-    msgType: 0,
+    msgType: WL_IDbMsgDataType.WL_DB_MSG_DATA_TEXT_TYPE,
     sessionId: '396588',
     sessionType: 2,
     senderId: 1541034,
-    status: 1,
+    status: WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_SENT,
     created: 1772439921.498,
     msgId: 173623488,
     autoReply: 0,
@@ -144,8 +145,8 @@ const realMessages: WL_IDbMsgData[] = [
     sessionType: 2,
     autoReply: 0,
     tag: '',
-    status: 3,
-    msgType: 0,
+    status: WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_READ,
+    msgType: WL_IDbMsgDataType.WL_DB_MSG_DATA_TEXT_TYPE,
     textData: 'nihao',
     combo_id: '396588_2_173623489_0',
   },
@@ -157,8 +158,8 @@ const realMessages: WL_IDbMsgData[] = [
     sessionType: 2,
     autoReply: 0,
     tag: '',
-    status: 3,
-    msgType: 1,
+    status: WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_READ,
+    msgType: WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE,
     combo_id: '396588_2_173623490_0',
     audioData: {
       data: {
@@ -745,8 +746,8 @@ const realMessages: WL_IDbMsgData[] = [
     sessionType: 2,
     autoReply: 0,
     tag: '',
-    status: 1,
-    msgType: 3,
+    status: WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_SENT,
+    msgType: WL_IDbMsgDataType.WL_DB_MSG_DATA_VIDEO_TYPE,
     combo_id: '396588_2_173623491_0',
     fileInfo: {
       fileUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',

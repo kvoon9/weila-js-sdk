@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/vue3'
 import WlVideoBubble from './WlVideoBubble.vue'
 import WlTextBubble from './WlTextBubble.vue'
 import type { WL_IDbMsgData } from '@vois/weila-sdk-core'
-import { WL_IDbMsgDataType } from '@vois/weila-sdk-core'
+import { WL_IDbMsgDataStatus, WL_IDbMsgDataType } from '@vois/weila-sdk-core'
 
 const createVideoMsg = (overrides?: Partial<WL_IDbMsgData>): WL_IDbMsgData => ({
   created: 1772600000,
@@ -12,7 +12,7 @@ const createVideoMsg = (overrides?: Partial<WL_IDbMsgData>): WL_IDbMsgData => ({
   sessionType: 2,
   autoReply: 0,
   tag: '',
-  status: 1,
+  status: WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_SENT,
   msgType: WL_IDbMsgDataType.WL_DB_MSG_DATA_VIDEO_TYPE,
   combo_id: '396588_2_173623491_0',
   fileInfo: {
