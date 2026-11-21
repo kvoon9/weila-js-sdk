@@ -1,0 +1,276 @@
+{
+  "entry": "weilasdk.mjs",
+  "exports": [
+    "WL_AnswerStatus",
+    "WL_ConfigID",
+    "WL_DataPrepareState",
+    "WL_ExtEventID",
+    "WL_IDbExtensionState",
+    "WL_IDbExtensionType",
+    "WL_IDbFriendStatus",
+    "WL_IDbGroupAuthType",
+    "WL_IDbGroupPublicType",
+    "WL_IDbGroupType",
+    "WL_IDbMemberStatus",
+    "WL_IDbMemberType",
+    "WL_IDbMsgDataStatus",
+    "WL_IDbMsgDataType",
+    "WL_IDbNotificationType",
+    "WL_IDbSessionStatus",
+    "WL_IDbSessionType",
+    "WL_IDbSettingID",
+    "WL_PttAudioPlaySource",
+    "WL_PttAudioPlayState",
+    "WL_PttRecordState",
+    "WL_ServiceStatus",
+    "WeilaCore",
+    "applySessionExtraProfile",
+    "calculateAudioDuration",
+    "createWeilaAudioInitController",
+    "getErrorMsg",
+    "getLogger",
+    "inheritSessionProfile",
+    "initLogger",
+    "installWeilaAudioRuntimePatch",
+    "isGroupSessionType",
+    "isIndividualSessionType",
+    "isLoggerEnabled",
+    "isServiceSessionType",
+    "setConfigData",
+    "setLoggerEnabled"
+  ],
+  "dtsExports": [
+    "SetConfigDataParam",
+    "WL_AudioInitController",
+    "WL_AudioInitControllerOptions",
+    "WL_AudioInitializable",
+    "WL_AudioRuntimePatchOptions",
+    "WL_ConfigID",
+    "WL_FileUploader",
+    "WL_InitOptions",
+    "WL_LoginOptions",
+    "WeilaCore",
+    "calculateAudioDuration",
+    "createWeilaAudioInitController",
+    "getErrorMsg",
+    "getLogger",
+    "initLogger",
+    "installWeilaAudioRuntimePatch",
+    "isLoggerEnabled",
+    "setConfigData",
+    "setLoggerEnabled"
+  ],
+  "assets": [
+    "opuslibs.wasm",
+    "start_player.wav",
+    "start_record.wav",
+    "stop_player.wav",
+    "stop_record.wav"
+  ],
+  "files": {
+    "assets/opuslibs.wasm": {
+      "bytes": 1016427,
+      "sha256": "ec81f316a31ce195e9dc4d993638b9bf617232755bea24bcfc00150843ecc31e"
+    },
+    "assets/start_player.wav": {
+      "bytes": 61706,
+      "sha256": "20649712617848a0fe24beefb9b03159cc3f22386aeb7621d4fb9b6194783880"
+    },
+    "assets/start_record.wav": {
+      "bytes": 59466,
+      "sha256": "3bd2f52b8e7d34da7c74a7ddd926ccc8de15f09b6a8a718aea7bba5af77652b6"
+    },
+    "assets/stop_player.wav": {
+      "bytes": 64294,
+      "sha256": "1b7d129709550f54a98121dc58d9b835abf08e5ba912ae8a379b423f95088bf3"
+    },
+    "assets/stop_record.wav": {
+      "bytes": 58430,
+      "sha256": "196c94f82331ba166bcf29a65aaa828aa5502e8b2313276ddf05a5480d4a35cd"
+    },
+    "audio/weila_audio.d.ts": {
+      "bytes": 1656,
+      "sha256": "78c9eb3dc34608bb1a76b0c318d622889be0a2f34b792dfd5376042d9dcebd3f"
+    },
+    "audio/weila_audio_data.d.ts": {
+      "bytes": 1275,
+      "sha256": "d406a2d19f503d78530780c36c08287c339ebca54c6f26b99f0680f2d7896717"
+    },
+    "audio/weila_compositor_array.d.ts": {
+      "bytes": 386,
+      "sha256": "1ce172b6ed713434b0d8ba2a6c3e0a29312348233811c9ae8308cdd03409e08e"
+    },
+    "audio/weila_ring_player.d.ts": {
+      "bytes": 153,
+      "sha256": "974ecd3a4b6f92180825ec6440c8305a74230b0c4c3663b6f2d3bc5ccd1ad185"
+    },
+    "audio/weila_ringbuffer.d.ts": {
+      "bytes": 435,
+      "sha256": "7fa420d051d570175c8dab7e762e928edfdb319c8aed0aacb04b88578f247cf7"
+    },
+    "database/weila_db.d.ts": {
+      "bytes": 7841,
+      "sha256": "d26a6e71b32107a5e907235c3e04e2f67cb5153cc257c3c11e28ae3cd0ce9eb5"
+    },
+    "database/weila_db_data.d.ts": {
+      "bytes": 10749,
+      "sha256": "4df22dbae51d1b7bbaf66f8218aeac53933d8ecf8487ee74adf2067b1bc39fa3"
+    },
+    "fsm/weila_fsmScript.d.ts": {
+      "bytes": 2080,
+      "sha256": "fbb0678d32d07882c728d95922879384d94cdf17c8764e7cc672f2597788ede9"
+    },
+    "log/weila_log.d.ts": {
+      "bytes": 590,
+      "sha256": "4aad0205485074139b4840b6332400c6eb426c3c713039d888b9728ac1574df5"
+    },
+    "main/weila_ali_oss.d.ts": {
+      "bytes": 862,
+      "sha256": "15175808718ca8165d21c2ae143909bc633d74c98e6f6bb97a925333b4c9216a"
+    },
+    "main/weila_audio_init_controller.d.ts": {
+      "bytes": 728,
+      "sha256": "446de906d840b72ad208ce9290f39db80e8ec2ff110fadbf7c1cec155902cb1d"
+    },
+    "main/weila_audio_runtime.d.ts": {
+      "bytes": 213,
+      "sha256": "0b969bb379ca1ad2b7ff82fc6920e9ee59c1f9cd17cbee66507ab97ff3b0b56b"
+    },
+    "main/weila_business_module.d.ts": {
+      "bytes": 1559,
+      "sha256": "83517a527718c1a777676982286da95a8a555b0f0aaea3121505bef3d5631a9c"
+    },
+    "main/weila_config.d.ts": {
+      "bytes": 736,
+      "sha256": "6997f3d6e7c06aa539b0e2dfd65f1ff1cadc73d3bba38968612689503186acd0"
+    },
+    "main/weila_core.d.ts": {
+      "bytes": 28011,
+      "sha256": "e66c123543da322c6fed076977f3f499d27ee4a2c3ca2ec6b213668433007f7d"
+    },
+    "main/weila_external_data.d.ts": {
+      "bytes": 7816,
+      "sha256": "de8fb37a884413e82e893ddb52dbc91563b5d20724ef6bb45fcfd8dc42a38df5"
+    },
+    "main/weila_friend_module.d.ts": {
+      "bytes": 838,
+      "sha256": "024d353b4faa7ecb4376e60b647bcd6d9eddfc6c13ef2831c425aebb9863efa1"
+    },
+    "main/weila_group_module.d.ts": {
+      "bytes": 1607,
+      "sha256": "74d391a743afa81b54e3375ea311e7b6d536c54d130fa6997182f1526ccf8cd7"
+    },
+    "main/weila_internal_data.d.ts": {
+      "bytes": 2976,
+      "sha256": "e9c4fdff1eaf226a0ca9ca493f685146b83656572c032814d9b54c1cacd39675"
+    },
+    "main/weila_location_module.d.ts": {
+      "bytes": 351,
+      "sha256": "93059dafab6336367eb66b0707c14d35774c9080b7d93dc660189df3d2e46b9c"
+    },
+    "main/weila_login_module.d.ts": {
+      "bytes": 970,
+      "sha256": "a0998b8922440f85ff16767a60fed530e4b4baa475e6868cbc6390013b12ef82"
+    },
+    "main/weila_network.worker.d.ts": {
+      "bytes": 11,
+      "sha256": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881"
+    },
+    "main/weila_pttFsm.d.ts": {
+      "bytes": 4015,
+      "sha256": "a5132d8420ec8768dd79d09bc4b0f9b6ade8399ce92bf8d838d38f31495010ad"
+    },
+    "main/weila_session_module.d.ts": {
+      "bytes": 2827,
+      "sha256": "7095de3659a7ab562a5b59bfe73c3ffe8172d458d74ede8f853c490250c6dda3"
+    },
+    "main/weila_user_module.d.ts": {
+      "bytes": 319,
+      "sha256": "ec8355dae73c60e0174a55b08480d203aff6b870aed241e82f630ef8b3086fa0"
+    },
+    "main/weila_utils.d.ts": {
+      "bytes": 1479,
+      "sha256": "f1d5af697e9cf697f91250899122fd464b479dd37a5cceb098371d381823c37c"
+    },
+    "proto/weilapb_business_wrapper.d.ts": {
+      "bytes": 1397,
+      "sha256": "f21f72738741d900dcfab71be0aaf69df5ef8b76bf8fe53c60bc63b32432ca0f"
+    },
+    "proto/weilapb_friend_wrapper.d.ts": {
+      "bytes": 1128,
+      "sha256": "bee6c57b2187ce54d4878c3a340c68322a8f2b5131f947eb913be904ea0e9165"
+    },
+    "proto/weilapb_group_wrapper.d.ts": {
+      "bytes": 2605,
+      "sha256": "5fd52d273a91d52b505aa5df071d9e133c3d3990626e8e3ee5c71c1a79546029"
+    },
+    "proto/weilapb_location_wrapper.d.ts": {
+      "bytes": 592,
+      "sha256": "b0ec6a9b598465f2e6412691c29af88bb8085b9d2e6d33b47242b9fde4fc4f89"
+    },
+    "proto/weilapb_login_wrapper.d.ts": {
+      "bytes": 1056,
+      "sha256": "ad5d4497f73ba5eb6c7a3c60f271198fc06835fa2d9dfd45c83362e404e4eee0"
+    },
+    "proto/weilapb_msg_header.d.ts": {
+      "bytes": 457,
+      "sha256": "2663817aaf3941714170c90630335936bc2811b7350ed8cd6131da47b2e8572e"
+    },
+    "proto/weilapb_session_wrapper.d.ts": {
+      "bytes": 2332,
+      "sha256": "ce921818c1394b412d83995fc44992a108d238a3390e73b115b4f10f48763419"
+    },
+    "proto/weilapb_textmsg_parser.d.ts": {
+      "bytes": 2370,
+      "sha256": "2b59c4b3301e7b00fdfff3bbece3972e85fd0b7af95d4b3db1bc870730042534"
+    },
+    "proto/weilapb_user_wrapper.d.ts": {
+      "bytes": 449,
+      "sha256": "0e3ae9568ed226ece5eb2c8e2aa3fa8ac28de35cbc43e1996e34ceae7b906e38"
+    },
+    "proto/weilapb_utils.d.ts": {
+      "bytes": 308,
+      "sha256": "c91c13583d033b8a5aa699d7cffd0f679c842e4f9b77fdfe667ca86165814f88"
+    },
+    "proto/weilapb_wrapper.d.ts": {
+      "bytes": 255,
+      "sha256": "10af99918bca9cc8652dafb0e60156fcb04104a2ca1fdfcccc0b723eac0e78a7"
+    },
+    "proto/weilapb_wrapper_data.d.ts": {
+      "bytes": 1950,
+      "sha256": "cbae0a3aaff0cc3c4cd3e7df701f66e67e63daeddb2cda28521a7b874c55d59a"
+    },
+    "weila_compile_config.d.ts": {
+      "bytes": 42,
+      "sha256": "0552dcebecf3e0978fca636f9b9c2f4e9f7f7e873f27aaeb04cf97316b344630"
+    },
+    "weilasdk.d.ts": {
+      "bytes": 800,
+      "sha256": "08341ae8ca932eacf887a47a5e23cec21cae4be2850e2daed593784fc3bad174"
+    },
+    "weilasdk.mjs": {
+      "bytes": 3937928,
+      "sha256": "b15444750b5b1312d41b3bc7a4cab86ec6b70074a66adb29bc148dac09e050e4"
+    },
+    "weilasdk_compile_cfg.mjs": {
+      "bytes": 973,
+      "sha256": "46a2a709d8b40b98afa6bbe03de72b60fb946022f3810c7a617c705d9d55bc7d"
+    },
+    "weilasdk_data.d.ts": {
+      "bytes": 86,
+      "sha256": "0320669cebde0335f80902cbe5c6c66e79905f904e6a3c8095283e8e0f5abbd4"
+    },
+    "weilasdk_data.mjs": {
+      "bytes": 920851,
+      "sha256": "2f80aa2c0a16ed3b88c508eb61e6a5a883f61a89a0f5b197568a4a16806363e5"
+    },
+    "weilasdk_log.d.ts": {
+      "bytes": 92,
+      "sha256": "d5f4a5580fd9cdef38350455097935e0a71dc93bea4f9fa7a09dd1feaadbd61e"
+    },
+    "weilasdk_log.mjs": {
+      "bytes": 6536,
+      "sha256": "fe4c1899666f3623a3614f804d7d14cb7e8d486f8dfe52760b921e95b7e5d8cd"
+    }
+  }
+}
