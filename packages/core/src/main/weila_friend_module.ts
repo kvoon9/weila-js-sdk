@@ -13,6 +13,7 @@ import {
   WL_IDbSettingID,
   WL_IDbUserInfo,
 } from 'db/weila_db_data'
+import { dbEnum } from 'db/db_enum'
 import { getLogger } from 'log/weila_log'
 import { AsyncTime } from 'main/weila_utils'
 import {
@@ -142,7 +143,7 @@ export default class WLFriendModule {
             }
 
             if (rspFriendInfo.status !== undefined) {
-              friendInfo.status = rspFriendInfo.status ?? 0
+              friendInfo.status = dbEnum<WL_IDbFriendStatus>(rspFriendInfo.status)
             }
 
             if (rspFriendInfo.label !== undefined) {
@@ -211,7 +212,7 @@ export default class WLFriendModule {
           if (!ntfFriendAnswerInvite) return
 
           const friendAnswerInfo = {} as WL_FriendAnswerInviteInfo
-          friendAnswerInfo.status = ntfFriendAnswerInvite.status ?? 0
+          friendAnswerInfo.status = dbEnum<WL_AnswerStatus>(ntfFriendAnswerInvite.status)
           friendAnswerInfo.inviteeUserInfo = await WeilaDB.getInstance().getUser(
             ntfFriendAnswerInvite.inviteeId ?? 0,
           )
@@ -235,7 +236,7 @@ export default class WLFriendModule {
         const friendInfo = {} as WL_IDbFriendInfo
         friendInfo.userId = newFriendInfo.userId ?? 0
         friendInfo.tts = newFriendInfo.tts === 1
-        friendInfo.status = newFriendInfo.status ?? 0
+        friendInfo.status = dbEnum<WL_IDbFriendStatus>(newFriendInfo.status)
         friendInfo.desc = newFriendInfo.desc ?? ''
         friendInfo.label = newFriendInfo.label ?? ''
         friendInfo.blockedStatus = newFriendInfo.shieldStatus === 1

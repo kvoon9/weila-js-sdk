@@ -1,4 +1,5 @@
 import { WL } from 'proto/weilapb'
+import { dbEnum } from './db_enum'
 
 // 存入数据库的设置项
 enum WL_IDbSettingID {
@@ -50,21 +51,21 @@ type WL_IDbSessionType = (typeof WL_IDbSessionType)[keyof typeof WL_IDbSessionTy
 
 function isIndividualSessionType(sessionType: number): boolean {
   return (
-    sessionType === WL_IDbSessionType.SESSION_INDIVIDUAL_TYPE ||
-    sessionType === WL_IDbSessionType.SESSION_CORP_INDIVIDUAL_TYPE
+    dbEnum<WL_IDbSessionType>(sessionType) === WL_IDbSessionType.SESSION_INDIVIDUAL_TYPE ||
+    dbEnum<WL_IDbSessionType>(sessionType) === WL_IDbSessionType.SESSION_CORP_INDIVIDUAL_TYPE
   )
 }
 
 function isGroupSessionType(sessionType: number): boolean {
   return (
-    sessionType === WL_IDbSessionType.SESSION_GROUP_TYPE ||
-    sessionType === WL_IDbSessionType.SESSION_CORP_GROUP_TYPE ||
-    sessionType === WL_IDbSessionType.SESSION_CORP_GROUP_TMP_TYPE
+    dbEnum<WL_IDbSessionType>(sessionType) === WL_IDbSessionType.SESSION_GROUP_TYPE ||
+    dbEnum<WL_IDbSessionType>(sessionType) === WL_IDbSessionType.SESSION_CORP_GROUP_TYPE ||
+    dbEnum<WL_IDbSessionType>(sessionType) === WL_IDbSessionType.SESSION_CORP_GROUP_TMP_TYPE
   )
 }
 
 function isServiceSessionType(sessionType: number): boolean {
-  return sessionType === WL_IDbSessionType.SESSION_SERVICE_TYPE
+  return dbEnum<WL_IDbSessionType>(sessionType) === WL_IDbSessionType.SESSION_SERVICE_TYPE
 }
 
 function applySessionExtraProfile(session: WL_IDbSession): boolean {

@@ -4,7 +4,7 @@ import WeilaMsgHeader from './weilapb_msg_header'
 
 class BuildWeilaMsg {
   public static buildWeilaMsgReq(
-    serviceId: number,
+    serviceId: WL.Service.ServiceID,
     commandId: number,
     commandType: number,
     msgInstance: any,

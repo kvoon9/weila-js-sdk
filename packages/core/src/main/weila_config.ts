@@ -75,7 +75,7 @@ class WLConfigDB extends Dexie {
 }
 
 interface SetConfigDataParam {
-  id: number
+  id: WL_ConfigID
   url: string
   version: number
 }

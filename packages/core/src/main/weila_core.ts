@@ -24,7 +24,9 @@ import {
   WL_IDbFileData,
   WL_IDbFriend,
   WL_IDbGroup,
+  WL_IDbGroupAuthType,
   WL_IDbGroupMember,
+  WL_IDbGroupPublicType,
   WL_IDbGroupType,
   WL_IDbLocationInfo,
   WL_IDbLocationShared,
@@ -49,6 +51,7 @@ import {
   isIndividualSessionType,
   isServiceSessionType,
 } from 'db/weila_db_data'
+import { dbEnum } from 'db/db_enum'
 import { getLogger } from 'log/weila_log'
 import {
   calculateOpusDataFrame,
@@ -231,7 +234,7 @@ class WeilaCore implements WL_CoreInterface {
           sendingItem.resolve(data)
         } else {
           let errorMessage = 'RET_CODE:' + resultCode + '-MESSAGE:'
-          const msg = getPbResultCodeMassage(resultCode)
+          const msg = getPbResultCodeMassage(dbEnum<WL.Service.ResultCode>(resultCode))
           errorMessage += msg ? msg : '未知错误码'
           errorMessage += ':END'
           sendingItem.reject(new Error(errorMessage))
@@ -895,7 +898,7 @@ class WeilaCore implements WL_CoreInterface {
       ...group,
       groupId,
       groupNum: group?.groupNum || groupId,
-      groupType: group?.groupType ?? WL_IDbSessionType.SESSION_GROUP_TYPE,
+      groupType: group?.groupType ?? WL_IDbGroupType.GROUP_TEMP,
       groupClass: group?.groupClass ?? 0,
       name: profile.name || group?.name || groupId,
       pinyinName: group?.pinyinName || '',
@@ -907,8 +910,8 @@ class WeilaCore implements WL_CoreInterface {
       ownerId: group?.ownerId ?? 0,
       speechEnable: group?.speechEnable ?? false,
       audioQuality: group?.audioQuality ?? 0,
-      authType: group?.authType ?? 0,
-      publicType: group?.publicType ?? 0,
+      authType: dbEnum<WL_IDbGroupAuthType>(group?.authType),
+      publicType: dbEnum<WL_IDbGroupPublicType>(group?.publicType),
       burstType: group?.burstType ?? 0,
       created: group?.created ?? 0,
     } as WL_IDbGroup
@@ -1081,7 +1084,10 @@ class WeilaCore implements WL_CoreInterface {
     const sessionList = this.sessionModule.getSessionList()
 
     const index = sessionList.findIndex((value) => {
-      return value.sessionId === sessionId && value.sessionType === sessionType
+      return (
+        value.sessionId === sessionId &&
+        value.sessionType === dbEnum<WL_IDbSessionType>(sessionType)
+      )
     })
 
     return index !== -1 ? sessionList[index] : undefined
@@ -1877,7 +1883,7 @@ class WeilaCore implements WL_CoreInterface {
       return Promise.reject(new Error('创建群组失败'))
     }
 
-    if (groupType === WL_IDbGroupType.GROUP_TEMP) {
+    if (dbEnum<WL_IDbGroupType>(groupType) === WL_IDbGroupType.GROUP_TEMP) {
       await this.weila_startNewSession(groupInfo.groupId, WL_IDbSessionType.SESSION_GROUP_TYPE)
     }
 
