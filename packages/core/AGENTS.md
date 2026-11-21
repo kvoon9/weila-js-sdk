@@ -5,7 +5,7 @@
 **微喇网页SDK (Weila Web SDK)** - A TypeScript-based SDK for Weila communication platform with WebSocket networking, audio processing, protobuf messaging, and IndexedDB storage.
 
 **Package Manager**: pnpm (pnpm-lock.yaml in monorepo root)
-**Build Tool**: Webpack 5 with TypeScript
+**Build Tool**: Rspack 2 with SWC
 **Language**: TypeScript (target: ESNext, strict mode: disabled)
 
 ---
@@ -18,8 +18,7 @@
 pnpm run build
 ```
 
-Builds SDK bundle with webpack in production mode (no source maps).
-Output: `dist/weilasdk.js`, `dist/weilasdk_data.js`, `dist/weilasdk_log.js`, `dist/weilasdk.d.ts`
+Builds the worklet bundles first, then the four ESM entries with Rspack, then declarations with `tsc`. Output: `dist/weilasdk.mjs`, `dist/weilasdk_data.mjs`, `dist/weilasdk_log.mjs`, `dist/weilasdk.d.ts`, and `dist/worklets/*.iife.js`.
 
 ### Development Build
 
@@ -27,8 +26,7 @@ Output: `dist/weilasdk.js`, `dist/weilasdk_data.js`, `dist/weilasdk_log.js`, `di
 pnpm run build:dev
 ```
 
-Builds SDK with source maps for debugging.
-Output written to sibling project path (configured in webpack).
+Builds the same artifacts in development mode with source maps, written to `dist`.
 
 ### Type Checking
 
@@ -40,7 +38,7 @@ Run TypeScript compiler for type checking without emitting files.
 
 ### Testing
 
-**No test framework configured.** The `pnpm test` script is a placeholder that exits with error.
+Unit tests run with Vitest (`pnpm test`). The built bundle is smoke-tested in Chromium with Playwright (`pnpm test:dist`).
 
 ---
 
@@ -61,16 +59,18 @@ packages/core/
 │   ├── weilasdk_log.ts
 │   └── weila_compile_config.ts
 ├── public/             # Static assets copied post-install
-├── dist/               # Build output (UMD bundles)
+├── dist/               # Build output (ESM bundles, assets, worklets)
 ├── test/               # Empty test directory
 ├── .env                # Environment variables
 ├── tsconfig.json       # TypeScript configuration
-└── webpack.config.js   # Webpack build configuration
+├── rspack.config.cjs   # Rspack build configuration
+├── rspack.worklets.config.cjs
+└── worklet-inline-loader.cjs
 ```
 
 ### Module Path Aliases
 
-Configured in both `tsconfig.json` and `webpack.config.js`:
+Configured in both `tsconfig.json` and `rspack.config.cjs`:
 
 - `fsm/*` → `src/fsm/*`
 - `log/*` → `src/log/*`
@@ -189,22 +189,22 @@ public weila_onEvent(callback: WL_ExtEventCallback): void {
 
 - Worker files use `.worker.ts` suffix (e.g., `weila_network.worker.ts`)
 - Import with `@ts-ignore` directive: `// @ts-ignore\nimport Network from 'main/weila_network.worker';`
-- Configured with `worker-loader` in webpack
+- Configured with `worker-rspack-loader` in `rspack.config.cjs` and inlined as a Blob
 
 ### Worklets (Audio)
 
 - Worklet files use `.worklet.js` suffix
-- Configured with `worklet-loader` (inline: true)
+- `rspack.worklets.config.cjs` builds each worklet as a standalone IIFE, and `worklet-inline-loader.cjs` embeds the result as a Blob URL factory
 
 ### Binary Assets
 
 - WASM files (`.wasm`) and audio files (`.wav`) loaded as `asset/resource`
 - Placed in `src/assets/` directory
-- Webpack outputs to `dist/assets/[name][ext]`
+- Rspack outputs to `dist/assets/[name][ext]` with no content hash, so consumers can copy the directory
 
 ### Environment Variables
 
-- Loaded via `dotenv-webpack` plugin
+- Loaded from `.env` in `rspack.config.cjs` and injected with `rspack.DefinePlugin`
 - Defined in `.env` file (not committed to git)
 - Accessible via `process.env.VARIABLE_NAME`
 
@@ -222,7 +222,7 @@ public weila_onEvent(callback: WL_ExtEventCallback): void {
 
 1. Copy `public/assets/` resources to `static/weilasdk/`
 2. Call `setConfigData()` before WeilaCore initialization to remap asset paths
-3. Add webpack rule for `.wasm` files using `file-loader`
+3. Add a bundler rule for `.wasm` files using asset modules
 
 ### Proxy Configuration
 

@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import vm from 'node:vm'
 import type { Browser, Page } from '@playwright/test'
 import { chromium, expect, test } from '@playwright/test'
 import { startServer } from './server.mjs'
@@ -55,6 +56,22 @@ test('WeilaCore constructs in the browser', async () => {
     }
   })
   expect(result).toBe('ok')
+})
+
+test('worklet bundles register their processors', () => {
+  const registered: string[] = []
+  const sandbox = {
+    AudioWorkletProcessor: class {},
+    Blob,
+    console,
+    currentTime: 0,
+    registerProcessor: (name: string) => registered.push(name),
+    sampleRate: 48000,
+    URL,
+  }
+  for (const file of ['weila_player.worklet.iife.js', 'weila_recorder.worklet.iife.js'])
+    vm.runInNewContext(readFileSync(join(PACKAGE, 'dist/worklets', file), 'utf8'), sandbox)
+  expect(registered).toEqual(['weila_player_processor', 'weila_recorder_processor'])
 })
 
 test('the page records no console errors', () => {
