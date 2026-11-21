@@ -32,7 +32,7 @@ function run(binary, args) {
 function diagnostics(output) {
   return [...output.matchAll(/^(.+?)\((\d+),(\d+)\): error (TS\d+): (.+)$/gm)]
     .map((match) => `${match[1]}(${match[2]},${match[3]}) ${match[4]} ${match[5]}`)
-    .sort()
+    .toSorted()
 }
 
 const problems = []

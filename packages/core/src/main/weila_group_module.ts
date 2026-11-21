@@ -207,7 +207,7 @@ export default class WLGroupModule {
 
             if (!ntfGroupInvite) break
 
-            ;(async () => {
+            void (async () => {
               const groupId = Long.fromValue(ntfGroupInvite.groupId ?? 0).toString(10)
               const groupInfo = await this.getGroupAttribute(groupId)
               const invitorUserInfo = ntfGroupInvite.userInfo
@@ -216,6 +216,7 @@ export default class WLGroupModule {
 
               const userInfos = WeilaDB.getInstance().convertFromUserRaw([invitorUserInfo])
               await WeilaDB.getInstance().putUserInfo(userInfos[0])
+
               const groupInviteInfo: WL_GroupInviteInfo = {
                 groupInfo,
                 invitorUserInfo: userInfos[0],
@@ -227,7 +228,9 @@ export default class WLGroupModule {
                 data: groupInviteInfo,
                 createTime: new Date().getTime() / 1000,
               }
+
               const notificationId = await WeilaDB.getInstance().putNotification(notification)
+
               const savedNotification: WL_IDbNotification = {
                 ...notification,
                 id: notificationId,
@@ -248,16 +251,18 @@ export default class WLGroupModule {
 
             if (!ntfGroupJoin) break
 
-            ;(async () => {
+            void (async () => {
               const joinUserInfo = ntfGroupJoin.userInfo
 
               if (!joinUserInfo) return
 
               const userInfos = WeilaDB.getInstance().convertFromUserRaw([joinUserInfo])
               await WeilaDB.getInstance().putUserInfo(userInfos[0])
+
               const groupInfo = await WeilaDB.getInstance().getGroup(
                 Long.fromValue(ntfGroupJoin.groupId ?? 0).toString(10),
               )
+
               const groupJoinInfo: WL_GroupJoinInfo = {
                 detail: ntfGroupJoin.detail ?? '',
                 status: WL_AnswerStatus.ANSWER_NORMAL,
@@ -270,11 +275,14 @@ export default class WLGroupModule {
                 data: groupJoinInfo,
                 createTime: new Date().getTime() / 1000,
               }
+
               const notificationId = await WeilaDB.getInstance().putNotification(notification)
+
               const savedNotification: WL_IDbNotification = {
                 ...notification,
                 id: notificationId,
               }
+
               this.coreInterface.sendExtEvent(
                 WL_ExtEventID.WL_EXT_NEW_NOTIFICATION_IND,
                 savedNotification,
@@ -492,12 +500,14 @@ export default class WLGroupModule {
               .delMemberInfos(groupId, userIdList)
               .then((_value) => {
                 wllog('删除了群成员成功')
+
                 // 通知外部
                 const info: WL_GroupMemberDeleteInfo = {
                   groupId,
                   initiatorId: ntfDeleteMember.initiatorId ?? 0,
                   userIdList,
                 }
+
                 this.coreInterface.sendExtEvent(WL_ExtEventID.WL_EXT_GROUP_MEMBER_DELETED_IND, info)
               })
               .catch((reason) => {
@@ -557,7 +567,7 @@ export default class WLGroupModule {
 
             if (!ntfAnswerJoin) break
 
-            ;(async () => {
+            void (async () => {
               const answerGroupJoin: WL_GroupAnswerJoinInfo = {
                 status: dbEnum<WL_AnswerStatus>(ntfAnswerJoin.status),
                 groupInfo: await WeilaDB.getInstance().getGroup(
@@ -573,7 +583,9 @@ export default class WLGroupModule {
                 data: answerGroupJoin,
                 createTime: new Date().getTime() / 1000,
               }
+
               const notificationId = await WeilaDB.getInstance().putNotification(notification)
+
               const savedNotification: WL_IDbNotification = {
                 ...notification,
                 id: notificationId,
@@ -594,7 +606,7 @@ export default class WLGroupModule {
 
             if (!ntfAnswerInvite) break
 
-            ;(async () => {
+            void (async () => {
               const answerGroupInvite: WL_GroupAnswerInviteInfo = {
                 groupInfo: await WeilaDB.getInstance().getGroup(
                   Long.fromValue(ntfAnswerInvite.groupId ?? 0).toString(10),
@@ -614,11 +626,14 @@ export default class WLGroupModule {
                 data: answerGroupInvite,
                 createTime: new Date().getTime() / 1000,
               }
+
               const notificationId = await WeilaDB.getInstance().putNotification(notification)
+
               const savedNotification: WL_IDbNotification = {
                 ...notification,
                 id: notificationId,
               }
+
               this.coreInterface.sendExtEvent(
                 WL_ExtEventID.WL_EXT_NEW_NOTIFICATION_IND,
                 savedNotification,
@@ -684,6 +699,7 @@ export default class WLGroupModule {
 
       // 删除无效的群  START
       const versionInfoList = groupVerMsgData.versionInfoList ?? []
+
       const groupIds = versionInfoList.map((value) => {
         return Long.fromValue(value.groupId ?? 0).toString(10)
       })
@@ -709,9 +725,11 @@ export default class WLGroupModule {
       for (let i = 0; i < versionInfoList.length; i++) {
         const ver = versionInfoList[i]
         wllog('群版本信息:', ver)
+
         const dbGroup = await WeilaDB.getInstance().getGroup(
           Long.fromValue(ver.groupId ?? 0).toString(10),
         )
+
         wllog('获取群信息:', dbGroup)
 
         if (
@@ -784,10 +802,12 @@ export default class WLGroupModule {
 
       const groupInfos: WL_IDbGroup[] = dbInstance.convertFromGroupRaw(groupAttributes)
       await dbInstance.putGroups(groupInfos)
+
       const ind: WL_DataPrepareInd = {
         state: WL_DataPrepareState.PREPARE_PROGRESS_IND,
         msg: 'SDK.SavingMembers',
       }
+
       this.coreInterface.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind)
       await dbInstance.putMemberInfos(allMemberInfos)
       ind.msg = 'SDK.SavingUsers'
@@ -989,6 +1009,7 @@ export default class WLGroupModule {
       groupId: Long.fromValue(groupId),
       ownerId: ownerUserId,
     }
+
     const buildMsgRet = WeilaPBGroupWrapper.buildChangeGroupAttributeReq(attributes)
 
     if (buildMsgRet.resultCode === 0) {

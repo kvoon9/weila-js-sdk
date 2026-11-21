@@ -26,7 +26,7 @@ export function parseEsmExports(source) {
   ))
     names.add(match[1])
 
-  return [...names].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
+  return [...names].toSorted((a, b) => (a < b ? -1 : a > b ? 1 : 0))
 }
 
 export function parseDtsExports(source) {
@@ -45,7 +45,7 @@ export function parseDtsExports(source) {
 
   for (const match of source.matchAll(declaration)) names.add(match[1])
 
-  return [...names].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
+  return [...names].toSorted((a, b) => (a < b ? -1 : a > b ? 1 : 0))
 }
 
 function walk(directory) {
@@ -74,7 +74,7 @@ export function collectArtifacts(dist = DIST) {
 
   const files = {}
 
-  for (const full of walk(dist).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))) {
+  for (const full of walk(dist).toSorted((a, b) => (a < b ? -1 : a > b ? 1 : 0))) {
     const path = relative(dist, full)
 
     if (LICENSE_SIDECAR.test(path)) continue
@@ -94,7 +94,7 @@ export function collectArtifacts(dist = DIST) {
     assets: Object.keys(files)
       .filter((path) => path.startsWith('assets/'))
       .map((path) => relative('assets', path))
-      .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)),
+      .toSorted((a, b) => (a < b ? -1 : a > b ? 1 : 0)),
     files,
   }
 }

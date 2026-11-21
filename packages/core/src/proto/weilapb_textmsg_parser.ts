@@ -20,47 +20,47 @@ function ensureLocation(dbMsgData: WL_IDbMsgData): WL_IDbLocationShared {
   return dbMsgData.location
 }
 
-class TextMsgDataParser {
-  static readonly BASE_FILE_TYPE_URL = 'https://weilaavatar.oss-cn-shenzhen.aliyuncs.com/file/'
-  static readonly FILE_TYPE_DOC = 'DOC.png'
-  static readonly FILE_TYPE_HTML = 'HTML.png'
-  static readonly FILE_TYPE_MP3 = 'MP3.png'
-  static readonly FILE_TYPE_PDF = 'PDF.png'
-  static readonly FILE_TYPE_PPT = 'PPT.png'
-  static readonly FILE_TYPE_RAR = 'RAR.png'
-  static readonly FILE_TYPE_RAW = 'RAW.png'
-  static readonly FILE_TYPE_TXT = 'TXT.png'
-  static readonly FILE_TYPE_XLS = 'XLS.png'
-  static readonly FILE_TYPE_ZIP = 'ZIP.png'
-  static readonly FILE_TYPE_WAV = 'WAV.png'
-  static readonly FILE_TYPE_VIDEO = 'video.jpg'
-  static readonly FILE_TYPE_UNKOWN = 'UNKOWN.png'
+const TextMsgDataParser = {
+  BASE_FILE_TYPE_URL: 'https://weilaavatar.oss-cn-shenzhen.aliyuncs.com/file/',
+  FILE_TYPE_DOC: 'DOC.png',
+  FILE_TYPE_HTML: 'HTML.png',
+  FILE_TYPE_MP3: 'MP3.png',
+  FILE_TYPE_PDF: 'PDF.png',
+  FILE_TYPE_PPT: 'PPT.png',
+  FILE_TYPE_RAR: 'RAR.png',
+  FILE_TYPE_RAW: 'RAW.png',
+  FILE_TYPE_TXT: 'TXT.png',
+  FILE_TYPE_XLS: 'XLS.png',
+  FILE_TYPE_ZIP: 'ZIP.png',
+  FILE_TYPE_WAV: 'WAV.png',
+  FILE_TYPE_VIDEO: 'video.jpg',
+  FILE_TYPE_UNKOWN: 'UNKOWN.png',
 
-  static readonly EXTEND_START_FLAG = '&$#@~^@[{:'
-  static readonly EXTEND_END_FLAG = ':}]&$~@#@'
-  static readonly EXTEND_MSG_PATTERN = /&\$#@~\^@\[{:(.*):}\]&\$~@#@/
-  static readonly CMD_MSG_PATTERN = /\*&\^@~\^\(\[{:(.*):}\]\)\^\*#@#@/
-  static readonly SERVICE_TYPE_KEY: string = 'serviceType'
-  static readonly SERVICE_TYPE_LOCATION: string = 'location'
-  static readonly LOCATION_TYPE_KEY: string = 'locationType'
-  static readonly LATITUDE_KEY: string = 'latitude'
-  static readonly LONGITUDE_KEY: string = 'longitude'
-  static readonly LOCATION_NAME_KEY: string = 'name'
-  static readonly LOCATION_ADDRESS_KEY: string = 'address'
-  static readonly SERVICE_TYPE_VIDEO: string = 'video'
-  static readonly SERVICE_TYPE_FILE: string = 'file'
-  static readonly FILE_URL_KEY: string = 'fileUrl'
-  static readonly FILE_SIZE_KEY: string = 'fileSize'
-  static readonly FILE_NAME_KEY: string = 'fileName'
-  static readonly SERVICE_TYPE_QR_CODE: string = 'qrcode'
-  static readonly QR_CODE_NAME_KEY: string = 'qrName'
-  static readonly QR_CODE_DESC_KEY: string = 'qrDesc'
-  static readonly QR_CODE_SESSION_TYPE_KEY: string = 'qrSessionType'
-  static readonly QR_CODE_PEER_ID_KEY: string = 'qrPeerId'
-  static readonly NORMAL_BUSINESS_SERVICE_TYPE: string = 'business' //通用订单类型
-  static readonly DEFAULT_BUSINESS_SERVICE_TYPE: string = 'order' //默认订单类型 打车
+  EXTEND_START_FLAG: '&$#@~^@[{:',
+  EXTEND_END_FLAG: ':}]&$~@#@',
+  EXTEND_MSG_PATTERN: /&\$#@~\^@\[{:(.*):}\]&\$~@#@/,
+  CMD_MSG_PATTERN: /\*&\^@~\^\(\[{:(.*):}\]\)\^\*#@#@/,
+  SERVICE_TYPE_KEY: 'serviceType',
+  SERVICE_TYPE_LOCATION: 'location',
+  LOCATION_TYPE_KEY: 'locationType',
+  LATITUDE_KEY: 'latitude',
+  LONGITUDE_KEY: 'longitude',
+  LOCATION_NAME_KEY: 'name',
+  LOCATION_ADDRESS_KEY: 'address',
+  SERVICE_TYPE_VIDEO: 'video',
+  SERVICE_TYPE_FILE: 'file',
+  FILE_URL_KEY: 'fileUrl',
+  FILE_SIZE_KEY: 'fileSize',
+  FILE_NAME_KEY: 'fileName',
+  SERVICE_TYPE_QR_CODE: 'qrcode',
+  QR_CODE_NAME_KEY: 'qrName',
+  QR_CODE_DESC_KEY: 'qrDesc',
+  QR_CODE_SESSION_TYPE_KEY: 'qrSessionType',
+  QR_CODE_PEER_ID_KEY: 'qrPeerId',
+  NORMAL_BUSINESS_SERVICE_TYPE: 'business', //通用订单类型
+  DEFAULT_BUSINESS_SERVICE_TYPE: 'order', //默认订单类型 打车
 
-  private static getCK(): lib.WordArray {
+  getCK(): lib.WordArray {
     const k = []
 
     for (let j = 0; j < 3; j++) {
@@ -77,9 +77,9 @@ class TextMsgDataParser {
     k.push(2)
 
     return enc.Utf8.parse(k.join(''))
-  }
+  },
 
-  private static getFileExt(filePath: string): string | undefined {
+  getFileExt(filePath: string): string | undefined {
     const extPattern = /\.[a-zA-Z0-9]{1,5}$/
 
     if (extPattern.test(filePath)) {
@@ -87,9 +87,9 @@ class TextMsgDataParser {
     } else {
       return undefined
     }
-  }
+  },
 
-  public static getExtendFileFormatUrl(filePath: string): string {
+  getExtendFileFormatUrl(filePath: string): string {
     let extStr = this.getFileExt(filePath)
     let fileFormatUrl = this.BASE_FILE_TYPE_URL
 
@@ -187,9 +187,9 @@ class TextMsgDataParser {
     }
 
     return fileFormatUrl
-  }
+  },
 
-  private static getExtendFileInfo(
+  getExtendFileInfo(
     filePath: string,
     fileUrl: string,
     fileSize: number,
@@ -214,9 +214,9 @@ class TextMsgDataParser {
     extendString += this.EXTEND_END_FLAG
 
     return extendString
-  }
+  },
 
-  public static encodeSessionTextMsg(
+  encodeSessionTextMsg(
     data: WL_IDbFileData | WL_IDbLocationShared | string,
     dataType: WL_IDbMsgDataType,
   ): string | undefined {
@@ -320,13 +320,13 @@ class TextMsgDataParser {
         })
 
         return encrypted.toString()
-      } catch (_e) {}
+      } catch {}
     }
 
     return undefined
-  }
+  },
 
-  public static decodeSessionTextMsg(data: string): WL_IDbMsgData | undefined {
+  decodeSessionTextMsg(data: string): WL_IDbMsgData | undefined {
     const dbMsgData = {} as WL_IDbMsgData
     let extendText = ''
 
@@ -340,7 +340,7 @@ class TextMsgDataParser {
         mode: mode.ECB,
         padding: pad.ZeroPadding,
       })
-    } catch (_e) {
+    } catch {
       return undefined
     }
 
@@ -412,7 +412,7 @@ class TextMsgDataParser {
                     {
                       try {
                         ensureLocation(dbMsgData).latitude = parseFloat(pair[1])
-                      } catch (e) {
+                      } catch {
                         ensureLocation(dbMsgData).latitude = 0
                       }
                     }
@@ -423,7 +423,7 @@ class TextMsgDataParser {
                     {
                       try {
                         ensureLocation(dbMsgData).longitude = parseFloat(pair[1])
-                      } catch (e) {
+                      } catch {
                         ensureLocation(dbMsgData).longitude = 0
                       }
                     }
@@ -465,7 +465,7 @@ class TextMsgDataParser {
                     {
                       try {
                         dbMsgData.fileInfo!.fileSize = parseInt(pair[1])
-                      } catch (e) {
+                      } catch {
                         dbMsgData.fileInfo!.fileSize = 0
                       }
                     }
@@ -497,7 +497,7 @@ class TextMsgDataParser {
     }
 
     return dbMsgData
-  }
+  },
 }
 
 export { TextMsgDataParser }

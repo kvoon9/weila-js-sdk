@@ -60,6 +60,13 @@ export const useWeilaStore = defineStore('weila', () => {
       ),
   })
 
+  const kickoutHandler: WL_ExtEventCallback = (eventId, eventData) => {
+    if (eventId === WL_ExtEventID.WL_EXT_KICKOUT_IND) {
+      kickoutReason.value = String(eventData.reason)
+      kickoutReasonText.value = eventData.reasonText
+    }
+  }
+
   async function init() {
     if (core.value) return core.value
 
@@ -84,12 +91,6 @@ export const useWeilaStore = defineStore('weila', () => {
     })
 
     // Register kickout event listener
-    const kickoutHandler: WL_ExtEventCallback = (eventId, eventData) => {
-      if (eventId === WL_ExtEventID.WL_EXT_KICKOUT_IND) {
-        kickoutReason.value = String(eventData.reason)
-        kickoutReasonText.value = eventData.reasonText
-      }
-    }
     instance.weila_onEvent(kickoutHandler)
 
     core.value = instance

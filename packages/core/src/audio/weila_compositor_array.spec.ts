@@ -9,7 +9,7 @@ describe('CompoUint8Array', () => {
 
     expect([...composer.getCompoArray()!]).toEqual([1, 2, 3, 4, 5])
     expect(composer.getCompoLengthList()).toEqual([2, 3])
-    expect(composer.parseArrayList()!.map((value) => [...value])).toEqual([
+    expect(composer.parseArrayList()!.map((value) => Array.from(value))).toEqual([
       [1, 2],
       [3, 4, 5],
     ])

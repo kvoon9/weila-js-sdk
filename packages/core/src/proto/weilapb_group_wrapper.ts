@@ -3,8 +3,8 @@ import { BuildWeilaMsg } from './weilapb_wrapper'
 import { WLBuildMsgRet, WLGroupAttributeInfo, WLGroupMemberInfo } from './weilapb_wrapper_data'
 import Long from 'long'
 
-class WeilaPBGroupWrapper {
-  public static buildGetGroupVersionReq(): WLBuildMsgRet {
+const WeilaPBGroupWrapper = {
+  buildGetGroupVersionReq(): WLBuildMsgRet {
     const groupMessage = new WL.Group.GroupMessage()
     groupMessage.reqGetGroupVersion = new WL.Group.ReqGetGroupVersion()
 
@@ -14,9 +14,9 @@ class WeilaPBGroupWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       groupMessage,
     )
-  }
+  },
 
-  public static buildGetGroupAttributeReq(groupId: Long): WLBuildMsgRet {
+  buildGetGroupAttributeReq(groupId: Long): WLBuildMsgRet {
     const groupMessage = new WL.Group.GroupMessage()
     groupMessage.reqGetGroupAttribute = new WL.Group.ReqGetGroupAttribute()
     groupMessage.reqGetGroupAttribute.groupId = groupId
@@ -27,9 +27,9 @@ class WeilaPBGroupWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       groupMessage,
     )
-  }
+  },
 
-  public static buildCreateGroupReq(
+  buildCreateGroupReq(
     groupName: string,
     groupType: number,
     avatar: string,
@@ -52,9 +52,9 @@ class WeilaPBGroupWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       groupMessage,
     )
-  }
+  },
 
-  public static buildChangeGroupAttributeReq(groupAttribute: WLGroupAttributeInfo): WLBuildMsgRet {
+  buildChangeGroupAttributeReq(groupAttribute: WLGroupAttributeInfo): WLBuildMsgRet {
     const groupMessage = new WL.Group.GroupMessage()
     groupMessage.reqChangeGroupAttribute = new WL.Group.ReqChangeGroupAttribute()
     groupMessage.reqChangeGroupAttribute.groupId = Long.fromValue(groupAttribute.groupId)
@@ -80,9 +80,9 @@ class WeilaPBGroupWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       groupMessage,
     )
-  }
+  },
 
-  public static buildGetGroupInfoReq(groupId: Long, memberVer: number): WLBuildMsgRet {
+  buildGetGroupInfoReq(groupId: Long, memberVer: number): WLBuildMsgRet {
     const groupMessage = new WL.Group.GroupMessage()
     groupMessage.reqGetGroupInfo = new WL.Group.ReqGetGroupInfo()
     groupMessage.reqGetGroupInfo.groupId = groupId
@@ -94,9 +94,9 @@ class WeilaPBGroupWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       groupMessage,
     )
-  }
+  },
 
-  public static buildGetGroupOnlineMemberReq(groupId: Long): WLBuildMsgRet {
+  buildGetGroupOnlineMemberReq(groupId: Long): WLBuildMsgRet {
     const groupMessage = new WL.Group.GroupMessage()
     groupMessage.reqGetGroupOnlineMember = new WL.Group.ReqGetGroupOnlineMember()
     groupMessage.reqGetGroupOnlineMember.groupId = groupId
@@ -107,12 +107,9 @@ class WeilaPBGroupWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       groupMessage,
     )
-  }
+  },
 
-  public static buildChangeGroupMemberInfoReq(
-    groupId: Long,
-    memberInfo: WLGroupMemberInfo,
-  ): WLBuildMsgRet {
+  buildChangeGroupMemberInfoReq(groupId: Long, memberInfo: WLGroupMemberInfo): WLBuildMsgRet {
     const groupMessage = new WL.Group.GroupMessage()
     groupMessage.reqChangeMemberInfo = new WL.Group.ReqChangeMemberInfo()
     groupMessage.reqChangeMemberInfo.groupId = groupId
@@ -132,9 +129,9 @@ class WeilaPBGroupWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       groupMessage,
     )
-  }
+  },
 
-  public static buildGetGroupMemberInfoReq(groupId: Long, userIdList: number[]): WLBuildMsgRet {
+  buildGetGroupMemberInfoReq(groupId: Long, userIdList: number[]): WLBuildMsgRet {
     const groupMessage = new WL.Group.GroupMessage()
     groupMessage.reqGetMemberUserInfo = new WL.Group.ReqGetMemberUserInfo()
     groupMessage.reqGetMemberUserInfo.groupId = groupId
@@ -146,13 +143,9 @@ class WeilaPBGroupWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       groupMessage,
     )
-  }
+  },
 
-  public static buildDelGroupMemebrReq(
-    groupId: Long,
-    userIdList: number[],
-    subUserId?: number,
-  ): WLBuildMsgRet {
+  buildDelGroupMemebrReq(groupId: Long, userIdList: number[], subUserId?: number): WLBuildMsgRet {
     const groupMessage = new WL.Group.GroupMessage()
     groupMessage.reqDeleteMember = new WL.Group.ReqDeleteMember()
     groupMessage.reqDeleteMember.groupId = groupId
@@ -165,9 +158,9 @@ class WeilaPBGroupWrapper {
       groupMessage,
       subUserId,
     )
-  }
+  },
 
-  public static buildDelGroupReq(groupId: Long): WLBuildMsgRet {
+  buildDelGroupReq(groupId: Long): WLBuildMsgRet {
     const groupMessage = new WL.Group.GroupMessage()
     groupMessage.reqDeleteGroup = new WL.Group.ReqDeleteGroup()
     groupMessage.reqDeleteGroup.groupId = groupId
@@ -178,9 +171,9 @@ class WeilaPBGroupWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       groupMessage,
     )
-  }
+  },
 
-  public static buildGetGroupInvitationReq(lastUpdateTime: Long): WLBuildMsgRet {
+  buildGetGroupInvitationReq(lastUpdateTime: Long): WLBuildMsgRet {
     const groupMessage = new WL.Group.GroupMessage()
     groupMessage.reqGetGroupInviteInfo = new WL.Group.ReqGetGroupInviteInfo()
     groupMessage.reqGetGroupInviteInfo.latestUpdated = lastUpdateTime
@@ -191,9 +184,9 @@ class WeilaPBGroupWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       groupMessage,
     )
-  }
+  },
 
-  public static buildGroupInviteReq(groupId: Long, userIdList: number[]): WLBuildMsgRet {
+  buildGroupInviteReq(groupId: Long, userIdList: number[]): WLBuildMsgRet {
     const groupMessage = new WL.Group.GroupMessage()
     groupMessage.reqGroupInvite = new WL.Group.ReqGroupInvite()
     groupMessage.reqGroupInvite.groupId = groupId
@@ -205,13 +198,9 @@ class WeilaPBGroupWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       groupMessage,
     )
-  }
+  },
 
-  public static buildGroupAnswerInviteReq(
-    groupId: Long,
-    invitorId: number,
-    status: number,
-  ): WLBuildMsgRet {
+  buildGroupAnswerInviteReq(groupId: Long, invitorId: number, status: number): WLBuildMsgRet {
     const groupMessage = new WL.Group.GroupMessage()
     groupMessage.reqAnswerGroupInvite = new WL.Group.ReqAnswerGroupInvite()
     groupMessage.reqAnswerGroupInvite.groupId = groupId
@@ -224,9 +213,9 @@ class WeilaPBGroupWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       groupMessage,
     )
-  }
+  },
 
-  public static buildGroupGetJoinInfoReq(lasteUpdate: Long, groupIdList: Long[]): WLBuildMsgRet {
+  buildGroupGetJoinInfoReq(lasteUpdate: Long, groupIdList: Long[]): WLBuildMsgRet {
     const groupMessage = new WL.Group.GroupMessage()
     groupMessage.reqGetGroupJoinInfo = new WL.Group.ReqGetGroupJoinInfo()
     groupMessage.reqGetGroupJoinInfo.latestUpdated = lasteUpdate
@@ -238,9 +227,9 @@ class WeilaPBGroupWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       groupMessage,
     )
-  }
+  },
 
-  public static buildGroupJoinReq(
+  buildGroupJoinReq(
     groupId: Long,
     detail?: string,
     password?: string,
@@ -259,13 +248,9 @@ class WeilaPBGroupWrapper {
       groupMessage,
       subUserId,
     )
-  }
+  },
 
-  public static buildGroupAnswerJoinReq(
-    groupId: Long,
-    joinId: number,
-    status: number,
-  ): WLBuildMsgRet {
+  buildGroupAnswerJoinReq(groupId: Long, joinId: number, status: number): WLBuildMsgRet {
     const groupMessage = new WL.Group.GroupMessage()
     groupMessage.reqAnswerGroupJoin = new WL.Group.ReqAnswerGroupJoin()
     groupMessage.reqAnswerGroupJoin.groupId = groupId
@@ -278,9 +263,9 @@ class WeilaPBGroupWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       groupMessage,
     )
-  }
+  },
 
-  public static buildGroupBroadcastReq(groupId: Long, status: number): WLBuildMsgRet {
+  buildGroupBroadcastReq(groupId: Long, status: number): WLBuildMsgRet {
     const groupMessage = new WL.Group.GroupMessage()
     groupMessage.reqGroupBroadcast = new WL.Group.ReqGroupBroadcast()
     groupMessage.reqGroupBroadcast.groupId = groupId
@@ -292,13 +277,9 @@ class WeilaPBGroupWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       groupMessage,
     )
-  }
+  },
 
-  public static buildGroupGetBlacklistReq(
-    groupId: Long,
-    pageIndex: number,
-    pageCount: number,
-  ): WLBuildMsgRet {
+  buildGroupGetBlacklistReq(groupId: Long, pageIndex: number, pageCount: number): WLBuildMsgRet {
     const groupMessage = new WL.Group.GroupMessage()
     groupMessage.reqGetGroupBlackList = new WL.Group.ReqGetGroupBlackList()
     groupMessage.reqGetGroupBlackList.groupId = groupId
@@ -311,9 +292,9 @@ class WeilaPBGroupWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       groupMessage,
     )
-  }
+  },
 
-  public static buildGroupChangeBlacklistReq(
+  buildGroupChangeBlacklistReq(
     groupId: Long,
     userIdList: number[],
     actionType: number,
@@ -330,9 +311,9 @@ class WeilaPBGroupWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       groupMessage,
     )
-  }
+  },
 
-  public static buildGetGroupMemberChangeLogReq(groupId: Long): WLBuildMsgRet {
+  buildGetGroupMemberChangeLogReq(groupId: Long): WLBuildMsgRet {
     const groupMessage = new WL.Group.GroupMessage()
     groupMessage.reqGetGroupMemberChangeLog = new WL.Group.ReqGetGroupMemberChangeLog()
     groupMessage.reqGetGroupMemberChangeLog.groupId = groupId
@@ -343,9 +324,9 @@ class WeilaPBGroupWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       groupMessage,
     )
-  }
+  },
 
-  public static buildGetGroupNoticeReq(groupId: Long, latestUpdated: Long): WLBuildMsgRet {
+  buildGetGroupNoticeReq(groupId: Long, latestUpdated: Long): WLBuildMsgRet {
     const groupMessage = new WL.Group.GroupMessage()
     groupMessage.reqGetNotice = new WL.Group.ReqGetNotice()
     groupMessage.reqGetNotice.groupId = groupId
@@ -357,9 +338,9 @@ class WeilaPBGroupWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       groupMessage,
     )
-  }
+  },
 
-  public static buildAddGroupNoticeReq(groupId: Long, notice: string): WLBuildMsgRet {
+  buildAddGroupNoticeReq(groupId: Long, notice: string): WLBuildMsgRet {
     const groupMessage = new WL.Group.GroupMessage()
     groupMessage.reqAddNotice = new WL.Group.ReqAddNotice()
     groupMessage.reqAddNotice.groupId = groupId
@@ -371,13 +352,9 @@ class WeilaPBGroupWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       groupMessage,
     )
-  }
+  },
 
-  public static buildChangeGroupNoticeReq(
-    groupId: Long,
-    noticeId: Long,
-    notice: string,
-  ): WLBuildMsgRet {
+  buildChangeGroupNoticeReq(groupId: Long, noticeId: Long, notice: string): WLBuildMsgRet {
     const groupMessage = new WL.Group.GroupMessage()
     groupMessage.reqChangeNotice = new WL.Group.ReqChangeNotice()
     groupMessage.reqChangeNotice.groupId = groupId
@@ -390,9 +367,9 @@ class WeilaPBGroupWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       groupMessage,
     )
-  }
+  },
 
-  public static buildDeleteGroupNoticeReq(groupId: Long, noticeId: Long): WLBuildMsgRet {
+  buildDeleteGroupNoticeReq(groupId: Long, noticeId: Long): WLBuildMsgRet {
     const groupMessage = new WL.Group.GroupMessage()
     groupMessage.reqDeleteNotice = new WL.Group.ReqDeleteNotice()
     groupMessage.reqDeleteNotice.groupId = groupId
@@ -404,9 +381,9 @@ class WeilaPBGroupWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       groupMessage,
     )
-  }
+  },
 
-  public static buildGetGroupDetailReq(groupId: Long): WLBuildMsgRet {
+  buildGetGroupDetailReq(groupId: Long): WLBuildMsgRet {
     const groupMessage = new WL.Group.GroupMessage()
     groupMessage.reqGetGroupDetail = new WL.Group.ReqGetGroupDetail()
     groupMessage.reqGetGroupDetail.groupId = groupId
@@ -417,9 +394,9 @@ class WeilaPBGroupWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       groupMessage,
     )
-  }
+  },
 
-  public static buildGetSubDeviceGroupAttributes(subUserId: number): WLBuildMsgRet {
+  buildGetSubDeviceGroupAttributes(subUserId: number): WLBuildMsgRet {
     const groupMessage = new WL.Group.GroupMessage()
     groupMessage.reqGetSubGroupAttribute = new WL.Group.ReqGetSubGroupAttribute()
 
@@ -430,9 +407,9 @@ class WeilaPBGroupWrapper {
       groupMessage,
       subUserId,
     )
-  }
+  },
 
-  public static buildAddSubMemberReq(groupId: Long, userIds: number[]): WLBuildMsgRet {
+  buildAddSubMemberReq(groupId: Long, userIds: number[]): WLBuildMsgRet {
     const groupMessage = new WL.Group.GroupMessage()
     groupMessage.reqAddSubMember = new WL.Group.ReqAddSubMember()
     groupMessage.reqAddSubMember.groupId = groupId
@@ -444,7 +421,7 @@ class WeilaPBGroupWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       groupMessage,
     )
-  }
+  },
 }
 
 export { WeilaPBGroupWrapper }

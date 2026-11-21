@@ -181,6 +181,8 @@ export default class WLPttFsm {
   }
 
   // actions
+
+  /** Handles entry into the idle state. */
   onIdle() {
     this.notifyPttDataReady().catch((_reason) => {})
   }
@@ -221,7 +223,7 @@ export default class WLPttFsm {
     if (event.type === 'FSM_FEED_PTT_PAYLOAD_EVT') {
       this.feedAudioPayload(audioItem, audioItem.playerType)
     } else if (event.type === 'FSM_PLAY_NEXT_PTT_ITEM_EVT') {
-      WeilaRingPlayer.weila_playRing(WL_ConfigID.WL_RES_RING_START_PLAY_ID)
+      void WeilaRingPlayer.weila_playRing(WL_ConfigID.WL_RES_RING_START_PLAY_ID)
         .then((_playRet) => {
           wllog('播放铃声成功')
         })
@@ -253,7 +255,7 @@ export default class WLPttFsm {
     wllog('after finish', this.playingAudioList, this.playingAudioMap)
 
     this.streamPttPlayItem = null
-    WeilaRingPlayer.weila_playRing(WL_ConfigID.WL_RES_RING_STOP_PLAY_ID).finally(() => {
+    void WeilaRingPlayer.weila_playRing(WL_ConfigID.WL_RES_RING_STOP_PLAY_ID).finally(() => {
       this.pttFsmService.send({ type: fsmEvents.FSM_PTT_CHECK_RESOURCE_EVT })
 
       this.onPlayInd(
@@ -278,8 +280,8 @@ export default class WLPttFsm {
   onSinglePlayEntry({ context, event }: PttActionArgs) {
     wllog('onSinglePlayEntry', event)
     context.singlePlayOrigin = event.type
-    this.audioManager.openPlayer(WLPlayerType.WL_PTT_SINGLE_PLAYER, 16000).then((_openRet) => {
-      WeilaRingPlayer.weila_playRing(WL_ConfigID.WL_RES_RING_START_PLAY_ID)
+    void this.audioManager.openPlayer(WLPlayerType.WL_PTT_SINGLE_PLAYER, 16000).then((_openRet) => {
+      void WeilaRingPlayer.weila_playRing(WL_ConfigID.WL_RES_RING_START_PLAY_ID)
         .then((_playRet) => {
           wllog('播放铃声成功')
         })
@@ -315,7 +317,7 @@ export default class WLPttFsm {
 
   onSinglePlayFinish({ event }: PttActionArgs) {
     wllog('onSinglePlayFinish', event)
-    WeilaRingPlayer.weila_playRing(WL_ConfigID.WL_RES_RING_STOP_PLAY_ID).finally(() => {
+    void WeilaRingPlayer.weila_playRing(WL_ConfigID.WL_RES_RING_STOP_PLAY_ID).finally(() => {
       this.pttFsmService.send({ type: fsmEvents.FSM_PLAY_END_EVT })
     })
   }
@@ -329,12 +331,12 @@ export default class WLPttFsm {
       this.audioManager
         .openPlayer(audioItem.playerType, 16000)
         .then((_openRet) => {
-          WeilaRingPlayer.weila_playRing(WL_ConfigID.WL_RES_RING_START_PLAY_ID)
+          void WeilaRingPlayer.weila_playRing(WL_ConfigID.WL_RES_RING_START_PLAY_ID)
             .then((_playRet) => {
               wllog('播放铃声成功')
             })
             .finally(() => {
-              this.audioManager.startPlay(audioItem.playerType).then((startRet) => {
+              void this.audioManager.startPlay(audioItem.playerType).then((startRet) => {
                 wllog('播放器开始:', startRet)
                 const streamItem = this.streamPttPlayItem
 
@@ -342,7 +344,7 @@ export default class WLPttFsm {
                 streamItem.msgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_READ
 
                 if (streamItem.shouldSave) {
-                  WeilaDB.getInstance()
+                  void WeilaDB.getInstance()
                     .putMsgData(streamItem.msgData)
                     .then((value) => {
                       wllog('更新消息结果', value)
@@ -378,13 +380,15 @@ export default class WLPttFsm {
   }
 
   // services
+
+  /** Opens the recorder and plays the start ring before talking. */
   async startTalking(event: PttFsmEvent): Promise<boolean> {
     this.talkingInfo = event.data
     await this.audioManager.openRecorder(16000, 20000)
 
     try {
       await WeilaRingPlayer.weila_playRing(WL_ConfigID.WL_RES_RING_START_RECORD_ID)
-    } catch (_e) {
+    } catch {
       wlerr('播放铃声失败')
     }
 
@@ -431,13 +435,13 @@ export default class WLPttFsm {
       this.audioManager
         .openPlayer(WLPlayerType.WL_PTT_HISTORY_PLAYER, 16000)
         .then((_openRet) => {
-          WeilaRingPlayer.weila_playRing(WL_ConfigID.WL_RES_RING_START_PLAY_ID)
+          void WeilaRingPlayer.weila_playRing(WL_ConfigID.WL_RES_RING_START_PLAY_ID)
             .then((_playRet) => {
               wllog('播放铃声成功')
             })
             .finally(() => {
               if (!this.audioManager.isPlayerStarted(WLPlayerType.WL_PTT_HISTORY_PLAYER)) {
-                this.audioManager
+                void this.audioManager
                   .startPlay(WLPlayerType.WL_PTT_HISTORY_PLAYER)
                   .then((_startRet) => {
                     wllog('播放器开始:', _startRet)
@@ -480,7 +484,7 @@ export default class WLPttFsm {
       this.historyPttPlayItems.shift()
     }
 
-    WeilaRingPlayer.weila_playRing(WL_ConfigID.WL_RES_RING_STOP_PLAY_ID).finally(() => {
+    void WeilaRingPlayer.weila_playRing(WL_ConfigID.WL_RES_RING_STOP_PLAY_ID).finally(() => {
       this.pttFsmService.send({ type: fsmEvents.FSM_PTT_CHECK_RESOURCE_EVT })
       this.onPlayInd(
         event.data,
@@ -516,7 +520,7 @@ export default class WLPttFsm {
 
   stopAndPlayNext() {
     const playType = pttPlayType(this.latestState)
-    this.audioManager.stopPlay(playType).finally(() => {
+    void this.audioManager.stopPlay(playType).finally(() => {
       this.pttFsmService.send({ type: fsmEvents.FSM_PTT_CHECK_RESOURCE_EVT })
     })
   }
@@ -539,8 +543,8 @@ export default class WLPttFsm {
 
     this.onPlayInd(null, playType, WL_PttAudioPlayState.PTT_AUDIO_PLAYING_END)
 
-    this.audioManager.stopPlay(playType).finally(() => {
-      this.audioManager.closePlayer(playType).finally(() => {
+    void this.audioManager.stopPlay(playType).finally(() => {
+      void this.audioManager.closePlayer(playType).finally(() => {
         if (
           event.type === fsmEvents.FSM_PLAY_SINGLE_EVT ||
           event.type === fsmEvents.FSM_PLAY_HISTORY_EVT ||
@@ -687,7 +691,7 @@ export default class WLPttFsm {
             audioItem.msgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_READ
 
             if (audioItem.shouldSave) {
-              WeilaDB.getInstance()
+              void WeilaDB.getInstance()
                 .putMsgData(audioItem.msgData)
                 .then((_value) => {
                   wllog('更新成功:', audioItem.msgData)

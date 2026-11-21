@@ -625,7 +625,7 @@ class WLAudio {
         (error: any) => {
           wlerr('getUserMedia', error)
           reject(error)
-          this.closeRecorder()
+          void this.closeRecorder()
         },
       )
     })

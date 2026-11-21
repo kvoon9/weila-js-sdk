@@ -10,8 +10,8 @@ import {
   WL_IDbPttData,
 } from 'db/weila_db_data'
 
-class WeilaPBSessionWrapper {
-  public static buildGetSessionReq(updateTime: Long, type?: number): WLBuildMsgRet {
+const WeilaPBSessionWrapper = {
+  buildGetSessionReq(updateTime: Long, type?: number): WLBuildMsgRet {
     const sessionMessage = new WL.Session.SessionMessage()
     sessionMessage.reqGetSession = new WL.Session.ReqGetSession()
     sessionMessage.reqGetSession.latestUpdated = updateTime
@@ -26,9 +26,9 @@ class WeilaPBSessionWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       sessionMessage,
     )
-  }
+  },
 
-  public static buildRemoveSessionReq(sessionId: Long, sessionType: number): WLBuildMsgRet {
+  buildRemoveSessionReq(sessionId: Long, sessionType: number): WLBuildMsgRet {
     const sessionMessage = new WL.Session.SessionMessage()
     sessionMessage.reqRemoveSession = new WL.Session.ReqRemoveSession()
     sessionMessage.reqRemoveSession.sessionId = sessionId
@@ -40,13 +40,9 @@ class WeilaPBSessionWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       sessionMessage,
     )
-  }
+  },
 
-  public static buildMsgReadReq(
-    sessionId: Long,
-    sessionType: number,
-    readMsgId: number,
-  ): WLBuildMsgRet {
+  buildMsgReadReq(sessionId: Long, sessionType: number, readMsgId: number): WLBuildMsgRet {
     const sessionMessage = new WL.Session.SessionMessage()
     sessionMessage.reqMsgRead = new WL.Session.ReqMsgRead()
     sessionMessage.reqMsgRead.sessionId = sessionId
@@ -59,9 +55,9 @@ class WeilaPBSessionWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       sessionMessage,
     )
-  }
+  },
 
-  public static buildMsgGetUnReadReq(
+  buildMsgGetUnReadReq(
     sessionId: Long,
     sessionType: number,
     fromMsgId: number,
@@ -80,9 +76,9 @@ class WeilaPBSessionWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       sessionMessage,
     )
-  }
+  },
 
-  public static buildMsgGetMsgReq(
+  buildMsgGetMsgReq(
     sessionId: Long,
     sessionType: number,
     msgId: number,
@@ -101,13 +97,9 @@ class WeilaPBSessionWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       sessionMessage,
     )
-  }
+  },
 
-  public static buildBurstControlReq(
-    sessionId: Long,
-    sessionType: number,
-    burstType: number,
-  ): WLBuildMsgRet {
+  buildBurstControlReq(sessionId: Long, sessionType: number, burstType: number): WLBuildMsgRet {
     const sessionMessage = new WL.Session.SessionMessage()
     sessionMessage.reqBurstControl = new WL.Session.ReqBurstControl()
     sessionMessage.reqBurstControl.sessionId = sessionId
@@ -120,13 +112,9 @@ class WeilaPBSessionWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       sessionMessage,
     )
-  }
+  },
 
-  public static buildMonitorControlReq(
-    status: number,
-    duration: number,
-    subUserId: number,
-  ): WLBuildMsgRet {
+  buildMonitorControlReq(status: number, duration: number, subUserId: number): WLBuildMsgRet {
     const sessionMessage = new WL.Session.SessionMessage()
     sessionMessage.reqMonitorControl = new WL.Session.ReqMonitorControl()
     sessionMessage.reqMonitorControl.status = status
@@ -139,9 +127,9 @@ class WeilaPBSessionWrapper {
       sessionMessage,
       subUserId,
     )
-  }
+  },
 
-  private static buildMsgDataReq(
+  buildMsgDataReq(
     sessionId: Long,
     sessionType: number,
     senderId: number,
@@ -249,9 +237,9 @@ class WeilaPBSessionWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       sessionMsg,
     )
-  }
+  },
 
-  public static buildTextSessionMsgReq(
+  buildTextSessionMsgReq(
     sessionId: Long,
     sessionType: number,
     senderId: number,
@@ -267,9 +255,9 @@ class WeilaPBSessionWrapper {
       0,
       WL_IDbMsgDataType.WL_DB_MSG_DATA_TEXT_TYPE,
     )
-  }
+  },
 
-  public static buildImageSessionMsgReq(
+  buildImageSessionMsgReq(
     sessionId: Long,
     sessionType: number,
     senderId: number,
@@ -285,9 +273,9 @@ class WeilaPBSessionWrapper {
       0,
       WL_IDbMsgDataType.WL_DB_MSG_DATA_IMAGE_TYPE,
     )
-  }
+  },
 
-  public static buildMediaInfoSessionMsgReq(
+  buildMediaInfoSessionMsgReq(
     sessionId: Long,
     sessionType: number,
     senderId: number,
@@ -300,9 +288,9 @@ class WeilaPBSessionWrapper {
       : WL_IDbMsgDataType.WL_DB_MSG_DATA_VIDEO_TYPE
 
     return this.buildMsgDataReq(sessionId, sessionType, senderId, autoReply, fileInfo, 0, msgType)
-  }
+  },
 
-  public static buildLocationInfoSessionMsgReq(
+  buildLocationInfoSessionMsgReq(
     sessionId: Long,
     sessionType: number,
     senderId: number,
@@ -318,9 +306,9 @@ class WeilaPBSessionWrapper {
       0,
       WL_IDbMsgDataType.WL_DB_MSG_DATA_LOCATION_TYPE,
     )
-  }
+  },
 
-  public static buildAudioSessionMsgReq(
+  buildAudioSessionMsgReq(
     sessionId: Long,
     sessionType: number,
     senderId: number,
@@ -336,9 +324,9 @@ class WeilaPBSessionWrapper {
       0,
       WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE,
     )
-  }
+  },
 
-  public static buildPttSessionMsgReq(
+  buildPttSessionMsgReq(
     sessionId: Long,
     sessionType: number,
     senderId: number,
@@ -354,9 +342,9 @@ class WeilaPBSessionWrapper {
       0,
       WL_IDbMsgDataType.WL_DB_MSG_DATA_PTT_TYPE,
     )
-  }
+  },
 
-  public static buildServiceSessionMsgReq(
+  buildServiceSessionMsgReq(
     sessionId: Long,
     sessionType: number,
     senderId: number,
@@ -372,9 +360,9 @@ class WeilaPBSessionWrapper {
       0,
       WL_IDbMsgDataType.WL_DB_MSG_DATA_SERVICE_TYPE,
     )
-  }
+  },
 
-  public static buildSwitchSessionMsgReq(
+  buildSwitchSessionMsgReq(
     sessionId: Long,
     sessionType: number,
     senderId: number,
@@ -390,9 +378,9 @@ class WeilaPBSessionWrapper {
       0,
       WL_IDbMsgDataType.WL_DB_MSG_DATA_SWITCH_TYPE,
     )
-  }
+  },
 
-  public static buildWithDrawMsgReq(
+  buildWithDrawMsgReq(
     sessionId: Long,
     sessionType: number,
     senderId: number,
@@ -408,7 +396,7 @@ class WeilaPBSessionWrapper {
       0,
       WL_IDbMsgDataType.WL_DB_MSG_DATA_WITHDRAW_TYPE,
     )
-  }
+  },
 }
 
 export { WeilaPBSessionWrapper }

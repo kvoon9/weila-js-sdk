@@ -3,8 +3,8 @@ import { WL } from './weilapb'
 import Long from 'long'
 import { BuildWeilaMsg } from './weilapb_wrapper'
 
-class WeilaPbFriendWrapper {
-  public static buildGetFriendInfoReq(latestUpdated: Long): WLBuildMsgRet {
+const WeilaPbFriendWrapper = {
+  buildGetFriendInfoReq(latestUpdated: Long): WLBuildMsgRet {
     const friendMessage = new WL.Friend.FriendMessage()
     friendMessage.reqGetFriendInfo = new WL.Friend.ReqGetFriendInfo()
     friendMessage.reqGetFriendInfo.latestUpdated = latestUpdated
@@ -15,9 +15,9 @@ class WeilaPbFriendWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       friendMessage,
     )
-  }
+  },
 
-  public static buildGetFriendUserInfoReq(userIdList: number[]): WLBuildMsgRet {
+  buildGetFriendUserInfoReq(userIdList: number[]): WLBuildMsgRet {
     const friendMessage = new WL.Friend.FriendMessage()
     friendMessage.reqGetFriendUserInfo = new WL.Friend.ReqGetFriendUserInfo()
     friendMessage.reqGetFriendUserInfo.userIds = Array.from(userIdList)
@@ -28,9 +28,9 @@ class WeilaPbFriendWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       friendMessage,
     )
-  }
+  },
 
-  public static buildGetFriendInvitationInfoReq(latestUpdated: Long): WLBuildMsgRet {
+  buildGetFriendInvitationInfoReq(latestUpdated: Long): WLBuildMsgRet {
     const friendMessage = new WL.Friend.FriendMessage()
     friendMessage.reqGetFriendInviteInfo = new WL.Friend.ReqGetFriendInviteInfo()
     friendMessage.reqGetFriendInviteInfo.latestUpdated = latestUpdated
@@ -41,9 +41,9 @@ class WeilaPbFriendWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       friendMessage,
     )
-  }
+  },
 
-  public static buildFriendInviteReq(
+  buildFriendInviteReq(
     inviteeId: number,
     detail: string,
     remark?: string,
@@ -65,13 +65,9 @@ class WeilaPbFriendWrapper {
       friendMessage,
       subUserId,
     )
-  }
+  },
 
-  public static buildAnswerFriendInviteReq(
-    inviterId: number,
-    status: number,
-    remark: string,
-  ): WLBuildMsgRet {
+  buildAnswerFriendInviteReq(inviterId: number, status: number, remark: string): WLBuildMsgRet {
     const friendMessage = new WL.Friend.FriendMessage()
     friendMessage.reqAnswerFriendInvite = new WL.Friend.ReqAnswerFriendInvite()
     friendMessage.reqAnswerFriendInvite.inviterId = inviterId
@@ -84,9 +80,9 @@ class WeilaPbFriendWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       friendMessage,
     )
-  }
+  },
 
-  public static buildDeleteFriendReq(userId: number, subUserId?: number): WLBuildMsgRet {
+  buildDeleteFriendReq(userId: number, subUserId?: number): WLBuildMsgRet {
     const friendMessage = new WL.Friend.FriendMessage()
     friendMessage.reqDeleteFriend = new WL.Friend.ReqDeleteFriend()
     friendMessage.reqDeleteFriend.userId = userId
@@ -98,12 +94,9 @@ class WeilaPbFriendWrapper {
       friendMessage,
       subUserId,
     )
-  }
+  },
 
-  public static buildChangeFriendInfoReq(
-    userId: number,
-    changeFriendInfo: WLChangeFriendInfo,
-  ): WLBuildMsgRet {
+  buildChangeFriendInfoReq(userId: number, changeFriendInfo: WLChangeFriendInfo): WLBuildMsgRet {
     const friendMessage = new WL.Friend.FriendMessage()
     friendMessage.reqChangeFriendInfo = new WL.Friend.ReqChangeFriendInfo()
     friendMessage.reqChangeFriendInfo.userId = userId
@@ -120,9 +113,9 @@ class WeilaPbFriendWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       friendMessage,
     )
-  }
+  },
 
-  public static buildGetFriendBlacklistReq(pageIndex: number, pageCount: number): WLBuildMsgRet {
+  buildGetFriendBlacklistReq(pageIndex: number, pageCount: number): WLBuildMsgRet {
     const friendMessage = new WL.Friend.FriendMessage()
     friendMessage.reqGetFriendBlackList = new WL.Friend.ReqGetFriendBlackList()
     friendMessage.reqGetFriendBlackList.pageIndex = pageIndex
@@ -134,12 +127,9 @@ class WeilaPbFriendWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       friendMessage,
     )
-  }
+  },
 
-  public static buildChangeFriendBlacklistReq(
-    userIdList: number[],
-    actionType: number,
-  ): WLBuildMsgRet {
+  buildChangeFriendBlacklistReq(userIdList: number[], actionType: number): WLBuildMsgRet {
     const friendMessage = new WL.Friend.FriendMessage()
     friendMessage.reqChangeFriendBlackList = new WL.Friend.ReqChangeFriendBlackList()
     friendMessage.reqChangeFriendBlackList.type = actionType
@@ -151,9 +141,9 @@ class WeilaPbFriendWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       friendMessage,
     )
-  }
+  },
 
-  public static buildGetOnlineFriendsReq(): WLBuildMsgRet {
+  buildGetOnlineFriendsReq(): WLBuildMsgRet {
     const friendMessage = new WL.Friend.FriendMessage()
     friendMessage.reqGetOnlineFriend = new WL.Friend.ReqGetOnlineFriend()
 
@@ -163,9 +153,9 @@ class WeilaPbFriendWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       friendMessage,
     )
-  }
+  },
 
-  public static buildGetSubFriendInfoReq(subUserId: number): WLBuildMsgRet {
+  buildGetSubFriendInfoReq(subUserId: number): WLBuildMsgRet {
     const friendMessage = new WL.Friend.FriendMessage()
     friendMessage.reqGetFriendInfo = new WL.Friend.ReqGetFriendInfo()
     friendMessage.reqGetFriendInfo.latestUpdated = Long.fromValue(0)
@@ -177,7 +167,7 @@ class WeilaPbFriendWrapper {
       friendMessage,
       subUserId,
     )
-  }
+  },
 }
 
 export { WeilaPbFriendWrapper }

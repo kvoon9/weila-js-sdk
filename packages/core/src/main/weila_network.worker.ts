@@ -32,7 +32,7 @@ class Network {
   }
 
   public start() {
-    this.ctx.onmessage = this.onMessage.bind(this)
+    this.ctx.addEventListener('message', this.onMessage.bind(this))
   }
 
   private onSocketOpen(event: Event): void {
@@ -51,7 +51,7 @@ class Network {
         this.isConnected = true
       }
 
-      this.ctx.postMessage(netEvent)
+      this.ctx.postMessage(netEvent, [])
     }
   }
 
@@ -82,7 +82,7 @@ class Network {
               const netEvent = {} as WL_NetworkEvent
               netEvent.eventId = WL_NetworkEventID.NET_MSG_RECV_IND_EVT
               netEvent.eventData = wlMsgData
-              this.ctx.postMessage(netEvent)
+              this.ctx.postMessage(netEvent, [])
             } else {
               break
             }
@@ -113,7 +113,7 @@ class Network {
     netEvent.eventId = WL_NetworkEventID.NET_STATE_IND_EVT
     netEvent.eventData = WL_NetworkState.NET_DISCONNECTED_STATE
     this.isConnected = false
-    this.ctx.postMessage(netEvent)
+    this.ctx.postMessage(netEvent, [])
   }
 
   private disconnect(code: number, reason?: string) {
@@ -123,7 +123,7 @@ class Network {
       const netEvent = {} as WL_NetworkEvent
       netEvent.eventId = WL_NetworkEventID.NET_STATE_IND_EVT
       netEvent.eventData = WL_NetworkState.NET_DISCONNECTING_STATE
-      this.ctx.postMessage(netEvent)
+      this.ctx.postMessage(netEvent, [])
 
       this.socket.close(code, reason || 'normal close')
       this.socket = undefined
@@ -139,7 +139,7 @@ class Network {
     netEvent.eventId = WL_NetworkEventID.NET_EXCEPTION_IND_EVT
     netEvent.eventData = JSON.stringify(event)
     this.isConnected = false
-    this.ctx.postMessage(netEvent)
+    this.ctx.postMessage(netEvent, [])
   }
 
   private connect() {
@@ -149,10 +149,10 @@ class Network {
         wllog('服务器连接中...')
 
         this.socket.binaryType = 'arraybuffer'
-        this.socket.onopen = this.onSocketOpen.bind(this)
-        this.socket.onmessage = this.onSocketRecv.bind(this)
-        this.socket.onclose = this.onSocketClose.bind(this)
-        this.socket.onerror = this.onSocketError.bind(this)
+        this.socket.addEventListener('open', this.onSocketOpen.bind(this))
+        this.socket.addEventListener('message', this.onSocketRecv.bind(this))
+        this.socket.addEventListener('close', this.onSocketClose.bind(this))
+        this.socket.addEventListener('error', this.onSocketError.bind(this))
       }
     } catch (e) {
       wlerr('连接WS Socket 出异常', e)
@@ -161,7 +161,7 @@ class Network {
       netEvent.eventId = WL_NetworkEventID.NET_EXCEPTION_IND_EVT
       netEvent.eventData = e
       this.isConnected = false
-      this.ctx.postMessage(netEvent)
+      this.ctx.postMessage(netEvent, [])
     }
   }
 

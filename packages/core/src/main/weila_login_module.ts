@@ -23,7 +23,7 @@ import {
 } from 'main/weila_external_data'
 
 const wllog = getLogger('MOD:login:info')
-const _wlerr = getLogger('MOD:login:err')
+const wlerr = getLogger('MOD:login:err')
 
 export default class WLLoginModule {
   constructor(private coreInterface: WL_CoreInterface) {
@@ -57,7 +57,7 @@ export default class WLLoginModule {
                 3,
               )
                 .catch((error) => {
-                  _wlerr('初始化数据库失败:', error)
+                  wlerr('初始化数据库失败:', error)
                 })
                 .finally(respond)
 
@@ -137,7 +137,7 @@ export default class WLLoginModule {
       switch (serviceHead.commandId) {
         case WL.Login.LoginCommandId.LOGIN_COMMAND_ANSWER_BIND_EXTENSION:
           {
-            ;(async () => {
+            void (async () => {
               const ntf = serverMessage.loginMessage?.ntfAnswerBindExtension
 
               if (!ntf) return
@@ -183,7 +183,7 @@ export default class WLLoginModule {
 
             this.coreInterface.sendExtEvent(WL_ExtEventID.WL_EXT_KICKOUT_IND, kickoutInfo)
             // 踢出后主动登出，停止 SDK 工作
-            this.coreInterface.executeCoreFunc('weila_logout')
+            void this.coreInterface.executeCoreFunc('weila_logout')
           }
 
           break

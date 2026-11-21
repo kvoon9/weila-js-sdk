@@ -88,10 +88,12 @@ function applySessionExtraProfile(session: WL_IDbSession): boolean {
   return true
 }
 
-function getSessionExtraProfile(extra: any): {
+interface SessionExtraProfile {
   sessionName?: string
   sessionAvatar?: string
-} {
+}
+
+function getSessionExtraProfile(extra: any): SessionExtraProfile {
   if (!extra || typeof extra !== 'object') {
     return {}
   }

@@ -85,6 +85,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isDeepEqual(a: unknown, b: unknown): boolean {
   if (a === b) return true
+
   if (!isRecord(a) || !isRecord(b)) return false
 
   const aKeys = Object.keys(a)
@@ -173,6 +174,7 @@ export default class WLSessionModule {
       onPlayInd: this.onPttPlayInd.bind(this),
       onRecordPttPacketInd: this.onPttPacketRecv.bind(this),
     }
+
     this.pttFsm = new WLPttFsm(listener)
   }
 
@@ -476,14 +478,14 @@ export default class WLSessionModule {
       )
 
       if (response.ok) {
-        const data = await response.json()
+        const speechRsp = await response.json()
 
-        if (data.errcode === 0) {
-          let matchResult = data.data.url.match(/(http|https):\/\/([^/]+)\/(.+)/i)
+        if (speechRsp.errcode === 0) {
+          let matchResult = speechRsp.data.url.match(/(http|https):\/\/([^/]+)\/(.+)/i)
 
           if (matchResult && matchResult.length >= 4) {
             //const pttUrl = "/" + matchResult[3];
-            const pttUrl = data.data.url
+            const pttUrl = speechRsp.data.url
 
             const audioData = await fetchWithTimeout(pttUrl)
               .then((value) => {
@@ -501,10 +503,12 @@ export default class WLSessionModule {
 
             if (audioData) {
               const audioBytes = new Uint8Array(audioData.slice(10))
+
               const audio: WL_IDbAudioData = {
                 data: audioBytes,
                 frameCount: getOpusDataFrameCount(audioBytes),
               }
+
               const audioMsgData: WL_IDbMsgData = {
                 combo_id: '',
                 sessionId: msgData.sessionId,
@@ -517,6 +521,7 @@ export default class WLSessionModule {
                 autoReply: 0,
                 status: WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_NEW,
               }
+
               audioMsgData.combo_id = getMsgDataIdByCombo(audioMsgData, 0)
 
               return audioMsgData
@@ -527,7 +532,7 @@ export default class WLSessionModule {
             return Promise.reject('ptt的地址不正确')
           }
         } else {
-          return Promise.reject('获取ptt地址失败:' + data.errmsg)
+          return Promise.reject('获取ptt地址失败:' + speechRsp.errmsg)
         }
       } else {
         return Promise.reject(response.statusText)
@@ -602,7 +607,7 @@ export default class WLSessionModule {
       if (!sessionMessage) return
 
       if (serviceHead.commandId === WL.Session.SessionCommandId.SESSION_COMMAND_MSGDATA) {
-        ;(async () => {
+        void (async () => {
           const ntfMsg = sessionMessage.ntfMsg
 
           if (!ntfMsg) return
@@ -969,6 +974,7 @@ export default class WLSessionModule {
     data: Uint8Array,
   ): Promise<boolean> {
     const pttCodeData = data.subarray(10)
+
     const pttData: WL_IDbPttData = {
       data: pttCodeData,
       frameCount: getOpusDataFrameCount(pttCodeData),
@@ -1305,6 +1311,7 @@ export default class WLSessionModule {
     if (!burstInfo) return
 
     wllog('onPttPacketRecv', burstInfo)
+
     const pttData: WL_IDbPttData = {
       seq: pttPacket.seq,
       data: pttPacket.data,
@@ -1331,6 +1338,7 @@ export default class WLSessionModule {
         data: pttData.data.slice(0),
         frameCount: pttData.frameCount,
       }
+
       const dbMsgData: WL_IDbMsgData = {
         combo_id: '',
         audioData,
@@ -1343,6 +1351,7 @@ export default class WLSessionModule {
         created: 0,
         status: WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_UNSENT,
       }
+
       dbMsgData.combo_id = getMsgDataIdByCombo(dbMsgData, seqSetting?.data ?? 0)
       burstInfo.dbMsgData = dbMsgData
     } else {
@@ -1380,7 +1389,7 @@ export default class WLSessionModule {
         dbMsgData.created = Long.fromValue(rsp.created ?? 0).toNumber()
         dbMsgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_SENT
         await WeilaDB.getInstance().putMsgData(dbMsgData)
-      } catch (_e) {
+      } catch {
         dbMsgData.msgId = -1
         dbMsgData.created = new Date().getTime() / 1000
         dbMsgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_UNSENT

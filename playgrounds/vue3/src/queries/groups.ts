@@ -38,21 +38,22 @@ export const useGroups = defineQuery(() => {
     enabled: () => core.value !== null,
   })
 
+  const handler: WL_ExtEventCallback = (eventId) => {
+    if (
+      eventId === WL_ExtEventID.WL_EXT_GROUP_NEW_MEMBER_JOINED_IND ||
+      eventId === WL_ExtEventID.WL_EXT_GROUP_DELETED_IND ||
+      eventId === WL_ExtEventID.WL_EXT_GROUP_MEMBERS_MODIFIED_IND ||
+      eventId === WL_ExtEventID.WL_EXT_GROUP_MODIFIED_IND
+    ) {
+      queryReturn.refetch().catch(console.error)
+    }
+  }
+
   // Refetch groups when group data changes
   watch(
     core,
     (coreInstance) => {
       if (!coreInstance) return
-      const handler: WL_ExtEventCallback = (eventId) => {
-        if (
-          eventId === WL_ExtEventID.WL_EXT_GROUP_NEW_MEMBER_JOINED_IND ||
-          eventId === WL_ExtEventID.WL_EXT_GROUP_DELETED_IND ||
-          eventId === WL_ExtEventID.WL_EXT_GROUP_MEMBERS_MODIFIED_IND ||
-          eventId === WL_ExtEventID.WL_EXT_GROUP_MODIFIED_IND
-        ) {
-          queryReturn.refetch().catch(console.error)
-        }
-      }
       coreInstance.weila_onEvent(handler)
     },
     { immediate: true },
