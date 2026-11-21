@@ -8,9 +8,7 @@ module.exports = function workletInlineLoader() {
   this.cacheable(true)
   return [
     `const source = ${JSON.stringify(source)}`,
-    'export default function () {',
-    "  return URL.createObjectURL(new Blob([source], { type: 'application/javascript' }))",
-    '}',
+    "export default URL.createObjectURL(new Blob([source], { type: 'application/javascript' }))",
     '',
   ].join('\n')
 }
