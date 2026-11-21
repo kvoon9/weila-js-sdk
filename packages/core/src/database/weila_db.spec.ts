@@ -147,6 +147,12 @@ describe('WeilaDB migration guard', () => {
     await db.putSession(session)
 
     await expect(db.getSession(session.sessionId, session.sessionType)).resolves.toEqual(session)
+    WeilaDB.close()
+
+    const reopened = await openDb(userId, CURRENT_DB_VERSION)
+    await expect(reopened.getSession(session.sessionId, session.sessionType)).resolves.toEqual(
+      session,
+    )
   })
 
   it('refuses a newer database before it opens or writes to it', async () => {
