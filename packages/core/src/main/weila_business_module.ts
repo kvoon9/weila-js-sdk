@@ -125,7 +125,7 @@ export default class WLBusinessModule {
               serviceSessionInfo.serviceSession.serviceStatus ===
               WL_ServiceStatus.SERVICE_STATUS_INIT
             ) {
-              ;(async () => {
+              void (async () => {
                 await WeilaDB.getInstance().putService(serviceSessionInfo.service)
                 await WeilaDB.getInstance().putServiceStaffs(
                   WeilaDB.getInstance().convertFromStaffRaws(session.staffAttributes ?? []),
@@ -276,6 +276,7 @@ export default class WLBusinessModule {
               session: WeilaDB.getInstance().convertFromServiceSessionRaw(session),
               content: ntf.content ?? undefined,
             }
+
             this.coreInterface.sendExtEvent(
               WL_ExtEventID.WL_EXT_STAFF_SESSION_INVITE_IND,
               staffSessionInvite,

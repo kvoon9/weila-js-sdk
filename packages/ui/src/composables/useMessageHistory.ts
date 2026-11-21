@@ -19,6 +19,43 @@ interface UseMessageHistoryOptions {
   shouldAppendMessage?: (message: WL_IDbMsgData) => boolean
 }
 
+function mergeMessage(existing: WL_IDbMsgData, next: WL_IDbMsgData): WL_IDbMsgData {
+  const base = next.audioData || !existing.audioData ? next : existing
+  const fallback = base === next ? existing : next
+  const audioData = base.audioData || fallback.audioData
+
+  return {
+    ...fallback,
+    ...base,
+    audioData,
+    pttData: audioData
+      ? undefined
+      : base.pttData
+        ? { ...fallback.pttData, ...base.pttData }
+        : fallback.pttData,
+  }
+}
+
+function getMessageIdentity(msg: WL_IDbMsgData): string {
+  if (msg.msgId > 0) {
+    return `${msg.sessionId}_${msg.sessionType}_${msg.msgId}`
+  }
+
+  return msg.combo_id || `${msg.sessionId}_${msg.sessionType}_${msg.msgId}`
+}
+
+function dedupeMessages(nextMessages: WL_IDbMsgData[]): WL_IDbMsgData[] {
+  const byId = new Map<string, WL_IDbMsgData>()
+
+  for (const msg of nextMessages) {
+    const id = getMessageIdentity(msg)
+    const existing = byId.get(id)
+    byId.set(id, existing ? mergeMessage(existing, msg) : msg)
+  }
+
+  return [...byId.values()]
+}
+
 /**
  * Message history composable for the active session.
  */
@@ -69,43 +106,6 @@ export function useMessageHistory(
     return Boolean(
       session && msg.sessionId === session.sessionId && msg.sessionType === session.sessionType,
     )
-  }
-
-  function mergeMessage(existing: WL_IDbMsgData, next: WL_IDbMsgData): WL_IDbMsgData {
-    const base = next.audioData || !existing.audioData ? next : existing
-    const fallback = base === next ? existing : next
-    const audioData = base.audioData || fallback.audioData
-
-    return {
-      ...fallback,
-      ...base,
-      audioData,
-      pttData: audioData
-        ? undefined
-        : base.pttData
-          ? { ...fallback.pttData, ...base.pttData }
-          : fallback.pttData,
-    }
-  }
-
-  function getMessageIdentity(msg: WL_IDbMsgData): string {
-    if (msg.msgId > 0) {
-      return `${msg.sessionId}_${msg.sessionType}_${msg.msgId}`
-    }
-
-    return msg.combo_id || `${msg.sessionId}_${msg.sessionType}_${msg.msgId}`
-  }
-
-  function dedupeMessages(nextMessages: WL_IDbMsgData[]): WL_IDbMsgData[] {
-    const byId = new Map<string, WL_IDbMsgData>()
-
-    for (const msg of nextMessages) {
-      const id = getMessageIdentity(msg)
-      const existing = byId.get(id)
-      byId.set(id, existing ? mergeMessage(existing, msg) : msg)
-    }
-
-    return [...byId.values()]
   }
 
   function applyWithdrawState(msg: WL_IDbMsgData): boolean {

@@ -2,8 +2,8 @@ import { WL } from './weilapb'
 import { WLBuildMsgRet } from './weilapb_wrapper_data'
 import WeilaMsgHeader from './weilapb_msg_header'
 
-class BuildWeilaMsg {
-  public static buildWeilaMsgReq(
+const BuildWeilaMsg = {
+  buildWeilaMsgReq(
     serviceId: WL.Service.ServiceID,
     commandId: number,
     commandType: number,
@@ -107,7 +107,7 @@ class BuildWeilaMsg {
     }
 
     return buildRet
-  }
+  },
 }
 
 export { BuildWeilaMsg }

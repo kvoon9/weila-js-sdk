@@ -3,8 +3,8 @@ import { BuildWeilaMsg } from './weilapb_wrapper'
 import Long from 'long'
 import { WLBuildMsgRet } from './weilapb_wrapper_data'
 
-class WeilaPbBusinessWrapper {
-  public static buildCommonGetSessionsReq(sessionIds: Long[]): WLBuildMsgRet {
+const WeilaPbBusinessWrapper = {
+  buildCommonGetSessionsReq(sessionIds: Long[]): WLBuildMsgRet {
     const businessMessage = new WL.Business.BusinessMessage()
     businessMessage.reqCommonGetSessions = new WL.Business.ReqCommonGetSessions()
     businessMessage.reqCommonGetSessions.sessionIds = sessionIds
@@ -15,13 +15,9 @@ class WeilaPbBusinessWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       businessMessage,
     )
-  }
+  },
 
-  public static buildCommonStaffInviteReq(
-    serviceId: number,
-    userIds: number[],
-    content?: string,
-  ): WLBuildMsgRet {
+  buildCommonStaffInviteReq(serviceId: number, userIds: number[], content?: string): WLBuildMsgRet {
     const businessMessage = new WL.Business.BusinessMessage()
     businessMessage.reqCommonStaffInvite = new WL.Business.ReqCommonStaffInvite()
     businessMessage.reqCommonStaffInvite.userIds = userIds
@@ -34,9 +30,9 @@ class WeilaPbBusinessWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       businessMessage,
     )
-  }
+  },
 
-  public static buildCommonAnswerStaffInviteReq(
+  buildCommonAnswerStaffInviteReq(
     serviceId: number,
     invitorId: number,
     status: number,
@@ -53,9 +49,9 @@ class WeilaPbBusinessWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       businessMessage,
     )
-  }
+  },
 
-  public static buildCommonGetStaffInviteReq(latestUpdated: number): WLBuildMsgRet {
+  buildCommonGetStaffInviteReq(latestUpdated: number): WLBuildMsgRet {
     const businessMessage = new WL.Business.BusinessMessage()
     businessMessage.reqCommonGetStaffInvite = new WL.Business.ReqCommonGetStaffInvite()
     businessMessage.reqCommonGetStaffInvite.latestUpdated = Long.fromValue(latestUpdated)
@@ -66,9 +62,9 @@ class WeilaPbBusinessWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       businessMessage,
     )
-  }
+  },
 
-  public static buildCommonStaffExitReq(serviceId: number): WLBuildMsgRet {
+  buildCommonStaffExitReq(serviceId: number): WLBuildMsgRet {
     const businessMessage = new WL.Business.BusinessMessage()
     businessMessage.reqCommonStaffExit = new WL.Business.ReqCommonStaffExit()
     businessMessage.reqCommonStaffExit.serviceId = serviceId
@@ -79,9 +75,9 @@ class WeilaPbBusinessWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       businessMessage,
     )
-  }
+  },
 
-  public static buildCommonStaffDeleteReq(serviceId: number, userId: number): WLBuildMsgRet {
+  buildCommonStaffDeleteReq(serviceId: number, userId: number): WLBuildMsgRet {
     const businessMessage = new WL.Business.BusinessMessage()
     businessMessage.reqCommonStaffDelete = new WL.Business.ReqCommonStaffDelete()
     businessMessage.reqCommonStaffDelete.serviceId = serviceId
@@ -93,10 +89,10 @@ class WeilaPbBusinessWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       businessMessage,
     )
-  }
+  },
 
   // 客服接口
-  public static buildStaffAcceptSessionReq(sessionId: Long): WLBuildMsgRet {
+  buildStaffAcceptSessionReq(sessionId: Long): WLBuildMsgRet {
     const businessMessage = new WL.Business.BusinessMessage()
     businessMessage.reqStaffAcceptSession = new WL.Business.ReqStaffAcceptSession()
     businessMessage.reqStaffAcceptSession.sessionId = sessionId
@@ -107,9 +103,9 @@ class WeilaPbBusinessWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       businessMessage,
     )
-  }
+  },
 
-  public static buildStaffExitSessionReq(sessionId: Long): WLBuildMsgRet {
+  buildStaffExitSessionReq(sessionId: Long): WLBuildMsgRet {
     const businessMessage = new WL.Business.BusinessMessage()
     businessMessage.reqStaffExitSession = new WL.Business.ReqStaffExitSession()
     businessMessage.reqStaffExitSession.sessionId = sessionId
@@ -120,9 +116,9 @@ class WeilaPbBusinessWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       businessMessage,
     )
-  }
+  },
 
-  public static buildStaffCloseSessionReq(sessionId: Long): WLBuildMsgRet {
+  buildStaffCloseSessionReq(sessionId: Long): WLBuildMsgRet {
     const businessMessage = new WL.Business.BusinessMessage()
     businessMessage.reqStaffCloseSession = new WL.Business.ReqStaffCloseSession()
     businessMessage.reqStaffCloseSession.sessionId = sessionId
@@ -133,13 +129,9 @@ class WeilaPbBusinessWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       businessMessage,
     )
-  }
+  },
 
-  public static buildStaffSessionInviteReq(
-    sessionId: Long,
-    staffIds: number[],
-    content?: string,
-  ): WLBuildMsgRet {
+  buildStaffSessionInviteReq(sessionId: Long, staffIds: number[], content?: string): WLBuildMsgRet {
     const businessMessage = new WL.Business.BusinessMessage()
     businessMessage.reqStaffSessionInvite = new WL.Business.ReqStaffSessionInvite()
     businessMessage.reqStaffSessionInvite.sessionId = sessionId
@@ -152,9 +144,9 @@ class WeilaPbBusinessWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       businessMessage,
     )
-  }
+  },
 
-  public static buildStaffAnswerSessionInviteReq(sessionId: Long, status: number): WLBuildMsgRet {
+  buildStaffAnswerSessionInviteReq(sessionId: Long, status: number): WLBuildMsgRet {
     const businessMessage = new WL.Business.BusinessMessage()
     businessMessage.reqStaffAnswerSessionInvite = new WL.Business.ReqStaffAnswerSessionInvite()
     businessMessage.reqStaffAnswerSessionInvite.sessionId = sessionId
@@ -166,12 +158,9 @@ class WeilaPbBusinessWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       businessMessage,
     )
-  }
+  },
 
-  public static buildStaffRemoveSessionStaffReq(
-    sessionId: Long,
-    staffIds: number[],
-  ): WLBuildMsgRet {
+  buildStaffRemoveSessionStaffReq(sessionId: Long, staffIds: number[]): WLBuildMsgRet {
     const businessMessage = new WL.Business.BusinessMessage()
     businessMessage.reqStaffRemoveSessionStaff = new WL.Business.ReqStaffRemoveSessionStaff()
     businessMessage.reqStaffRemoveSessionStaff.sessionId = sessionId
@@ -183,9 +172,9 @@ class WeilaPbBusinessWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       businessMessage,
     )
-  }
+  },
 
-  public static buildStaffSearchStaffsReq(
+  buildStaffSearchStaffsReq(
     serviceId: number,
     pageIndex: number,
     pageSize: number,
@@ -204,9 +193,9 @@ class WeilaPbBusinessWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       businessMessage,
     )
-  }
+  },
 
-  public static buildStaffResetSessionReq(sessionId: Long): WLBuildMsgRet {
+  buildStaffResetSessionReq(sessionId: Long): WLBuildMsgRet {
     const businessMessage = new WL.Business.BusinessMessage()
     businessMessage.reqStaffResetSession = new WL.Business.ReqStaffResetSession()
     businessMessage.reqStaffResetSession.sessionId = sessionId
@@ -217,7 +206,7 @@ class WeilaPbBusinessWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       businessMessage,
     )
-  }
+  },
 }
 
 export { WeilaPbBusinessWrapper }

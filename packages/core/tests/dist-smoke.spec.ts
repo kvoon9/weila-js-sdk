@@ -31,7 +31,7 @@ test.afterAll(async () => {
 })
 
 test('exports match the contract baseline', async () => {
-  const names = await page.evaluate(() => Object.keys(window.__sdk).sort())
+  const names = await page.evaluate(() => Object.keys(window.__sdk).toSorted())
   expect(names).toEqual(baseline.exports)
 })
 

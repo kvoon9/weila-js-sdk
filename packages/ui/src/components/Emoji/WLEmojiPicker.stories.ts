@@ -10,14 +10,15 @@ const meta: Meta<typeof WLEmojiPicker> = {
 export default meta
 type Story = StoryObj<typeof WLEmojiPicker>
 
+function handleSelect(emoji: string) {
+  console.log('Selected emoji:', emoji)
+}
+
 export const Default: Story = {
   args: {},
   render: () => ({
     components: { WLEmojiPicker },
     setup() {
-      function handleSelect(emoji: string) {
-        console.log('Selected emoji:', emoji)
-      }
       return { handleSelect }
     },
     template: `

@@ -18,20 +18,21 @@ export const useFriends = defineQuery(() => {
     enabled: () => core.value !== null,
   })
 
+  const handler: WL_ExtEventCallback = (eventId) => {
+    if (
+      eventId === WL_ExtEventID.WL_EXT_FRIEND_NEW_IND ||
+      eventId === WL_ExtEventID.WL_EXT_FRIEND_DELETED_IND ||
+      eventId === WL_ExtEventID.WL_EXT_FRIEND_MODIFIED_IND
+    ) {
+      queryReturn.refetch().catch(console.error)
+    }
+  }
+
   // Refetch friends when friend data changes
   watch(
     core,
     (coreInstance) => {
       if (!coreInstance) return
-      const handler: WL_ExtEventCallback = (eventId) => {
-        if (
-          eventId === WL_ExtEventID.WL_EXT_FRIEND_NEW_IND ||
-          eventId === WL_ExtEventID.WL_EXT_FRIEND_DELETED_IND ||
-          eventId === WL_ExtEventID.WL_EXT_FRIEND_MODIFIED_IND
-        ) {
-          queryReturn.refetch().catch(console.error)
-        }
-      }
       coreInstance.weila_onEvent(handler)
     },
     { immediate: true },

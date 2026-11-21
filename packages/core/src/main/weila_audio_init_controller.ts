@@ -65,7 +65,7 @@ export function createWeilaAudioInitController(
     initPromise = core
       .weila_audioInit()
       .then((result) => {
-        setInitialized(Boolean(result))
+        setInitialized(result)
 
         if (initialized) disarmInitListener()
 

@@ -222,7 +222,7 @@ class WeilaCore implements WL_CoreInterface {
     this.sendingPbMsgList = []
 
     this.network = new Network()
-    this.network.onmessage = this.onNetworkMessage.bind(this)
+    this.network.addEventListener('message', this.onNetworkMessage.bind(this))
 
     this.loginModule = new WLLoginModule(this)
     this.friendModule = new WLFriendModule(this)
@@ -284,6 +284,7 @@ class WeilaCore implements WL_CoreInterface {
         buildPbMsg,
         timeout: timeout ? timeout : 6000,
       }
+
       this.sendingPbMsgList.push(sendingItem)
       setTimeout(this.processSendingPbMsg.bind(this), 0)
     })
@@ -311,6 +312,7 @@ class WeilaCore implements WL_CoreInterface {
         },
         timeout: new Date().getTime() + (sendingItem.timeout ?? 0),
       }
+
       this.waitingRspMap.set(weilaMsgHeader.seqNum, waitingItem)
       this.sendNetworkEvent(WL_NetworkEventID.NET_SEND_DATA_EVT, sendingItem.buildPbMsg.reqData)
     }
@@ -329,7 +331,7 @@ class WeilaCore implements WL_CoreInterface {
 
   private sendNetworkEvent(eventId: WL_NetworkEventID, eventData: any) {
     const netEvent: WL_NetworkEvent = { eventId, eventData }
-    this.network.postMessage(netEvent)
+    this.network.postMessage(netEvent, [])
   }
 
   private onNetworkMessage(event: MessageEvent<WL_NetworkEvent>) {
@@ -410,6 +412,7 @@ class WeilaCore implements WL_CoreInterface {
       state: WL_DataPrepareState.PREPARE_PROGRESS_IND,
       msg: 'SDK.FriendInit',
     }
+
     this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind)
     await this.friendModule.initFriends()
     ind.msg = 'SDK.GroupInit'
@@ -486,6 +489,7 @@ class WeilaCore implements WL_CoreInterface {
       state: WL_DataPrepareState.START_PREPARING,
       msg: 'Commons.startPrepare',
     }
+
     this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind)
   }
 
@@ -495,18 +499,20 @@ class WeilaCore implements WL_CoreInterface {
       state: WL_DataPrepareState.PREPARE_SUCC_END,
       msg: 'Commons.prepareFinishSucc',
     }
+
     this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind)
   }
 
   private onDataPrepareFail(_context: any, _event: any) {
     // 因为数据准备失败，登出系统
-    this.weila_logout().then((_value) => {})
+    void this.weila_logout().then((_value) => {})
 
     //通知外部，出现异常，并告知异常信息
     const ind: WL_DataPrepareInd = {
       state: WL_DataPrepareState.PREPARE_FAIL_END,
       msg: 'Commons.prepareFinishFail',
     }
+
     this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind)
   }
 
@@ -722,6 +728,7 @@ class WeilaCore implements WL_CoreInterface {
         countryCode,
         md5: options.md5 ?? true,
       }
+
       this.mainFsmService.send({ type: fsmEvents.FSM_LOGIN_SERVER_EVT, data: params })
     })
   }
@@ -762,7 +769,7 @@ class WeilaCore implements WL_CoreInterface {
               frameCount: 0,
             }
           }
-        } catch (_e) {
+        } catch {
           audioMsgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR
           audioMsgData.audioData = {
             audioUrl: audioUrl,
@@ -1211,11 +1218,12 @@ class WeilaCore implements WL_CoreInterface {
       let extra = session.extra
 
       if (profile?.memberCount !== undefined || profile?.extra !== undefined) {
-        extra = {
-          ...(session.extra && typeof session.extra === 'object' ? session.extra : {}),
-          ...(profile?.memberCount !== undefined ? { memberCount: profile.memberCount } : {}),
-          ...(profile?.extra !== undefined ? profile.extra : {}),
-        }
+        const baseExtra = session.extra && typeof session.extra === 'object' ? session.extra : {}
+        extra = { ...baseExtra }
+
+        if (profile?.memberCount !== undefined) extra.memberCount = profile.memberCount
+
+        if (profile?.extra !== undefined) Object.assign(extra, profile.extra)
       }
 
       await this.weila_updateSessionProfile(session.sessionId, session.sessionType, {
@@ -1624,12 +1632,14 @@ class WeilaCore implements WL_CoreInterface {
     }
 
     const fileName = index !== -1 ? filename.substring(index + 1) : filename
+
     const fileInfo: WL_IDbFileData = {
       fileName,
       fileUrl: '',
       fileThumbnail: TextMsgDataParser.getExtendFileFormatUrl(fileName),
       fileSize: data.size,
     }
+
     const msgData: WL_IDbMsgData = {
       combo_id: '',
       fileInfo,
@@ -2306,7 +2316,7 @@ class WeilaCore implements WL_CoreInterface {
 
       // immediately: 从数据库加载历史消息并逐条触发回调
       if (opts?.immediately && filter) {
-        this.weila_getMsgDatas(filter.sessionId, filter.sessionType, 0, 20).then((msgs) => {
+        void this.weila_getMsgDatas(filter.sessionId, filter.sessionType, 0, 20).then((msgs) => {
           for (const msg of msgs) {
             cb(msg)
           }

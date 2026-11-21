@@ -176,7 +176,7 @@ export default class WLFriendModule {
             wlerr('好友信息变更失败', reason)
           })
       } else if (serviceHead.commandId === WL.Friend.FriendCommandId.FRIEND_COMMAND_FRIEND_INVITE) {
-        ;(async () => {
+        void (async () => {
           const ntfFriendInvite = friendMessage.ntfFriendInvite
 
           if (!ntfFriendInvite) return
@@ -206,7 +206,7 @@ export default class WLFriendModule {
       } else if (
         serviceHead.commandId === WL.Friend.FriendCommandId.FRIEND_COMMAND_ANSWER_FRIEND_INVITE
       ) {
-        ;(async () => {
+        void (async () => {
           const ntfFriendAnswerInvite = friendMessage.ntfAnswerFriendInvite
 
           if (!ntfFriendAnswerInvite) return

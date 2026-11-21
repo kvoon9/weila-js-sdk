@@ -106,8 +106,8 @@ function setConfigData(params: SetConfigDataParam[]) {
   }
 }
 
-class WLConfig {
-  public static async loadResource(): Promise<boolean> {
+const WLConfig = {
+  async loadResource(): Promise<boolean> {
     const db = new WLConfigDB()
 
     for (let item of configItemInfo) {
@@ -161,9 +161,9 @@ class WLConfig {
     }
 
     return true
-  }
+  },
 
-  private static fetchUrl(url: string, dataType: XMLHttpRequestResponseType): Promise<any> {
+  fetchUrl(url: string, dataType: XMLHttpRequestResponseType): Promise<any> {
     return new Promise<any>((resolve, reject) => {
       wllog('获取URL:' + url + ' 的数据')
       const xhr = new XMLHttpRequest()
@@ -184,9 +184,9 @@ class WLConfig {
       })
       xhr.send(null)
     })
-  }
+  },
 
-  public static async getConfigData(id: WL_ConfigID): Promise<IConfigData | undefined> {
+  async getConfigData(id: WL_ConfigID): Promise<IConfigData | undefined> {
     const db = new WLConfigDB()
 
     try {
@@ -197,7 +197,7 @@ class WLConfig {
       wlerr('获取配置信息出错:' + e)
       throw e
     }
-  }
+  },
 }
 
 export { WLConfig, WL_ConfigID, setConfigData }

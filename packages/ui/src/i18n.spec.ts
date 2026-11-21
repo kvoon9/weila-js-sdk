@@ -5,6 +5,20 @@ import WlStatusIndicator from './components/WlStatusIndicator.vue'
 import { createWeilaUi, provideWeilaUiI18n, useWeilaUiI18n } from './i18n'
 import { formatMsgTime, formatTimeAgo } from './utils/time'
 
+const translate = (key: string, params: Record<string, string | number> = {}) => {
+  const messages: Record<string, string> = {
+    'time.yesterday': 'Yesterday {time}',
+    'time.justNow': 'Just now',
+    'time.minutesAgo': '{minutes}m ago',
+    'time.hoursAgo': '{hours}h ago',
+    'time.daysAgo': '{days}d ago',
+  }
+
+  return (messages[key] ?? key).replace(/\{(\w+)\}/g, (_, name) =>
+    String(params[name] ?? `{${name}}`),
+  )
+}
+
 describe('weila ui i18n', () => {
   it('renders zh-CN by default without installing the plugin', () => {
     const wrapper = mount(WlStatusIndicator, {
@@ -93,29 +107,15 @@ describe('weila ui i18n', () => {
   })
 
   it('formats relative and message times with provided translations', () => {
-    const t = (key: string, params: Record<string, string | number> = {}) => {
-      const messages: Record<string, string> = {
-        'time.yesterday': 'Yesterday {time}',
-        'time.justNow': 'Just now',
-        'time.minutesAgo': '{minutes}m ago',
-        'time.hoursAgo': '{hours}h ago',
-        'time.daysAgo': '{days}d ago',
-      }
-
-      return (messages[key] ?? key).replace(/\{(\w+)\}/g, (_, name) =>
-        String(params[name] ?? `{${name}}`),
-      )
-    }
-
     const nowSeconds = Math.floor(Date.now() / 1000)
     const yesterday = new Date()
     yesterday.setDate(yesterday.getDate() - 1)
     yesterday.setHours(9, 5, 0, 0)
 
-    expect(formatTimeAgo(nowSeconds - 30, t)).toBe('Just now')
-    expect(formatTimeAgo(nowSeconds - 5 * 60, t)).toBe('5m ago')
-    expect(formatTimeAgo(nowSeconds - 2 * 60 * 60, t)).toBe('2h ago')
-    expect(formatMsgTime(Math.floor(yesterday.getTime() / 1000), t)).toBe('Yesterday 09:05')
+    expect(formatTimeAgo(nowSeconds - 30, translate)).toBe('Just now')
+    expect(formatTimeAgo(nowSeconds - 5 * 60, translate)).toBe('5m ago')
+    expect(formatTimeAgo(nowSeconds - 2 * 60 * 60, translate)).toBe('2h ago')
+    expect(formatMsgTime(Math.floor(yesterday.getTime() / 1000), translate)).toBe('Yesterday 09:05')
   })
 
   it('interpolates params from useWeilaUiI18n', () => {

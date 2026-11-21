@@ -8,8 +8,8 @@ import {
 import Long from 'long'
 import { BuildWeilaMsg } from './weilapb_wrapper'
 
-class WeilaPbLocationWrapper {
-  public static buildReportLocationReq(
+const WeilaPbLocationWrapper = {
+  buildReportLocationReq(
     locationInfo: WLLocationInfo,
     sessionInfoList: WLSessionInfo[],
     appId: string,
@@ -50,12 +50,9 @@ class WeilaPbLocationWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       locationMessage,
     )
-  }
+  },
 
-  public static buildGetLocationReq(
-    sessionInfo: WLSessionInfo,
-    userIdList: number[],
-  ): WLBuildMsgRet {
+  buildGetLocationReq(sessionInfo: WLSessionInfo, userIdList: number[]): WLBuildMsgRet {
     const locationMessage = new WL.Location.LocationMessage()
     locationMessage.reqGetLocation = new WL.Location.ReqGetLocation()
     locationMessage.reqGetLocation.sessionInfo = new WL.Location.LocationSessionInfo()
@@ -72,9 +69,9 @@ class WeilaPbLocationWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       locationMessage,
     )
-  }
+  },
 
-  public static buildLocationControlReq(
+  buildLocationControlReq(
     sessionInfo: WLSessionInfo,
     locationControl: WLLocationControl,
     userIdList: number[],
@@ -98,7 +95,7 @@ class WeilaPbLocationWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       locationMessage,
     )
-  }
+  },
 }
 
 export { WeilaPbLocationWrapper }

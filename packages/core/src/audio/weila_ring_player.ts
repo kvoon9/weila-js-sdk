@@ -1,9 +1,9 @@
 import { WLConfig, WL_ConfigID } from 'main/weila_config'
 
-class WeilaRingPlayer {
-  private static ringCache: Map<number, string> = new Map<number, string>()
+const WeilaRingPlayer = {
+  ringCache: new Map<number, string>(),
 
-  public static async weila_playRing(id: WL_ConfigID): Promise<boolean> {
+  async weila_playRing(id: WL_ConfigID): Promise<boolean> {
     let url = ''
 
     if (this.ringCache.has(id)) {
@@ -34,7 +34,7 @@ class WeilaRingPlayer {
           reject('播放铃声失败')
         })
     })
-  }
+  },
 }
 
 export default WeilaRingPlayer

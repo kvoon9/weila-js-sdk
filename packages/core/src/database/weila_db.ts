@@ -49,7 +49,7 @@ import { TextMsgDataParser } from 'proto/weilapb_textmsg_parser'
 import { AsyncTime, calculateOpusDataFrame, getMsgDataIdByCombo, SyncTime } from 'main/weila_utils'
 
 const wllog = getLogger('DB:core:info')
-const _wlerr = getLogger('DB:core:err')
+const wlerr = getLogger('DB:core:err')
 
 // Opening without a version never upgrades. `$meta` holds the logical version after Dexie
 // patches a same-version schema, and the floored native version is the fallback for Dexie 3
@@ -148,7 +148,7 @@ class WeilaDB extends Dexie {
     } catch (error) {
       const initError = error instanceof Error ? error : new Error(String(error))
       this.initError = initError
-      _wlerr('读取数据库版本失败:', dbName, initError)
+      wlerr('读取数据库版本失败:', dbName, initError)
       throw initError
     }
 
@@ -158,7 +158,7 @@ class WeilaDB extends Dexie {
       )
 
       this.initError = error
-      _wlerr(
+      wlerr(
         '拒绝降级打开数据库 %s: 已安装版本 %d, 当前 SDK 声明版本 %d (Dexie VersionError)',
         dbName,
         installedVersion,
@@ -250,11 +250,11 @@ class WeilaDB extends Dexie {
         return undefined
       })
       .catch((error) => {
-        _wlerr('初始化数据库设置失败:', this.name, error)
+        wlerr('初始化数据库设置失败:', this.name, error)
       })
   }
 
-  // 设置相关操作
+  /** 设置相关操作 */
   public async putSettingItem(item: WL_IDbSetting): Promise<number> {
     return this.settings.put(item)
   }
@@ -263,7 +263,7 @@ class WeilaDB extends Dexie {
     return this.settings.get(id)
   }
 
-  // 会话相关操作
+  /** 会话相关操作 */
   @AsyncTime()
   public async fillSessionInfo(session: WL_IDbSession): Promise<WL_IDbSession> {
     session.sessionName = ''
@@ -318,6 +318,7 @@ class WeilaDB extends Dexie {
       const sessionId = Long.fromValue(raw.sessionId ?? 0).toString(10)
       const sessionType = dbEnum<WL_IDbSessionType>(raw.sessionType)
       const readMsgId = raw.readMsgId ?? 0
+
       let session: WL_IDbSession = {
         sessionId,
         sessionType,
@@ -329,6 +330,7 @@ class WeilaDB extends Dexie {
         status: WL_IDbSessionStatus.SESSION_ACTIVATE,
         lastMsgId: 0,
       }
+
       inheritSessionProfile(session, await this.getSession(session.sessionId, session.sessionType))
       wllog('sessionId:%s lastMsgDataRaw:', session.sessionId, raw.latestMsgData)
       const latestMsgData = raw.latestMsgData
@@ -404,8 +406,8 @@ class WeilaDB extends Dexie {
           sessionSetting.loactionShared = friendInfo.locationShared
         }
       } else if (isGroupSessionType(sessionType)) {
-        const comboId = sessionId + '_' + this.loginUserId
-        const memberInfo = await this.group_members.get(comboId)
+        const memberComboId = sessionId + '_' + this.loginUserId
+        const memberInfo = await this.group_members.get(memberComboId)
 
         if (memberInfo) {
           sessionSetting.tts = memberInfo.tts
@@ -450,10 +452,10 @@ class WeilaDB extends Dexie {
 
         if (groupInfo) {
           const id = groupInfo.groupId + '_' + groupInfo.ownerId
-          this.group_members.where('combo_gid_uid').equals(id).modify(setting)
+          void this.group_members.where('combo_gid_uid').equals(id).modify(setting)
         }
       } else if (isIndividualSessionType(sessionType)) {
-        this.friends.where('userId').equals(parseInt(sessionId)).modify(setting)
+        void this.friends.where('userId').equals(parseInt(sessionId)).modify(setting)
       } else if (isServiceSessionType(sessionType)) {
         //TODO: 服务类的会话暂时不支持设置到其他属性去
 
@@ -526,6 +528,7 @@ class WeilaDB extends Dexie {
     for (let i = 0; i < count; i++) {
       const raw = groupRaws[i]
       const name = raw.name ?? ''
+
       const group: WL_IDbGroup = {
         groupId: Long.fromValue(raw.groupId ?? 0).toString(10),
         groupNum: raw.number ?? '',
@@ -623,6 +626,7 @@ class WeilaDB extends Dexie {
     for (let i = 0; i < count; i++) {
       const raw = memberRaws[i]
       const userId = raw.userId ?? 0
+
       const memberInfo: WL_IDbMemberInfo = {
         memberType: dbEnum<WL_IDbMemberType>(raw.type),
         speechEnable: raw.shutupStatus === 0,
@@ -638,6 +642,7 @@ class WeilaDB extends Dexie {
         created: Long.fromValue(raw.created ?? 0).toNumber(),
         combo_gid_uid: groupId + '_' + userId,
       }
+
       memberInfos.push(memberInfo)
     }
 
@@ -702,6 +707,7 @@ class WeilaDB extends Dexie {
           memberInfo: memberInfos[i],
           userInfo: userInfos[index],
         }
+
         groupMembers.push(groupMember)
       }
     }
@@ -768,6 +774,7 @@ class WeilaDB extends Dexie {
           memberInfo: memberInfos[i],
           userInfo: userInfos[index],
         }
+
         groupMembers.push(groupMember)
       }
     }
@@ -782,6 +789,7 @@ class WeilaDB extends Dexie {
 
     for (let i = 0; i < count; i++) {
       const raw = friendRaws[i]
+
       const friendInfo: WL_IDbFriendInfo = {
         remark: raw.remark ?? undefined,
         tts: raw.tts === 1,
@@ -852,6 +860,7 @@ class WeilaDB extends Dexie {
           friendInfo: friendInfos[i],
           userInfo: userInfos[index],
         }
+
         friends.push(friend)
       }
     }
@@ -902,6 +911,7 @@ class WeilaDB extends Dexie {
     for (let i = 0; i < count; i++) {
       const raw = userRaws[i]
       const nick = raw.nick ?? ''
+
       const userInfo: WL_IDbUserInfo = {
         userId: raw.userId ?? 0,
         avatar: raw.avatar ?? '',
@@ -1000,8 +1010,10 @@ class WeilaDB extends Dexie {
     for (let i = 0; i < count; i++) {
       const raw = msgDataRaws[i]
       const senderId = raw.senderId ?? 0
+
       const isIndividualMsg =
         isIndividualSessionType(raw.sessionType ?? 0) && raw.senderId !== myUserId
+
       const msgData: WL_IDbMsgData = {
         combo_id: '',
         senderId,
@@ -1015,6 +1027,7 @@ class WeilaDB extends Dexie {
         autoReply: raw.autoReply ?? 0,
         status: WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_READ,
       }
+
       msgData.tag = raw.tag ?? undefined
 
       switch (raw.msgType) {
@@ -1531,6 +1544,7 @@ class WeilaDB extends Dexie {
     }
 
     const userData = await this.users.get(staff.userId)
+
     const staffInfo: WL_IDbServiceStaffInfo = {
       staff,
       userData: userData!,
@@ -1547,6 +1561,7 @@ class WeilaDB extends Dexie {
     for (let staff of staffs) {
       if (staff) {
         const userData = await this.users.get(staff.userId)
+
         const staffInfo: WL_IDbServiceStaffInfo = {
           staff,
           userData: userData!,

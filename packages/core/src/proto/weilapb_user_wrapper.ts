@@ -2,8 +2,8 @@ import { WLBuildMsgRet, WLChangeUserInfoData } from './weilapb_wrapper_data'
 import { WL } from './weilapb'
 import { BuildWeilaMsg } from './weilapb_wrapper'
 
-class WeilaPbUserWrapper {
-  public static buildGetUserInfoReq(key: string): WLBuildMsgRet {
+const WeilaPbUserWrapper = {
+  buildGetUserInfoReq(key: string): WLBuildMsgRet {
     const userMessage = new WL.User.UserMessage()
     userMessage.reqGetUserInfo = new WL.User.ReqGetUserInfo()
     userMessage.reqGetUserInfo.key = key
@@ -14,9 +14,9 @@ class WeilaPbUserWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       userMessage,
     )
-  }
+  },
 
-  public static buildChangeUserInfoReq(changeUserInfo: WLChangeUserInfoData): WLBuildMsgRet {
+  buildChangeUserInfoReq(changeUserInfo: WLChangeUserInfoData): WLBuildMsgRet {
     const userMessage = new WL.User.UserMessage()
     userMessage.reqChangeUserInfo = new WL.User.ReqChangeUserInfo()
     userMessage.reqChangeUserInfo.avatar = changeUserInfo.avatar
@@ -30,9 +30,9 @@ class WeilaPbUserWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       userMessage,
     )
-  }
+  },
 
-  public static buildGetConfigReq(): WLBuildMsgRet {
+  buildGetConfigReq(): WLBuildMsgRet {
     const userMessage = new WL.User.UserMessage()
     userMessage.reqGetConfig = new WL.User.ReqGetConfig()
 
@@ -42,14 +42,9 @@ class WeilaPbUserWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       userMessage,
     )
-  }
+  },
 
-  public static buildSetConfigReq(
-    userId: number,
-    key: string,
-    value: string,
-    subUserId: number,
-  ): WLBuildMsgRet {
+  buildSetConfigReq(userId: number, key: string, value: string, subUserId: number): WLBuildMsgRet {
     const userMessage = new WL.User.UserMessage()
     userMessage.reqSetConfig = new WL.User.ReqSetConfig()
     userMessage.reqSetConfig.name = key
@@ -63,7 +58,7 @@ class WeilaPbUserWrapper {
       userMessage,
       subUserId,
     )
-  }
+  },
 }
 
 export { WeilaPbUserWrapper }

@@ -4,8 +4,8 @@ import { BuildWeilaMsg } from './weilapb_wrapper'
 import { MD5 } from 'crypto-js'
 import Long from 'long'
 
-class WeilaPBLoginWrapper {
-  public static buildLoginAppReq(
+const WeilaPBLoginWrapper = {
+  buildLoginAppReq(
     account: string,
     password: string,
     countryCode: string,
@@ -33,9 +33,9 @@ class WeilaPBLoginWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       loginMsg,
     )
-  }
+  },
 
-  public static buildLogoutReq(): WLBuildMsgRet {
+  buildLogoutReq(): WLBuildMsgRet {
     const loginMsg = new WL.Login.LoginMessage()
     loginMsg.reqLogout = new WL.Login.ReqLogout()
 
@@ -45,9 +45,9 @@ class WeilaPBLoginWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       loginMsg,
     )
-  }
+  },
 
-  public static buildHeartbeatReq(): WLBuildMsgRet {
+  buildHeartbeatReq(): WLBuildMsgRet {
     const loginMsg = new WL.Login.LoginMessage()
     loginMsg.reqHeartbeat = new WL.Login.ReqHeartbeat()
     loginMsg.reqHeartbeat.serverTime = Long.fromNumber(Date.now(), true)
@@ -58,9 +58,9 @@ class WeilaPBLoginWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       loginMsg,
     )
-  }
+  },
 
-  public static buildBindExtensionReq(verifyCode: string): WLBuildMsgRet {
+  buildBindExtensionReq(verifyCode: string): WLBuildMsgRet {
     const loginMsg = new WL.Login.LoginMessage()
     loginMsg.reqBindExtension = new WL.Login.ReqBindExtension()
     loginMsg.reqBindExtension.verificationCode = verifyCode
@@ -71,9 +71,9 @@ class WeilaPBLoginWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       loginMsg,
     )
-  }
+  },
 
-  public static buildUnbindExtensionReq(subUserId: number): WLBuildMsgRet {
+  buildUnbindExtensionReq(subUserId: number): WLBuildMsgRet {
     const loginMsg = new WL.Login.LoginMessage()
     loginMsg.reqUnbindExtension = new WL.Login.ReqUnbindExtension()
 
@@ -84,9 +84,9 @@ class WeilaPBLoginWrapper {
       loginMsg,
       subUserId,
     )
-  }
+  },
 
-  public static buildGetExtensionInfoReq(subUserId: number): WLBuildMsgRet {
+  buildGetExtensionInfoReq(subUserId: number): WLBuildMsgRet {
     const loginMsg = new WL.Login.LoginMessage()
     loginMsg.reqGetExtensionInfo = new WL.Login.ReqGetExtensionInfo()
 
@@ -97,9 +97,9 @@ class WeilaPBLoginWrapper {
       loginMsg,
       subUserId,
     )
-  }
+  },
 
-  public static buildGetExtensionListReq(): WLBuildMsgRet {
+  buildGetExtensionListReq(): WLBuildMsgRet {
     const loginMsg = new WL.Login.LoginMessage()
     loginMsg.reqGetExtensionList = new WL.Login.ReqGetExtensionList()
 
@@ -109,9 +109,9 @@ class WeilaPBLoginWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       loginMsg,
     )
-  }
+  },
 
-  public static buildSetExtensionConfig(
+  buildSetExtensionConfig(
     subUserId: number,
     configKey: string,
     configValue: string,
@@ -128,9 +128,9 @@ class WeilaPBLoginWrapper {
       loginMsg,
       subUserId,
     )
-  }
+  },
 
-  public static buildShutdownExtensionReq(subUserId: number): WLBuildMsgRet {
+  buildShutdownExtensionReq(subUserId: number): WLBuildMsgRet {
     const loginMsg = new WL.Login.LoginMessage()
     loginMsg.reqShutdownExtension = new WL.Login.ReqShutdownExtension()
 
@@ -141,9 +141,9 @@ class WeilaPBLoginWrapper {
       loginMsg,
       subUserId,
     )
-  }
+  },
 
-  public static buildLockExtensionReq(subUserId: number): WLBuildMsgRet {
+  buildLockExtensionReq(subUserId: number): WLBuildMsgRet {
     const loginMsg = new WL.Login.LoginMessage()
     loginMsg.reqLockExtension = new WL.Login.ReqLockExtension()
 
@@ -154,9 +154,9 @@ class WeilaPBLoginWrapper {
       loginMsg,
       subUserId,
     )
-  }
+  },
 
-  public static buildUnlockExtensionReq(subUserId: number): WLBuildMsgRet {
+  buildUnlockExtensionReq(subUserId: number): WLBuildMsgRet {
     const loginMsg = new WL.Login.LoginMessage()
     loginMsg.reqUnlockExtension = new WL.Login.ReqUnlockExtension()
 
@@ -167,9 +167,9 @@ class WeilaPBLoginWrapper {
       loginMsg,
       subUserId,
     )
-  }
+  },
 
-  public static buildGetTokenReq(token: string): WLBuildMsgRet {
+  buildGetTokenReq(token: string): WLBuildMsgRet {
     const loginMsg = new WL.Login.LoginMessage()
     loginMsg.reqToken = new WL.Login.ReqToken()
     loginMsg.reqToken.token = token
@@ -180,9 +180,9 @@ class WeilaPBLoginWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       loginMsg,
     )
-  }
+  },
 
-  public static buildRefreshTokenReq(): WLBuildMsgRet {
+  buildRefreshTokenReq(): WLBuildMsgRet {
     const loginMsg = new WL.Login.LoginMessage()
     loginMsg.reqRefreshAccessToken = new WL.Login.ReqRefreshAccessToken()
 
@@ -192,7 +192,7 @@ class WeilaPBLoginWrapper {
       WL.Service.CommandType.COMMAND_REQUEST,
       loginMsg,
     )
-  }
+  },
 }
 
 export { WeilaPBLoginWrapper }

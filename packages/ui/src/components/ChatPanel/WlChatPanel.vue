@@ -232,16 +232,16 @@ const handleAudioPlayInd = (event: WL_PttPlayInd) => {
   }
 }
 
+const handlePttPlayEvent: WL_ExtEventCallback = (eventId, eventData) => {
+  if (eventId === WL_ExtEventID.WL_EXT_PTT_PLAY_IND) {
+    handleAudioPlayInd(eventData as WL_PttPlayInd)
+  }
+}
+
 watch(
   () => props.core,
   (core, _oldCore, onCleanup) => {
     if (!core) return
-    const handlePttPlayEvent: WL_ExtEventCallback = (eventId, eventData) => {
-      if (eventId === WL_ExtEventID.WL_EXT_PTT_PLAY_IND) {
-        handleAudioPlayInd(eventData as WL_PttPlayInd)
-      }
-    }
-
     core.weila_onEvent(handlePttPlayEvent)
     onCleanup(() => {
       core.weila_offEvent(handlePttPlayEvent)

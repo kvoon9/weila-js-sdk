@@ -5,8 +5,8 @@ import postcss from 'postcss'
 import tailwindcss from '@tailwindcss/postcss'
 import autoprefixer from 'autoprefixer'
 
-const __dirname = dirname(fileURLToPath(import.meta.url))
-const rootDir = resolve(__dirname, '..')
+const scriptDir = dirname(fileURLToPath(import.meta.url))
+const rootDir = resolve(scriptDir, '..')
 
 const sourceCssPath = resolve(rootDir, 'src/style.postcss.css')
 const distCssPath = resolve(rootDir, 'dist/index.css')
