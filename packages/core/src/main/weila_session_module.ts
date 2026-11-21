@@ -1094,7 +1094,7 @@ export default class WLSessionModule {
   }
 
   public isPttFsmIdle(): boolean {
-    return this.pttFsm?.pttFsmService?.state?.matches('idle') ?? true
+    return this.pttFsm?.pttFsmService?.getSnapshot().matches('idle') ?? true
   }
 
   public stopPlayAudio(): Promise<void> {

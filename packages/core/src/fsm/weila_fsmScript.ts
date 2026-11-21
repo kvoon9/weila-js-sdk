@@ -1,4 +1,4 @@
-import { assign, createMachine, send } from 'xstate'
+import { assign, createMachine, raise } from 'xstate'
 import type { WeilaCore } from 'main/weila_core'
 import { WL_LoginParam } from 'main/weila_internal_data'
 import { WLPlayerType } from 'audio/weila_audio_data'
@@ -10,7 +10,6 @@ const loginProcedureFsm = {
     on: {
       FSM_NET_DISCONNECT_IND_EVT: {
         actions: (_context: any, _event: any) => {},
-        internal: true,
       },
 
       FSM_LOGIN_PROCEDURE_SUCC_EVT: {
@@ -29,38 +28,45 @@ const loginProcedureFsm = {
         description: '一旦进入此状态，首先执行连接网络',
         after: {
           '10000': {
-            actions: [send('FSM_LOGIN_PROCEDURE_FAIL_EVT'), (_context: any, _event: any) => {}],
+            actions: [
+              raise({ type: 'FSM_LOGIN_PROCEDURE_FAIL_EVT' }),
+              (_context: any, _event: any) => {},
+            ],
           },
         },
         on: {
           FSM_NET_CONNECTED_IND_EVT: {
             actions: (_context: any, _event: any) => {},
             target: 'logining',
-            internal: true,
           },
           FSM_NET_CONNECTING_IND_EVT: {
             actions: ['onConnecting', (_context: any, _event: any) => {}],
-            internal: true,
           },
           FSM_NET_EXCEPTION_IND_EVT: {
-            actions: send('FSM_LOGIN_PROCEDURE_FAIL_EVT'),
+            actions: raise({ type: 'FSM_LOGIN_PROCEDURE_FAIL_EVT' }),
           },
           FSM_NET_DISCONNECT_IND_EVT: {
-            actions: send('FSM_LOGIN_PROCEDURE_FAIL_EVT'),
+            actions: raise({ type: 'FSM_LOGIN_PROCEDURE_FAIL_EVT' }),
           },
         },
       },
       logining: {
-        entry: [(_context: any, _event: any) => {}, send('FSM_SYSTEM_WATCH_TIMEOUT_EVT')],
+        entry: [
+          (_context: any, _event: any) => {},
+          raise({ type: 'FSM_SYSTEM_WATCH_TIMEOUT_EVT' }),
+        ],
         on: {
           FSM_SYSTEM_WATCH_TIMEOUT_EVT: {
             actions: ['onSysTimeChecking'],
-            internal: true,
           },
         },
         invoke: {
           src: 'loginServer',
           id: 'login_server',
+          input: ({ context, event }: { context: MainFsmContext; event: any }) => ({
+            context,
+            event,
+          }),
           onDone: [
             {
               actions: 'onLoginServerSucc',
@@ -88,10 +94,18 @@ const initialMainFsmContext: MainFsmContext = {
   core: null,
 }
 
+interface MainFsmTypes {
+  context: MainFsmContext
+  input: MainFsmContext
+  events: { type: string; data?: any }
+}
+
 const mainFsm = createMachine({
+  // SAFETY: xstate v5 用空值断言携带类型参数，运行时仍是空对象，机型类型由此处唯一声明
+  types: {} as MainFsmTypes,
   id: 'main',
   initial: 'uninit',
-  context: initialMainFsmContext,
+  context: ({ input }) => input ?? initialMainFsmContext,
   states: {
     uninit: {
       description: '此时系统未初始化，一些资源没有加载，例如wasm等。\n',
@@ -107,6 +121,7 @@ const mainFsm = createMachine({
       invoke: {
         src: 'loadResource',
         id: 'loading_resource',
+        input: ({ context, event }) => ({ context, event }),
         onError: [
           {
             actions: 'onResourceLoadFail',
@@ -137,17 +152,18 @@ const mainFsm = createMachine({
         FSM_LOGIN_SERVER_EVT: {
           target: 'loginProcedure',
           actions: assign({
-            loginParam: (_context: any, event: any) => event.data,
+            loginParam: ({ event }) => event.data,
           }),
         },
       },
     },
     ...loginProcedureFsm,
     dataInit: {
-      entry: ['onDataInit', send('FSM_SYSTEM_WATCH_TIMEOUT_EVT')],
+      entry: ['onDataInit', raise({ type: 'FSM_SYSTEM_WATCH_TIMEOUT_EVT' })],
       invoke: {
         src: 'prepareData',
         id: 'prepare_data',
+        input: ({ context, event }) => ({ context, event }),
         onDone: {
           actions: 'onDataInited',
           target: 'ready',
@@ -160,7 +176,6 @@ const mainFsm = createMachine({
       on: {
         FSM_SYSTEM_WATCH_TIMEOUT_EVT: {
           actions: ['onSysTimeChecking'],
-          internal: true,
         },
         FSM_NET_DISCONNECT_IND_EVT: {
           target: 'loginProcedure',
@@ -180,7 +195,7 @@ const mainFsm = createMachine({
       after: {
         '2000': [
           {
-            cond: 'canRetry',
+            guard: 'canRetry',
             target: 'loginProcedure',
           },
           {
@@ -191,13 +206,12 @@ const mainFsm = createMachine({
       },
     },
     ready: {
-      entry: ['onReadyEntry', send('FSM_SYSTEM_WATCH_TIMEOUT_EVT')],
+      entry: ['onReadyEntry', raise({ type: 'FSM_SYSTEM_WATCH_TIMEOUT_EVT' })],
       exit: 'onReadyExit',
       description: '准备状态，此时可以做很多事情。\n每隔1秒，检查一下等待消息列表是否超时。',
       on: {
         FSM_SYSTEM_WATCH_TIMEOUT_EVT: {
           actions: ['onSysTimeChecking'],
-          internal: true,
         },
 
         FSM_LOGOUT_EVT: {
@@ -213,6 +227,7 @@ const mainFsm = createMachine({
     logoutProcedure: {
       invoke: {
         src: 'logout',
+        input: ({ context, event }) => ({ context, event }),
         onDone: [
           {
             target: 'inited',
@@ -228,15 +243,36 @@ const mainFsm = createMachine({
   },
 })
 
+export interface PttFsmEvent {
+  type: string
+  data?: any
+}
+
+export interface PttFsmContext {
+  pttCore: unknown
+  singlePlayOrigin: string
+  historyPlayOrigin: string
+  talkOrigin: string
+}
+
+interface PttFsmTypes {
+  context: PttFsmContext
+  input: PttFsmContext
+  events: PttFsmEvent
+}
+
 const pttFsm = createMachine({
+  // SAFETY: xstate v5 用空值断言携带类型参数，运行时仍是空对象，机型类型由此处唯一声明
+  types: {} as PttFsmTypes,
   id: 'PTTMachine',
   initial: 'idle',
-  context: {
-    pttCore: null as any,
-    singlePlayOrigin: '',
-    historyPlayOrigin: '',
-    talkOrigin: '',
-  },
+  context: ({ input }) =>
+    input ?? {
+      pttCore: null,
+      singlePlayOrigin: '',
+      historyPlayOrigin: '',
+      talkOrigin: '',
+    },
   states: {
     idle: {
       entry: 'onIdle',
@@ -257,7 +293,6 @@ const pttFsm = createMachine({
           on: {
             FSM_PTT_OUT_OF_PAYLOAD_EVT: {
               target: 'waitPayload',
-              internal: true,
             },
             FSM_PTT_ITEM_PLAY_END_EVT: {
               actions: 'onPlayItemFinish',
@@ -265,11 +300,9 @@ const pttFsm = createMachine({
             FSM_PTT_CHECK_RESOURCE_EVT: 'checkPttSource',
             FSM_FEED_PTT_PAYLOAD_EVT: {
               actions: 'feedData',
-              internal: true,
             },
             FSM_STOP_AND_PLAY_NEXT_EVT: {
               actions: 'stopAndPlayNext',
-              internal: true,
             },
           },
           meta: {
@@ -281,13 +314,14 @@ const pttFsm = createMachine({
             src: 'checkPttPlayingList',
             id: 'check_ptt_source',
             onError: {
-              actions: send('FSM_PLAY_END_EVT'),
+              actions: raise({ type: 'FSM_PLAY_END_EVT' }),
               description: '没有数据了，此时可以结束播音',
             },
             onDone: {
-              actions: send((_, event: any) => ({
+              // v4 的 onDone 伪事件带 data；v5 是 output
+              actions: raise(({ event }: { event: { type: string; output?: any } }) => ({
                 type: 'FSM_PLAY_NEXT_PTT_ITEM_EVT',
-                data: event.data,
+                data: event.output,
               })),
               description: '还有数据，播放下一条',
             },
@@ -342,11 +376,9 @@ const pttFsm = createMachine({
             FSM_PTT_CHECK_RESOURCE_EVT: 'checkPttSource',
             FSM_FEED_PTT_PAYLOAD_EVT: {
               actions: 'feedData',
-              internal: true,
             },
             FSM_STOP_AND_PLAY_NEXT_EVT: {
               actions: 'stopAndPlayNext',
-              internal: true,
             },
           },
           meta: {
@@ -358,13 +390,14 @@ const pttFsm = createMachine({
             src: 'checkHistoryList',
             id: 'check_history_source',
             onError: {
-              actions: send('FSM_PLAY_END_EVT'),
+              actions: raise({ type: 'FSM_PLAY_END_EVT' }),
               description: '没有数据了，此时可以结束播音',
             },
             onDone: {
-              actions: send((_, event: any) => ({
+              // v4 的 onDone 伪事件带 data；v5 是 output
+              actions: raise(({ event }: { event: { type: string; output?: any } }) => ({
                 type: 'FSM_PLAY_NEXT_PTT_ITEM_EVT',
-                data: event.data,
+                data: event.output,
               })),
               description: '还有数据，播放下一条',
             },
@@ -399,6 +432,7 @@ const pttFsm = createMachine({
       invoke: {
         src: 'startTalking',
         id: 'request_talk',
+        input: ({ event }) => event,
         onDone: {
           actions: 'onRequestTalkResult',
           target: 'talking',
@@ -441,7 +475,6 @@ const pttFsm = createMachine({
         FSM_PLAY_HISTORY_EVT: 'singleStopping',
         FSM_FEED_PTT_PAYLOAD_EVT: {
           actions: 'feedData',
-          internal: true,
         },
       },
     },
