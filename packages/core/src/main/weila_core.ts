@@ -83,14 +83,6 @@ import WLBusinessModule from 'main/weila_business_module'
 const wllog = getLogger('CORE:info')
 const wlerr = getLogger('CORE:err')
 
-// v4 的 onDone/onError 伪事件带 data 字段；v5 分别是 output/error。适配回 v4 形状供处理器使用。
-function doneEventData(event: { type: string; output?: unknown; error?: unknown }): {
-  type: string
-  data: unknown
-} {
-  return { type: event.type, data: 'output' in event ? event.output : event.error }
-}
-
 interface WL_WaitingRspPbMsgInfo {
   resolve(value: any): any
   reject(reason: any): any
@@ -161,19 +153,17 @@ class WeilaCore implements WL_CoreInterface {
         logout: fromPromise(({ input }) => this.logout(input.context, input.event)),
       },
       actions: {
-        onResourceLoadFail: ({ context, event }) =>
-          this.onResourceLoadFail(context, doneEventData(event)),
-        onLoadingResource: ({ context, event }) =>
-          this.onLoadingResource(context, doneEventData(event)),
-        onException: ({ context, event }) => this.onException(context, doneEventData(event)),
+        onResourceLoadFail: ({ context, event }) => this.onResourceLoadFail(context, event),
+        onLoadingResource: this.onLoadingResource.bind(this),
+        onException: ({ context, event }) => this.onException(context, event),
         onReadyEntry: this.onReadyEntry.bind(this),
         onReadyExit: this.onReadyExit.bind(this),
         onSysTimeChecking: this.onSysTimeChecking.bind(this),
         onDataInit: this.onDataInit.bind(this),
         onDataInited: this.onDataInited.bind(this),
         onDataPrepareFail: this.onDataPrepareFail.bind(this),
-        onLoginServerSucc: ({ context, event }) => this.onLoginSucc(context, doneEventData(event)),
-        onLoginServerFail: ({ context, event }) => this.onLoginFail(context, doneEventData(event)),
+        onLoginServerSucc: ({ context, event }) => this.onLoginSucc(context, event),
+        onLoginServerFail: ({ context, event }) => this.onLoginFail(context, event),
         connectServer: this.connectServer.bind(this),
         onConnecting: this.onConnecting.bind(this),
         onDisconnectInReadyState: this.onDisconnectInReadyState.bind(this),
@@ -437,16 +427,16 @@ class WeilaCore implements WL_CoreInterface {
     }
   }
 
-  private onResourceLoadFail(_context: any, event: any) {
-    wlerr('初始加载数据出错', event.data)
+  private onResourceLoadFail(_context: any, event: { error?: unknown }) {
+    wlerr('初始加载数据出错', event.error)
   }
 
   private onLoadingResource(_context: any, _event: any) {
     wllog('加载数据成功')
   }
 
-  private onException(_context: any, event: any) {
-    this.sendExtEvent(WL_ExtEventID.WL_EXT_SYSTEM_EXCEPTION_IND, event.data)
+  private onException(_context: any, event: { error?: unknown }) {
+    this.sendExtEvent(WL_ExtEventID.WL_EXT_SYSTEM_EXCEPTION_IND, event.error)
   }
 
   private onDataInit(_context: any, _event: any) {
@@ -476,20 +466,26 @@ class WeilaCore implements WL_CoreInterface {
     this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind)
   }
 
-  private onLoginFail(_context: any, event: any) {
+  private onLoginFail(_context: any, event: { error?: unknown }) {
     wllog('onLoginFail:', event)
     this.sendNetworkEvent(WL_NetworkEventID.NET_DISCONNECT_EVT, null)
-    this.mainFsmService.send({ type: fsmEvents.FSM_LOGIN_PROCEDURE_FAIL_EVT, data: event.data })
+    this.mainFsmService.send({
+      type: fsmEvents.FSM_LOGIN_PROCEDURE_FAIL_EVT,
+      data: event.error,
+    })
   }
 
-  private onLoginSucc(_context: any, event: any) {
-    const loginResult = event.data as WL_LoginResult
+  private onLoginSucc(_context: any, event: { output?: unknown }) {
+    const loginResult = event.output as WL_LoginResult
     wllog('onLogin:', event)
     this.loginUserInfo = loginResult.loginUserInfo
     if (loginResult.callback) {
       loginResult.callback.resolve(loginResult.loginUserInfo)
     }
-    this.mainFsmService.send({ type: fsmEvents.FSM_LOGIN_PROCEDURE_SUCC_EVT, data: event.data })
+    this.mainFsmService.send({
+      type: fsmEvents.FSM_LOGIN_PROCEDURE_SUCC_EVT,
+      data: event.output,
+    })
   }
 
   private onSysTimeChecking(_context: any, _event: any) {

@@ -133,15 +133,7 @@ export default class WLPttFsm {
         onTalking: this.onTalking.bind(this),
         stopPlay: this.stopPlay.bind(this),
         onStopPttPlay: this.onStopPttPlay.bind(this),
-        // v4 的 onDone/onError 伪事件带 data；v5 是 output/error，这里适配回 v4 形状
-        onRequestTalkResult: ({ context, event }) =>
-          this.onRequestTalkResult({
-            context,
-            event: {
-              type: event.type,
-              data: 'output' in event ? event.output : (event as { error?: unknown }).error,
-            },
-          }),
+        onRequestTalkResult: this.onRequestTalkResult.bind(this),
         onTalkInterrupt: this.onTalkInterrupt.bind(this),
         stopAndPlayNext: this.stopAndPlayNext.bind(this),
       },
@@ -491,7 +483,7 @@ export default class WLPttFsm {
     wllog('onRequestTalkResult', event)
     if (this.talkingInfo && this.talkingInfo.callback) {
       if (event.type.startsWith('xstate.error.actor')) {
-        this.talkingInfo.callback.reject(event.data)
+        this.talkingInfo.callback.reject(event.error)
       } else {
         WLPttFsm.pttSeq++
         this.talkingInfo.seqOfPackage = 0

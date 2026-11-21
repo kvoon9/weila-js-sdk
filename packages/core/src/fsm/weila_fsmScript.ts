@@ -9,7 +9,7 @@ interface MainFsmContext {
   core: WeilaCore | null
 }
 
-type MainFsmEvent = { type: string; data?: any }
+type MainFsmEvent = { type: string; data?: any; output?: unknown; error?: unknown }
 
 const loginProcedureFsm: Record<
   string,
@@ -252,6 +252,8 @@ const mainFsm = createMachine({
 export interface PttFsmEvent {
   type: string
   data?: any
+  output?: unknown
+  error?: unknown
 }
 
 export interface PttFsmContext {
