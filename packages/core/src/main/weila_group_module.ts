@@ -309,7 +309,6 @@ export default class WLGroupModule {
             const ntfChangeMemberInfo = serverMessage.groupMessage
               .ntfChangeMemberInfo as WL.Group.INtfChangeMemberInfo
             const groupId = ntfChangeMemberInfo.groupId.toString(10)
-            ntfChangeMemberInfo.memberInfo
 
             WeilaDB.getInstance()
               .getGroupMemberInfo(groupId, ntfChangeMemberInfo.memberInfo.userId)
