@@ -19,14 +19,7 @@ const wllog = getLogger('MOD:login:info')
 const _wlerr = getLogger('MOD:login:err')
 
 export default class WLLoginModule {
-  private account: string
-  private password: string
-  private countryCode: string
-
   constructor(private coreInterface: WL_CoreInterface) {
-    this.account = ''
-    this.password = ''
-    this.countryCode = ''
     this.coreInterface.registerPbMsgHandler(
       WL.Service.ServiceID.SERVICE_LOGIN,
       this.onPbMsgHandler.bind(this),
@@ -172,12 +165,6 @@ export default class WLLoginModule {
       default:
         return 'Unknown reason'
     }
-  }
-
-  public saveLoginInfo(account: string, password: string, countryCode: string): void {
-    this.account = account
-    this.password = password
-    this.countryCode = countryCode
   }
 
   public async loginReq(

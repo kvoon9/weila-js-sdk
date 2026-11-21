@@ -129,7 +129,7 @@ const mainFsm = createMachine({
         FSM_LOGIN_SERVER_EVT: {
           target: 'loginProcedure',
           actions: assign({
-            loginParam: (context: any, event: any) => event.data,
+            loginParam: (_context: any, event: any) => event.data,
           }),
         },
       },

@@ -7,7 +7,6 @@ import { WLBuildMsgRet, WLSessionInfo } from 'proto/weilapb_wrapper_data'
 import Long from 'long'
 
 const wllog = getLogger('MOD:location:info')
-const _wlerr = getLogger('MOD:location:err')
 
 export default class WLLocationModule {
   constructor(private coreInterface: WL_CoreInterface) {

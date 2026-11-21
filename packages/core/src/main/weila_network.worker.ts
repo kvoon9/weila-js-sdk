@@ -7,8 +7,8 @@ import {
 import WeilaMsgHeader from 'proto/weilapb_msg_header'
 import { getWebsocketAddr } from 'main/weila_utils'
 
-function getLogger(tagName: string) {
-  return (...args: any[]) => {}
+function getLogger(_tagName: string) {
+  return (..._args: any[]) => {}
 }
 
 const wllog = getLogger('NET:info')

@@ -43,7 +43,6 @@ import { AsyncTime, calculateOpusDataFrame, getMsgDataIdByCombo, SyncTime } from
 
 const wllog = getLogger('DB:core:info')
 const _wlerr = getLogger('DB:core:err')
-const wlerr = getLogger('DB:core:err')
 
 // Opening without a version never upgrades. `$meta` holds the logical version after Dexie
 // patches a same-version schema, and the floored native version is the fallback for Dexie 3
@@ -1038,10 +1037,6 @@ class WeilaDB extends Dexie {
       msgData.status = status
       return this.msgDatas.put(msgData)
     })
-  }
-
-  private getWithdrawSessionKey(sessionId: string, sessionType: number): string {
-    return `${sessionId}_${sessionType}`
   }
 
   /**
