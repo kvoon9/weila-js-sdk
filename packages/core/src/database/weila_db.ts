@@ -59,6 +59,8 @@ class WeilaDB extends Dexie {
   service: Dexie.Table<WL_IDbService, number>
   service_staffs: Dexie.Table<WL_IDbServiceStaff, number>
   loginUserId: number
+  private readonly declaredVersion: number
+  private downgradeError?: Error
   private cleanedWithdrawSessions: Set<string> = new Set()
   static appAuthInfo?: { appKey: string; appId: string }
 
@@ -96,6 +98,7 @@ class WeilaDB extends Dexie {
     const dbName = 'WL_' + userId + '_DB'
     super(dbName)
     this.loginUserId = parseInt(userId)
+    this.declaredVersion = version
     this.version(version).stores({
       sessions: 'combo_id_type, [sessionId+sessionType], status',
       session_setting: 'combo_id_type, [sessionId+sessionType]',
@@ -123,13 +126,42 @@ class WeilaDB extends Dexie {
     this.session_setting = this.table('session_setting')
     wllog('create db name:%s version:%d', dbName, version, this)
 
-    this.settings.get(WL_IDbSettingID.SETTING_MSG_SENDING_SEQ).then((value) => {
-      if (value === undefined || value.data === 0) {
-        const setting = {} as WL_IDbSetting
-        setting.id = WL_IDbSettingID.SETTING_MSG_SENDING_SEQ
-        setting.data = 10
-        this.settings.put(setting)
+    this.settings
+      .get(WL_IDbSettingID.SETTING_MSG_SENDING_SEQ)
+      .then((value) => {
+        if (value === undefined || value.data === 0) {
+          const setting = {} as WL_IDbSetting
+          setting.id = WL_IDbSettingID.SETTING_MSG_SENDING_SEQ
+          setting.data = 10
+          this.settings.put(setting)
+        }
+      })
+      .catch((error) => {
+        _wlerr('初始化数据库设置失败:', this.name, error)
+      })
+  }
+
+  public open(): Dexie.Promise<this> {
+    return super.open().then(() => {
+      if (this.downgradeError) {
+        this.close()
+        throw this.downgradeError
       }
+      const installedVersion = this.backendDB().version / 10
+      if (installedVersion > this.declaredVersion) {
+        _wlerr(
+          '拒绝降级打开数据库 %s: 已安装版本 %d, 当前 SDK 声明版本 %d (Dexie VersionError)',
+          this.name,
+          installedVersion,
+          this.declaredVersion,
+        )
+        this.downgradeError = new Dexie.VersionError(
+          `Refusing to downgrade ${this.name}: installed schema ${installedVersion}, SDK schema ${this.declaredVersion} (Dexie VersionError)`,
+        )
+        this.close()
+        throw this.downgradeError
+      }
+      return this
     })
   }
 
@@ -344,10 +376,9 @@ class WeilaDB extends Dexie {
       return combo
     })
 
-    this.transaction<boolean>('rw', this.sessions, this.msgDatas, async () => {
+    return this.transaction<void>('rw', this.sessions, this.msgDatas, async () => {
       await this.sessions.bulkDelete(comboIds)
       await this.msgDatas.where('[sessionId+sessionType]').anyOf(sessionCombos).delete()
-      return true
     })
   }
 
