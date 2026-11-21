@@ -4,19 +4,24 @@ import Long from 'long'
 import {
   WL_IDbAudioData,
   WL_IDbExtensionInfo,
+  WL_IDbExtensionState,
   WL_IDbExtensionType,
   WL_IDbFriend,
   WL_IDbFriendInfo,
+  WL_IDbFriendStatus,
   WL_IDbGroup,
+  WL_IDbGroupAuthType,
   WL_IDbGroupMember,
+  WL_IDbGroupPublicType,
+  WL_IDbGroupType,
   WL_IDbMemberInfo,
+  WL_IDbMemberStatus,
   WL_IDbMemberType,
   WL_IDbMsgData,
   WL_IDbMsgDataStatus,
   WL_IDbMsgDataType,
   WL_IDbNotification,
   WL_IDbNotificationType,
-  WL_IDbPttData,
   WL_IDbService,
   WL_IDbServiceSession,
   WL_IDbServiceSessionInfo,
@@ -26,9 +31,11 @@ import {
   WL_IDbSessionSetting,
   WL_IDbSessionSettingParams,
   WL_IDbSessionStatus,
+  WL_IDbSessionType,
   WL_IDbSetting,
   WL_IDbSettingID,
   WL_IDbUserInfo,
+  WL_ServiceStatus,
   applySessionExtraProfile,
   inheritSessionProfile,
   isGroupSessionType,
@@ -43,6 +50,12 @@ import { AsyncTime, calculateOpusDataFrame, getMsgDataIdByCombo, SyncTime } from
 
 const wllog = getLogger('DB:core:info')
 const _wlerr = getLogger('DB:core:err')
+
+// SAFETY: these DB enums label the same numeric values the proto payload carries, so restoring the
+// enum type here changes only the label; an absent proto field keeps the record's 0 default.
+function dbEnum<T extends number>(value: number | null | undefined): T {
+  return (value ?? 0) as T
+}
 
 // Opening without a version never upgrades. `$meta` holds the logical version after Dexie
 // patches a same-version schema, and the floored native version is the fallback for Dexie 3
@@ -128,7 +141,7 @@ class WeilaDB extends Dexie {
   private cleanedWithdrawSessions: Set<string> = new Set()
   static appAuthInfo?: { appKey: string; appId: string }
 
-  private static instance: WeilaDB = null
+  private static instance: WeilaDB | null = null
   private static initError: Error | null = null
 
   public static async init(userId: string, version: number): Promise<void> {
@@ -188,7 +201,9 @@ class WeilaDB extends Dexie {
     if (this.instance === null && this.initError) {
       throw this.initError
     }
-    return this.instance
+    // SAFETY: init() assigns the instance before callers reach here; a null return is the existing
+    // pre-init contract that this public signature already advertises.
+    return this.instance as WeilaDB
   }
 
   constructor(userId: string, version: number) {
@@ -220,6 +235,9 @@ class WeilaDB extends Dexie {
     this.settings = this.table('settings')
     this.notifications = this.table('notifications')
     this.session_setting = this.table('session_setting')
+    this.extensions = this.table('extensions')
+    this.service = this.table('service')
+    this.service_staffs = this.table('service_staffs')
     wllog('create db name:%s version:%d', dbName, version, this)
 
     this.settings
@@ -294,18 +312,19 @@ class WeilaDB extends Dexie {
     const sessionCount = sessionRaws.length
     const sessions: WL_IDbSession[] = []
     for (let i = 0; i < sessionCount; i++) {
+      const raw = sessionRaws[i]
       let session = {} as WL_IDbSession
-      session.combo_id_type =
-        sessionRaws[i].sessionId.toString(10) + '_' + sessionRaws[i].sessionType
-      session.sessionId = sessionRaws[i].sessionId.toString(10)
-      session.sessionType = sessionRaws[i].sessionType
-      session.readMsgId = sessionRaws[i].readMsgId
-      session.latestUpdate = Long.fromValue(sessionRaws[i].latestUpdated).toNumber()
+      session.sessionId = Long.fromValue(raw.sessionId ?? 0).toString(10)
+      session.sessionType = dbEnum<WL_IDbSessionType>(raw.sessionType)
+      session.combo_id_type = session.sessionId + '_' + session.sessionType
+      session.readMsgId = raw.readMsgId ?? 0
+      session.latestUpdate = Long.fromValue(raw.latestUpdated ?? 0).toNumber()
       inheritSessionProfile(session, await this.getSession(session.sessionId, session.sessionType))
-      wllog('sessionId:%s lastMsgDataRaw:', session.sessionId, sessionRaws[i].latestMsgData)
-      if (sessionRaws[i].latestMsgData) {
+      wllog('sessionId:%s lastMsgDataRaw:', session.sessionId, raw.latestMsgData)
+      const latestMsgData = raw.latestMsgData
+      if (latestMsgData) {
         const msgDatas: WL_IDbMsgData[] = this.convertFromMsgDataRaws(
-          [sessionRaws[i].latestMsgData],
+          [latestMsgData],
           this.loginUserId,
         )
         wllog('sessionId:%s lastMsgData:', session.sessionId, msgDatas)
@@ -477,29 +496,31 @@ class WeilaDB extends Dexie {
     const count = groupRaws.length
     const groups: WL_IDbGroup[] = []
     for (let i = 0; i < count; i++) {
+      const raw = groupRaws[i]
+      const name = raw.name ?? ''
       const group = {} as WL_IDbGroup
-      group.groupId = groupRaws[i].groupId.toString(10)
-      group.groupNum = groupRaws[i].number
-      group.groupType = groupRaws[i].type
-      group.groupClass = groupRaws[i].class
-      group.name = groupRaws[i].name
-      group.pinyinName = TinyPinyin.convertToPinyin(groupRaws[i].name)
-      group.avatar = groupRaws[i].avatar
-      group.memberCount = groupRaws[i].memberCount
-      group.memberLimit = groupRaws[i].memberLimit
-      group.memberVersion = groupRaws[i].memberVersion
-      group.version = groupRaws[i].version
-      group.ownerId = groupRaws[i].ownerId
-      group.desc = groupRaws[i].desc
-      group.latitude = groupRaws[i].latitude
-      group.longitude = groupRaws[i].longitude
-      group.speechEnable = groupRaws[i].shutupStatus === 0
-      group.audioQuality = groupRaws[i].audioQuality
-      group.authType = groupRaws[i].authType
-      group.publicType = groupRaws[i].publicType
-      group.burstType = groupRaws[i].burstType
-      group.home = groupRaws[i].home
-      group.created = Long.fromValue(groupRaws[i].created).toNumber()
+      group.groupId = Long.fromValue(raw.groupId ?? 0).toString(10)
+      group.groupNum = raw.number ?? ''
+      group.groupType = dbEnum<WL_IDbGroupType>(raw.type)
+      group.groupClass = raw.class ?? 0
+      group.name = name
+      group.pinyinName = TinyPinyin.convertToPinyin(name)
+      group.avatar = raw.avatar ?? ''
+      group.memberCount = raw.memberCount ?? 0
+      group.memberLimit = raw.memberLimit ?? 0
+      group.memberVersion = raw.memberVersion ?? 0
+      group.version = raw.version ?? 0
+      group.ownerId = raw.ownerId ?? 0
+      group.desc = raw.desc ?? undefined
+      group.latitude = raw.latitude ?? undefined
+      group.longitude = raw.longitude ?? undefined
+      group.speechEnable = raw.shutupStatus === 0
+      group.audioQuality = raw.audioQuality ?? 0
+      group.authType = dbEnum<WL_IDbGroupAuthType>(raw.authType)
+      group.publicType = dbEnum<WL_IDbGroupPublicType>(raw.publicType)
+      group.burstType = raw.burstType ?? 0
+      group.home = raw.home ?? undefined
+      group.created = Long.fromValue(raw.created ?? 0).toNumber()
 
       groups.push(group)
     }
@@ -567,19 +588,20 @@ class WeilaDB extends Dexie {
     const count = memberRaws.length
     const memberInfos: WL_IDbMemberInfo[] = []
     for (let i = 0; i < count; i++) {
+      const raw = memberRaws[i]
       const memberInfo: WL_IDbMemberInfo = {} as WL_IDbMemberInfo
-      memberInfo.memberType = memberRaws[i].type
-      memberInfo.speechEnable = memberRaws[i].shutupStatus === 0
-      memberInfo.tts = memberRaws[i].tts === 1
-      memberInfo.locationShared = memberRaws[i].locationShare === 1
-      memberInfo.blockedStatus = memberRaws[i].shieldStatus === 1
-      memberInfo.speechDisableTimeout = Long.fromValue(memberRaws[i].shutupTimeout).toNumber()
-      memberInfo.priority = memberRaws[i].prority
-      memberInfo.userId = memberRaws[i].userId
+      memberInfo.memberType = dbEnum<WL_IDbMemberType>(raw.type)
+      memberInfo.speechEnable = raw.shutupStatus === 0
+      memberInfo.tts = raw.tts === 1
+      memberInfo.locationShared = raw.locationShare === 1
+      memberInfo.blockedStatus = raw.shieldStatus === 1
+      memberInfo.speechDisableTimeout = Long.fromValue(raw.shutupTimeout ?? 0).toNumber()
+      memberInfo.priority = raw.prority ?? 0
+      memberInfo.userId = raw.userId ?? 0
       memberInfo.groupId = groupId
-      memberInfo.remark = memberRaws[i].remark
-      memberInfo.status = memberRaws[i].status
-      memberInfo.created = Long.fromValue(memberRaws[i].created).toNumber()
+      memberInfo.remark = raw.remark ?? undefined
+      memberInfo.status = dbEnum<WL_IDbMemberStatus>(raw.status)
+      memberInfo.created = Long.fromValue(raw.created ?? 0).toNumber()
       memberInfo.combo_gid_uid = groupId + '_' + memberInfo.userId
       memberInfos.push(memberInfo)
     }
@@ -661,15 +683,17 @@ class WeilaDB extends Dexie {
     groupId: string,
     userId: number,
   ): Promise<WL_IDbGroupMember | undefined> {
-    const groupMember = {} as WL_IDbGroupMember
     const id = groupId + '_' + userId
-    groupMember.memberInfo = await this.group_members.get(id)
-    if (groupMember.memberInfo) {
-      groupMember.userInfo = await this.users.get(userId)
-      return groupMember
+    const memberInfo = await this.group_members.get(id)
+    if (!memberInfo) {
+      return undefined
     }
 
-    return undefined
+    const groupMember = {} as WL_IDbGroupMember
+    groupMember.memberInfo = memberInfo
+    groupMember.userInfo = await this.users.get(userId)
+
+    return groupMember
   }
 
   @AsyncTime()
@@ -707,16 +731,17 @@ class WeilaDB extends Dexie {
     const count = friendRaws.length
     const friendInfos: WL_IDbFriendInfo[] = []
     for (let i = 0; i < count; i++) {
+      const raw = friendRaws[i]
       const friendInfo = {} as WL_IDbFriendInfo
-      friendInfo.remark = friendRaws[i].remark
-      friendInfo.tts = friendRaws[i].tts === 1
-      friendInfo.userId = friendRaws[i].userId
-      friendInfo.desc = friendRaws[i].desc
-      friendInfo.status = friendRaws[i].status
-      friendInfo.blockedStatus = friendRaws[i].shieldStatus === 1
-      friendInfo.label = friendRaws[i].label
-      friendInfo.locationShared = friendRaws[i].locationShare === 1
-      friendInfo.extension = friendRaws[i].extension
+      friendInfo.remark = raw.remark ?? undefined
+      friendInfo.tts = raw.tts === 1
+      friendInfo.userId = raw.userId ?? 0
+      friendInfo.desc = raw.desc ?? undefined
+      friendInfo.status = dbEnum<WL_IDbFriendStatus>(raw.status)
+      friendInfo.blockedStatus = raw.shieldStatus === 1
+      friendInfo.label = raw.label ?? undefined
+      friendInfo.locationShared = raw.locationShare === 1
+      friendInfo.extension = raw.extension ?? undefined
 
       friendInfos.push(friendInfo)
     }
@@ -793,14 +818,16 @@ class WeilaDB extends Dexie {
 
   @AsyncTime()
   public async getFriend(userId: number): Promise<WL_IDbFriend | undefined> {
-    const friend: WL_IDbFriend = {} as WL_IDbFriend
-    friend.friendInfo = await this.friends.get(userId)
-    if (friend.friendInfo) {
-      friend.userInfo = await this.users.get(userId)
-      return friend
+    const friendInfo = await this.friends.get(userId)
+    if (!friendInfo) {
+      return undefined
     }
 
-    return undefined
+    const friend: WL_IDbFriend = {} as WL_IDbFriend
+    friend.friendInfo = friendInfo
+    friend.userInfo = (await this.users.get(userId)) ?? null
+
+    return friend
   }
 
   @AsyncTime()
@@ -813,20 +840,21 @@ class WeilaDB extends Dexie {
     const count = userRaws.length
     const userInfos: WL_IDbUserInfo[] = []
     for (let i = 0; i < count; i++) {
+      const raw = userRaws[i]
       const userInfo = {} as WL_IDbUserInfo
-      userInfo.userId = userRaws[i].userId
-      userInfo.avatar = userRaws[i].avatar
-      userInfo.countryCode = userRaws[i].countryCode
-      userInfo.created = Long.fromValue(userRaws[i].created).toNumber()
-      userInfo.email = userRaws[i].email
-      userInfo.nick = userRaws[i].nick
+      userInfo.userId = raw.userId ?? 0
+      userInfo.avatar = raw.avatar ?? ''
+      userInfo.countryCode = raw.countryCode ?? undefined
+      userInfo.created = Long.fromValue(raw.created ?? 0).toNumber()
+      userInfo.email = raw.email ?? undefined
+      userInfo.nick = raw.nick ?? ''
       userInfo.pinyinName = TinyPinyin.convertToPinyin(userInfo.nick)
-      userInfo.phone = userRaws[i].phone
-      userInfo.sex = userRaws[i].sex
-      userInfo.signature = userRaws[i].signature
-      userInfo.status = userRaws[i].status
-      userInfo.userType = userRaws[i].type
-      userInfo.weilaNum = userRaws[i].number
+      userInfo.phone = raw.phone ?? undefined
+      userInfo.sex = raw.sex ?? 0
+      userInfo.signature = raw.signature ?? undefined
+      userInfo.status = raw.status ?? 0
+      userInfo.userType = raw.type ?? 0
+      userInfo.weilaNum = raw.number ?? ''
 
       userInfos.push(userInfo)
     }
@@ -903,28 +931,26 @@ class WeilaDB extends Dexie {
     const msgDatas: WL_IDbMsgData[] = []
     wllog('msgCount:', count)
     for (let i = 0; i < count; i++) {
+      const raw = msgDataRaws[i]
       const msgData: WL_IDbMsgData = {} as WL_IDbMsgData
-      msgData.created = Long.fromValue(msgDataRaws[i].created).toNumber()
-      msgData.msgId = msgDataRaws[i].msgId
-      if (
-        isIndividualSessionType(msgDataRaws[i].sessionType) &&
-        msgDataRaws[i].senderId !== myUserId
-      ) {
-        msgData.senderId = msgDataRaws[i].senderId
-        msgData.sessionId = msgDataRaws[i].senderId.toString(10)
+      msgData.created = Long.fromValue(raw.created ?? 0).toNumber()
+      msgData.msgId = raw.msgId ?? 0
+      if (isIndividualSessionType(raw.sessionType ?? 0) && raw.senderId !== myUserId) {
+        msgData.senderId = raw.senderId ?? 0
+        msgData.sessionId = (raw.senderId ?? 0).toString(10)
       } else {
-        msgData.senderId = msgDataRaws[i].senderId
-        msgData.sessionId = msgDataRaws[i].sessionId.toString(10)
+        msgData.senderId = raw.senderId ?? 0
+        msgData.sessionId = Long.fromValue(raw.sessionId ?? 0).toString(10)
       }
-      msgData.sessionType = msgDataRaws[i].sessionType
-      msgData.autoReply = msgDataRaws[i].autoReply
-      msgData.tag = msgDataRaws[i].tag
+      msgData.sessionType = raw.sessionType ?? 0
+      msgData.autoReply = raw.autoReply ?? 0
+      msgData.tag = raw.tag ?? undefined
       msgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_READ
 
-      switch (msgDataRaws[i].msgType) {
+      switch (raw.msgType) {
         case WL.Session.MessageType.MSG_TYPE_TEXT:
           {
-            const textMsgData = TextMsgDataParser.decodeSessionTextMsg(msgDataRaws[i].textData!)
+            const textMsgData = TextMsgDataParser.decodeSessionTextMsg(raw.textData!)
             if (textMsgData !== undefined) {
               msgData.msgType = textMsgData.msgType
               msgData.textData = textMsgData.textData
@@ -940,33 +966,38 @@ class WeilaDB extends Dexie {
         case WL.Session.MessageType.MSG_TYPE_PTT:
           {
             msgData.msgType = WL_IDbMsgDataType.WL_DB_MSG_DATA_PTT_TYPE
-            msgData.pttData = {} as WL_IDbPttData
-            msgData.pttData.data = msgDataRaws[i].pttData.opusData.payload
-            msgData.pttData.frameCount = msgDataRaws[i].pttData.opusData.frameCount
-            msgData.pttData.seq = msgDataRaws[i].pttData.seq
-            msgData.pttData.seqInPackage = msgDataRaws[i].pttData.packageSeq
-            msgData.pttData.mark = msgDataRaws[i].pttData.marker
-            msgData.pttData.sourceType = msgDataRaws[i].pttData.source
+
+            if (raw.pttData) {
+              msgData.pttData = {
+                data: raw.pttData.opusData?.payload ?? new Uint8Array(),
+                frameCount: raw.pttData.opusData?.frameCount ?? 0,
+                seq: raw.pttData.seq ?? 0,
+                seqInPackage: raw.pttData.packageSeq ?? 0,
+                mark: raw.pttData.marker ?? 0,
+                sourceType: raw.pttData.source ?? 0,
+              }
+            } else {
+              msgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR
+            }
           }
           break
 
         case WL.Session.MessageType.MSG_TYPE_AUDIO:
           {
             msgData.msgType = WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE
-            msgData.audioData = {} as WL_IDbAudioData
             msgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_NEW
 
-            if (msgDataRaws[i].audioData) {
-            }
-
-            if (msgDataRaws[i].audioData.payload && msgDataRaws[i].audioData.payload.length > 0) {
-              msgData.audioData.data = msgDataRaws[i].audioData.payload.slice(0)
-              msgData.audioData.audioUrl = undefined
-              msgData.audioData.frameCount = calculateOpusDataFrame(msgData.audioData.data)
-            } else if (msgDataRaws[i].audioData.url && msgDataRaws[i].audioData.url !== '') {
-              msgData.audioData.data = undefined
-              msgData.audioData.audioUrl = msgDataRaws[i].audioData.url
-              msgData.audioData.frameCount = 0
+            const audioData = {} as WL_IDbAudioData
+            msgData.audioData = audioData
+            const audioRaw = raw.audioData
+            if (audioRaw?.payload && audioRaw.payload.length > 0) {
+              audioData.data = audioRaw.payload.slice(0)
+              audioData.audioUrl = undefined
+              audioData.frameCount = calculateOpusDataFrame(audioData.data)
+            } else if (audioRaw?.url && audioRaw.url !== '') {
+              audioData.data = undefined
+              audioData.audioUrl = audioRaw.url
+              audioData.frameCount = 0
             } else {
               msgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR
             }
@@ -976,21 +1007,21 @@ class WeilaDB extends Dexie {
         case WL.Session.MessageType.MSG_TYPE_SERVICE:
           {
             msgData.msgType = WL_IDbMsgDataType.WL_DB_MSG_DATA_SERVICE_TYPE
-            msgData.serviceData = msgDataRaws[i].serviceData
+            msgData.serviceData = raw.serviceData ?? undefined
           }
           break
 
         case WL.Session.MessageType.MSG_TYPE_SWITCH:
           {
             msgData.msgType = WL_IDbMsgDataType.WL_DB_MSG_DATA_SWITCH_TYPE
-            msgData.switchData = msgDataRaws[i].switchData.serviceData
+            msgData.switchData = raw.switchData?.serviceData ?? undefined
           }
           break
 
         case WL.Session.MessageType.MSG_TYPE_REVOCATION:
           {
             msgData.msgType = WL_IDbMsgDataType.WL_DB_MSG_DATA_WITHDRAW_TYPE
-            msgData.withdrawMsgId = msgDataRaws[i].revocationMsgId
+            msgData.withdrawMsgId = raw.revocationMsgId ?? undefined
           }
           break
 
@@ -1034,6 +1065,9 @@ class WeilaDB extends Dexie {
   public async updateMsgDataStatus(combo_id: string, status: WL_IDbMsgDataStatus): Promise<string> {
     return this.transaction<string>('rw', this.msgDatas, async () => {
       const msgData = await this.msgDatas.get(combo_id)
+      if (!msgData) {
+        throw new Error(`消息不存在: ${combo_id}`)
+      }
       msgData.status = status
       return this.msgDatas.put(msgData)
     })
@@ -1227,20 +1261,20 @@ class WeilaDB extends Dexie {
     extensionInfoRaw: WL.Login.IExtensionInfo,
   ): WL_IDbExtensionInfo {
     const extensionInfo = {} as WL_IDbExtensionInfo
-    extensionInfo.config = extensionInfoRaw.config
+    extensionInfo.config = extensionInfoRaw.config ?? ''
     extensionInfo.extensionType = WL_IDbExtensionType.EXTENSION_SLAVE
-    extensionInfo.userId = extensionInfoRaw.userId
-    extensionInfo.imei = extensionInfoRaw.imei
-    extensionInfo.status = extensionInfoRaw.status
-    extensionInfo.productName = extensionInfoRaw.product
-    extensionInfo.activeTime = Long.fromValue(extensionInfoRaw.actived).toNumber()
-    extensionInfo.groupLimit = extensionInfoRaw.groupLimit
-    extensionInfo.groupCount = extensionInfoRaw.groupCount
-    extensionInfo.supervisorId = extensionInfoRaw.managerId
-    extensionInfo.createdTime = Long.fromValue(extensionInfoRaw.created).toNumber()
-    extensionInfo.state = extensionInfoRaw.state
-    extensionInfo.version = extensionInfoRaw.version
-    extensionInfo.warrant = Long.fromValue(extensionInfoRaw.warranted).toNumber()
+    extensionInfo.userId = extensionInfoRaw.userId ?? 0
+    extensionInfo.imei = extensionInfoRaw.imei ?? ''
+    extensionInfo.status = extensionInfoRaw.status ?? 0
+    extensionInfo.productName = extensionInfoRaw.product ?? ''
+    extensionInfo.activeTime = Long.fromValue(extensionInfoRaw.actived ?? 0).toNumber()
+    extensionInfo.groupLimit = extensionInfoRaw.groupLimit ?? 0
+    extensionInfo.groupCount = extensionInfoRaw.groupCount ?? 0
+    extensionInfo.supervisorId = extensionInfoRaw.managerId ?? 0
+    extensionInfo.createdTime = Long.fromValue(extensionInfoRaw.created ?? 0).toNumber()
+    extensionInfo.state = dbEnum<WL_IDbExtensionState>(extensionInfoRaw.state)
+    extensionInfo.version = extensionInfoRaw.version ?? ''
+    extensionInfo.warrant = Long.fromValue(extensionInfoRaw.warranted ?? 0).toNumber()
 
     return extensionInfo
   }
@@ -1270,7 +1304,7 @@ class WeilaDB extends Dexie {
   }
 
   @AsyncTime()
-  public async getExtension(userId: number): Promise<WL_IDbExtensionInfo> {
+  public async getExtension(userId: number): Promise<WL_IDbExtensionInfo | undefined> {
     return this.extensions.get(userId)
   }
 
@@ -1280,12 +1314,16 @@ class WeilaDB extends Dexie {
   ): WL_IDbServiceSessionInfo {
     const serviceSessionInfo = {} as WL_IDbServiceSessionInfo
     serviceSessionInfo.serviceSession = {} as WL_IDbServiceSession
-    serviceSessionInfo.service = this.convertFromServiceRaw(serviceSession.serviceAttribute)
+    const serviceAttribute = serviceSession.serviceAttribute ?? {}
+    const customerAttribute = serviceSession.customerAttribute
+    const customerUserInfo = customerAttribute?.userInfo ?? {}
+    const staffAttributes = serviceSession.staffAttributes ?? []
+    serviceSessionInfo.service = this.convertFromServiceRaw(serviceAttribute)
     serviceSessionInfo.staffs = []
-    const staffs = this.convertFromStaffRaws(serviceSession.staffAttributes)
+    const staffs = this.convertFromStaffRaws(staffAttributes)
     const userInfos = this.convertFromUserRaw(
-      serviceSession.staffAttributes.map((value) => {
-        return value.userInfo
+      staffAttributes.map((value) => {
+        return value.userInfo ?? {}
       }),
     )
     serviceSessionInfo.staffs = staffs.map((value, index) => {
@@ -1294,20 +1332,20 @@ class WeilaDB extends Dexie {
       staffInfo.staff = value
       return staffInfo
     })
-    serviceSessionInfo.customer = this.convertFromUserRaw([
-      serviceSession.customerAttribute.userInfo,
-    ])[0]
-    serviceSessionInfo.serviceSession.serviceId = serviceSession.serviceAttribute.id
-    serviceSessionInfo.serviceSession.serviceStatus = serviceSession.status
-    serviceSessionInfo.serviceSession.staffIds = serviceSession.staffAttributes.map((value) => {
-      return value.userInfo.userId
+    serviceSessionInfo.customer = this.convertFromUserRaw([customerUserInfo])[0]
+    serviceSessionInfo.serviceSession.serviceId = serviceAttribute.id ?? 0
+    serviceSessionInfo.serviceSession.serviceStatus = dbEnum<WL_ServiceStatus>(
+      serviceSession.status,
+    )
+    serviceSessionInfo.serviceSession.staffIds = staffAttributes.map((value) => {
+      return value.userInfo?.userId ?? 0
     })
-    serviceSessionInfo.serviceSession.customerId = serviceSession.customerAttribute.userInfo.userId
+    serviceSessionInfo.serviceSession.customerId = customerUserInfo.userId ?? 0
     serviceSessionInfo.serviceSession.createdTime = Long.fromValue(
-      serviceSession.created,
+      serviceSession.created ?? 0,
     ).toNumber()
     serviceSessionInfo.serviceSession.updatedTime = Long.fromValue(
-      serviceSession.updated,
+      serviceSession.updated ?? 0,
     ).toNumber()
 
     return serviceSessionInfo
@@ -1316,15 +1354,15 @@ class WeilaDB extends Dexie {
   @SyncTime()
   public convertFromServiceRaw(serviceRaw: WL.Business.IServiceAttribute): WL_IDbService {
     const service = {} as WL_IDbService
-    service.serviceId = serviceRaw.id
-    service.serviceNum = serviceRaw.number
-    service.serviceClass = serviceRaw.class
-    service.serviceType = serviceRaw.type
-    service.avatar = serviceRaw.avatar
-    service.intro = serviceRaw.intro
-    service.name = serviceRaw.name
-    service.url = serviceRaw.url
-    service.createdTime = Long.fromValue(serviceRaw.created).toNumber()
+    service.serviceId = serviceRaw.id ?? 0
+    service.serviceNum = serviceRaw.number ?? ''
+    service.serviceClass = serviceRaw.class ?? 0
+    service.serviceType = serviceRaw.type ?? 0
+    service.avatar = serviceRaw.avatar ?? ''
+    service.intro = serviceRaw.intro ?? ''
+    service.name = serviceRaw.name ?? ''
+    service.url = serviceRaw.url ?? ''
+    service.createdTime = Long.fromValue(serviceRaw.created ?? 0).toNumber()
     return service
   }
 
@@ -1360,12 +1398,12 @@ class WeilaDB extends Dexie {
   public convertFromStaffRaws(staffRaws: WL.Business.IStaffAttribute[]): WL_IDbServiceStaff[] {
     return staffRaws.map((value) => {
       const dbStaff = {} as WL_IDbServiceStaff
-      dbStaff.userId = value.userInfo.userId
-      dbStaff.staffClass = value.class
-      dbStaff.staffType = value.type
-      dbStaff.admin = value.admin
+      dbStaff.userId = value.userInfo?.userId ?? 0
+      dbStaff.staffClass = value.class ?? 0
+      dbStaff.staffType = value.type ?? 0
+      dbStaff.admin = value.admin ?? 0
       dbStaff.isOperator = value.operator === 1
-      dbStaff.createdTime = Long.fromValue(value.created).toNumber()
+      dbStaff.createdTime = Long.fromValue(value.created ?? 0).toNumber()
       return dbStaff
     })
   }
@@ -1382,15 +1420,19 @@ class WeilaDB extends Dexie {
 
   @AsyncTime()
   public async getServiceStaff(userId: number): Promise<WL_IDbServiceStaffInfo | undefined> {
-    const staffInfo = {} as WL_IDbServiceStaffInfo
     const staff = await this.service_staffs.get(userId)
-    if (staff) {
-      staffInfo.staff = staff
-      staffInfo.userData = await this.users.get(staff.userId)
-      return staffInfo
+    if (!staff) {
+      return undefined
     }
 
-    return undefined
+    const staffInfo = {} as WL_IDbServiceStaffInfo
+    staffInfo.staff = staff
+    const userData = await this.users.get(staff.userId)
+    if (userData) {
+      staffInfo.userData = userData
+    }
+
+    return staffInfo
   }
 
   @AsyncTime()
@@ -1402,7 +1444,10 @@ class WeilaDB extends Dexie {
       if (staff) {
         const staffInfo = {} as WL_IDbServiceStaffInfo
         staffInfo.staff = staff
-        staffInfo.userData = await this.users.get(staff.userId)
+        const userData = await this.users.get(staff.userId)
+        if (userData) {
+          staffInfo.userData = userData
+        }
         staffInfos.push(staffInfo)
       }
     }
