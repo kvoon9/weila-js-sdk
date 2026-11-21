@@ -29,14 +29,17 @@ export default class WLLoginModule {
   private onPbMsgHandler(data: any): void {
     const serverMessage = data as WL.Service.IServiceMessage
     const serviceHead = serverMessage.serviceHead
-    if (serverMessage.serviceHead.commandType === WL.Service.CommandType.COMMAND_RESPONSE) {
-      switch (serverMessage.serviceHead!.commandId) {
+
+    if (!serviceHead) return
+
+    if (serviceHead.commandType === WL.Service.CommandType.COMMAND_RESPONSE) {
+      switch (serviceHead.commandId) {
         case WL.Login.LoginCommandId.LOGIN_COMMAND_LOGIN_APP:
           {
             const respond = () => {
               this.coreInterface.rspPbMsg(
-                serviceHead.seq,
-                serviceHead.resultCode,
+                serviceHead.seq ?? 0,
+                serviceHead.resultCode ?? 0,
                 serverMessage.loginMessage ? serverMessage.loginMessage.rspLoginApp : null,
               )
             }
@@ -61,8 +64,8 @@ export default class WLLoginModule {
         case WL.Login.LoginCommandId.LOGIN_COMMAND_LOGOUT:
           {
             this.coreInterface.rspPbMsg(
-              serviceHead.seq,
-              serviceHead.resultCode,
+              serviceHead.seq ?? 0,
+              serviceHead.resultCode ?? 0,
               serviceHead.resultCode === 0,
             )
             WeilaDB.close()
@@ -72,15 +75,15 @@ export default class WLLoginModule {
         case WL.Login.LoginCommandId.LOGIN_COMMAND_HEARTBEAT:
           {
             wllog('收到心跳响应')
-            this.coreInterface.rspPbMsg(serviceHead.seq, serviceHead.resultCode, null)
+            this.coreInterface.rspPbMsg(serviceHead.seq ?? 0, serviceHead.resultCode ?? 0, null)
           }
           break
 
         case WL.Login.LoginCommandId.LOGIN_COMMAND_GET_EXTENSIONLIST:
           {
             this.coreInterface.rspPbMsg(
-              serviceHead.seq,
-              serviceHead.resultCode,
+              serviceHead.seq ?? 0,
+              serviceHead.resultCode ?? 0,
               serverMessage.loginMessage ? serverMessage.loginMessage.rspGetExtensionList : null,
             )
           }
@@ -89,8 +92,8 @@ export default class WLLoginModule {
         case WL.Login.LoginCommandId.LOGIN_COMMAND_SET_EXTENSION_CONFIG:
           {
             this.coreInterface.rspPbMsg(
-              serviceHead.seq,
-              serviceHead.resultCode,
+              serviceHead.seq ?? 0,
+              serviceHead.resultCode ?? 0,
               serverMessage.loginMessage ? serverMessage.loginMessage.rspSetExtensionConfig : null,
             )
           }
@@ -99,8 +102,8 @@ export default class WLLoginModule {
         case WL.Login.LoginCommandId.LOGIN_COMMAND_BIND_EXTENSION:
           {
             this.coreInterface.rspPbMsg(
-              serviceHead.seq,
-              serviceHead.resultCode,
+              serviceHead.seq ?? 0,
+              serviceHead.resultCode ?? 0,
               serverMessage.loginMessage ? serverMessage.loginMessage.rspBindExtension : null,
             )
           }
@@ -109,26 +112,38 @@ export default class WLLoginModule {
         case WL.Login.LoginCommandId.LOGIN_COMMAND_UNBIND_EXTENSION:
           {
             this.coreInterface.rspPbMsg(
-              serviceHead.seq,
-              serviceHead.resultCode,
+              serviceHead.seq ?? 0,
+              serviceHead.resultCode ?? 0,
               serverMessage.loginMessage ? serverMessage.loginMessage.rspUnbindExtension : null,
             )
           }
           break
       }
-    } else if (serverMessage.serviceHead.commandType === WL.Service.CommandType.COMMAND_NOTIFY) {
-      switch (serverMessage.serviceHead.commandId) {
+    } else if (serviceHead.commandType === WL.Service.CommandType.COMMAND_NOTIFY) {
+      switch (serviceHead.commandId) {
         case WL.Login.LoginCommandId.LOGIN_COMMAND_ANSWER_BIND_EXTENSION:
           {
             ;(async () => {
+              const ntf = serverMessage.loginMessage?.ntfAnswerBindExtension
+
+              if (!ntf) return
+
+              // SAFETY: protobufjs 8 types the oneof member as $Properties; the wire format carries IUserInfo.
+              const rawUserInfo = ntf.userInfo as WL.Common.IUserInfo | undefined
+
+              if (!rawUserInfo) return
+
               const bindAnswerInfo = {} as WL_bindAnswerInfo
-              const ntf = serverMessage.loginMessage.ntfAnswerBindExtension
-              bindAnswerInfo.status = ntf.status
-              bindAnswerInfo.userInfo = WeilaDB.getInstance().convertFromUserRaw([ntf.userInfo])[0]
-              bindAnswerInfo.deviceInfo = WeilaDB.getInstance().convertFromExtensionInfoRaw(
-                ntf.extensionInfo,
-              )
-              bindAnswerInfo.verifyCode = ntf.verificationCode
+              bindAnswerInfo.status = ntf.status ?? 0
+              bindAnswerInfo.userInfo = WeilaDB.getInstance().convertFromUserRaw([rawUserInfo])[0]
+              // SAFETY: protobufjs 8 types the oneof member as $Properties; the wire format carries IExtensionInfo.
+              const rawExtensionInfo = ntf.extensionInfo as WL.Login.IExtensionInfo | undefined
+
+              if (!rawExtensionInfo) return
+
+              bindAnswerInfo.deviceInfo =
+                WeilaDB.getInstance().convertFromExtensionInfoRaw(rawExtensionInfo)
+              bindAnswerInfo.verifyCode = ntf.verificationCode ?? ''
 
               this.coreInterface.sendExtEvent(
                 WL_ExtEventID.WL_EXT_DEVICE_BINDING_ANSWER_IND,
@@ -140,10 +155,14 @@ export default class WLLoginModule {
 
         case WL.Login.LoginCommandId.LOGIN_COMMAND_KICKOUT:
           {
-            const ntf = serverMessage.loginMessage.ntfKickout
+            const ntf = serverMessage.loginMessage?.ntfKickout
+
+            if (!ntf) break
+
+            const reason = ntf.reason ?? 0
             const kickoutInfo: WL_KickoutInfo = {
-              reason: ntf.reason,
-              reasonText: this.getKickoutReasonText(ntf.reason),
+              reason,
+              reasonText: this.getKickoutReasonText(reason),
             }
             this.coreInterface.sendExtEvent(WL_ExtEventID.WL_EXT_KICKOUT_IND, kickoutInfo)
             // 踢出后主动登出，停止 SDK 工作
@@ -188,7 +207,14 @@ export default class WLLoginModule {
         wlBuildMsgRet,
         10000,
       )) as WL.Login.IRspLoginApp
-      const dbUserInfos = await WeilaDB.getInstance().convertFromUserRaw([loginAppRsp.userInfo])
+      // SAFETY: protobufjs 8 types the oneof member as $Properties; the wire format carries IUserInfo.
+      const rawUserInfo = loginAppRsp.userInfo as WL.Common.IUserInfo | undefined
+
+      if (!rawUserInfo) {
+        return Promise.reject('登录响应缺少用户信息')
+      }
+
+      const dbUserInfos = await WeilaDB.getInstance().convertFromUserRaw([rawUserInfo])
 
       const tokenInfo = {} as WL_IDbSetting
       tokenInfo.id = WL_IDbSettingID.SETTING_LOGIN_TOKEN
@@ -284,16 +310,16 @@ export default class WLLoginModule {
         const extensionInfos: WL_IDbExtensionInfo[] = []
         rsp.infos.forEach((value) => {
           const extensionInfo: WL_IDbExtensionInfo = {} as WL_IDbExtensionInfo
-          extensionInfo.imei = value.imei
-          extensionInfo.extensionType = value.type
-          extensionInfo.userId = value.userId
-          extensionInfo.supervisorId = value.managerId
-          extensionInfo.status = value.status
-          extensionInfo.config = value.config
-          extensionInfo.activeTime = Long.fromValue(value.actived).toNumber()
-          extensionInfo.groupCount = value.groupCount
-          extensionInfo.groupLimit = value.groupLimit
-          extensionInfo.productName = value.product
+          extensionInfo.imei = value.imei ?? ''
+          extensionInfo.extensionType = value.type ?? 0
+          extensionInfo.userId = value.userId ?? 0
+          extensionInfo.supervisorId = value.managerId ?? 0
+          extensionInfo.status = value.status ?? 0
+          extensionInfo.config = value.config ?? ''
+          extensionInfo.activeTime = Long.fromValue(value.actived ?? 0).toNumber()
+          extensionInfo.groupCount = value.groupCount ?? 0
+          extensionInfo.groupLimit = value.groupLimit ?? 0
+          extensionInfo.productName = value.product ?? ''
 
           extensionInfos.push(extensionInfo)
         })
@@ -357,7 +383,7 @@ export default class WLLoginModule {
         buildMsgRet,
       )) as WL.Login.IRspSetExtensionConfig
       wllog('setDeviceConfig', rspConfig)
-      return rspConfig.config
+      return rspConfig.config ?? ''
     }
 
     return Promise.reject('创造消息失败:' + buildMsgRet.resultCode)
