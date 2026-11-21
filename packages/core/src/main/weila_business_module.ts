@@ -3,7 +3,6 @@ import { WL } from 'proto/weilapb'
 import { getLogger } from 'log/weila_log'
 import {
   WL_IDbService,
-  WL_IDbServiceSession,
   WL_IDbServiceSessionInfo,
   WL_IDbServiceStaff,
   WL_IDbServiceStaffInfo,
@@ -37,8 +36,8 @@ export default class WLBusinessModule {
     )
   }
 
-  private onPbMsgHandler(data: any): void {
-    const serverMessage = data as WL.Service.IServiceMessage
+  private onPbMsgHandler(data: WL.Service.IServiceMessage): void {
+    const serverMessage = data
     const serviceHead = serverMessage.serviceHead
 
     if (!serviceHead) return
@@ -169,14 +168,14 @@ export default class WLBusinessModule {
 
             if (!serviceAttribute) return
 
-            const staffInvite = {} as WL_StaffInvite
-            staffInvite.invitorInfo = {} as WL_IDbServiceStaffInfo
-            staffInvite.invitorInfo.staff = WeilaDB.getInstance().convertFromStaffRaws([invitor])[0]
-            staffInvite.invitorInfo.userData = WeilaDB.getInstance().convertFromUserRaw([
-              invitorUserInfo,
-            ])[0]
-            staffInvite.content = inviteInfo.content ?? undefined
-            staffInvite.service = WeilaDB.getInstance().convertFromServiceRaw(serviceAttribute)
+            const staffInvite: WL_StaffInvite = {
+              invitorInfo: {
+                staff: WeilaDB.getInstance().convertFromStaffRaws([invitor])[0],
+                userData: WeilaDB.getInstance().convertFromUserRaw([invitorUserInfo])[0],
+              },
+              content: inviteInfo.content ?? undefined,
+              service: WeilaDB.getInstance().convertFromServiceRaw(serviceAttribute),
+            }
 
             this.coreInterface.sendExtEvent(
               WL_ExtEventID.WL_EXT_COMMON_STAFF_INVITE_IND,
@@ -192,10 +191,11 @@ export default class WLBusinessModule {
 
             if (!ntf) return
 
-            const commonAnswerStaffInvite = {} as WL_CommonAnswerStaffInvite
-            commonAnswerStaffInvite.serviceId = ntf.serviceId ?? 0
-            commonAnswerStaffInvite.userId = ntf.userId ?? 0
-            commonAnswerStaffInvite.status = dbEnum<WL_AnswerStatus>(ntf.status)
+            const commonAnswerStaffInvite: WL_CommonAnswerStaffInvite = {
+              serviceId: ntf.serviceId ?? 0,
+              userId: ntf.userId ?? 0,
+              status: dbEnum<WL_AnswerStatus>(ntf.status),
+            }
 
             this.coreInterface.sendExtEvent(
               WL_ExtEventID.WL_EXT_COMMON_ANSWER_INVITE_IND,
@@ -211,9 +211,10 @@ export default class WLBusinessModule {
 
             if (!ntf) return
 
-            const staffSessionInfo = {} as WL_StaffSessionInfo
-            staffSessionInfo.sessionId = Long.fromValue(ntf.sessionId ?? 0).toString(10)
-            staffSessionInfo.staffId = ntf.staffId ?? 0
+            const staffSessionInfo: WL_StaffSessionInfo = {
+              sessionId: Long.fromValue(ntf.sessionId ?? 0).toString(10),
+              staffId: ntf.staffId ?? 0,
+            }
 
             this.coreInterface.sendExtEvent(
               WL_ExtEventID.WL_EXT_STAFF_ACCEPT_SESSION_IND,
@@ -229,9 +230,10 @@ export default class WLBusinessModule {
 
             if (!ntf) return
 
-            const staffSessionInfo = {} as WL_StaffSessionInfo
-            staffSessionInfo.sessionId = Long.fromValue(ntf.sessionId ?? 0).toString(10)
-            staffSessionInfo.staffId = ntf.staffId ?? 0
+            const staffSessionInfo: WL_StaffSessionInfo = {
+              sessionId: Long.fromValue(ntf.sessionId ?? 0).toString(10),
+              staffId: ntf.staffId ?? 0,
+            }
 
             this.coreInterface.sendExtEvent(
               WL_ExtEventID.WL_EXT_STAFF_EXIT_SESSION_IND,
@@ -247,9 +249,10 @@ export default class WLBusinessModule {
 
             if (!ntf) return
 
-            const staffSessionInfo = {} as WL_StaffSessionInfo
-            staffSessionInfo.sessionId = Long.fromValue(ntf.sessionId ?? 0).toString(10)
-            staffSessionInfo.staffId = ntf.staffId ?? 0
+            const staffSessionInfo: WL_StaffSessionInfo = {
+              sessionId: Long.fromValue(ntf.sessionId ?? 0).toString(10),
+              staffId: ntf.staffId ?? 0,
+            }
 
             this.coreInterface.sendExtEvent(
               WL_ExtEventID.WL_EXT_STAFF_CLOSE_SESSION_IND,
@@ -269,9 +272,10 @@ export default class WLBusinessModule {
 
             if (!session) return
 
-            const staffSessionInvite = {} as WL_ServiceSessionInvite
-            staffSessionInvite.session = WeilaDB.getInstance().convertFromServiceSessionRaw(session)
-            staffSessionInvite.content = ntf.content ?? undefined
+            const staffSessionInvite: WL_ServiceSessionInvite = {
+              session: WeilaDB.getInstance().convertFromServiceSessionRaw(session),
+              content: ntf.content ?? undefined,
+            }
             this.coreInterface.sendExtEvent(
               WL_ExtEventID.WL_EXT_STAFF_SESSION_INVITE_IND,
               staffSessionInvite,
@@ -294,16 +298,14 @@ export default class WLBusinessModule {
 
             if (!inviteeUserInfo) return
 
-            const staffAnswerSessionInvite = {} as WL_StaffAnswerSessionInvite
-            staffAnswerSessionInvite.sessionId = Long.fromValue(ntf.sessionId ?? 0).toString(10)
-            staffAnswerSessionInvite.status = dbEnum<WL_AnswerStatus>(ntf.status)
-            staffAnswerSessionInvite.invitee = {} as WL_IDbServiceStaffInfo
-            staffAnswerSessionInvite.invitee.staff = WeilaDB.getInstance().convertFromStaffRaws([
-              invitee,
-            ])[0]
-            staffAnswerSessionInvite.invitee.userData = WeilaDB.getInstance().convertFromUserRaw([
-              inviteeUserInfo,
-            ])[0]
+            const staffAnswerSessionInvite: WL_StaffAnswerSessionInvite = {
+              sessionId: Long.fromValue(ntf.sessionId ?? 0).toString(10),
+              status: dbEnum<WL_AnswerStatus>(ntf.status),
+              invitee: {
+                staff: WeilaDB.getInstance().convertFromStaffRaws([invitee])[0],
+                userData: WeilaDB.getInstance().convertFromUserRaw([inviteeUserInfo])[0],
+              },
+            }
 
             this.coreInterface.sendExtEvent(
               WL_ExtEventID.WL_EXT_STAFF_ANSWER_INVITE_IND,
@@ -338,11 +340,9 @@ export default class WLBusinessModule {
     ])
 
     if (buildMsgRet.resultCode === 0) {
-      let dbUserInfos = [] as WL_IDbUserInfo[]
+      const dbUserInfos: WL_IDbUserInfo[] = []
 
-      const rsp = (await this.coreInterface.sendPbMsg(
-        buildMsgRet,
-      )) as WL.Business.IRspCommonGetSessions
+      const rsp: WL.Business.IRspCommonGetSessions = await this.coreInterface.sendPbMsg(buildMsgRet)
 
       const sessions = rsp.sessions ?? []
 
@@ -376,7 +376,7 @@ export default class WLBusinessModule {
   }
 
   public async initService(dbSessionList: WL_IDbSession[]): Promise<boolean> {
-    let serviceSessionInfos = [] as WL_IDbServiceSessionInfo[]
+    let serviceSessionInfos: WL_IDbServiceSessionInfo[] = []
 
     if (dbSessionList.length === 0) {
       return true
@@ -393,13 +393,11 @@ export default class WLBusinessModule {
     const buildMsgRet = WeilaPbBusinessWrapper.buildCommonGetSessionsReq(sessionIds_long)
 
     if (buildMsgRet.resultCode === 0) {
-      const rsp = (await this.coreInterface.sendPbMsg(
-        buildMsgRet,
-      )) as WL.Business.IRspCommonGetSessions
+      const rsp: WL.Business.IRspCommonGetSessions = await this.coreInterface.sendPbMsg(buildMsgRet)
 
-      const services = [] as WL_IDbService[]
-      let dbUserInfos = [] as WL_IDbUserInfo[]
-      let allStaffs = [] as WL_IDbServiceStaff[]
+      const services: WL_IDbService[] = []
+      let dbUserInfos: WL_IDbUserInfo[] = []
+      let allStaffs: WL_IDbServiceStaff[] = []
 
       wllog('buildCommonGetSessionsReq', rsp)
 
@@ -446,8 +444,7 @@ export default class WLBusinessModule {
           dbSession.extra = serviceSessionInfo.serviceSession
         } else {
           dbSession.status = WL_IDbSessionStatus.SESSION_INVALID
-          ;(dbSession.extra as WL_IDbServiceSession).serviceStatus =
-            WL_ServiceStatus.SERVICE_STATUS_FINISH
+          dbSession.extra.serviceStatus = WL_ServiceStatus.SERVICE_STATUS_FINISH
         }
       }
 
@@ -517,11 +514,10 @@ export default class WLBusinessModule {
     const buildMsgRet = WeilaPbBusinessWrapper.buildCommonGetStaffInviteReq(latestUpdate)
 
     if (buildMsgRet.resultCode === 0) {
-      const staffInvites = [] as WL_StaffInvite[]
+      const staffInvites: WL_StaffInvite[] = []
 
-      const rsp = (await this.coreInterface.sendPbMsg(
-        buildMsgRet,
-      )) as WL.Business.IRspCommonGetStaffInvite
+      const rsp: WL.Business.IRspCommonGetStaffInvite =
+        await this.coreInterface.sendPbMsg(buildMsgRet)
 
       if (rsp.invites) {
         for (let invite of rsp.invites) {
@@ -537,14 +533,14 @@ export default class WLBusinessModule {
 
           if (!invitorUserInfo) continue
 
-          const staffInvite = {} as WL_StaffInvite
-          staffInvite.service = WeilaDB.getInstance().convertFromServiceRaw(serviceAttribute)
-          staffInvite.invitorInfo = {} as WL_IDbServiceStaffInfo
-          staffInvite.invitorInfo.staff = WeilaDB.getInstance().convertFromStaffRaws([invitor])[0]
-          staffInvite.invitorInfo.userData = WeilaDB.getInstance().convertFromUserRaw([
-            invitorUserInfo,
-          ])[0]
-          staffInvite.content = invite.content ?? undefined
+          const staffInvite: WL_StaffInvite = {
+            service: WeilaDB.getInstance().convertFromServiceRaw(serviceAttribute),
+            invitorInfo: {
+              staff: WeilaDB.getInstance().convertFromStaffRaws([invitor])[0],
+              userData: WeilaDB.getInstance().convertFromUserRaw([invitorUserInfo])[0],
+            },
+            content: invite.content ?? undefined,
+          }
 
           staffInvites.push(staffInvite)
         }
@@ -680,9 +676,10 @@ export default class WLBusinessModule {
         await WeilaDB.getInstance().putUserInfos(userInfos)
 
         return staffs.map((value, index) => {
-          const staffInfo = {} as WL_IDbServiceStaffInfo
-          staffInfo.userData = userInfos[index]
-          staffInfo.staff = value
+          const staffInfo: WL_IDbServiceStaffInfo = {
+            userData: userInfos[index],
+            staff: value,
+          }
 
           return staffInfo
         })
