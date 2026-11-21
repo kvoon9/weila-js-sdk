@@ -45,7 +45,6 @@ import {
 import { MD5 } from 'crypto-js'
 import {
   WL_ExtEventID,
-  WL_PttPlayInd,
   WL_PttPlayIndData,
   WL_PttRecordInd,
   WL_PttRecordState,
@@ -101,7 +100,7 @@ function isDeepEqual(a: unknown, b: unknown): boolean {
 
 export default class WLSessionModule {
   private sessionList: WL_IDbSession[] = []
-  private pttFsm: WLPttFsm | null
+  private pttFsm: WLPttFsm
   private curBurstInfo: WL_BurstInfo | null
   private activeSession: WL_ActiveSessionInfo | null
 
@@ -127,7 +126,9 @@ export default class WLSessionModule {
         dBSession.sessionAvatar = userInfo.avatar
       }
     } else if (isGroupSessionType(dBSession.sessionType)) {
-      const groupInfo: WL_IDbGroup = await WeilaDB.getInstance().getGroup(dBSession.sessionId)
+      const groupInfo: WL_IDbGroup | undefined = await WeilaDB.getInstance().getGroup(
+        dBSession.sessionId,
+      )
       if (groupInfo) {
         dBSession.sessionName = groupInfo.name
         dBSession.sessionAvatar = groupInfo.avatar || default_group_logo
@@ -334,7 +335,7 @@ export default class WLSessionModule {
       const weilaTokenItem = await WeilaDB.getInstance().getSettingItem(
         WL_IDbSettingID.SETTING_LOGIN_TOKEN,
       )
-      const weilaToken = weilaTokenItem.data
+      const weilaToken = weilaTokenItem?.data ?? ''
       let speakerInfo = ''
       const senderUserInfo = await WeilaDB.getInstance().getUser(msgData.senderId)
 
@@ -434,14 +435,18 @@ export default class WLSessionModule {
 
   private onPbMsgHandler(data: any): void {
     const serverMessage = data as WL.Service.IServiceMessage
-    if (serverMessage.serviceHead.commandType === WL.Service.CommandType.COMMAND_RESPONSE) {
-      switch (serverMessage.serviceHead.commandId) {
+    const serviceHead = serverMessage.serviceHead
+
+    if (!serviceHead) return
+
+    if (serviceHead.commandType === WL.Service.CommandType.COMMAND_RESPONSE) {
+      switch (serviceHead.commandId) {
         case WL.Session.SessionCommandId.SESSION_COMMAND_MSGDATA:
           {
             this.coreInterface.rspPbMsg(
-              serverMessage.serviceHead.seq,
-              serverMessage.serviceHead.resultCode,
-              serverMessage.sessionMessage.rspMsg,
+              serviceHead.seq ?? 0,
+              serviceHead.resultCode ?? 0,
+              serverMessage.sessionMessage?.rspMsg,
             )
           }
           break
@@ -449,9 +454,9 @@ export default class WLSessionModule {
         case WL.Session.SessionCommandId.SESSION_COMMAND_GET_SESSION:
           {
             this.coreInterface.rspPbMsg(
-              serverMessage.serviceHead.seq,
-              serverMessage.serviceHead.resultCode,
-              serverMessage.sessionMessage.rspGetSession,
+              serviceHead.seq ?? 0,
+              serviceHead.resultCode ?? 0,
+              serverMessage.sessionMessage?.rspGetSession,
             )
           }
           break
@@ -459,9 +464,9 @@ export default class WLSessionModule {
         case WL.Session.SessionCommandId.SESSION_COMMAND_GET_MSG:
           {
             this.coreInterface.rspPbMsg(
-              serverMessage.serviceHead.seq,
-              serverMessage.serviceHead.resultCode,
-              serverMessage.sessionMessage.rspGetMsg,
+              serviceHead.seq ?? 0,
+              serviceHead.resultCode ?? 0,
+              serverMessage.sessionMessage?.rspGetMsg,
             )
           }
           break
@@ -469,29 +474,32 @@ export default class WLSessionModule {
         case WL.Session.SessionCommandId.SESSION_COMMAND_READ_MSG:
           {
             this.coreInterface.rspPbMsg(
-              serverMessage.serviceHead.seq,
-              serverMessage.serviceHead.resultCode,
-              serverMessage.sessionMessage.rspMsgRead,
+              serviceHead.seq ?? 0,
+              serviceHead.resultCode ?? 0,
+              serverMessage.sessionMessage?.rspMsgRead,
             )
           }
           break
 
         case WL.Session.SessionCommandId.SESSION_COMMAND_REMOVE_SESSION:
           {
-            this.coreInterface.rspPbMsg(
-              serverMessage.serviceHead.seq,
-              serverMessage.serviceHead.resultCode,
-              true,
-            )
+            this.coreInterface.rspPbMsg(serviceHead.seq ?? 0, serviceHead.resultCode ?? 0, true)
           }
           break
       }
-    } else if (serverMessage.serviceHead.commandType === WL.Service.CommandType.COMMAND_NOTIFY) {
-      if (
-        serverMessage.serviceHead.commandId === WL.Session.SessionCommandId.SESSION_COMMAND_MSGDATA
-      ) {
+    } else if (serviceHead.commandType === WL.Service.CommandType.COMMAND_NOTIFY) {
+      const sessionMessage = serverMessage.sessionMessage
+
+      if (!sessionMessage) return
+
+      if (serviceHead.commandId === WL.Session.SessionCommandId.SESSION_COMMAND_MSGDATA) {
         ;(async () => {
-          const msgDataRaw = serverMessage.sessionMessage.ntfMsg.msgData
+          const ntfMsg = sessionMessage.ntfMsg
+
+          if (!ntfMsg) return
+          const msgDataRaw = ntfMsg.msgData
+
+          if (!msgDataRaw) return
           const loginUserInfo = this.coreInterface.getLoginUserInfo()
           const msgDatas = WeilaDB.getInstance().convertFromMsgDataRaws(
             [msgDataRaw],
@@ -536,31 +544,34 @@ export default class WLSessionModule {
                 this.coreInterface.sendExtEvent(WL_ExtEventID.WL_EXT_NEW_MSG_RECV_IND, msgData)
                 await WeilaDB.getInstance().putMsgData(msgData)
               } else {
-                const withdrawMsgData = await WeilaDB.getInstance().getMsgDataByMsgId(
-                  msgData.sessionId,
-                  msgData.sessionType,
-                  msgData.withdrawMsgId,
-                )
+                const withdrawMsgId = msgData.withdrawMsgId
 
-                wllog('withdraw msg is:', withdrawMsgData)
-                if (withdrawMsgData) {
-                  withdrawMsgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_WITHDRAW
-                  //发送通知消息出去
-                  this.coreInterface.sendExtEvent(
-                    WL_ExtEventID.WL_EXT_NEW_MSG_RECV_IND,
-                    withdrawMsgData,
+                if (withdrawMsgId !== undefined) {
+                  const withdrawMsgData = await WeilaDB.getInstance().getMsgDataByMsgId(
+                    msgData.sessionId,
+                    msgData.sessionType,
+                    withdrawMsgId,
                   )
-                  await WeilaDB.getInstance().putMsgData(withdrawMsgData)
+
+                  wllog('withdraw msg is:', withdrawMsgData)
+                  if (withdrawMsgData) {
+                    withdrawMsgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_WITHDRAW
+                    //发送通知消息出去
+                    this.coreInterface.sendExtEvent(
+                      WL_ExtEventID.WL_EXT_NEW_MSG_RECV_IND,
+                      withdrawMsgData,
+                    )
+                    await WeilaDB.getInstance().putMsgData(withdrawMsgData)
+                  }
                 }
               }
             }
           }
         })()
       } else if (
-        serverMessage.serviceHead.commandId ===
-        WL.Session.SessionCommandId.SESSION_COMMAND_BURST_CONTROL
+        serviceHead.commandId === WL.Session.SessionCommandId.SESSION_COMMAND_BURST_CONTROL
       ) {
-        wllog('收到发言控制消息:', serverMessage.sessionMessage.ntfBurstControl)
+        wllog('收到发言控制消息:', sessionMessage.ntfBurstControl)
       }
     }
   }
@@ -602,9 +613,10 @@ export default class WLSessionModule {
 
     if (buildResult.resultCode === 0) {
       const rspGetMsg = (await this.coreInterface.sendPbMsg(buildResult)) as WL.Session.IRspGetMsg
-      wllog('从服务器获取:' + rspGetMsg.msgList.length + ' 条记录')
+      const msgList = rspGetMsg.msgList ?? []
+      wllog('从服务器获取:' + msgList.length + ' 条记录')
       let msgDatas = WeilaDB.getInstance().convertFromMsgDataRaws(
-        rspGetMsg.msgList,
+        msgList,
         this.coreInterface.getLoginUserInfo().userId,
       )
 
@@ -764,14 +776,14 @@ export default class WLSessionModule {
         settingItem = {} as WL_IDbSetting
         settingItem.id = settingId
       }
-      settingItem.data = Long.fromValue(rspMsg.latestUpdated).toNumber()
+      settingItem.data = Long.fromValue(rspMsg.latestUpdated ?? 0).toNumber()
       await dbInstance.putSettingItem(settingItem)
 
-      wllog('initSessions type=%d:', type, rspMsg.sessionInfoList)
-      if (rspMsg.sessionInfoList.length) {
-        const sessionInfos: WL_IDbSession[] = await dbInstance.convertFromSessionRaw(
-          rspMsg.sessionInfoList,
-        )
+      const sessionInfoList = rspMsg.sessionInfoList ?? []
+      wllog('initSessions type=%d:', type, sessionInfoList)
+      if (sessionInfoList.length) {
+        const sessionInfos: WL_IDbSession[] =
+          await dbInstance.convertFromSessionRaw(sessionInfoList)
         await dbInstance.putSessions(sessionInfos)
         wllog('after convert type=%d:', type, sessionInfos)
       }
@@ -860,8 +872,11 @@ export default class WLSessionModule {
       dbMsgData.created = new Date().getTime() / 1000
       dbMsgData.msgId = lastMsgData ? lastMsgData.msgId + 1 : 0
       dbMsgData.autoReply = 0
-      dbMsgData.combo_id = getMsgDataIdByCombo(dbMsgData, seqSetting.data++)
-      await WeilaDB.getInstance().putSettingItem(seqSetting)
+      dbMsgData.combo_id = getMsgDataIdByCombo(dbMsgData, seqSetting?.data ?? 0)
+      if (seqSetting) {
+        seqSetting.data = (seqSetting.data ?? 0) + 1
+        await WeilaDB.getInstance().putSettingItem(seqSetting)
+      }
     }
 
     if (msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_TEXT_TYPE) {
@@ -893,7 +908,7 @@ export default class WLSessionModule {
         sessionType,
         this.coreInterface.getLoginUserInfo().userId,
         false,
-        dbMsgData.fileInfo.fileUrl,
+        dbMsgData.fileInfo.fileUrl ?? '',
       )
     } else if (msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_LOCATION_TYPE) {
       dbMsgData.location = data as WL_IDbLocationShared
@@ -908,7 +923,7 @@ export default class WLSessionModule {
       const audioData = data as WL_IDbAudioData
       dbMsgData.audioData = audioData
       const payload =
-        audioData.data && audioData.data.length > 0 ? audioData.data : audioData.audioUrl
+        audioData.data && audioData.data.length > 0 ? audioData.data : (audioData.audioUrl ?? '')
       buildResult = WeilaPBSessionWrapper.buildAudioSessionMsgReq(
         Long.fromValue(sessionId),
         sessionType,
@@ -936,6 +951,10 @@ export default class WLSessionModule {
       )
     }
 
+    if (!buildResult) {
+      return Promise.reject('创建消息失败:不存在消息类型:' + msgType)
+    }
+
     if (buildResult.resultCode === 0) {
       try {
         const rspMsg = (await this.coreInterface.sendPbMsg(buildResult)) as WL.Session.IRspMsg
@@ -958,7 +977,7 @@ export default class WLSessionModule {
 
         wllog('发送消息成功,返回结果id:', rspMsg.msgId)
         dbMsgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_SENT
-        dbMsgData.msgId = rspMsg.msgId
+        dbMsgData.msgId = rspMsg.msgId ?? 0
         dbMsgData.combo_id = getMsgDataIdByCombo(dbMsgData, 0)
         if (index !== -1) {
           this.applySessionMsgData(this.sessionList[index], dbMsgData, true)
@@ -1102,14 +1121,19 @@ export default class WLSessionModule {
     audioItem: WL_PttAudioItem | null,
     indData: WL_PttPlayIndData,
   ): Promise<void> {
-    const pttPlayInd = {} as WL_PttPlayInd
-    pttPlayInd.msgData = audioItem ? audioItem.msgData : null
-    pttPlayInd.indData = indData
+    const pttPlayInd = {
+      msgData: audioItem ? audioItem.msgData : null,
+      indData,
+    }
     this.coreInterface.sendExtEvent(WL_ExtEventID.WL_EXT_PTT_PLAY_IND, pttPlayInd)
   }
 
   private async sendPttPacket(pttPacket: WL_PttPacket, isNotify: boolean): Promise<void> {
-    wllog('onPttPacketRecv', this.curBurstInfo)
+    const burstInfo = this.curBurstInfo
+
+    if (!burstInfo) return
+
+    wllog('onPttPacketRecv', burstInfo)
     const pttData = {} as WL_IDbPttData
     pttData.seq = pttPacket.seq
     pttData.data = pttPacket.data
@@ -1126,40 +1150,43 @@ export default class WLSessionModule {
         WL_IDbSettingID.SETTING_MSG_SENDING_SEQ,
       )
       const lastMsgData = await WeilaDB.getInstance().getLastMsgData(
-        this.curBurstInfo.sessionId,
-        this.curBurstInfo.sessionType,
+        burstInfo.sessionId,
+        burstInfo.sessionType,
       )
-      this.curBurstInfo.dbMsgData = {} as WL_IDbMsgData
-      this.curBurstInfo.dbMsgData.audioData = {} as WL_IDbAudioData
-      this.curBurstInfo.dbMsgData.audioData.data = pttData.data.slice(0)
-      this.curBurstInfo.dbMsgData.audioData.frameCount = pttData.frameCount
-      this.curBurstInfo.dbMsgData.msgType = WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE
-      this.curBurstInfo.dbMsgData.senderId = this.coreInterface.getLoginUserInfo().userId
-      this.curBurstInfo.dbMsgData.sessionId = this.curBurstInfo.sessionId
-      this.curBurstInfo.dbMsgData.sessionType = this.curBurstInfo.sessionType
-      this.curBurstInfo.dbMsgData.autoReply = 0
-      this.curBurstInfo.dbMsgData.msgId = lastMsgData ? lastMsgData.msgId + 1 : 0
-      this.curBurstInfo.dbMsgData.combo_id = getMsgDataIdByCombo(
-        this.curBurstInfo.dbMsgData,
-        seqSetting.data++,
-      )
+      burstInfo.dbMsgData = {} as WL_IDbMsgData
+      burstInfo.dbMsgData.audioData = {} as WL_IDbAudioData
+      burstInfo.dbMsgData.audioData.data = pttData.data.slice(0)
+      burstInfo.dbMsgData.audioData.frameCount = pttData.frameCount
+      burstInfo.dbMsgData.msgType = WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE
+      burstInfo.dbMsgData.senderId = this.coreInterface.getLoginUserInfo().userId
+      burstInfo.dbMsgData.sessionId = burstInfo.sessionId
+      burstInfo.dbMsgData.sessionType = burstInfo.sessionType
+      burstInfo.dbMsgData.autoReply = 0
+      burstInfo.dbMsgData.msgId = lastMsgData ? lastMsgData.msgId + 1 : 0
+      burstInfo.dbMsgData.combo_id = getMsgDataIdByCombo(burstInfo.dbMsgData, seqSetting?.data ?? 0)
     } else {
-      if (this.curBurstInfo.dbMsgData) {
-        const newData = new Uint8Array(
-          this.curBurstInfo.dbMsgData.audioData.data.length + pttPacket.data.length,
-        )
-        newData.set(this.curBurstInfo.dbMsgData.audioData.data)
-        newData.set(pttPacket.data, this.curBurstInfo.dbMsgData.audioData.data.length)
-        this.curBurstInfo.dbMsgData.audioData.frameCount += pttPacket.frameCount
-        this.curBurstInfo.dbMsgData.audioData.data = newData
-      } else {
-        return
-      }
+      const dbMsgData = burstInfo.dbMsgData
+
+      if (!dbMsgData) return
+
+      const audioData = dbMsgData.audioData
+
+      if (!audioData?.data) return
+
+      const newData = new Uint8Array(audioData.data.length + pttPacket.data.length)
+      newData.set(audioData.data)
+      newData.set(pttPacket.data, audioData.data.length)
+      audioData.frameCount += pttPacket.frameCount
+      audioData.data = newData
     }
 
+    const dbMsgData = burstInfo.dbMsgData
+
+    if (!dbMsgData) return
+
     const buildMsgRet = WeilaPBSessionWrapper.buildPttSessionMsgReq(
-      Long.fromValue(this.curBurstInfo.sessionId),
-      this.curBurstInfo.sessionType,
+      Long.fromValue(burstInfo.sessionId),
+      burstInfo.sessionType,
       this.coreInterface.getLoginUserInfo().userId,
       false,
       pttData,
@@ -1168,57 +1195,44 @@ export default class WLSessionModule {
     if (buildMsgRet.resultCode === 0) {
       try {
         const rsp = (await this.coreInterface.sendPbMsg(buildMsgRet)) as WL.Session.IRspMsg
-        this.curBurstInfo.dbMsgData.msgId = rsp.msgId
-        this.curBurstInfo.dbMsgData.created = Long.fromValue(rsp.created).toNumber()
-        this.curBurstInfo.dbMsgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_SENT
-        await WeilaDB.getInstance().putMsgData(this.curBurstInfo.dbMsgData)
+        dbMsgData.msgId = rsp.msgId ?? 0
+        dbMsgData.created = Long.fromValue(rsp.created ?? 0).toNumber()
+        dbMsgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_SENT
+        await WeilaDB.getInstance().putMsgData(dbMsgData)
       } catch (_e) {
-        this.curBurstInfo.dbMsgData.msgId = -1
-        this.curBurstInfo.dbMsgData.created = new Date().getTime() / 1000
-        this.curBurstInfo.dbMsgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_UNSENT
-        await WeilaDB.getInstance().putMsgData(this.curBurstInfo.dbMsgData)
+        dbMsgData.msgId = -1
+        dbMsgData.created = new Date().getTime() / 1000
+        dbMsgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_UNSENT
+        await WeilaDB.getInstance().putMsgData(dbMsgData)
       } finally {
         const pttRecordInd: WL_PttRecordInd = {} as WL_PttRecordInd
-        pttRecordInd.msgData = this.curBurstInfo.dbMsgData
-        if (this.curBurstInfo.dbMsgData.status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_SENT) {
+        pttRecordInd.msgData = dbMsgData
+        if (dbMsgData.status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_SENT) {
           if (pttPacket.mark === WL_PttPackType.PTT_INTER_PACK) {
             pttRecordInd.state = WL_PttRecordState.PTT_AUDIO_RECORDING
           } else if (
             pttPacket.mark === WL_PttPackType.PTT_END_PACK ||
             pttPacket.mark === WL_PttPackType.PTT_WHOLE_PACK
           ) {
-            await WeilaDB.getInstance().delMsgDataByComboId(this.curBurstInfo.dbMsgData.combo_id)
-            this.curBurstInfo.dbMsgData.combo_id = getMsgDataIdByCombo(
-              this.curBurstInfo.dbMsgData,
-              0,
-            )
-            await WeilaDB.getInstance().putMsgData(this.curBurstInfo.dbMsgData)
-            const sessionIndex = this.findSessionIndex(
-              this.curBurstInfo.sessionId,
-              this.curBurstInfo.sessionType,
-            )
+            await WeilaDB.getInstance().delMsgDataByComboId(dbMsgData.combo_id)
+            dbMsgData.combo_id = getMsgDataIdByCombo(dbMsgData, 0)
+            await WeilaDB.getInstance().putMsgData(dbMsgData)
+            const sessionIndex = this.findSessionIndex(burstInfo.sessionId, burstInfo.sessionType)
             if (sessionIndex !== -1) {
-              this.applySessionMsgData(
-                this.sessionList[sessionIndex],
-                this.curBurstInfo.dbMsgData,
-                true,
-              )
+              this.applySessionMsgData(this.sessionList[sessionIndex], dbMsgData, true)
               await this.persistSessionUpdate(this.sessionList[sessionIndex])
             } else {
               await this.startSession(
-                this.curBurstInfo.sessionId,
-                this.curBurstInfo.sessionType,
+                burstInfo.sessionId,
+                burstInfo.sessionType,
                 undefined,
-                this.curBurstInfo.dbMsgData.msgId,
-                this.curBurstInfo.dbMsgData,
+                dbMsgData.msgId,
+                dbMsgData,
               )
             }
 
             pttRecordInd.state = WL_PttRecordState.PTT_AUDIO_RECORDING_END
-            this.coreInterface.sendExtEvent(
-              WL_ExtEventID.WL_EXT_MSG_SEND_IND,
-              this.curBurstInfo.dbMsgData,
-            )
+            this.coreInterface.sendExtEvent(WL_ExtEventID.WL_EXT_MSG_SEND_IND, dbMsgData)
           } else {
             pttRecordInd.state = WL_PttRecordState.PTT_AUDIO_RECORDING_START
           }
@@ -1226,10 +1240,7 @@ export default class WLSessionModule {
           if (isNotify) {
             await this.pttFsm.releaseTalkByError()
             pttRecordInd.state = WL_PttRecordState.PTT_AUDIO_RECORDING_END
-            this.coreInterface.sendExtEvent(
-              WL_ExtEventID.WL_EXT_MSG_SEND_IND,
-              this.curBurstInfo.dbMsgData,
-            )
+            this.coreInterface.sendExtEvent(WL_ExtEventID.WL_EXT_MSG_SEND_IND, dbMsgData)
           }
         }
 
