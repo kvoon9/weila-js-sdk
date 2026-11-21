@@ -13,6 +13,8 @@
     "up": "pnpm dlx taze -Ir major",
     "build:story": "turbo run build:story",
     "typecheck": "turbo run typecheck",
+    "typecheck:tsc": "turbo run typecheck:tsc",
+    "typecheck:parity": "node packages/core/scripts/typecheck-parity.mjs",
     "test:run": "turbo run test:run",
     "lint": "oxlint --type-aware",
     "lint:fix": "oxlint --type-aware --fix",

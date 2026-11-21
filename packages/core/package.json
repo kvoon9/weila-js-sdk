@@ -36,7 +36,8 @@
     "build:worklets": "rspack build --config rspack.worklets.config.cjs",
     "build:declarations": "tsc -p tsconfig.build.json --emitDeclarationOnly",
     "dev": "pnpm run build:watch",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsrs --noEmit --fast",
+    "typecheck:tsc": "tsc --noEmit"
   },
   "dependencies": {
     "ali-oss": "^6.16.0",
@@ -58,7 +59,8 @@
     "@types/debug": "^4.1.7",
     "@types/node": "^22.13.10",
     "jsdom": "catalog:",
-    "typescript": "^5.9.3",
+    "tsrs": "0.25.0-ts7.1.0-beta",
+    "typescript": "^7.0.2",
     "vitest": "catalog:",
     "worker-rspack-loader": "^3.1.5"
   }

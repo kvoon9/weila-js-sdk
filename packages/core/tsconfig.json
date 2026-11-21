@@ -1,16 +1,17 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "baseUrl": "src",
+    "moduleResolution": "bundler",
     "strict": false,
+    "types": ["node"],
     "outDir": "dist",
     "paths": {
-      "fsm/*": ["fsm/*"],
-      "log/*": ["log/*"],
-      "main/*": ["main/*"],
-      "db/*": ["database/*"],
-      "proto/*": ["proto/*"],
-      "audio/*": ["audio/*"]
+      "fsm/*": ["./src/fsm/*"],
+      "log/*": ["./src/log/*"],
+      "main/*": ["./src/main/*"],
+      "db/*": ["./src/database/*"],
+      "proto/*": ["./src/proto/*"],
+      "audio/*": ["./src/audio/*"]
     }
   },
   "include": ["src/**/*"],
