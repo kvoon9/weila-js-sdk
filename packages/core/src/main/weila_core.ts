@@ -34,6 +34,7 @@ import {
   WL_IDbMsgDataStatus,
   WL_IDbMsgDataType,
   WL_IDbNotification,
+  WL_IDbServiceSession,
   WL_IDbServiceSessionInfo,
   WL_IDbServiceStaffInfo,
   WL_IDbSession,
@@ -74,8 +75,6 @@ import {
   WL_DataPrepareState,
   WL_ExtEventCallback,
   WL_ExtEventID,
-  WL_SubscribeOptions,
-  WL_MessagesFilter,
   WL_SubscribeMap,
   WL_SubscribeTopic,
 } from 'main/weila_external_data'
@@ -85,6 +84,32 @@ import WLBusinessModule from 'main/weila_business_module'
 
 const wllog = getLogger('CORE:info')
 const wlerr = getLogger('CORE:err')
+
+function isCoreMethodName<T extends object>(name: string, target: T): name is keyof T & string {
+  return name in target
+}
+
+interface WL_SubscribeRequest {
+  topic: WL_SubscribeTopic
+  callback: WL_SubscribeMap[WL_SubscribeTopic]['callback']
+  options?: WL_SubscribeMap[WL_SubscribeTopic]['options']
+}
+
+function isSessionListRequest(request: WL_SubscribeRequest): request is WL_SubscribeRequest & {
+  topic: 'sessionList'
+  callback: WL_SubscribeMap['sessionList']['callback']
+  options?: WL_SubscribeMap['sessionList']['options']
+} {
+  return request.topic === 'sessionList'
+}
+
+function isMessagesRequest(request: WL_SubscribeRequest): request is WL_SubscribeRequest & {
+  topic: 'messages'
+  callback: WL_SubscribeMap['messages']['callback']
+  options?: WL_SubscribeMap['messages']['options']
+} {
+  return request.topic === 'messages'
+}
 
 interface WL_WaitingRspPbMsgInfo {
   resolve(value: any): any
@@ -244,11 +269,8 @@ class WeilaCore implements WL_CoreInterface {
   }
 
   async executeCoreFunc(funcName: string, ...argvs: any[]): Promise<any> {
-    if (funcName in this) {
-      // SAFETY: callers pass names of public WeilaCore methods, and the guard above proves the property exists.
-      const target = this as any
-
-      return target[funcName](...argvs)
+    if (isCoreMethodName<WeilaCore>(funcName, this)) {
+      return this[funcName](...argvs)
     }
 
     return Promise.reject(new Error('Not Support Function:' + funcName))
@@ -256,11 +278,12 @@ class WeilaCore implements WL_CoreInterface {
 
   sendPbMsg(buildPbMsg: WLBuildMsgRet, timeout?: number): Promise<any> {
     return new Promise<any>((resolve, reject) => {
-      const sendingItem = {} as WL_SendingPbMsgInfo
-      sendingItem.resolve = resolve
-      sendingItem.reject = reject
-      sendingItem.buildPbMsg = buildPbMsg
-      sendingItem.timeout = timeout ? timeout : 6000
+      const sendingItem: WL_SendingPbMsgInfo = {
+        resolve,
+        reject,
+        buildPbMsg,
+        timeout: timeout ? timeout : 6000,
+      }
       this.sendingPbMsgList.push(sendingItem)
       setTimeout(this.processSendingPbMsg.bind(this), 0)
     })
@@ -275,17 +298,19 @@ class WeilaCore implements WL_CoreInterface {
 
     if (this.sendingPbMsgList.length > 0) {
       const sendingItem = this.sendingPbMsgList.shift()!
-      const waitingItem = {} as WL_WaitingRspPbMsgInfo
-      waitingItem.resolve = sendingItem.resolve
-      waitingItem.reject = sendingItem.reject
-      waitingItem.pbMsgData = {} as WL_PbMsgData
       const weilaMsgHeader = sendingItem.buildPbMsg.weilaMsgHeader
 
       if (!weilaMsgHeader) return
 
-      waitingItem.pbMsgData.header = weilaMsgHeader
-      waitingItem.pbMsgData.pbMsgData = sendingItem.buildPbMsg.reqData
-      waitingItem.timeout = new Date().getTime() + (sendingItem.timeout ?? 0)
+      const waitingItem: WL_WaitingRspPbMsgInfo = {
+        resolve: sendingItem.resolve,
+        reject: sendingItem.reject,
+        pbMsgData: {
+          header: weilaMsgHeader,
+          pbMsgData: sendingItem.buildPbMsg.reqData,
+        },
+        timeout: new Date().getTime() + (sendingItem.timeout ?? 0),
+      }
       this.waitingRspMap.set(weilaMsgHeader.seqNum, waitingItem)
       this.sendNetworkEvent(WL_NetworkEventID.NET_SEND_DATA_EVT, sendingItem.buildPbMsg.reqData)
     }
@@ -303,19 +328,17 @@ class WeilaCore implements WL_CoreInterface {
   }
 
   private sendNetworkEvent(eventId: WL_NetworkEventID, eventData: any) {
-    const netEvent = {} as WL_NetworkEvent
-    netEvent.eventId = eventId
-    netEvent.eventData = eventData
+    const netEvent: WL_NetworkEvent = { eventId, eventData }
     this.network.postMessage(netEvent)
   }
 
-  private onNetworkMessage(event: any) {
-    const netEvent = event.data as WL_NetworkEvent
+  private onNetworkMessage(event: MessageEvent<WL_NetworkEvent>) {
+    const netEvent = event.data
 
     switch (netEvent.eventId) {
       case WL_NetworkEventID.NET_STATE_IND_EVT:
         {
-          const netState = netEvent.eventData as WL_NetworkState
+          const netState: WL_NetworkState = netEvent.eventData
 
           if (netState === WL_NetworkState.NET_CONNECTED_STATE) {
             this.mainFsmService.send({ type: fsmEvents.FSM_NET_CONNECTED_IND_EVT })
@@ -341,7 +364,7 @@ class WeilaCore implements WL_CoreInterface {
 
       case WL_NetworkEventID.NET_MSG_RECV_IND_EVT:
         {
-          const msgData = netEvent.eventData as WL_PbMsgData
+          const msgData: WL_PbMsgData = netEvent.eventData
           const serverMessage = WL.Service.ServiceMessage.decode(msgData.pbMsgData)
 
           const serviceHead = serverMessage.serviceHead
@@ -383,9 +406,10 @@ class WeilaCore implements WL_CoreInterface {
   }
 
   private async prepareData(_context: any, _event: any): Promise<boolean> {
-    const ind = {} as WL_DataPrepareInd
-    ind.state = WL_DataPrepareState.PREPARE_PROGRESS_IND
-    ind.msg = 'SDK.FriendInit'
+    const ind: WL_DataPrepareInd = {
+      state: WL_DataPrepareState.PREPARE_PROGRESS_IND,
+      msg: 'SDK.FriendInit',
+    }
     this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind)
     await this.friendModule.initFriends()
     ind.msg = 'SDK.GroupInit'
@@ -420,10 +444,9 @@ class WeilaCore implements WL_CoreInterface {
   }
 
   private async loginServer(context: any, _event: any): Promise<WL_LoginResult> {
-    const loginParam = context.loginParam as WL_LoginParam
-    const loginResult = {} as WL_LoginResult
+    const loginParam: WL_LoginParam = context.loginParam
+    const loginResult: WL_LoginResult = { callback: loginParam.callback }
 
-    loginResult.callback = loginParam.callback
     loginParam.retryCount++
 
     try {
@@ -459,17 +482,19 @@ class WeilaCore implements WL_CoreInterface {
 
   private onDataInit(_context: any, _event: any) {
     // 对外发出正在准备数据中.
-    const ind = {} as WL_DataPrepareInd
-    ind.state = WL_DataPrepareState.START_PREPARING
-    ind.msg = 'Commons.startPrepare'
+    const ind: WL_DataPrepareInd = {
+      state: WL_DataPrepareState.START_PREPARING,
+      msg: 'Commons.startPrepare',
+    }
     this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind)
   }
 
   private onDataInited(_context: any, _event: any) {
     // 对外通知数据已经准备好
-    const ind = {} as WL_DataPrepareInd
-    ind.state = WL_DataPrepareState.PREPARE_SUCC_END
-    ind.msg = 'Commons.prepareFinishSucc'
+    const ind: WL_DataPrepareInd = {
+      state: WL_DataPrepareState.PREPARE_SUCC_END,
+      msg: 'Commons.prepareFinishSucc',
+    }
     this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind)
   }
 
@@ -478,9 +503,10 @@ class WeilaCore implements WL_CoreInterface {
     this.weila_logout().then((_value) => {})
 
     //通知外部，出现异常，并告知异常信息
-    const ind = {} as WL_DataPrepareInd
-    ind.state = WL_DataPrepareState.PREPARE_FAIL_END
-    ind.msg = 'Commons.prepareFinishFail'
+    const ind: WL_DataPrepareInd = {
+      state: WL_DataPrepareState.PREPARE_FAIL_END,
+      msg: 'Commons.prepareFinishFail',
+    }
     this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind)
   }
 
@@ -493,8 +519,8 @@ class WeilaCore implements WL_CoreInterface {
     })
   }
 
-  private onLoginSucc(_context: any, event: { output?: unknown }) {
-    const loginResult = event.output as WL_LoginResult
+  private onLoginSucc(_context: any, event: { output?: any }) {
+    const loginResult: WL_LoginResult = event.output
     wllog('onLogin:', event)
     this.loginUserInfo = loginResult.loginUserInfo
 
@@ -602,14 +628,14 @@ class WeilaCore implements WL_CoreInterface {
   }
 
   private canRetry(context: any, _event: any): boolean {
-    const loginParams = context.loginParam as WL_LoginParam
+    const loginParams: WL_LoginParam = context.loginParam
     wllog('canRetry', loginParams)
 
     return loginParams.retryCount < this.maxRetryLoginTimes
   }
 
   private isLoginSucc(_context: any, event: any): boolean {
-    const loginResult = event.data.loginResult as WL_LoginResult
+    const loginResult: WL_LoginResult = event.data.loginResult
 
     return loginResult.loginUserInfo !== undefined
   }
@@ -628,7 +654,7 @@ class WeilaCore implements WL_CoreInterface {
 
   private onLoginRetryFail(context: any, event: any) {
     wllog('onLoginRetryFail', event.data)
-    const loginParam = context.loginParam as WL_LoginParam
+    const loginParam: WL_LoginParam = context.loginParam
 
     if (event.data && event.data.error) {
       loginParam.callback.reject(event.data.error)
@@ -668,9 +694,7 @@ class WeilaCore implements WL_CoreInterface {
     }
 
     return new Promise<boolean>((resolve, reject) => {
-      const callback = {} as WL_PromiseCallback
-      callback.resolve = resolve
-      callback.reject = reject
+      const callback: WL_PromiseCallback = { resolve, reject }
       this.mainFsmService.send({ type: fsmEvents.FSM_LOAD_RESOURCE_EVT, data: callback })
     })
   }
@@ -690,15 +714,14 @@ class WeilaCore implements WL_CoreInterface {
     options: WL_LoginOptions = {},
   ): Promise<WL_IDbUserInfo> {
     return new Promise<WL_IDbUserInfo>((resolve, reject) => {
-      const params = {} as WL_LoginParam
-      params.retryCount = 0
-      params.callback = {} as WL_PromiseCallback
-      params.callback.resolve = resolve
-      params.callback.reject = reject
-      params.account = account
-      params.password = password
-      params.countryCode = countryCode
-      params.md5 = options.md5 ?? true
+      const params: WL_LoginParam = {
+        retryCount: 0,
+        callback: { resolve, reject },
+        account,
+        password,
+        countryCode,
+        md5: options.md5 ?? true,
+      }
       this.mainFsmService.send({ type: fsmEvents.FSM_LOGIN_SERVER_EVT, data: params })
     })
   }
@@ -914,7 +937,7 @@ class WeilaCore implements WL_CoreInterface {
       publicType: dbEnum<WL_IDbGroupPublicType>(group?.publicType),
       burstType: group?.burstType ?? 0,
       created: group?.created ?? 0,
-    } as WL_IDbGroup
+    }
     await WeilaDB.getInstance().putGroup(group)
 
     return group
@@ -1053,7 +1076,7 @@ class WeilaCore implements WL_CoreInterface {
       status: userInfo?.status ?? 0,
       userType: userInfo?.userType ?? 0,
       created: userInfo?.created ?? 0,
-    } as WL_IDbUserInfo
+    }
     await WeilaDB.getInstance().putUserInfo(userInfo)
 
     return userInfo
@@ -1145,7 +1168,7 @@ class WeilaCore implements WL_CoreInterface {
    * 可以调用此方法通知 UI 重新拉取 session 列表（resolver 会覆盖名称/头像）。
    */
   public weila_refreshSessionList(): void {
-    this.sendExtEvent(WL_ExtEventID.WL_EXT_SESSION_UPDATED_IND, {} as WL_IDbSession)
+    this.sendExtEvent(WL_ExtEventID.WL_EXT_SESSION_UPDATED_IND, {})
   }
 
   private async resolveSessionProfile(session: WL_IDbSession): Promise<void> {
@@ -1589,7 +1612,6 @@ class WeilaCore implements WL_CoreInterface {
     }
 
     const lastMsgData = await WeilaDB.getInstance().getLastMsgData(sessionId, sessionType)
-    const msgData: WL_IDbMsgData = {} as WL_IDbMsgData
 
     const seqSetting = await WeilaDB.getInstance().getSettingItem(
       WL_IDbSettingID.SETTING_MSG_SENDING_SEQ,
@@ -1601,28 +1623,26 @@ class WeilaCore implements WL_CoreInterface {
       index = filename.lastIndexOf('/')
     }
 
-    msgData.fileInfo = {} as WL_IDbFileData
-
-    if (index !== -1) {
-      msgData.fileInfo.fileName = filename.substring(index + 1)
-    } else {
-      msgData.fileInfo.fileName = filename
+    const fileName = index !== -1 ? filename.substring(index + 1) : filename
+    const fileInfo: WL_IDbFileData = {
+      fileName,
+      fileUrl: '',
+      fileThumbnail: TextMsgDataParser.getExtendFileFormatUrl(fileName),
+      fileSize: data.size,
+    }
+    const msgData: WL_IDbMsgData = {
+      combo_id: '',
+      fileInfo,
+      msgType,
+      msgId: lastMsgData ? lastMsgData.msgId + 1 : 0,
+      sessionType,
+      sessionId,
+      status: WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_SENDING,
+      senderId: this.getLoginUserInfo().userId,
+      created: new Date().getTime() / 1000,
+      autoReply: 0,
     }
 
-    msgData.fileInfo.fileUrl = ''
-    msgData.fileInfo.fileThumbnail = TextMsgDataParser.getExtendFileFormatUrl(
-      msgData.fileInfo.fileName,
-    )
-    msgData.fileInfo.fileSize = data.size
-    msgData.msgType = msgType
-    msgData.msgId = lastMsgData ? lastMsgData.msgId + 1 : 0
-    msgData.sessionType = sessionType
-    msgData.sessionId = sessionId
-    msgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_SENDING
-    msgData.senderId = this.getLoginUserInfo().userId
-    msgData.created = new Date().getTime() / 1000
-
-    msgData.autoReply = 0
     msgData.combo_id = getMsgDataIdByCombo(msgData, seqSetting?.data ?? 0)
 
     if (seqSetting) {
@@ -1634,10 +1654,10 @@ class WeilaCore implements WL_CoreInterface {
     this.sendExtEvent(WL_ExtEventID.WL_EXT_MSG_SEND_IND, msgData)
 
     try {
-      msgData.fileInfo.fileUrl = await this.uploadFileToCache(
+      fileInfo.fileUrl = await this.uploadFileToCache(
         sessionId,
         sessionType,
-        msgData.fileInfo.fileName || filename,
+        fileInfo.fileName || filename,
         data,
       )
     } catch (error) {
@@ -1649,13 +1669,7 @@ class WeilaCore implements WL_CoreInterface {
       return Promise.reject(error)
     }
 
-    return this.sessionModule.sendMsgData(
-      sessionId,
-      sessionType,
-      msgData.fileInfo,
-      msgType,
-      msgData,
-    )
+    return this.sessionModule.sendMsgData(sessionId, sessionType, fileInfo, msgType, msgData)
   }
 
   /**
@@ -2039,19 +2053,15 @@ class WeilaCore implements WL_CoreInterface {
       const service = await WeilaDB.getInstance().getService(serviceId)
 
       if (service) {
-        const serviceSessionInfo = {} as WL_IDbServiceSessionInfo
-        serviceSessionInfo.serviceSession = session.extra
+        const serviceSession: WL_IDbServiceSession | undefined = session.extra
 
-        if (serviceSessionInfo.serviceSession) {
-          serviceSessionInfo.service = service
-          serviceSessionInfo.staffs = await WeilaDB.getInstance().getServiceStaffs(
-            serviceSessionInfo.serviceSession.staffIds,
-          )
-          serviceSessionInfo.customer = await WeilaDB.getInstance().getUser(
-            serviceSessionInfo.serviceSession.customerId,
-          )
-
-          return serviceSessionInfo
+        if (serviceSession) {
+          return {
+            service,
+            serviceSession,
+            staffs: await WeilaDB.getInstance().getServiceStaffs(serviceSession.staffIds),
+            customer: await WeilaDB.getInstance().getUser(serviceSession.customerId),
+          }
         }
       }
     }
@@ -2168,7 +2178,7 @@ class WeilaCore implements WL_CoreInterface {
    * @param url
    */
   public async weila_fetchAudioData(url: string): Promise<WL_IDbAudioData | undefined> {
-    const audioData = {} as WL_IDbAudioData
+    const audioData: WL_IDbAudioData = { frameCount: 0 }
     // let matchResult = url.match(/(http|https):\/\/([^\/]+)\/(.+)/i);
     // const newUrl = '/audio/' + matchResult[3];
     const newUrl = url
@@ -2239,9 +2249,11 @@ class WeilaCore implements WL_CoreInterface {
     callback: WL_SubscribeMap[T]['callback'],
     options?: WL_SubscribeMap[T]['options'],
   ): () => void {
-    if (topic === 'sessionList') {
-      const cb = callback as WL_SubscribeMap['sessionList']['callback']
-      const opts = options as WL_SubscribeOptions | undefined
+    const request: WL_SubscribeRequest = { topic, callback, options }
+
+    if (isSessionListRequest(request)) {
+      const cb = request.callback
+      const opts = request.options
 
       const handler: WL_ExtEventCallback = (eventId: WL_ExtEventID, eventData: any) => {
         if (
@@ -2267,9 +2279,9 @@ class WeilaCore implements WL_CoreInterface {
       return () => {
         this.emitter.off('ext_event', handler)
       }
-    } else if (topic === 'messages') {
-      const opts = options as WL_SubscribeOptions<WL_MessagesFilter>
-      const cb = callback as WL_SubscribeMap['messages']['callback']
+    } else if (isMessagesRequest(request)) {
+      const opts = request.options
+      const cb = request.callback
       const filter = opts?.filter
 
       const handler: WL_ExtEventCallback = (eventId: WL_ExtEventID, eventData: any) => {
@@ -2277,7 +2289,7 @@ class WeilaCore implements WL_CoreInterface {
           eventId === WL_ExtEventID.WL_EXT_NEW_MSG_RECV_IND ||
           eventId === WL_ExtEventID.WL_EXT_MSG_SEND_IND
         ) {
-          const msgData = eventData as WL_IDbMsgData
+          const msgData: WL_IDbMsgData = eventData
 
           if (
             msgData &&
