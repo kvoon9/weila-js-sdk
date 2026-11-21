@@ -38,9 +38,9 @@ class AliOssHelper {
   private expireTimeout: number
   private isUploading: boolean
   private uploadingQueue: WL_UploadParams[]
-  private static instance: AliOssHelper = null
-  private cacheClient: OSS
-  private avatarClient: OSS
+  private static instance: AliOssHelper | null = null
+  private cacheClient!: OSS
+  private avatarClient!: OSS
   private inited: boolean
 
   constructor() {
@@ -48,8 +48,6 @@ class AliOssHelper {
     this.isUploading = false
     this.uploadingQueue = []
     this.uploadSeq = 0
-    this.cacheClient = null
-    this.avatarClient = null
     this.inited = false
   }
 
@@ -70,7 +68,7 @@ class AliOssHelper {
       const weilaTokenItem = await WeilaDB.getInstance().getSettingItem(
         WL_IDbSettingID.SETTING_LOGIN_TOKEN,
       )
-      const weilaToken = weilaTokenItem.data
+      const weilaToken = weilaTokenItem?.data ?? ''
       let response = await fetchWithTimeout('/v1/aliyun/sts?access-token=' + weilaToken, {
         method: 'GET',
       })

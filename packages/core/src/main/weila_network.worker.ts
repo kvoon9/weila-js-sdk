@@ -159,12 +159,12 @@ class Network {
   private processSending(): void {
     if (this.sendingPbMsgList.length > 0) {
       const data = this.sendingPbMsgList.shift()!
-      if (this.isConnected) {
-        if (this.socket.readyState === WebSocket.OPEN) {
-          wllog('发送了数据')
-          this.socket.send(data as BufferSource)
-          setTimeout(this.processSending.bind(this), 0)
-        }
+      const socket = this.socket
+
+      if (this.isConnected && socket && socket.readyState === WebSocket.OPEN) {
+        wllog('发送了数据')
+        socket.send(data as BufferSource)
+        setTimeout(this.processSending.bind(this), 0)
       }
     }
   }
