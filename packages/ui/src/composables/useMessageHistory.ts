@@ -209,7 +209,7 @@ export function useMessageHistory(
       return
     }
 
-    const msg = eventData as WL_IDbMsgData
+    const msg: WL_IDbMsgData = eventData
     if (options.shouldAppendMessage?.(msg) === false) return
 
     void appendRealtimeMessage(msg)

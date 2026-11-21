@@ -19,11 +19,11 @@ enum WL_UploadClientType {
 
 interface WL_UploadParams {
   remoteUrl: string
-  fileName: string
+  fileName?: string
   fileData: Blob
   resolve: (value: WL_UploadResult) => void
   reject: (err: any) => void
-  checkPoint: any
+  checkPoint?: any
   clientType: WL_UploadClientType
 }
 
@@ -207,7 +207,7 @@ class AliOssHelper {
 
         this.isUploading = true
         const uploadParams = this.uploadingQueue.shift()!
-        let client = null as OSS | null
+        let client: OSS | null = null
 
         if (uploadParams.clientType === WL_UploadClientType.CACHE_BUCKET_TYPE) {
           client = this.cacheClient
@@ -219,10 +219,12 @@ class AliOssHelper {
           client
             .put(uploadParams.remoteUrl, uploadParams.fileData, { timeout: 30000 })
             .then((objResult) => {
-              const uploadResult = {} as WL_UploadResult
-              uploadResult.remoteUrl = objResult.url
-              uploadResult.statusCode = objResult.res.status
-              uploadResult.statusMessage = ''
+              const uploadResult: WL_UploadResult = {
+                remoteUrl: objResult.url,
+                statusCode: objResult.res.status,
+                statusMessage: '',
+              }
+
               uploadParams.resolve(uploadResult)
               wllog('上传结果:', objResult)
             })
@@ -251,14 +253,16 @@ class AliOssHelper {
     fileData: File,
   ): Promise<WL_UploadResult> {
     return new Promise<WL_UploadResult>((resolve, reject) => {
-      const uploadParams = {} as WL_UploadParams
-      uploadParams.checkPoint = null
-      uploadParams.fileName = fileName
-      uploadParams.fileData = fileData
-      uploadParams.reject = reject
-      uploadParams.resolve = resolve
-      uploadParams.remoteUrl = this.getUploadUrl(senderId, sessionId, sessionType, fileName)
-      uploadParams.clientType = WL_UploadClientType.CACHE_BUCKET_TYPE
+      const uploadParams: WL_UploadParams = {
+        checkPoint: null,
+        fileName,
+        fileData,
+        reject,
+        resolve,
+        remoteUrl: this.getUploadUrl(senderId, sessionId, sessionType, fileName),
+        clientType: WL_UploadClientType.CACHE_BUCKET_TYPE,
+      }
+
       this.uploadingQueue.push(uploadParams)
       this.processUploadData()
     })
@@ -301,12 +305,14 @@ class AliOssHelper {
 
       url = '/avatar/' + url
 
-      const uploadParam = {} as WL_UploadParams
-      uploadParam.clientType = WL_UploadClientType.AVATAR_BUCKET_TYPE
-      uploadParam.remoteUrl = url
-      uploadParam.resolve = resolve
-      uploadParam.reject = reject
-      uploadParam.fileData = imageData
+      const uploadParam: WL_UploadParams = {
+        clientType: WL_UploadClientType.AVATAR_BUCKET_TYPE,
+        remoteUrl: url,
+        resolve,
+        reject,
+        fileData: imageData,
+      }
+
       this.uploadingQueue.push(uploadParam)
       this.processUploadData()
     })

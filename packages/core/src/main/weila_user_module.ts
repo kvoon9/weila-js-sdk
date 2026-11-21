@@ -17,7 +17,7 @@ export default class WLUserModule {
   }
 
   private onPbMsgHandler(data: any): void {
-    const serverMessage = data as WL.Service.IServiceMessage
+    const serverMessage: WL.Service.IServiceMessage = data
     const serviceHead = serverMessage.serviceHead
 
     if (!serviceHead) return
@@ -55,28 +55,27 @@ export default class WLUserModule {
     const buildRet = WeilaPbUserWrapper.buildGetUserInfoReq(key)
 
     if (buildRet.resultCode === 0) {
-      const rspGetUserInfo = (await this.coreInterface.sendPbMsg(
-        buildRet,
-      )) as WL.User.IRspGetUserInfo
+      const rspGetUserInfo: WL.User.IRspGetUserInfo = await this.coreInterface.sendPbMsg(buildRet)
 
       const dbUserList: WL_IDbUserInfo[] = []
 
       if (rspGetUserInfo.userInfoList) {
         rspGetUserInfo.userInfoList.forEach((value) => {
-          const dbUserInfo = {} as WL_IDbUserInfo
-          dbUserInfo.nick = value.nick ?? ''
-          dbUserInfo.avatar = value.avatar ? value.avatar : default_user_logo
-          dbUserInfo.countryCode = value.countryCode ?? ''
-          dbUserInfo.created = Long.fromValue(value.created ?? 0).toNumber()
-          dbUserInfo.email = value.email ?? ''
-          dbUserInfo.sex = value.sex ?? 0
-          dbUserInfo.phone = value.phone ?? ''
-          dbUserInfo.userId = value.userId ?? 0
-          dbUserInfo.status = value.status ?? 0
-          dbUserInfo.userType = value.type ?? 0
-          dbUserInfo.weilaNum = value.number ?? ''
-          dbUserInfo.signature = value.signature ?? ''
-          dbUserInfo.pinyinName = TinyPinyin.convertToPinyin(dbUserInfo.nick)
+          const dbUserInfo: WL_IDbUserInfo = {
+            nick: value.nick ?? '',
+            avatar: value.avatar ? value.avatar : default_user_logo,
+            countryCode: value.countryCode ?? '',
+            created: Long.fromValue(value.created ?? 0).toNumber(),
+            email: value.email ?? '',
+            sex: value.sex ?? 0,
+            phone: value.phone ?? '',
+            userId: value.userId ?? 0,
+            status: value.status ?? 0,
+            userType: value.type ?? 0,
+            weilaNum: value.number ?? '',
+            signature: value.signature ?? '',
+            pinyinName: TinyPinyin.convertToPinyin(value.nick ?? ''),
+          }
 
           dbUserList.push(dbUserInfo)
         })

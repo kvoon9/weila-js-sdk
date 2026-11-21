@@ -17,7 +17,7 @@ export default class WLLocationModule {
   }
 
   private onPbMsgHandler(data: any): void {
-    const serverMessage = data as WL.Service.IServiceMessage
+    const serverMessage: WL.Service.IServiceMessage = data
     const serviceHead = serverMessage.serviceHead
 
     if (!serviceHead) return
@@ -35,9 +35,10 @@ export default class WLLocationModule {
   }
 
   public async getLocation(sessionId: string, sessionType: number): Promise<WL_IDbLocationInfo[]> {
-    const sessionInfo = {} as WLSessionInfo
-    sessionInfo.sessionId = Long.fromValue(sessionId)
-    sessionInfo.sessionType = sessionType
+    const sessionInfo: WLSessionInfo = {
+      sessionId: Long.fromValue(sessionId),
+      sessionType,
+    }
 
     const getLocationReq: WLBuildMsgRet = WeilaPbLocationWrapper.buildGetLocationReq(
       sessionInfo,
@@ -51,18 +52,20 @@ export default class WLLocationModule {
       const locationInfos: WL_IDbLocationInfo[] = []
 
       for (const info of rspLocation.locationInfos ?? []) {
-        const locationInfo: WL_IDbLocationInfo = {} as WL_IDbLocationInfo
         const locationParam = info.locationParam
-        locationInfo.userId = info.userId ?? 0
-        locationInfo.clientType = info.clientType ?? 0
-        locationInfo.locationType = info.locationType ?? 0
-        locationInfo.altitude = locationParam?.altitude ?? 0
-        locationInfo.longitude = locationParam?.longitude ?? 0
-        locationInfo.latitude = locationParam?.latitude ?? 0
-        locationInfo.radius = locationParam?.radius ?? 0
-        locationInfo.speed = locationParam?.speed ?? 0
-        locationInfo.direction = locationParam?.direction ?? 0
-        locationInfo.timestamp = Long.fromValue(locationParam?.timestamp ?? 0).toNumber()
+
+        const locationInfo: WL_IDbLocationInfo = {
+          userId: info.userId ?? 0,
+          clientType: info.clientType ?? 0,
+          locationType: info.locationType ?? 0,
+          altitude: locationParam?.altitude ?? 0,
+          longitude: locationParam?.longitude ?? 0,
+          latitude: locationParam?.latitude ?? 0,
+          radius: locationParam?.radius ?? 0,
+          speed: locationParam?.speed ?? 0,
+          direction: locationParam?.direction ?? 0,
+          timestamp: Long.fromValue(locationParam?.timestamp ?? 0).toNumber(),
+        }
 
         locationInfos.push(locationInfo)
       }

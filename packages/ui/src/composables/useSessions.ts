@@ -25,9 +25,14 @@ export type BatchSessionProfileResolver = (
   sessions: WL_IDbSession[],
 ) => Promise<Map<string, BatchSessionProfileResult>>
 
-function isRealtimePttData(data: unknown) {
-  const msg =
-    (data as WL_IDbSession | undefined)?.lastMsgData ?? (data as WL_IDbMsgData | undefined)
+interface RealtimePttEventData {
+  lastMsgData?: WL_IDbMsgData
+  msgType?: WL_IDbMsgData['msgType']
+  pttData?: WL_IDbMsgData['pttData']
+}
+
+function isRealtimePttData(data: RealtimePttEventData | undefined) {
+  const msg = data?.lastMsgData ?? data
   return Boolean(
     msg?.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_PTT_TYPE ||
     (msg?.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE && msg?.pttData),

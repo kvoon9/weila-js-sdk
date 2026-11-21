@@ -19,10 +19,8 @@ const WeilaPBLoginWrapper = {
     loginMsg.reqLoginApp.password = md5 ? MD5(password).toString() : password
     loginMsg.reqLoginApp.countryCode = countryCode
 
-    const signature = {} as any
-    signature.et = '' + (Math.floor(Date.now() / 1000) + 20)
-    signature.app_id = appId
-    signature.sign = MD5(signature.et + appKey).toString()
+    const et = '' + (Math.floor(Date.now() / 1000) + 20)
+    const signature = { et, app_id: appId, sign: MD5(et + appKey).toString() }
     loginMsg.reqLoginApp.signature = JSON.stringify(signature)
     loginMsg.reqLoginApp.pduVersion = 4
     loginMsg.reqLoginApp.clientType = WL.Common.ClientType.CLIENT_WINDOWS

@@ -14,16 +14,22 @@ function getLogger(_tagName: string) {
 const wllog = getLogger('NET:info')
 const wlerr = getLogger('NET:err')
 
-class Network {
-  // SAFETY: the worker bundle aliases this module to a module worker; `self` is the
-  // DedicatedWorkerGlobalScope at runtime, and these two members are its full use here.
-  private readonly ctx: {
-    addEventListener(type: 'message', listener: (event: MessageEvent) => void): void
-    postMessage(message: WL_NetworkEvent, options?: StructuredSerializeOptions): void
-  } = self as unknown as {
-    addEventListener(type: 'message', listener: (event: MessageEvent) => void): void
-    postMessage(message: WL_NetworkEvent, options?: StructuredSerializeOptions): void
+interface WL_WorkerScope {
+  addEventListener(type: 'message', listener: (event: MessageEvent) => void): void
+  postMessage(message: WL_NetworkEvent, options?: StructuredSerializeOptions): void
+}
+
+// The worker bundle aliases this module to a module worker, so `self` is the
+// DedicatedWorkerGlobalScope at runtime; these two members are its full use here.
+function getWorkerScope(): WL_WorkerScope {
+  return {
+    addEventListener: (type, listener) => self.addEventListener(type, listener),
+    postMessage: (message, options) => self.postMessage(message, options),
   }
+}
+
+class Network {
+  private readonly ctx = getWorkerScope()
   private readonly maxRecvBufSize = 1024 * 1024
   private socket?: WebSocket
   private recvBuffer: Uint8Array

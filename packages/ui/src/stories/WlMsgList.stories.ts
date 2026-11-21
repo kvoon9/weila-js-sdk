@@ -773,7 +773,7 @@ const senderInfos = new Map<number, WL_IDbUserInfo>([
       status: 1,
       userType: 1,
       created: 0,
-    } as WL_IDbUserInfo,
+    },
   ],
   [
     1600000,
@@ -787,7 +787,7 @@ const senderInfos = new Map<number, WL_IDbUserInfo>([
       status: 1,
       userType: 1,
       created: 0,
-    } as WL_IDbUserInfo,
+    },
   ],
 ])
 

@@ -106,9 +106,11 @@ interface MainFsmTypes {
   events: MainFsmEvent
 }
 
+// XState 5 reads `types` only for inference; the value itself is never observed at runtime.
+const mainFsmTypes: MainFsmTypes = Object.create(null)
+
 const mainFsm = createMachine({
-  // SAFETY: xstate v5 用空值断言携带类型参数，运行时仍是空对象，机型类型由此处唯一声明
-  types: {} as MainFsmTypes,
+  types: mainFsmTypes,
   id: 'main',
   initial: 'uninit',
   context: ({ input }) => input ?? initialMainFsmContext,
@@ -269,9 +271,11 @@ interface PttFsmTypes {
   events: PttFsmEvent
 }
 
+// XState 5 reads `types` only for inference; the value itself is never observed at runtime.
+const pttFsmTypes: PttFsmTypes = Object.create(null)
+
 const pttFsm = createMachine({
-  // SAFETY: xstate v5 用空值断言携带类型参数，运行时仍是空对象，机型类型由此处唯一声明
-  types: {} as PttFsmTypes,
+  types: pttFsmTypes,
   id: 'PTTMachine',
   initial: 'idle',
   context: ({ input }) =>
