@@ -1,5 +1,15 @@
 const path = require('path')
+const { execSync } = require('node:child_process')
 const DotEnv = require('dotenv-webpack')
+const webpack = require('webpack')
+
+const buildId = (() => {
+  try {
+    return execSync('git rev-parse --short HEAD', { cwd: __dirname }).toString().trim()
+  } catch {
+    return 'dev'
+  }
+})()
 
 module.exports = (env) => {
   return {
@@ -88,6 +98,7 @@ module.exports = (env) => {
             {
               loader: 'ts-loader',
               options: {
+                configFile: path.resolve(__dirname, 'tsconfig.build.json'),
                 compilerOptions: {
                   baseUrl: path.resolve(__dirname, 'src'),
                   // outDir: path.resolve(__dirname, '../wlsdk_test/node_modules/wl_js_new_sdk/dist')
@@ -129,6 +140,9 @@ module.exports = (env) => {
     plugins: [
       new DotEnv({
         expand: true,
+      }),
+      new webpack.DefinePlugin({
+        'process.env.WL_BUILD_ID': JSON.stringify(buildId),
       }),
     ],
   }

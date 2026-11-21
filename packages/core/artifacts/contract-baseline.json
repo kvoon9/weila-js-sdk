@@ -2,6 +2,7 @@
   "entry": "weilasdk.mjs",
   "exports": [
     "WL_AnswerStatus",
+    "WL_BUILD_ID",
     "WL_ConfigID",
     "WL_DataPrepareState",
     "WL_ExtEventID",
@@ -45,6 +46,7 @@
     "WL_AudioInitControllerOptions",
     "WL_AudioInitializable",
     "WL_AudioRuntimePatchOptions",
+    "WL_BUILD_ID",
     "WL_ConfigID",
     "WL_FileUploader",
     "WL_InitOptions",
@@ -141,8 +143,8 @@
       "sha256": "83517a527718c1a777676982286da95a8a555b0f0aaea3121505bef3d5631a9c"
     },
     "main/weila_config.d.ts": {
-      "bytes": 736,
-      "sha256": "6997f3d6e7c06aa539b0e2dfd65f1ff1cadc73d3bba38968612689503186acd0"
+      "bytes": 752,
+      "sha256": "591b831b2ee66c81baa5f415c8163af72aa2adabcc6ac74a5959c3f7c7d456de"
     },
     "main/weila_core.d.ts": {
       "bytes": 28011,
@@ -245,12 +247,12 @@
       "sha256": "0552dcebecf3e0978fca636f9b9c2f4e9f7f7e873f27aaeb04cf97316b344630"
     },
     "weilasdk.d.ts": {
-      "bytes": 800,
-      "sha256": "08341ae8ca932eacf887a47a5e23cec21cae4be2850e2daed593784fc3bad174"
+      "bytes": 885,
+      "sha256": "ca7a3955a63d30c2341b64afa1048ff9d57454492c5a118c292679d14805c26c"
     },
     "weilasdk.mjs": {
-      "bytes": 3937928,
-      "sha256": "b15444750b5b1312d41b3bc7a4cab86ec6b70074a66adb29bc148dac09e050e4"
+      "bytes": 3937984,
+      "sha256": "d2ea2a9dc2db8df88262adf6d666e5e2cdcb57e5acd2a5290c7a04538896ae19"
     },
     "weilasdk_compile_cfg.mjs": {
       "bytes": 973,

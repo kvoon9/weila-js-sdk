@@ -162,7 +162,7 @@ class Network {
       if (this.isConnected) {
         if (this.socket.readyState === WebSocket.OPEN) {
           wllog('发送了数据')
-          this.socket.send(data)
+          this.socket.send(data as BufferSource)
           setTimeout(this.processSending.bind(this), 0)
         }
       }
