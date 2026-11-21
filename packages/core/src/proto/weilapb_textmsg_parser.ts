@@ -12,6 +12,14 @@ import {
   WL_IDbMsgDataType,
 } from 'db/weila_db_data'
 
+function ensureLocation(dbMsgData: WL_IDbMsgData): WL_IDbLocationShared {
+  if (!dbMsgData.location) {
+    dbMsgData.location = { locationType: '', latitude: 0, longitude: 0 }
+  }
+
+  return dbMsgData.location
+}
+
 class TextMsgDataParser {
   static readonly BASE_FILE_TYPE_URL = 'https://weilaavatar.oss-cn-shenzhen.aliyuncs.com/file/'
   static readonly FILE_TYPE_DOC = 'DOC.png'
@@ -215,10 +223,10 @@ class TextMsgDataParser {
       case WL_IDbMsgDataType.WL_DB_MSG_DATA_VIDEO_TYPE:
         {
           const fileInfo: WL_IDbFileData = data as WL_IDbFileData
-          fileInfo.fileThumbnail = this.getExtendFileFormatUrl(fileInfo.fileName)
+          fileInfo.fileThumbnail = this.getExtendFileFormatUrl(fileInfo.fileName ?? '')
           extendText = this.getExtendFileInfo(
-            fileInfo.fileName,
-            fileInfo.fileUrl,
+            fileInfo.fileName ?? '',
+            fileInfo.fileUrl ?? '',
             fileInfo.fileSize,
             this.SERVICE_TYPE_VIDEO,
           )
@@ -228,10 +236,10 @@ class TextMsgDataParser {
       case WL_IDbMsgDataType.WL_DB_MSG_DATA_FILE_TYPE:
         {
           const fileInfo: WL_IDbFileData = data as WL_IDbFileData
-          fileInfo.fileThumbnail = this.getExtendFileFormatUrl(fileInfo.fileName)
+          fileInfo.fileThumbnail = this.getExtendFileFormatUrl(fileInfo.fileName ?? '')
           extendText = this.getExtendFileInfo(
-            fileInfo.fileName,
-            fileInfo.fileUrl,
+            fileInfo.fileName ?? '',
+            fileInfo.fileUrl ?? '',
             fileInfo.fileSize,
             this.SERVICE_TYPE_FILE,
           )
@@ -241,7 +249,7 @@ class TextMsgDataParser {
       case WL_IDbMsgDataType.WL_DB_MSG_DATA_LOCATION_TYPE:
         {
           const locationInfo: WL_IDbLocationShared = data as WL_IDbLocationShared
-          extendText = this.EXTEND_START_FLAG + locationInfo.mapUrl + '?'
+          extendText = this.EXTEND_START_FLAG + (locationInfo.mapUrl ?? '') + '?'
           extendText += this.SERVICE_TYPE_KEY + '=' + this.SERVICE_TYPE_LOCATION
           extendText += '&' + this.LOCATION_TYPE_KEY + '=' + locationInfo.locationType
           extendText += '&' + this.LATITUDE_KEY + '=' + locationInfo.latitude
@@ -250,12 +258,12 @@ class TextMsgDataParser {
             '&' +
             this.LOCATION_NAME_KEY +
             '=' +
-            enc.Base64.stringify(enc.Utf8.parse(locationInfo.name))
+            enc.Base64.stringify(enc.Utf8.parse(locationInfo.name ?? ''))
           extendText +=
             '&' +
             this.LOCATION_ADDRESS_KEY +
             '=' +
-            enc.Base64.stringify(enc.Utf8.parse(locationInfo.address))
+            enc.Base64.stringify(enc.Utf8.parse(locationInfo.address ?? ''))
           extendText += this.EXTEND_END_FLAG
         }
         break
@@ -364,16 +372,16 @@ class TextMsgDataParser {
 
                   case this.LOCATION_TYPE_KEY:
                     {
-                      dbMsgData.location.locationType = pair[1]
+                      ensureLocation(dbMsgData).locationType = pair[1]
                     }
                     break
 
                   case this.LATITUDE_KEY:
                     {
                       try {
-                        dbMsgData.location.latitude = parseFloat(pair[1])
+                        ensureLocation(dbMsgData).latitude = parseFloat(pair[1])
                       } catch (e) {
-                        dbMsgData.location.latitude = 0
+                        ensureLocation(dbMsgData).latitude = 0
                       }
                     }
                     break
@@ -381,22 +389,22 @@ class TextMsgDataParser {
                   case this.LONGITUDE_KEY:
                     {
                       try {
-                        dbMsgData.location.longitude = parseFloat(pair[1])
+                        ensureLocation(dbMsgData).longitude = parseFloat(pair[1])
                       } catch (e) {
-                        dbMsgData.location.longitude = 0
+                        ensureLocation(dbMsgData).longitude = 0
                       }
                     }
                     break
 
                   case this.LOCATION_NAME_KEY:
                     {
-                      dbMsgData.location.name = getStringFromBase64(pair[1])
+                      ensureLocation(dbMsgData).name = getStringFromBase64(pair[1])
                     }
                     break
 
                   case this.LOCATION_ADDRESS_KEY:
                     {
-                      dbMsgData.location.address = getStringFromBase64(pair[1])
+                      ensureLocation(dbMsgData).address = getStringFromBase64(pair[1])
                     }
                     break
 
