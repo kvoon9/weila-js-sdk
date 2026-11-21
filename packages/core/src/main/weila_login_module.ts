@@ -34,7 +34,7 @@ export default class WLLoginModule {
   }
 
   private onPbMsgHandler(data: any): void {
-    const serverMessage = data as WL.Service.IServiceMessage
+    const serverMessage: WL.Service.IServiceMessage = data
     const serviceHead = serverMessage.serviceHead
 
     if (!serviceHead) return
@@ -142,22 +142,25 @@ export default class WLLoginModule {
 
               if (!ntf) return
 
-              // SAFETY: protobufjs 8 types the oneof member as $Properties; the wire format carries IUserInfo.
-              const rawUserInfo = ntf.userInfo as WL.Common.IUserInfo | undefined
+              const rawUserInfo: WL.Common.IUserInfo | undefined = ntf.userInfo ?? undefined
 
               if (!rawUserInfo) return
 
-              const bindAnswerInfo = {} as WL_bindAnswerInfo
-              bindAnswerInfo.status = dbEnum<WL_AnswerStatus>(ntf.status)
-              bindAnswerInfo.userInfo = WeilaDB.getInstance().convertFromUserRaw([rawUserInfo])[0]
-              // SAFETY: protobufjs 8 types the oneof member as $Properties; the wire format carries IExtensionInfo.
-              const rawExtensionInfo = ntf.extensionInfo as WL.Login.IExtensionInfo | undefined
+              const userInfo = WeilaDB.getInstance().convertFromUserRaw([rawUserInfo])[0]
+
+              const rawExtensionInfo: WL.Login.IExtensionInfo | undefined =
+                ntf.extensionInfo ?? undefined
 
               if (!rawExtensionInfo) return
 
-              bindAnswerInfo.deviceInfo =
-                WeilaDB.getInstance().convertFromExtensionInfoRaw(rawExtensionInfo)
-              bindAnswerInfo.verifyCode = ntf.verificationCode ?? ''
+              const deviceInfo = WeilaDB.getInstance().convertFromExtensionInfoRaw(rawExtensionInfo)
+
+              const bindAnswerInfo: WL_bindAnswerInfo = {
+                status: dbEnum<WL_AnswerStatus>(ntf.status),
+                userInfo,
+                deviceInfo,
+                verifyCode: ntf.verificationCode ?? '',
+              }
 
               this.coreInterface.sendExtEvent(
                 WL_ExtEventID.WL_EXT_DEVICE_BINDING_ANSWER_IND,
@@ -223,13 +226,12 @@ export default class WLLoginModule {
     )
 
     if (wlBuildMsgRet.resultCode === 0) {
-      const loginAppRsp = (await this.coreInterface.sendPbMsg(
+      const loginAppRsp: WL.Login.IRspLoginApp = await this.coreInterface.sendPbMsg(
         wlBuildMsgRet,
         10000,
-      )) as WL.Login.IRspLoginApp
+      )
 
-      // SAFETY: protobufjs 8 types the oneof member as $Properties; the wire format carries IUserInfo.
-      const rawUserInfo = loginAppRsp.userInfo as WL.Common.IUserInfo | undefined
+      const rawUserInfo: WL.Common.IUserInfo | undefined = loginAppRsp.userInfo ?? undefined
 
       if (!rawUserInfo) {
         return Promise.reject('登录响应缺少用户信息')
@@ -237,9 +239,11 @@ export default class WLLoginModule {
 
       const dbUserInfos = await WeilaDB.getInstance().convertFromUserRaw([rawUserInfo])
 
-      const tokenInfo = {} as WL_IDbSetting
-      tokenInfo.id = WL_IDbSettingID.SETTING_LOGIN_TOKEN
-      tokenInfo.data = loginAppRsp.token
+      const tokenInfo: WL_IDbSetting = {
+        id: WL_IDbSettingID.SETTING_LOGIN_TOKEN,
+        data: loginAppRsp.token,
+      }
+
       await WeilaDB.getInstance().putSettingItem(tokenInfo)
       await WeilaDB.getInstance().putUserInfo(dbUserInfos[0])
 
@@ -277,13 +281,14 @@ export default class WLLoginModule {
     const buildRet = WeilaPBLoginWrapper.buildRefreshTokenReq()
 
     if (buildRet.resultCode === 0) {
-      const refreshRsp = (await this.coreInterface.sendPbMsg(
-        buildRet,
-      )) as WL.Login.IRspRefreshAccessToken
+      const refreshRsp: WL.Login.IRspRefreshAccessToken =
+        await this.coreInterface.sendPbMsg(buildRet)
 
-      const tokenInfo = {} as WL_IDbSetting
-      tokenInfo.id = WL_IDbSettingID.SETTING_LOGIN_TOKEN
-      tokenInfo.data = refreshRsp.accessToken
+      const tokenInfo: WL_IDbSetting = {
+        id: WL_IDbSettingID.SETTING_LOGIN_TOKEN,
+        data: refreshRsp.accessToken,
+      }
+
       await WeilaDB.getInstance().putSettingItem(tokenInfo)
 
       return true
@@ -296,10 +301,10 @@ export default class WLLoginModule {
     const buildMsgRet = WeilaPBLoginWrapper.buildBindExtensionReq(verifyCode)
 
     if (buildMsgRet.resultCode === 0) {
-      const rspBindMsg = (await this.coreInterface.sendPbMsg(
+      const rspBindMsg: WL.Login.RspBindExtension = await this.coreInterface.sendPbMsg(
         buildMsgRet,
         30000,
-      )) as WL.Login.RspBindExtension
+      )
 
       return rspBindMsg.extensionState
     }
@@ -311,9 +316,8 @@ export default class WLLoginModule {
     const buildMsgRet = WeilaPBLoginWrapper.buildUnbindExtensionReq(deviceUserId)
 
     if (buildMsgRet.resultCode === 0) {
-      const rspUnbindMsg = (await this.coreInterface.sendPbMsg(
-        buildMsgRet,
-      )) as WL.Login.RspUnbindExtension
+      const rspUnbindMsg: WL.Login.RspUnbindExtension =
+        await this.coreInterface.sendPbMsg(buildMsgRet)
 
       if (
         dbEnum<WL_IDbExtensionState>(rspUnbindMsg.extensionState) ===
@@ -351,17 +355,22 @@ export default class WLLoginModule {
       if (rsp.infos && rsp.infos.length > 0) {
         const extensionInfos: WL_IDbExtensionInfo[] = []
         rsp.infos.forEach((value) => {
-          const extensionInfo: WL_IDbExtensionInfo = {} as WL_IDbExtensionInfo
-          extensionInfo.imei = value.imei ?? ''
-          extensionInfo.extensionType = dbEnum<WL_IDbExtensionType>(value.type)
-          extensionInfo.userId = value.userId ?? 0
-          extensionInfo.supervisorId = value.managerId ?? 0
-          extensionInfo.status = value.status ?? 0
-          extensionInfo.config = value.config ?? ''
-          extensionInfo.activeTime = Long.fromValue(value.actived ?? 0).toNumber()
-          extensionInfo.groupCount = value.groupCount ?? 0
-          extensionInfo.groupLimit = value.groupLimit ?? 0
-          extensionInfo.productName = value.product ?? ''
+          const extensionInfo: WL_IDbExtensionInfo = {
+            imei: value.imei ?? '',
+            extensionType: dbEnum<WL_IDbExtensionType>(value.type),
+            userId: value.userId ?? 0,
+            supervisorId: value.managerId ?? 0,
+            status: value.status ?? 0,
+            config: value.config ?? '',
+            activeTime: Long.fromValue(value.actived ?? 0).toNumber(),
+            groupCount: value.groupCount ?? 0,
+            groupLimit: value.groupLimit ?? 0,
+            productName: value.product ?? '',
+            createdTime: Long.fromValue(value.created ?? 0).toNumber(),
+            state: dbEnum<WL_IDbExtensionState>(value.state),
+            version: value.version ?? '',
+            warrant: Long.fromValue(value.warranted ?? 0).toNumber(),
+          }
 
           extensionInfos.push(extensionInfo)
         })
@@ -397,20 +406,15 @@ export default class WLLoginModule {
     })
 
     for (const ext of extensionInfos) {
-      const extension = {} as WL_IDbExtension
-      let index = userIds.indexOf(ext.userId)
+      const userIdIndex = userIds.indexOf(ext.userId)
+      const supervisorIndex = supervisorIds.indexOf(ext.supervisorId)
 
-      if (index !== -1) {
-        extension.userInfo = userInfos[index]
+      const extension: WL_IDbExtension = {
+        userInfo: userInfos[userIdIndex],
+        supervisor: supervisors[supervisorIndex],
+        info: ext,
       }
 
-      index = supervisorIds.indexOf(ext.supervisorId)
-
-      if (index !== -1) {
-        extension.supervisor = supervisors[index]
-      }
-
-      extension.info = ext
       extensions.push(extension)
     }
 
@@ -426,9 +430,8 @@ export default class WLLoginModule {
     wllog('setDeviceConfig', cfgKey, cfgValue, subUserId)
 
     if (buildMsgRet.resultCode === 0) {
-      const rspConfig = (await this.coreInterface.sendPbMsg(
-        buildMsgRet,
-      )) as WL.Login.IRspSetExtensionConfig
+      const rspConfig: WL.Login.IRspSetExtensionConfig =
+        await this.coreInterface.sendPbMsg(buildMsgRet)
 
       wllog('setDeviceConfig', rspConfig)
 

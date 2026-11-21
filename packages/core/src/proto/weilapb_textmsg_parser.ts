@@ -5,14 +5,39 @@ import {
   uint8Array2HexStr,
   uint8Array2Utf8Str,
 } from './weilapb_utils'
-import {
-  WL_IDbFileData,
-  WL_IDbLocationShared,
-  WL_IDbMsgData,
-  WL_IDbMsgDataType,
-} from 'db/weila_db_data'
+import { WL_IDbFileData, WL_IDbLocationShared, WL_IDbMsgDataType } from 'db/weila_db_data'
 
-function ensureLocation(dbMsgData: WL_IDbMsgData): WL_IDbLocationShared {
+interface ParsedTextMsgData {
+  msgType: WL_IDbMsgDataType
+  textData?: string
+  location?: WL_IDbLocationShared
+  fileInfo?: WL_IDbFileData
+  command?: string
+}
+
+type EncodeTextMsgPayload =
+  | {
+      dataType:
+        | WL_IDbMsgDataType.WL_DB_MSG_DATA_TEXT_TYPE
+        | WL_IDbMsgDataType.WL_DB_MSG_DATA_IMAGE_TYPE
+      data: string
+    }
+  | {
+      dataType:
+        | WL_IDbMsgDataType.WL_DB_MSG_DATA_VIDEO_TYPE
+        | WL_IDbMsgDataType.WL_DB_MSG_DATA_FILE_TYPE
+      data: WL_IDbFileData
+    }
+  | {
+      dataType: WL_IDbMsgDataType.WL_DB_MSG_DATA_LOCATION_TYPE
+      data: WL_IDbLocationShared
+    }
+  | {
+      dataType: WL_IDbMsgDataType.WL_DB_MSG_DATA_COMMAND_TYPE
+      data?: undefined
+    }
+
+function ensureLocation(dbMsgData: ParsedTextMsgData): WL_IDbLocationShared {
   if (!dbMsgData.location) {
     dbMsgData.location = { locationType: '', latitude: 0, longitude: 0 }
   }
@@ -216,17 +241,14 @@ const TextMsgDataParser = {
     return extendString
   },
 
-  encodeSessionTextMsg(
-    data: WL_IDbFileData | WL_IDbLocationShared | string,
-    dataType: WL_IDbMsgDataType,
-  ): string | undefined {
+  encodeSessionTextMsg(payload: EncodeTextMsgPayload): string | undefined {
     let extendText: string | undefined = undefined
 
-    switch (dataType) {
+    switch (payload.dataType) {
       // 纯文字
       case WL_IDbMsgDataType.WL_DB_MSG_DATA_TEXT_TYPE:
         {
-          extendText = data as string
+          extendText = payload.data
         }
 
         break
@@ -234,14 +256,14 @@ const TextMsgDataParser = {
       // 图片信息,先上传,成功后再上传
       case WL_IDbMsgDataType.WL_DB_MSG_DATA_IMAGE_TYPE:
         {
-          extendText = this.EXTEND_START_FLAG + (data as string) + this.EXTEND_END_FLAG
+          extendText = this.EXTEND_START_FLAG + payload.data + this.EXTEND_END_FLAG
         }
 
         break
 
       case WL_IDbMsgDataType.WL_DB_MSG_DATA_VIDEO_TYPE:
         {
-          const fileInfo: WL_IDbFileData = data as WL_IDbFileData
+          const fileInfo = payload.data
           fileInfo.fileThumbnail = this.getExtendFileFormatUrl(fileInfo.fileName ?? '')
           extendText = this.getExtendFileInfo(
             fileInfo.fileName ?? '',
@@ -255,7 +277,7 @@ const TextMsgDataParser = {
 
       case WL_IDbMsgDataType.WL_DB_MSG_DATA_FILE_TYPE:
         {
-          const fileInfo: WL_IDbFileData = data as WL_IDbFileData
+          const fileInfo = payload.data
           fileInfo.fileThumbnail = this.getExtendFileFormatUrl(fileInfo.fileName ?? '')
           extendText = this.getExtendFileInfo(
             fileInfo.fileName ?? '',
@@ -269,7 +291,7 @@ const TextMsgDataParser = {
 
       case WL_IDbMsgDataType.WL_DB_MSG_DATA_LOCATION_TYPE:
         {
-          const locationInfo: WL_IDbLocationShared = data as WL_IDbLocationShared
+          const locationInfo = payload.data
           extendText = this.EXTEND_START_FLAG + (locationInfo.mapUrl ?? '') + '?'
           extendText += this.SERVICE_TYPE_KEY + '=' + this.SERVICE_TYPE_LOCATION
           extendText += '&' + this.LOCATION_TYPE_KEY + '=' + locationInfo.locationType
@@ -326,11 +348,12 @@ const TextMsgDataParser = {
     return undefined
   },
 
-  decodeSessionTextMsg(data: string): WL_IDbMsgData | undefined {
-    const dbMsgData = {} as WL_IDbMsgData
-    let extendText = ''
+  decodeSessionTextMsg(data: string): ParsedTextMsgData | undefined {
+    const dbMsgData: ParsedTextMsgData = {
+      msgType: WL_IDbMsgDataType.WL_DB_MSG_DATA_UNKNOWN_TYPE,
+    }
 
-    dbMsgData.msgType = WL_IDbMsgDataType.WL_DB_MSG_DATA_UNKNOWN_TYPE
+    let extendText = ''
 
     // 1. 解密 AES.decrypt(encrypted(string类型), key(WordArray类型), cfg({mode: , pad:, });
     let decryptedHexText
@@ -386,16 +409,18 @@ const TextMsgDataParser = {
 
                       if (pair[1] === this.SERVICE_TYPE_LOCATION) {
                         dbMsgData.msgType = WL_IDbMsgDataType.WL_DB_MSG_DATA_LOCATION_TYPE
-                        dbMsgData.location = {} as WL_IDbLocationShared
-                        dbMsgData.location.mapUrl = fileUrl
+                        dbMsgData.location = {
+                          locationType: '',
+                          latitude: 0,
+                          longitude: 0,
+                          mapUrl: fileUrl,
+                        }
                       } else if (pair[1] === this.SERVICE_TYPE_VIDEO) {
                         dbMsgData.msgType = WL_IDbMsgDataType.WL_DB_MSG_DATA_VIDEO_TYPE
-                        dbMsgData.fileInfo = {} as WL_IDbFileData
-                        dbMsgData.fileInfo.fileUrl = fileUrl
+                        dbMsgData.fileInfo = { fileSize: 0, fileUrl }
                       } else if (pair[1] === this.SERVICE_TYPE_FILE) {
                         dbMsgData.msgType = WL_IDbMsgDataType.WL_DB_MSG_DATA_FILE_TYPE
-                        dbMsgData.fileInfo = {} as WL_IDbFileData
-                        dbMsgData.fileInfo.fileUrl = fileUrl
+                        dbMsgData.fileInfo = { fileSize: 0, fileUrl }
                       }
                     }
 
@@ -455,7 +480,7 @@ const TextMsgDataParser = {
                     {
                       dbMsgData.fileInfo!.fileName = enc.Base64.parse(pair[1]).toString(enc.Utf8)
                       dbMsgData.fileInfo!.fileThumbnail = this.getExtendFileFormatUrl(
-                        dbMsgData.fileInfo!.fileName!,
+                        dbMsgData.fileInfo!.fileName,
                       )
                     }
 
@@ -478,9 +503,7 @@ const TextMsgDataParser = {
         } else {
           // 普通图片的内容
           dbMsgData.msgType = WL_IDbMsgDataType.WL_DB_MSG_DATA_IMAGE_TYPE
-          dbMsgData.fileInfo = {} as WL_IDbFileData
-          dbMsgData.fileInfo.fileUrl = result[1]
-          dbMsgData.fileInfo.fileName = ''
+          dbMsgData.fileInfo = { fileSize: 0, fileUrl: result[1], fileName: '' }
         }
       }
     } else if (this.CMD_MSG_PATTERN.test(extendText)) {
