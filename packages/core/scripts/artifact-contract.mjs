@@ -22,7 +22,7 @@ export function parseEsmExports(source) {
     /export\s+(?:const|let|var|function|class)\s+([A-Za-z0-9_$]+)/g,
   ))
     names.add(match[1])
-  return [...names].sort((a, b) => a.localeCompare(b))
+  return [...names].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
 }
 
 export function parseDtsExports(source) {
@@ -36,7 +36,7 @@ export function parseDtsExports(source) {
   const declaration =
     /export\s+(?:declare\s+)?(?:const|let|var|function|class|interface|type|enum)\s+([A-Za-z0-9_$]+)/g
   for (const match of source.matchAll(declaration)) names.add(match[1])
-  return [...names].sort((a, b) => a.localeCompare(b))
+  return [...names].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
 }
 
 function walk(directory) {
@@ -59,7 +59,7 @@ export function collectArtifacts(dist = DIST) {
     throw new Error(`${ENTRY} exports nothing. Refusing to capture a broken contract.`)
 
   const files = {}
-  for (const full of walk(dist).sort((a, b) => a.localeCompare(b))) {
+  for (const full of walk(dist).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))) {
     const path = relative(dist, full)
     if (LICENSE_SIDECAR.test(path)) continue
     const bytes = readFileSync(full)
