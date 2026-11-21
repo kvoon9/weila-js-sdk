@@ -30,10 +30,12 @@
     "test": "vitest run",
     "test:run": "vitest run",
     "test:dist": "playwright test",
-    "build": "webpack --config webpack.config.js --progress --node-env production",
-    "build:dev": "webpack --config webpack.config.js --progress --node-env development",
-    "build:watch": "pnpm build --watch",
-    "dev": "webpack --config webpack.config.js --watch --node-env development",
+    "build": "pnpm run build:worklets && rspack build --config rspack.config.cjs && pnpm run build:declarations",
+    "build:dev": "pnpm run build:worklets && rspack build --config rspack.config.cjs --mode development && pnpm run build:declarations",
+    "build:watch": "pnpm run build:worklets && rspack build --config rspack.config.cjs --watch",
+    "build:worklets": "rspack build --config rspack.worklets.config.cjs",
+    "build:declarations": "tsc -p tsconfig.build.json --emitDeclarationOnly",
+    "dev": "pnpm run build:watch",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -50,17 +52,14 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
+    "@rspack/cli": "^2.3.3",
+    "@rspack/core": "^2.3.3",
     "@types/ali-oss": "^6.16.3",
     "@types/debug": "^4.1.7",
     "@types/node": "^22.13.10",
-    "dotenv-webpack": "^8.0.1",
     "jsdom": "catalog:",
-    "ts-loader": "^9.2.8",
     "typescript": "^5.9.3",
     "vitest": "catalog:",
-    "webpack": "^5.71.0",
-    "webpack-cli": "^4.9.2",
-    "worker-loader": "^3.0.8",
-    "worklet-loader": "^2.0.0"
+    "worker-rspack-loader": "^3.1.5"
   }
 }
