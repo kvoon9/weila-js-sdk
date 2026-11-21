@@ -37,7 +37,8 @@
     "build:declarations": "tsc -p tsconfig.build.json --emitDeclarationOnly",
     "dev": "pnpm run build:watch",
     "typecheck": "tsrs --noEmit --fast",
-    "typecheck:tsc": "tsc --noEmit"
+    "typecheck:tsc": "tsc --noEmit",
+    "test:integration": "pnpm run build && playwright test --config playwright.integration.config.ts"
   },
   "dependencies": {
     "ali-oss": "^6.23.0",

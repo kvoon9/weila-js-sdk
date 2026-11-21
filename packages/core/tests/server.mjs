@@ -20,7 +20,9 @@ export async function startServer() {
         ? join(PACKAGE, 'tests/fixtures/smoke.html')
         : path.startsWith('/dist/')
           ? join(PACKAGE, path)
-          : null
+          : path.startsWith('/assets/')
+            ? join(PACKAGE, 'dist', path)
+            : null
 
     if (!file) {
       response.writeHead(404).end()
