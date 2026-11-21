@@ -36,13 +36,16 @@ export default class WLFriendModule {
   private onPbMsgHandler(data: any): void {
     const serverMessage = data as WL.Service.IServiceMessage
     const serviceHead = serverMessage.serviceHead
+
+    if (!serviceHead) return
+
     if (serviceHead.commandType === WL.Service.CommandType.COMMAND_RESPONSE) {
       switch (serviceHead.commandId) {
         case WL.Friend.FriendCommandId.FRIEND_COMMAND_GET_FRIENDINFO:
           {
             this.coreInterface.rspPbMsg(
-              serviceHead.seq,
-              serviceHead.resultCode,
+              serviceHead.seq ?? 0,
+              serviceHead.resultCode ?? 0,
               serverMessage.friendMessage ? serverMessage.friendMessage.rspGetFriendInfo : null,
             )
           }
@@ -51,8 +54,8 @@ export default class WLFriendModule {
         case WL.Friend.FriendCommandId.FRIEND_COMMAND_GET_FRIEND_USERINFO:
           {
             this.coreInterface.rspPbMsg(
-              serviceHead.seq,
-              serviceHead.resultCode,
+              serviceHead.seq ?? 0,
+              serviceHead.resultCode ?? 0,
               serverMessage.friendMessage ? serverMessage.friendMessage.rspGetFriendUserInfo : null,
             )
           }
@@ -60,27 +63,27 @@ export default class WLFriendModule {
 
         case WL.Friend.FriendCommandId.FRIEND_COMMAND_ANSWER_FRIEND_INVITE:
           {
-            this.coreInterface.rspPbMsg(serviceHead.seq, serviceHead.resultCode, true)
+            this.coreInterface.rspPbMsg(serviceHead.seq ?? 0, serviceHead.resultCode ?? 0, true)
           }
           break
 
         case WL.Friend.FriendCommandId.FRIEND_COMMAND_DELETE_FRIEND:
           {
-            this.coreInterface.rspPbMsg(serviceHead.seq, serviceHead.resultCode, true)
+            this.coreInterface.rspPbMsg(serviceHead.seq ?? 0, serviceHead.resultCode ?? 0, true)
           }
           break
 
         case WL.Friend.FriendCommandId.FRIEND_COMMAND_FRIEND_INVITE:
           {
-            this.coreInterface.rspPbMsg(serviceHead.seq, serviceHead.resultCode, true)
+            this.coreInterface.rspPbMsg(serviceHead.seq ?? 0, serviceHead.resultCode ?? 0, true)
           }
           break
 
         case WL.Friend.FriendCommandId.FRIEND_COMMAND_GET_ONLINE_FRIEND:
           {
             this.coreInterface.rspPbMsg(
-              serviceHead.seq,
-              serviceHead.resultCode,
+              serviceHead.seq ?? 0,
+              serviceHead.resultCode ?? 0,
               serverMessage.friendMessage ? serverMessage.friendMessage.rspGetOnlineFriend : null,
             )
           }
@@ -88,27 +91,39 @@ export default class WLFriendModule {
       }
     } else if (serviceHead.commandType === WL.Service.CommandType.COMMAND_NOTIFY) {
       wllog('好友的通知信息', serverMessage)
+      const friendMessage = serverMessage.friendMessage
+
+      if (!friendMessage) return
+
       if (serviceHead.commandId === WL.Friend.FriendCommandId.FRIEND_COMMAND_DELETE_FRIEND) {
-        const ntfDeleteFriend = serverMessage.friendMessage.ntfDeleteFriend
+        const ntfDeleteFriend = friendMessage.ntfDeleteFriend
+
+        if (!ntfDeleteFriend) return
+
+        const userId = ntfDeleteFriend.userId ?? 0
         // 数据库删除好友后，发送通知告知客户端
         WeilaDB.getInstance()
-          .delFriendInfos([ntfDeleteFriend.userId])
+          .delFriendInfos([userId])
           .then(() => {
-            this.coreInterface.sendExtEvent(
-              WL_ExtEventID.WL_EXT_FRIEND_DELETED_IND,
-              ntfDeleteFriend.userId,
-            )
+            this.coreInterface.sendExtEvent(WL_ExtEventID.WL_EXT_FRIEND_DELETED_IND, userId)
           })
           .catch((reason) => {
-            wlerr('删除好友:%d失败', ntfDeleteFriend.userId, reason)
+            wlerr('删除好友:%d失败', userId, reason)
           })
       } else if (
         serviceHead.commandId === WL.Friend.FriendCommandId.FRIEND_COMMAND_CHANGE_FRIENDINFO
       ) {
-        const rspFriendInfo = serverMessage.friendMessage.ntfChangeFriendInfo
-          .friendInfo as WL.Friend.IFriendInfo
+        const ntfChangeFriendInfo = friendMessage.ntfChangeFriendInfo
+
+        if (!ntfChangeFriendInfo) return
+
+        const changeFriendInfo = ntfChangeFriendInfo.friendInfo
+
+        if (!changeFriendInfo) return
+
+        const rspFriendInfo = changeFriendInfo as WL.Friend.IFriendInfo
         WeilaDB.getInstance()
-          .getFriendInfo(serverMessage.friendMessage.ntfChangeFriendInfo.friendInfo.userId)
+          .getFriendInfo(changeFriendInfo.userId ?? 0)
           .then(async (value) => {
             const friendInfo: WL_IDbFriendInfo = value as WL_IDbFriendInfo
             if (rspFriendInfo.tts !== undefined) {
@@ -116,15 +131,15 @@ export default class WLFriendModule {
             }
 
             if (rspFriendInfo.desc !== undefined) {
-              friendInfo.desc = rspFriendInfo.desc
+              friendInfo.desc = rspFriendInfo.desc ?? ''
             }
 
             if (rspFriendInfo.status !== undefined) {
-              friendInfo.status = rspFriendInfo.status
+              friendInfo.status = rspFriendInfo.status ?? 0
             }
 
             if (rspFriendInfo.label !== undefined) {
-              friendInfo.label = rspFriendInfo.label
+              friendInfo.label = rspFriendInfo.label ?? ''
             }
 
             if (rspFriendInfo.locationShare !== undefined) {
@@ -136,11 +151,11 @@ export default class WLFriendModule {
             }
 
             if (rspFriendInfo.extension !== undefined) {
-              friendInfo.extension = rspFriendInfo.extension
+              friendInfo.extension = rspFriendInfo.extension ?? ''
             }
 
             if (rspFriendInfo.remark !== undefined) {
-              friendInfo.remark = rspFriendInfo.remark
+              friendInfo.remark = rspFriendInfo.remark ?? ''
             }
 
             await WeilaDB.getInstance().putFriendInfo(friendInfo)
@@ -154,11 +169,16 @@ export default class WLFriendModule {
           })
       } else if (serviceHead.commandId === WL.Friend.FriendCommandId.FRIEND_COMMAND_FRIEND_INVITE) {
         ;(async () => {
-          const inviteInfo = serverMessage.friendMessage.ntfFriendInvite
-            .inviteInfo as WL.Friend.FriendInviteInfo
-          const userInfos = await WeilaDB.getInstance().convertFromUserRaw([
-            serverMessage.friendMessage.ntfFriendInvite.userInfo,
-          ])
+          const ntfFriendInvite = friendMessage.ntfFriendInvite
+
+          if (!ntfFriendInvite) return
+
+          const inviteeUserInfo = ntfFriendInvite.userInfo
+
+          if (!inviteeUserInfo) return
+
+          const inviteInfo = ntfFriendInvite.inviteInfo as WL.Friend.FriendInviteInfo
+          const userInfos = await WeilaDB.getInstance().convertFromUserRaw([inviteeUserInfo])
           const inviteNotifyData = {} as WL_FriendInviteInfo
           await WeilaDB.getInstance().putUserInfo(userInfos[0])
           inviteNotifyData.inviterUserInfo = await WeilaDB.getInstance().getUser(
@@ -179,11 +199,14 @@ export default class WLFriendModule {
         serviceHead.commandId === WL.Friend.FriendCommandId.FRIEND_COMMAND_ANSWER_FRIEND_INVITE
       ) {
         ;(async () => {
-          const ntfFriendAnswerInvite = serverMessage.friendMessage.ntfAnswerFriendInvite
+          const ntfFriendAnswerInvite = friendMessage.ntfAnswerFriendInvite
+
+          if (!ntfFriendAnswerInvite) return
+
           const friendAnswerInfo = {} as WL_FriendAnswerInviteInfo
-          friendAnswerInfo.status = ntfFriendAnswerInvite.status
+          friendAnswerInfo.status = ntfFriendAnswerInvite.status ?? 0
           friendAnswerInfo.inviteeUserInfo = await WeilaDB.getInstance().getUser(
-            ntfFriendAnswerInvite.inviteeId,
+            ntfFriendAnswerInvite.inviteeId ?? 0,
           )
 
           const notification: WL_IDbNotification = {} as WL_IDbNotification
@@ -194,20 +217,31 @@ export default class WLFriendModule {
           this.coreInterface.sendExtEvent(WL_ExtEventID.WL_EXT_NEW_NOTIFICATION_IND, notification)
         })()
       } else if (serviceHead.commandId === WL.Friend.FriendCommandId.FRIEND_COMMAND_NEW_FRIEND) {
+        const ntfNewFriend = friendMessage.ntfNewFriend
+
+        if (!ntfNewFriend) return
+
+        const newFriendInfo = ntfNewFriend.friendInfo
+
+        if (!newFriendInfo) return
+
         const friendInfo = {} as WL_IDbFriendInfo
-        const ntfNewFriend = serverMessage.friendMessage.ntfNewFriend
-        friendInfo.userId = ntfNewFriend.friendInfo.userId
-        friendInfo.tts = ntfNewFriend.friendInfo.tts === 1
-        friendInfo.status = ntfNewFriend.friendInfo.status
-        friendInfo.desc = ntfNewFriend.friendInfo.desc
-        friendInfo.label = ntfNewFriend.friendInfo.label
-        friendInfo.blockedStatus = ntfNewFriend.friendInfo.shieldStatus === 1
-        friendInfo.locationShared = ntfNewFriend.friendInfo.locationShare === 1
-        friendInfo.remark = ntfNewFriend.friendInfo.remark
+        friendInfo.userId = newFriendInfo.userId ?? 0
+        friendInfo.tts = newFriendInfo.tts === 1
+        friendInfo.status = newFriendInfo.status ?? 0
+        friendInfo.desc = newFriendInfo.desc ?? ''
+        friendInfo.label = newFriendInfo.label ?? ''
+        friendInfo.blockedStatus = newFriendInfo.shieldStatus === 1
+        friendInfo.locationShared = newFriendInfo.locationShare === 1
+        friendInfo.remark = newFriendInfo.remark ?? ''
 
         ;(async () => {
           await WeilaDB.getInstance().putFriendInfo(friendInfo)
-          const userInfos = WeilaDB.getInstance().convertFromUserRaw([ntfNewFriend.userInfo])
+          const newFriendUserInfo = ntfNewFriend.userInfo
+
+          if (!newFriendUserInfo) return
+
+          const userInfos = WeilaDB.getInstance().convertFromUserRaw([newFriendUserInfo])
           if (userInfos.length) {
             await WeilaDB.getInstance().putUserInfo(userInfos[0])
           }
@@ -244,15 +278,17 @@ export default class WLFriendModule {
         30000,
       )) as WL.Friend.IRspGetFriendInfo
 
-      const deleteFriendIdList = rspGetFriendInfo.friendInfos
+      const friendRaws = rspGetFriendInfo.friendInfos ?? []
+
+      const deleteFriendIdList = friendRaws
         .filter((value) => {
           return value.status === WL_IDbFriendStatus.FRIEND_DELETED_STATUS
         })
         .map((value) => {
-          return value.userId
+          return value.userId ?? 0
         })
 
-      const normalFriendList = rspGetFriendInfo.friendInfos.filter((value) => {
+      const normalFriendList = friendRaws.filter((value) => {
         return value.status === WL_IDbFriendStatus.FRIEND_NORMAL_STATUS
       })
 
@@ -272,7 +308,7 @@ export default class WLFriendModule {
         wllog('转换后的好友信息:', friendInfos)
         result = await dbInstance.putFriendInfos(friendInfos)
         wllog('保存好友结果:', result)
-        const userInfos = dbInstance.convertFromUserRaw(rspGetFriendInfo.userInfos)
+        const userInfos = dbInstance.convertFromUserRaw(rspGetFriendInfo.userInfos ?? [])
         await dbInstance.putUserInfos(userInfos)
       }
 
@@ -292,7 +328,9 @@ export default class WLFriendModule {
       const rspGetFriendUser = (await this.coreInterface.sendPbMsg(
         buildResult,
       )) as WL.Friend.IRspGetFriendUserInfo
-      const userInfoRaws = WeilaDB.getInstance().convertFromUserRaw(rspGetFriendUser.userInfos)
+      const userInfoRaws = WeilaDB.getInstance().convertFromUserRaw(
+        rspGetFriendUser.userInfos ?? [],
+      )
       return WeilaDB.getInstance().putUserInfos(userInfoRaws)
     }
 
@@ -390,7 +428,7 @@ export default class WLFriendModule {
           rsp.friendInfos,
         )
         const userInfos: WL_IDbUserInfo[] = await WeilaDB.getInstance().convertFromUserRaw(
-          rsp.userInfos,
+          rsp.userInfos ?? [],
         )
 
         const userIds = userInfos.map((value) => {

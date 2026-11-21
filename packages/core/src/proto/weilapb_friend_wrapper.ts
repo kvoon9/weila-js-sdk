@@ -43,14 +43,17 @@ class WeilaPbFriendWrapper {
   public static buildFriendInviteReq(
     inviteeId: number,
     detail: string,
-    remark: string,
+    remark?: string,
     subUserId?: number,
   ): WLBuildMsgRet {
     const friendMessage = new WL.Friend.FriendMessage()
     friendMessage.reqFriendInvite = new WL.Friend.ReqFriendInvite()
     friendMessage.reqFriendInvite.inviteeId = inviteeId
     friendMessage.reqFriendInvite.detail = detail
-    friendMessage.reqFriendInvite.remark = remark
+
+    if (remark !== undefined) {
+      friendMessage.reqFriendInvite.remark = remark
+    }
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_FRIEND,
       WL.Friend.FriendCommandId.FRIEND_COMMAND_FRIEND_INVITE,
