@@ -8,6 +8,7 @@ import {
   WL_IDbMsgDataStatus,
   WL_IDbMsgDataType,
   WL_IDbSessionStatus,
+  WL_IDbSettingID,
   type WL_IDbMsgData,
   type WL_IDbSession,
 } from './weila_db_data'
@@ -37,8 +38,8 @@ function nextUserId(): string {
   return String(900000 + userSeq)
 }
 
-function openDb(userId: string, version: number): WeilaDB {
-  WeilaDB.init(userId, version)
+async function openDb(userId: string, version: number): Promise<WeilaDB> {
+  await WeilaDB.init(userId, version)
 
   return WeilaDB.getInstance()
 }
@@ -78,7 +79,7 @@ afterEach(() => {
 
 describe('WeilaDB schema', () => {
   it('opens every stored table at the declared schema version', async () => {
-    const db = openDb(nextUserId(), CURRENT_DB_VERSION)
+    const db = await openDb(nextUserId(), CURRENT_DB_VERSION)
     await db.open()
 
     expect(db.verno).toBe(CURRENT_DB_VERSION)
@@ -90,7 +91,7 @@ describe('WeilaDB schema', () => {
 
 describe('WeilaDB messages', () => {
   it('round-trips a message through the public database methods', async () => {
-    const db = openDb(nextUserId(), CURRENT_DB_VERSION)
+    const db = await openDb(nextUserId(), CURRENT_DB_VERSION)
     const message = makeMessage('4100', 11)
 
     await db.putMsgData(message)
@@ -101,7 +102,7 @@ describe('WeilaDB messages', () => {
   })
 
   it('deletes a session and its messages through one transaction', async () => {
-    const db = openDb(nextUserId(), CURRENT_DB_VERSION)
+    const db = await openDb(nextUserId(), CURRENT_DB_VERSION)
     const session = makeSession('4200')
     const message = makeMessage(session.sessionId, 12)
 
@@ -116,7 +117,7 @@ describe('WeilaDB messages', () => {
 
 describe('WeilaDB transactions', () => {
   it('rolls back a failed transaction without leaving a row', async () => {
-    const db = openDb(nextUserId(), CURRENT_DB_VERSION)
+    const db = await openDb(nextUserId(), CURRENT_DB_VERSION)
     const session = makeSession('4300')
 
     await expect(
@@ -138,7 +139,7 @@ describe('WeilaDB migration guard', () => {
     await partial.open()
     partial.close()
 
-    const db = openDb(userId, CURRENT_DB_VERSION)
+    const db = await openDb(userId, CURRENT_DB_VERSION)
     await db.open()
 
     expect(db.backendDB().version).toBe(CURRENT_DB_VERSION * 10 + 1)
@@ -148,21 +149,67 @@ describe('WeilaDB migration guard', () => {
     await expect(db.getSession(session.sessionId, session.sessionType)).resolves.toEqual(session)
   })
 
-  it('refuses to reopen a newer database at an older schema version', async () => {
+  it('refuses a newer database before it opens or writes to it', async () => {
     const userId = nextUserId()
-    const session = makeSession('4400')
-    const newer = openDb(userId, CURRENT_DB_VERSION + 1)
-    await newer.putSession(session)
+    const dbName = `WL_${userId}_DB`
+    const newer = new Dexie(dbName)
+    newer.version(CURRENT_DB_VERSION + 1).stores({ settings: 'id' })
+    await newer.open()
+    await newer
+      .table('settings')
+      .put({ id: WL_IDbSettingID.SETTING_LOGIN_TOKEN, data: 'NEWER-TOKEN' })
+    const newerNativeVersion = newer.backendDB().version
+    newer.close()
+
+    await expect(WeilaDB.init(userId, CURRENT_DB_VERSION)).rejects.toMatchObject({
+      name: 'VersionError',
+    })
+    expect(() => WeilaDB.getInstance()).toThrow(/Refusing to downgrade/)
+
+    const check = new Dexie(dbName)
+    await check.open()
+    await expect(check.table('settings').get(WL_IDbSettingID.SETTING_LOGIN_TOKEN)).resolves.toEqual(
+      { id: WL_IDbSettingID.SETTING_LOGIN_TOKEN, data: 'NEWER-TOKEN' },
+    )
+    expect(check.backendDB().version).toBe(newerNativeVersion)
+    check.close()
+  })
+
+  it('accepts a native version patched past the declared logical version', async () => {
+    const userId = nextUserId()
+    const dbName = `WL_${userId}_DB`
+    const db = await openDb(userId, CURRENT_DB_VERSION)
+    const session = makeSession('4600')
+    await db.putSession(session)
     WeilaDB.close()
 
-    const older = openDb(userId, CURRENT_DB_VERSION)
-    await expect(older.open()).rejects.toMatchObject({ name: 'VersionError' })
-    expect(older.isOpen()).toBe(false)
-    WeilaDB.close()
+    const bumped = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open(dbName, CURRENT_DB_VERSION * 10 + 10)
 
-    const reopened = openDb(userId, CURRENT_DB_VERSION + 1)
+      request.addEventListener('upgradeneeded', () => {
+        const transaction = request.transaction
+
+        if (!transaction) {
+          reject(new Error('missing upgrade transaction'))
+
+          return
+        }
+
+        if (!transaction.db.objectStoreNames.contains('$meta')) {
+          transaction.db.createObjectStore('$meta').add(CURRENT_DB_VERSION, 'version')
+        }
+      })
+
+      request.addEventListener('success', () => resolve(request.result))
+      request.addEventListener('error', () => reject(request.error))
+    })
+
+    bumped.close()
+
+    const reopened = await openDb(userId, CURRENT_DB_VERSION)
     await expect(reopened.getSession(session.sessionId, session.sessionType)).resolves.toEqual(
       session,
     )
+    expect(reopened.backendDB().version).toBe(CURRENT_DB_VERSION * 10 + 10)
   })
 })

@@ -45,6 +45,59 @@ const wllog = getLogger('DB:core:info')
 const _wlerr = getLogger('DB:core:err')
 const wlerr = getLogger('DB:core:err')
 
+// Opening without a version never upgrades. `$meta` holds the logical version after Dexie
+// patches a same-version schema, and native divided by ten is the fallback for Dexie 3 databases.
+function readInstalledSchemaVersion(dbName: string): Promise<number> {
+  return new Promise((resolve, reject) => {
+    let creating = false
+    const request = indexedDB.open(dbName)
+
+    request.addEventListener('upgradeneeded', () => {
+      creating = true
+      request.transaction?.abort()
+    })
+
+    request.addEventListener('blocked', () => {
+      reject(new Error(`数据库 ${dbName} 被其他连接占用`))
+    })
+
+    request.addEventListener('error', () => {
+      if (creating) {
+        resolve(0)
+
+        return
+      }
+
+      reject(request.error ?? new Error(`无法读取数据库 ${dbName} 的版本`))
+    })
+
+    request.addEventListener('success', () => {
+      const db = request.result
+      const nativeVersion = db.version
+
+      if (!db.objectStoreNames.contains('$meta')) {
+        db.close()
+        resolve(nativeVersion / 10)
+
+        return
+      }
+
+      const getRequest = db.transaction('$meta', 'readonly').objectStore('$meta').get('version')
+
+      getRequest.addEventListener('success', () => {
+        const logicalVersion = getRequest.result
+        db.close()
+        resolve(Number.isFinite(logicalVersion) ? Number(logicalVersion) : nativeVersion / 10)
+      })
+
+      getRequest.addEventListener('error', () => {
+        db.close()
+        reject(getRequest.error ?? new Error(`无法读取数据库 ${dbName} 的逻辑版本`))
+      })
+    })
+  })
+}
+
 class WeilaDB extends Dexie {
   sessions: Dexie.Table<WL_IDbSession, string>
   session_setting: Dexie.Table<WL_IDbSessionSetting, string>
@@ -59,17 +112,43 @@ class WeilaDB extends Dexie {
   service: Dexie.Table<WL_IDbService, number>
   service_staffs: Dexie.Table<WL_IDbServiceStaff, number>
   loginUserId: number
-  private readonly declaredVersion: number
-  private downgradeError?: Error
   private cleanedWithdrawSessions: Set<string> = new Set()
   static appAuthInfo?: { appKey: string; appId: string }
 
   private static instance: WeilaDB = null
+  private static initError: Error | null = null
 
-  public static init(userId: string, version: number): void {
-    if (this.instance === null) {
-      this.instance = new WeilaDB(userId, version)
+  public static async init(userId: string, version: number): Promise<void> {
+    if (this.instance !== null) return
+    const dbName = 'WL_' + userId + '_DB'
+    let installedVersion: number
+
+    try {
+      installedVersion = await readInstalledSchemaVersion(dbName)
+    } catch (error) {
+      const initError = error instanceof Error ? error : new Error(String(error))
+      this.initError = initError
+      _wlerr('读取数据库版本失败:', dbName, initError)
+      throw initError
     }
+
+    if (installedVersion > version) {
+      const error = new Dexie.VersionError(
+        `Refusing to downgrade ${dbName}: installed schema ${installedVersion}, SDK schema ${version} (Dexie VersionError)`,
+      )
+
+      this.initError = error
+      _wlerr(
+        '拒绝降级打开数据库 %s: 已安装版本 %d, 当前 SDK 声明版本 %d (Dexie VersionError)',
+        dbName,
+        installedVersion,
+        version,
+      )
+      throw error
+    }
+
+    this.initError = null
+    this.instance = new WeilaDB(userId, version)
   }
 
   public static setAppAuthInfo(appId: string, appKey: string) {
@@ -88,9 +167,14 @@ class WeilaDB extends Dexie {
       this.instance.close()
       this.instance = null
     }
+
+    this.initError = null
   }
 
   public static getInstance(): WeilaDB {
+    if (this.instance === null && this.initError) {
+      throw this.initError
+    }
     return this.instance
   }
 
@@ -98,7 +182,6 @@ class WeilaDB extends Dexie {
     const dbName = 'WL_' + userId + '_DB'
     super(dbName)
     this.loginUserId = parseInt(userId)
-    this.declaredVersion = version
     this.version(version).stores({
       sessions: 'combo_id_type, [sessionId+sessionType], status',
       session_setting: 'combo_id_type, [sessionId+sessionType]',
@@ -133,36 +216,13 @@ class WeilaDB extends Dexie {
           const setting = {} as WL_IDbSetting
           setting.id = WL_IDbSettingID.SETTING_MSG_SENDING_SEQ
           setting.data = 10
-          this.settings.put(setting)
+          return this.settings.put(setting)
         }
+        return undefined
       })
       .catch((error) => {
         _wlerr('初始化数据库设置失败:', this.name, error)
       })
-  }
-
-  public open(): Dexie.Promise<this> {
-    return super.open().then(() => {
-      if (this.downgradeError) {
-        this.close()
-        throw this.downgradeError
-      }
-      const installedVersion = this.backendDB().version / 10
-      if (Math.floor(installedVersion) > this.declaredVersion) {
-        _wlerr(
-          '拒绝降级打开数据库 %s: 已安装版本 %d, 当前 SDK 声明版本 %d (Dexie VersionError)',
-          this.name,
-          installedVersion,
-          this.declaredVersion,
-        )
-        this.downgradeError = new Dexie.VersionError(
-          `Refusing to downgrade ${this.name}: installed schema ${installedVersion}, SDK schema ${this.declaredVersion} (Dexie VersionError)`,
-        )
-        this.close()
-        throw this.downgradeError
-      }
-      return this
-    })
   }
 
   // 设置相关操作

@@ -40,14 +40,28 @@ export default class WLLoginModule {
       switch (serverMessage.serviceHead!.commandId) {
         case WL.Login.LoginCommandId.LOGIN_COMMAND_LOGIN_APP:
           {
-            if (serviceHead.resultCode === 0) {
-              WeilaDB.init(serverMessage.loginMessage!.rspLoginApp!.userInfo!.userId!.toString(), 3)
+            const respond = () => {
+              this.coreInterface.rspPbMsg(
+                serviceHead.seq,
+                serviceHead.resultCode,
+                serverMessage.loginMessage ? serverMessage.loginMessage.rspLoginApp : null,
+              )
             }
-            this.coreInterface.rspPbMsg(
-              serviceHead.seq,
-              serviceHead.resultCode,
-              serverMessage.loginMessage ? serverMessage.loginMessage.rspLoginApp : null,
-            )
+
+            if (serviceHead.resultCode === 0) {
+              void WeilaDB.init(
+                serverMessage.loginMessage!.rspLoginApp!.userInfo!.userId!.toString(),
+                3,
+              )
+                .catch((error) => {
+                  _wlerr('初始化数据库失败:', error)
+                })
+                .finally(respond)
+
+              break
+            }
+
+            respond()
           }
           break
 
