@@ -51,7 +51,7 @@ export default class WLUserModule {
       const rspGetUserInfo = (await this.coreInterface.sendPbMsg(
         buildRet,
       )) as WL.User.IRspGetUserInfo
-      const dbUserList = []
+      const dbUserList: WL_IDbUserInfo[] = []
 
       if (rspGetUserInfo.userInfoList) {
         rspGetUserInfo.userInfoList.forEach((value) => {

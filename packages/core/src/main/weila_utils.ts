@@ -20,7 +20,7 @@ async function fetchWithTimeout(
 
   wllog('fetch url:', input)
 
-  const timeoutPromise = (localTimeout) => {
+  const timeoutPromise = (localTimeout: any) => {
     return new Promise<Response>((resolve, _reject) => {
       timerId = setTimeout(() => {
         wlerr('获取URL:%s超时', input)
@@ -779,12 +779,9 @@ function getOpusDataFrameCount(pttData: Uint8Array): number {
 function getOpusDataListFromPttData(pttData: Uint8Array): Uint8Array[] {
   let offset = 0
   let sizeOfOpusData = 0
-  let codedDataList = null
+  const codedDataList: Uint8Array[] = []
 
   while (offset < pttData.length) {
-    if (codedDataList === null) {
-      codedDataList = []
-    }
     const flag = pttData[offset]
     offset += 1
 

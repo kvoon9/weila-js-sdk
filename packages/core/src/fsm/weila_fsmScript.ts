@@ -4,11 +4,11 @@ import { WLPlayerType } from 'audio/weila_audio_data'
 
 const loginProcedureFsm = {
   loginProcedure: {
-    entry: (_context, _event) => {},
+    entry: (_context: any, _event: any) => {},
     initial: 'connecting',
     on: {
       FSM_NET_DISCONNECT_IND_EVT: {
-        actions: (_context, _event) => {},
+        actions: (_context: any, _event: any) => {},
         internal: true,
       },
 
@@ -17,7 +17,7 @@ const loginProcedureFsm = {
       },
 
       FSM_LOGIN_PROCEDURE_FAIL_EVT: {
-        actions: (_context, _event) => {},
+        actions: (_context: any, _event: any) => {},
         target: 'loginTry',
       },
     },
@@ -28,17 +28,17 @@ const loginProcedureFsm = {
         description: '一旦进入此状态，首先执行连接网络',
         after: {
           '10000': {
-            actions: [send('FSM_LOGIN_PROCEDURE_FAIL_EVT'), (_context, _event) => {}],
+            actions: [send('FSM_LOGIN_PROCEDURE_FAIL_EVT'), (_context: any, _event: any) => {}],
           },
         },
         on: {
           FSM_NET_CONNECTED_IND_EVT: {
-            actions: (_context, _event) => {},
+            actions: (_context: any, _event: any) => {},
             target: 'logining',
             internal: true,
           },
           FSM_NET_CONNECTING_IND_EVT: {
-            actions: ['onConnecting', (_context, _event) => {}],
+            actions: ['onConnecting', (_context: any, _event: any) => {}],
             internal: true,
           },
           FSM_NET_EXCEPTION_IND_EVT: {
@@ -50,7 +50,7 @@ const loginProcedureFsm = {
         },
       },
       logining: {
-        entry: [(_context, _event) => {}, send('FSM_SYSTEM_WATCH_TIMEOUT_EVT')],
+        entry: [(_context: any, _event: any) => {}, send('FSM_SYSTEM_WATCH_TIMEOUT_EVT')],
         on: {
           FSM_SYSTEM_WATCH_TIMEOUT_EVT: {
             actions: ['onSysTimeChecking'],

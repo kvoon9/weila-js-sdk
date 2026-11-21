@@ -115,7 +115,7 @@ export default class WLPttFsm {
 
     this.pttFsmService = interpret(this.pttFsm)
     this.pttFsmService
-      .onTransition((state, event) => {
+      .onTransition((state: any, event: any) => {
         wllog(
           '事件:%s 从状态:%s ===> 到状态:%s',
           event.type,
@@ -123,7 +123,7 @@ export default class WLPttFsm {
           JSON.stringify(state.value),
         )
       })
-      .onEvent((event) => {
+      .onEvent((event: any) => {
         wllog('执行了事件:%s', event.type)
       })
       .start()

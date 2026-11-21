@@ -522,7 +522,7 @@ class WLAudio {
       // @ts-ignore
       navigator.getUserMedia(
         { audio: true },
-        (stream) => {
+        (stream: any) => {
           this.micMedia = stream
           this.micSource = this.audioContext!.createMediaStreamSource(this.micMedia)
           this.sendRecorderEvent(WLAudioRecorderEvent.WL_WORKLET_NODE_OPEN_REQ, {
@@ -543,7 +543,7 @@ class WLAudio {
           )
           this.sendingEventListMap.set(WLAudioRecorderEvent.WL_WORKLET_NODE_OPEN_RSP, callback)
         },
-        (error) => {
+        (error: any) => {
           wlerr('getUserMedia', error)
           reject(error)
           this.closeRecorder()

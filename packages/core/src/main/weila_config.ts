@@ -110,7 +110,7 @@ class WLConfig {
       wllog('id:%d url:%s', item.id, item.url)
       const configDataItem = {} as IConfigData
       let dbItem = {} as IConfigItem
-      let responseData
+      let responseData: any
       configDataItem.latestTime = new Date().getTime()
       configDataItem.version = item.version
 

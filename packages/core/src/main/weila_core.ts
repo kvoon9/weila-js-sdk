@@ -242,7 +242,10 @@ class WeilaCore implements WL_CoreInterface {
 
   async executeCoreFunc(funcName: string, ...argvs: any[]): Promise<any> {
     if (funcName in this) {
-      return this[funcName](...argvs)
+      // SAFETY: callers pass names of public WeilaCore methods, and the guard above proves the property exists.
+      const target = this as any
+
+      return target[funcName](...argvs)
     }
 
     return Promise.reject(new Error('Not Support Function:' + funcName))
@@ -477,11 +480,13 @@ class WeilaCore implements WL_CoreInterface {
       this.waitingTimeoutChecking,
     )
     if (this.waitingRspMap.size > 0) {
-      const timeoutKeyList = []
+      const timeoutKeyList: number[] = []
+
       const now = new Date().getTime()
 
       this.waitingRspMap.forEach((value, key) => {
         wllog('checkSendingMsgItemTimeout:', value.timeout, now)
+
         if (value.timeout <= now) {
           timeoutKeyList.push(key)
         }
