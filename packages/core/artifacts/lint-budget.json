@@ -60,6 +60,7 @@
     "packages/core/src/weilasdk.ts": 12,
     "packages/core/src/audio/weila_audio_data.ts": 2,
     "packages/core/src/audio/weila_ringbuffer.spec.ts": 2,
+    "packages/core/src/database/weila_db.spec.ts": 2,
     "packages/core/src/audio/weila_ringbuffer.ts": 8,
     "packages/core/src/log/weila_log.spec.ts": 2,
     "packages/core/src/main/weila_external_data.ts": 2,
