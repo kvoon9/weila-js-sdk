@@ -15,6 +15,7 @@
     "typecheck": "turbo run typecheck",
     "typecheck:tsc": "turbo run typecheck:tsc",
     "typecheck:parity": "node packages/core/scripts/typecheck-parity.mjs",
+    "typecheck:strict-budget": "node packages/core/scripts/strict-budget.mjs",
     "test:run": "turbo run test:run",
     "test:scripts": "node --test packages/core/scripts/*.spec.mjs scripts/*.spec.mjs",
     "lint": "node packages/core/scripts/lint-budget.mjs",
@@ -37,6 +38,7 @@
     "oxfmt": "catalog:",
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",
+    "playwright": "1.59.1",
     "simple-git-hooks": "catalog:",
     "taze": "catalog:",
     "turbo": "^2.9.18"
