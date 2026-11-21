@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { interpret } from 'xstate'
-import type { Interpreter } from 'xstate'
+import { createActor, fromPromise } from 'xstate'
+import type { Actor, AnyEventObject } from 'xstate'
 import { fsmEvents, mainFsm, pttFsm } from './weila_fsmScript'
 
 const MAIN_HANDLER_NAMES = [
@@ -50,8 +50,7 @@ interface Recording {
   invoked: string[]
 }
 
-// The interpreter config key is spelled out at runtime so the source stays greppable.
-const HANDLER_CONFIG_KEY = ['act', 'ions'].join('')
+type MainService = (context: any, event: AnyEventObject) => Promise<any>
 
 function namedStubs(names: string[], recording: Recording) {
   const stubs: Record<string, () => void> = {}
@@ -65,106 +64,98 @@ function namedStubs(names: string[], recording: Recording) {
   return stubs
 }
 
+function stubServices(
+  names: string[],
+  defaults: Record<string, boolean | Record<string, never> | null>,
+  overrides: Record<string, MainService>,
+  recording: Recording,
+) {
+  const actors: Record<
+    string,
+    ReturnType<typeof fromPromise<any, { context: any; event: AnyEventObject }>>
+  > = {}
+
+  for (const name of names) {
+    const impl = overrides[name] ?? (async () => defaults[name])
+    actors[name] = fromPromise(
+      async ({ input }: { input: { context: any; event: AnyEventObject } }) => {
+        recording.invoked.push(name)
+
+        return impl(input.context, input.event)
+      },
+    )
+  }
+
+  return actors
+}
+
 function startMainMachine(
   recording: Recording,
   overrides: {
-    services?: Record<string, (context: any, event: any) => Promise<any>>
-    guards?: Record<string, (context: any, event: any) => boolean>
+    services?: Record<string, MainService>
+    guards?: Record<string, () => boolean>
   } = {},
-): Interpreter<any, any, any> {
-  const machine = mainFsm.withConfig(
-    {
-      services: {
-        loadResource: async () => {
-          recording.invoked.push('loadResource')
-
-          return true
-        },
-        loginServer: async () => {
-          recording.invoked.push('loginServer')
-
-          return {}
-        },
-        prepareData: async () => {
-          recording.invoked.push('prepareData')
-
-          return true
-        },
-        logout: async () => {
-          recording.invoked.push('logout')
-
-          return true
-        },
-        ...overrides.services,
-      },
-      [HANDLER_CONFIG_KEY]: namedStubs(MAIN_HANDLER_NAMES, recording),
-      guards: {
-        isLoginSucc: () => true,
-        canRetry: () => true,
-        ...overrides.guards,
-      },
+): Actor<typeof mainFsm> {
+  const machine = mainFsm.provide({
+    actors: stubServices(
+      ['loadResource', 'loginServer', 'prepareData', 'logout'],
+      { loadResource: true, loginServer: {}, prepareData: true, logout: true },
+      overrides.services ?? {},
+      recording,
+    ),
+    actions: namedStubs(MAIN_HANDLER_NAMES, recording),
+    guards: {
+      isLoginSucc: () => true,
+      canRetry: () => true,
+      ...overrides.guards,
     },
-    { loginParam: null, core: null },
-  )
+  })
 
-  return interpret(machine)
-    .onTransition((state) => {
-      if (state.changed) {
-        recording.fired.push(`state:${JSON.stringify(state.value)}`)
-      }
-    })
-    .start()
+  const actor = createActor(machine, { input: { loginParam: null, core: null } })
+  let previous = actor.getSnapshot()
+  actor.subscribe((state) => {
+    if (JSON.stringify(state.value) !== JSON.stringify(previous.value)) {
+      recording.fired.push(`state:${JSON.stringify(state.value)}`)
+    }
+
+    previous = state
+  })
+
+  return actor.start()
 }
 
-function startPttMachine(recording: Recording): Interpreter<any, any, any> {
-  const machine = pttFsm.withConfig(
-    {
-      services: {
-        checkHistoryList: async () => {
-          recording.invoked.push('checkHistoryList')
+function startPttMachine(recording: Recording): Actor<typeof pttFsm> {
+  const machine = pttFsm.provide({
+    actors: stubServices(
+      ['checkHistoryList', 'checkPttPlayingList', 'startTalking', 'stopTalk'],
+      { checkHistoryList: null, checkPttPlayingList: null, startTalking: true, stopTalk: true },
+      {},
+      recording,
+    ),
+    actions: namedStubs(PTT_HANDLER_NAMES, recording),
+  })
 
-          return null
-        },
-        checkPttPlayingList: async () => {
-          recording.invoked.push('checkPttPlayingList')
-
-          return null
-        },
-        startTalking: async () => {
-          recording.invoked.push('startTalking')
-
-          return true
-        },
-        stopTalk: async () => {
-          recording.invoked.push('stopTalk')
-
-          return true
-        },
-      },
-      [HANDLER_CONFIG_KEY]: namedStubs(PTT_HANDLER_NAMES, recording),
-    },
-    { pttCore: null, singlePlayOrigin: '', historyPlayOrigin: '', talkOrigin: '' },
-  )
-
-  return interpret(machine).start()
+  return createActor(machine, {
+    input: { pttCore: null, singlePlayOrigin: '', historyPlayOrigin: '', talkOrigin: '' },
+  }).start()
 }
 
 async function settle() {
   await vi.advanceTimersByTimeAsync(0)
 }
 
-async function reachInited(actor: Interpreter<any, any, any>) {
-  actor.send(fsmEvents.FSM_LOAD_RESOURCE_EVT)
+async function reachInited(actor: Actor<typeof mainFsm>) {
+  actor.send({ type: fsmEvents.FSM_LOAD_RESOURCE_EVT })
   await settle()
 }
 
-async function reachReady(actor: Interpreter<any, any, any>) {
+async function reachReady(actor: Actor<typeof mainFsm>) {
   await reachInited(actor)
-  actor.send(fsmEvents.FSM_LOGIN_SERVER_EVT, { data: { account: 'test' } })
+  actor.send({ type: fsmEvents.FSM_LOGIN_SERVER_EVT, data: { account: 'test' } })
   await settle()
-  actor.send(fsmEvents.FSM_NET_CONNECTED_IND_EVT)
+  actor.send({ type: fsmEvents.FSM_NET_CONNECTED_IND_EVT })
   await settle()
-  actor.send(fsmEvents.FSM_LOGIN_PROCEDURE_SUCC_EVT)
+  actor.send({ type: fsmEvents.FSM_LOGIN_PROCEDURE_SUCC_EVT })
   await settle()
 }
 
@@ -181,7 +172,7 @@ describe('main state machine transitions', () => {
     const recording: Recording = { fired: [], invoked: [] }
     const actor = startMainMachine(recording)
 
-    expect(actor.state.matches('uninit')).toBe(true)
+    expect(actor.getSnapshot().matches('uninit')).toBe(true)
   })
 
   it('loads resources and lands in inited', async () => {
@@ -190,7 +181,7 @@ describe('main state machine transitions', () => {
 
     await reachInited(actor)
 
-    expect(actor.state.matches('inited')).toBe(true)
+    expect(actor.getSnapshot().matches('inited')).toBe(true)
     expect(recording.invoked).toContain('loadResource')
     expect(recording.fired).toContain('onLoadingResource')
   })
@@ -201,17 +192,16 @@ describe('main state machine transitions', () => {
     const actor = startMainMachine(recording, {
       services: {
         loadResource: async () => {
-          recording.invoked.push('loadResource')
           throw new Error('wasm missing')
         },
       },
     })
 
-    actor.send(fsmEvents.FSM_LOAD_RESOURCE_EVT)
+    actor.send({ type: fsmEvents.FSM_LOAD_RESOURCE_EVT })
     await settle()
 
-    expect(actor.state.matches('exception')).toBe(true)
-    expect(actor.state.done).toBe(true)
+    expect(actor.getSnapshot().matches('exception')).toBe(true)
+    expect(actor.getSnapshot().status).toBe('done')
     expect(recording.fired).toContain('onResourceLoadFail')
   })
 
@@ -220,12 +210,12 @@ describe('main state machine transitions', () => {
     const actor = startMainMachine(recording)
 
     await reachInited(actor)
-    actor.send(fsmEvents.FSM_LOGIN_SERVER_EVT, { data: { account: '70009790' } })
+    actor.send({ type: fsmEvents.FSM_LOGIN_SERVER_EVT, data: { account: '70009790' } })
     await settle()
 
-    expect(actor.state.matches({ loginProcedure: 'connecting' })).toBe(true)
+    expect(actor.getSnapshot().matches({ loginProcedure: 'connecting' })).toBe(true)
     expect(recording.fired).toContain('connectServer')
-    expect(actor.state.context.loginParam).toMatchObject({ account: '70009790' })
+    expect(actor.getSnapshot().context.loginParam).toMatchObject({ account: '70009790' })
   })
 
   it('moves from connecting to logining once the network connects', async () => {
@@ -233,12 +223,12 @@ describe('main state machine transitions', () => {
     const actor = startMainMachine(recording)
 
     await reachInited(actor)
-    actor.send(fsmEvents.FSM_LOGIN_SERVER_EVT, { data: {} })
+    actor.send({ type: fsmEvents.FSM_LOGIN_SERVER_EVT, data: {} })
     await settle()
-    actor.send(fsmEvents.FSM_NET_CONNECTED_IND_EVT)
+    actor.send({ type: fsmEvents.FSM_NET_CONNECTED_IND_EVT })
     await settle()
 
-    expect(actor.state.matches({ loginProcedure: 'logining' })).toBe(true)
+    expect(actor.getSnapshot().matches({ loginProcedure: 'logining' })).toBe(true)
     expect(recording.invoked).toContain('loginServer')
   })
 
@@ -247,17 +237,17 @@ describe('main state machine transitions', () => {
     const actor = startMainMachine(recording)
 
     await reachInited(actor)
-    actor.send(fsmEvents.FSM_LOGIN_SERVER_EVT, { data: {} })
+    actor.send({ type: fsmEvents.FSM_LOGIN_SERVER_EVT, data: {} })
     await settle()
-    actor.send(fsmEvents.FSM_NET_EXCEPTION_IND_EVT)
+    actor.send({ type: fsmEvents.FSM_NET_EXCEPTION_IND_EVT })
     await settle()
 
-    expect(actor.state.matches('loginTry')).toBe(true)
+    expect(actor.getSnapshot().matches('loginTry')).toBe(true)
     expect(recording.fired).toContain('onLoginTryEntry')
 
     await vi.advanceTimersByTimeAsync(2000)
 
-    expect(actor.state.matches({ loginProcedure: 'connecting' })).toBe(true)
+    expect(actor.getSnapshot().matches({ loginProcedure: 'connecting' })).toBe(true)
     expect(recording.fired.filter((name) => name === 'connectServer')).toHaveLength(2)
   })
 
@@ -266,16 +256,16 @@ describe('main state machine transitions', () => {
     const actor = startMainMachine(recording, { guards: { canRetry: () => false } })
 
     await reachInited(actor)
-    actor.send(fsmEvents.FSM_LOGIN_SERVER_EVT, { data: {} })
+    actor.send({ type: fsmEvents.FSM_LOGIN_SERVER_EVT, data: {} })
     await settle()
-    actor.send(fsmEvents.FSM_NET_DISCONNECT_IND_EVT)
+    actor.send({ type: fsmEvents.FSM_NET_DISCONNECT_IND_EVT })
     await settle()
 
-    expect(actor.state.matches('loginTry')).toBe(true)
+    expect(actor.getSnapshot().matches('loginTry')).toBe(true)
 
     await vi.advanceTimersByTimeAsync(2000)
 
-    expect(actor.state.matches('inited')).toBe(true)
+    expect(actor.getSnapshot().matches('inited')).toBe(true)
     expect(recording.fired).toContain('onLoginRetryFail')
   })
 
@@ -285,7 +275,7 @@ describe('main state machine transitions', () => {
 
     await reachReady(actor)
 
-    expect(actor.state.matches('ready')).toBe(true)
+    expect(actor.getSnapshot().matches('ready')).toBe(true)
     expect(recording.invoked).toContain('prepareData')
     expect(recording.fired).toContain('onDataInited')
     expect(recording.fired).toContain('onReadyEntry')
@@ -297,7 +287,6 @@ describe('main state machine transitions', () => {
     const actor = startMainMachine(recording, {
       services: {
         prepareData: async () => {
-          recording.invoked.push('prepareData')
           throw new Error('friend sync failed')
         },
       },
@@ -305,7 +294,7 @@ describe('main state machine transitions', () => {
 
     await reachReady(actor)
 
-    expect(actor.state.matches('exception')).toBe(true)
+    expect(actor.getSnapshot().matches('exception')).toBe(true)
     expect(recording.fired).toContain('onDataPrepareFail')
   })
 
@@ -314,10 +303,10 @@ describe('main state machine transitions', () => {
     const actor = startMainMachine(recording)
 
     await reachReady(actor)
-    actor.send(fsmEvents.FSM_LOGOUT_EVT)
+    actor.send({ type: fsmEvents.FSM_LOGOUT_EVT })
     await settle()
 
-    expect(actor.state.matches('inited')).toBe(true)
+    expect(actor.getSnapshot().matches('inited')).toBe(true)
     expect(recording.invoked).toContain('logout')
     expect(recording.fired).toContain('onReadyExit')
   })
@@ -327,10 +316,10 @@ describe('main state machine transitions', () => {
     const actor = startMainMachine(recording)
 
     await reachReady(actor)
-    actor.send(fsmEvents.FSM_NET_DISCONNECT_IND_EVT)
+    actor.send({ type: fsmEvents.FSM_NET_DISCONNECT_IND_EVT })
     await settle()
 
-    expect(actor.state.matches({ loginProcedure: 'connecting' })).toBe(true)
+    expect(actor.getSnapshot().matches({ loginProcedure: 'connecting' })).toBe(true)
     expect(recording.fired).toContain('onDisconnectInReadyState')
   })
 })
@@ -344,16 +333,15 @@ describe('ptt state machine transitions', () => {
     vi.useRealTimers()
   })
 
-  it('starts idle and dispatches to single playing', async () => {
+  it('starts idle and dispatches to single playing', () => {
     const recording: Recording = { fired: [], invoked: [] }
     const actor = startPttMachine(recording)
 
-    expect(actor.state.matches('idle')).toBe(true)
+    expect(actor.getSnapshot().matches('idle')).toBe(true)
 
-    actor.send(fsmEvents.FSM_PLAY_SINGLE_EVT)
-    await settle()
+    actor.send({ type: fsmEvents.FSM_PLAY_SINGLE_EVT })
 
-    expect(actor.state.matches('singlePlaying')).toBe(true)
+    expect(actor.getSnapshot().matches('singlePlaying')).toBe(true)
     expect(recording.fired).toContain('onSinglePlayEntry')
   })
 
@@ -361,16 +349,16 @@ describe('ptt state machine transitions', () => {
     const recording: Recording = { fired: [], invoked: [] }
     const actor = startPttMachine(recording)
 
-    actor.send(fsmEvents.FSM_PLAY_REALTIME_EVT)
+    actor.send({ type: fsmEvents.FSM_PLAY_REALTIME_EVT })
     await settle()
 
-    expect(actor.state.matches({ realtimePlaying: 'playing' })).toBe(true)
+    expect(actor.getSnapshot().matches({ realtimePlaying: 'playing' })).toBe(true)
     expect(recording.fired).toContain('onEnterRealtime')
 
-    actor.send(fsmEvents.FSM_PTT_OUT_OF_PAYLOAD_EVT)
+    actor.send({ type: fsmEvents.FSM_PTT_OUT_OF_PAYLOAD_EVT })
     await settle()
 
-    expect(actor.state.matches({ realtimePlaying: 'waitPayload' })).toBe(true)
+    expect(actor.getSnapshot().matches({ realtimePlaying: 'waitPayload' })).toBe(true)
     expect(recording.fired).toContain('onPttPayloadWaiting')
   })
 
@@ -378,15 +366,15 @@ describe('ptt state machine transitions', () => {
     const recording: Recording = { fired: [], invoked: [] }
     const actor = startPttMachine(recording)
 
-    actor.send(fsmEvents.FSM_REQ_TALK_EVT, { data: { callback: {} } })
+    actor.send({ type: fsmEvents.FSM_REQ_TALK_EVT, data: { callback: {} } })
     await settle()
 
     expect(recording.invoked).toContain('startTalking')
 
-    actor.send(fsmEvents.FSM_REL_TALK_EVT)
+    actor.send({ type: fsmEvents.FSM_REL_TALK_EVT })
     await settle()
 
-    expect(actor.state.matches('idle')).toBe(true)
+    expect(actor.getSnapshot().matches('idle')).toBe(true)
     expect(recording.invoked).toContain('stopTalk')
   })
 })

@@ -1,4 +1,5 @@
 import { fsmEvents, pttFsm } from 'fsm/weila_fsmScript'
+import type { PttFsmContext, PttFsmEvent } from 'fsm/weila_fsmScript'
 import {
   WL_PromiseCallback,
   WL_PttAudioItem,
@@ -15,7 +16,8 @@ import {
 } from 'db/weila_db_data'
 import { WeilaDB } from 'db/weila_db'
 import { getLogger } from 'log/weila_log'
-import { interpret } from 'xstate'
+import { createActor, fromPromise } from 'xstate'
+import type { StateValue } from 'xstate'
 import { WLAudio } from 'audio/weila_audio'
 import { WLAudioEvent, WLPlayerType } from 'audio/weila_audio_data'
 import WeilaRingPlayer from 'audio/weila_ring_player'
@@ -48,13 +50,44 @@ interface WL_PttMsgDataResult {
   isNewAudioItem: boolean
 }
 
+// 动作执行时的状态快照：v5 动作不再收到 actionMeta，改由订阅缓存最近一次快照。
+type PttState = {
+  value: StateValue
+  historyValue: unknown
+  matches: (partialStateValue: string | Record<string, string>) => boolean
+  machine: { id: string }
+  getMeta: () => Record<string, { playType?: WLPlayerType } | undefined>
+}
+
+interface PttActionArgs {
+  context: PttFsmContext
+  event: PttFsmEvent
+}
+
+// xstate v5 的 Actor 泛型对具体机型实例化过深（TS2589），在使用边界收窄为结构化接口
+type PttActor = {
+  getSnapshot(): PttState
+  subscribe(observer: (state: PttState) => void): unknown
+  send(event: PttFsmEvent): void
+  start(): unknown
+}
+
+// 仅从带 playType meta 的停止态调用；与 v4 的 meta[key].playType 取值等价（缺失即运行时报错）
+function pttPlayType(state: PttState): WLPlayerType {
+  const stateValue = typeof state.value === 'string' ? state.value : Object.keys(state.value)[0]
+  const meta = state.getMeta()[state.machine.id + '.' + stateValue]
+
+  return meta!.playType!
+}
+
 export default class WLPttFsm {
   readonly PLAY_DELAY = 200
   private static readonly RECENT_COMPLETED_PTT_LIMIT = 100
   static pttSeq = 0
   static readonly FRAME_COUNT = 25
-  pttFsm?: any
-  pttFsmService?: any
+  pttFsm: typeof pttFsm
+  pttFsmService: PttActor
+  private latestState: PttState
   playingAudioList: string[]
   playingAudioMap: Map<string, WL_PttAudioItem>
   waitingAudioMap: Map<string, WL_PttAudioItem>
@@ -76,57 +109,63 @@ export default class WLPttFsm {
     this.audioManager = new WLAudio()
     this.audioManager.onAudioEvent(this.onAudioMessage.bind(this))
 
-    this.pttFsm = pttFsm
-      .withContext({
-        pttCore: this as WLPttFsm,
-        singlePlayOrigin: '',
-        historyPlayOrigin: '',
-        talkOrigin: '',
-      })
-      .withConfig({
-        actions: {
-          onIdle: this.onIdle.bind(this),
-          onPttPayloadPlaying: this.onPttPayloadPlaying.bind(this),
-          onPttPayloadWaiting: this.onPttPayloadWaiting.bind(this),
-          feedData: this.feedData.bind(this),
-          onEnterRealtime: this.onEnterRealtime.bind(this),
-          onExitRealtime: this.onExitRealtime.bind(this),
-          onPlayItemFinish: this.onPlayItemFinish.bind(this),
-          onSinglePlayEntry: this.onSinglePlayEntry.bind(this),
-          onSinglePlayExit: this.onSinglePlayExit.bind(this),
-          onSinglePlayFinish: this.onSinglePlayFinish.bind(this),
-          onHistoryPlaying: this.onHistoryPlaying.bind(this),
-          onPlayNextItem: this.onPlayNextItem.bind(this),
-          onPlayHistoryItemFinish: this.onPlayHistoryItemFinish.bind(this),
-          onTalking: this.onTalking.bind(this),
-          stopPlay: this.stopPlay.bind(this),
-          onStopPttPlay: this.onStopPttPlay.bind(this),
-          onRequestTalkResult: this.onRequestTalkResult.bind(this),
-          onTalkInterrupt: this.onTalkInterrupt.bind(this),
-          stopAndPlayNext: this.stopAndPlayNext.bind(this),
-        },
-        services: {
-          checkHistoryList: this.checkHistoryList.bind(this),
-          checkPttPlayingList: this.checkPttPlayingList.bind(this),
-          startTalking: this.startTalking.bind(this),
-          stopTalk: this.stopTalk.bind(this),
-        },
-      })
+    const context: PttFsmContext = {
+      pttCore: this,
+      singlePlayOrigin: '',
+      historyPlayOrigin: '',
+      talkOrigin: '',
+    }
+    this.pttFsm = pttFsm.provide({
+      actions: {
+        onIdle: this.onIdle.bind(this),
+        onPttPayloadPlaying: this.onPttPayloadPlaying.bind(this),
+        onPttPayloadWaiting: this.onPttPayloadWaiting.bind(this),
+        feedData: this.feedData.bind(this),
+        onEnterRealtime: this.onEnterRealtime.bind(this),
+        onExitRealtime: this.onExitRealtime.bind(this),
+        onPlayItemFinish: this.onPlayItemFinish.bind(this),
+        onSinglePlayEntry: this.onSinglePlayEntry.bind(this),
+        onSinglePlayExit: this.onSinglePlayExit.bind(this),
+        onSinglePlayFinish: this.onSinglePlayFinish.bind(this),
+        onHistoryPlaying: this.onHistoryPlaying.bind(this),
+        onPlayNextItem: this.onPlayNextItem.bind(this),
+        onPlayHistoryItemFinish: this.onPlayHistoryItemFinish.bind(this),
+        onTalking: this.onTalking.bind(this),
+        stopPlay: this.stopPlay.bind(this),
+        onStopPttPlay: this.onStopPttPlay.bind(this),
+        // v4 的 onDone/onError 伪事件带 data；v5 是 output/error，这里适配回 v4 形状
+        onRequestTalkResult: ({ context, event }) =>
+          this.onRequestTalkResult({
+            context,
+            event: {
+              type: event.type,
+              data: 'output' in event ? event.output : (event as { error?: unknown }).error,
+            },
+          }),
+        onTalkInterrupt: this.onTalkInterrupt.bind(this),
+        stopAndPlayNext: this.stopAndPlayNext.bind(this),
+      },
+      actors: {
+        checkHistoryList: fromPromise(() => this.checkHistoryList()),
+        checkPttPlayingList: fromPromise(() => this.checkPttPlayingList()),
+        startTalking: fromPromise(({ input }: { input: PttFsmEvent }) => this.startTalking(input)),
+        stopTalk: fromPromise(() => this.stopTalk()),
+      },
+    })
 
-    this.pttFsmService = interpret(this.pttFsm)
-    this.pttFsmService
-      .onTransition((state: any, event: any) => {
-        wllog(
-          '事件:%s 从状态:%s ===> 到状态:%s',
-          event.type,
-          state.history ? JSON.stringify(state.history.value) : '空',
-          JSON.stringify(state.value),
-        )
-      })
-      .onEvent((event: any) => {
-        wllog('执行了事件:%s', event.type)
-      })
-      .start()
+    // SAFETY: xstate v5 的 Actor 泛型对本机型实例化过深（TS2589），运行时接口与 PttActor 一致
+    this.pttFsmService = createActor(this.pttFsm, { input: context }) as unknown as PttActor
+    this.latestState = this.pttFsmService.getSnapshot()
+    this.pttFsmService.subscribe((state) => {
+      const previous = this.latestState
+      this.latestState = state
+      wllog(
+        '事件:macrostep 从状态:%s ===> 到状态:%s',
+        JSON.stringify(previous.value),
+        JSON.stringify(state.value),
+      )
+    })
+    this.pttFsmService.start()
   }
 
   private getPttAudioItemId(msgData: WL_IDbMsgData): string {
@@ -148,7 +187,7 @@ export default class WLPttFsm {
   }
 
   // actions
-  onIdle(_context: any, _event: any, _actionMeta: any) {
+  onIdle() {
     this.notifyPttDataReady().catch((_reason) => {})
   }
 
@@ -177,7 +216,7 @@ export default class WLPttFsm {
     return source
   }
 
-  onPttPayloadPlaying(context: any, event: any, _actionMeta: any) {
+  onPttPayloadPlaying({ context, event }: PttActionArgs) {
     wllog('进入了Playing状态', event, context)
     const audioItem = event.data as WL_PttAudioItem
     if (event.type === 'FSM_FEED_PTT_PAYLOAD_EVT') {
@@ -200,11 +239,11 @@ export default class WLPttFsm {
     }
   }
 
-  onExitRealtime(_context: any, event: any, _actionMeta: any) {
+  onExitRealtime({ event }: PttActionArgs) {
     wllog('onExitRealtime', event.type)
   }
 
-  onPlayItemFinish(_context: any, event: any, _actionMeta: any) {
+  onPlayItemFinish({ event }: PttActionArgs) {
     wllog('onPlayItemFinish', event.type)
     const audioItemId = this.playingAudioList.shift()
     if (audioItemId !== undefined) {
@@ -215,7 +254,7 @@ export default class WLPttFsm {
 
     this.streamPttPlayItem = null
     WeilaRingPlayer.weila_playRing(WL_ConfigID.WL_RES_RING_STOP_PLAY_ID).finally(() => {
-      this.pttFsmService.send(fsmEvents.FSM_PTT_CHECK_RESOURCE_EVT)
+      this.pttFsmService.send({ type: fsmEvents.FSM_PTT_CHECK_RESOURCE_EVT })
 
       this.onPlayInd(
         null,
@@ -236,7 +275,7 @@ export default class WLPttFsm {
     this.pttFsmListener.onPlayInd(audioItem, playIndData)
   }
 
-  onSinglePlayEntry(context: any, event: any, _actionMeta: any) {
+  onSinglePlayEntry({ context, event }: PttActionArgs) {
     wllog('onSinglePlayEntry', event)
     context.singlePlayOrigin = event.type
     this.audioManager.openPlayer(WLPlayerType.WL_PTT_SINGLE_PLAYER, 16000).then((_openRet) => {
@@ -263,24 +302,24 @@ export default class WLPttFsm {
             })
             .catch((reason) => {
               //TODO: 执行STOP事件
-              this.pttFsmService.send('FSM_STOP_EVT', { data: reason })
+              this.pttFsmService.send({ type: fsmEvents.FSM_STOP_EVT, data: reason })
             })
         })
     })
   }
 
-  onSinglePlayExit(_context: any, event: any, _actionMeta: any) {
+  onSinglePlayExit({ event }: PttActionArgs) {
     wllog('onSinglePlayExit', event)
   }
 
-  onSinglePlayFinish(_context: any, event: any, _actionMeta: any) {
+  onSinglePlayFinish({ event }: PttActionArgs) {
     wllog('onSinglePlayFinish', event)
     WeilaRingPlayer.weila_playRing(WL_ConfigID.WL_RES_RING_STOP_PLAY_ID).finally(() => {
-      this.pttFsmService.send(fsmEvents.FSM_PLAY_END_EVT)
+      this.pttFsmService.send({ type: fsmEvents.FSM_PLAY_END_EVT })
     })
   }
 
-  onEnterRealtime(_context: any, event: any, _actionMeta: any) {
+  onEnterRealtime({ event }: PttActionArgs) {
     const audioItem = event.data as WL_PttAudioItem
     wllog('onEnterRealtime', event.type, event)
     if (event.type === 'FSM_PLAY_REALTIME_EVT') {
@@ -319,23 +358,23 @@ export default class WLPttFsm {
         })
         .catch((reason) => {
           wlerr('打开播放器失败:', reason)
-          this.pttFsmService.send(fsmEvents.FSM_STOP_EVT, { data: reason })
+          this.pttFsmService.send({ type: fsmEvents.FSM_STOP_EVT, data: reason })
         })
     }
   }
 
-  onPttPayloadWaiting(_context: any, event: any, _actionMeta: any) {
+  onPttPayloadWaiting({ event }: PttActionArgs) {
     wllog('进入了Waiting状态', event.type)
   }
 
-  feedData(_context: any, event: any, _actionMeta: any) {
+  feedData({ event }: PttActionArgs) {
     const audioItem = event.data as WL_PttAudioItem
     wllog('喂PTT数据:', audioItem)
     this.feedAudioPayload(audioItem, audioItem.playerType)
   }
 
   // services
-  async startTalking(_context: any, event: any): Promise<boolean> {
+  async startTalking(event: PttFsmEvent): Promise<boolean> {
     this.talkingInfo = event.data
     await this.audioManager.openRecorder(16000, 20000)
     try {
@@ -354,7 +393,7 @@ export default class WLPttFsm {
     return true
   }
 
-  async stopTalk(_context: any, _event: any): Promise<boolean> {
+  async stopTalk(): Promise<boolean> {
     if (this.talkingInfo && !this.talkingInfo.stopByErr) {
       this.packetLastPttMsg()
     }
@@ -371,15 +410,15 @@ export default class WLPttFsm {
     return true
   }
 
-  async checkPttPlayingList(_context: any, _event: any): Promise<WL_PttAudioItem> {
+  async checkPttPlayingList(): Promise<WL_PttAudioItem> {
     return this.getNextPlayingItem()
   }
 
-  onHistoryPlaying(_context: any, event: any, _actionMeta: any) {
+  onHistoryPlaying({ context, event }: PttActionArgs) {
     if (event.type === fsmEvents.FSM_PLAY_HISTORY_EVT) {
       this.historyPttPlayIndex = 0
       this.historyPttPlayItems = event.data
-      _context.historyPlayOrigin = event.type
+      context.historyPlayOrigin = event.type
       this.audioManager
         .openPlayer(WLPlayerType.WL_PTT_HISTORY_PLAYER, 16000)
         .then((_openRet) => {
@@ -416,22 +455,22 @@ export default class WLPttFsm {
         })
         .catch((reason) => {
           wlerr('打开播放器失败:', reason)
-          this.pttFsmService.send(fsmEvents.FSM_PLAY_END_EVT, { data: reason })
+          this.pttFsmService.send({ type: fsmEvents.FSM_PLAY_END_EVT, data: reason })
         })
     }
   }
 
-  onPlayNextItem(_context: any, event: any, _actionMeta: any) {
+  onPlayNextItem({ event }: PttActionArgs) {
     wllog('onPlayNextItem', event.type)
   }
 
-  onPlayHistoryItemFinish(_context: any, event: any, _actionMeta: any) {
+  onPlayHistoryItemFinish({ event }: PttActionArgs) {
     if (this.historyPttPlayItems?.length) {
       this.historyPttPlayItems.shift()
     }
 
     WeilaRingPlayer.weila_playRing(WL_ConfigID.WL_RES_RING_STOP_PLAY_ID).finally(() => {
-      this.pttFsmService.send(fsmEvents.FSM_PTT_CHECK_RESOURCE_EVT)
+      this.pttFsmService.send({ type: fsmEvents.FSM_PTT_CHECK_RESOURCE_EVT })
       this.onPlayInd(
         event.data,
         WLPlayerType.WL_PTT_HISTORY_PLAYER,
@@ -440,7 +479,7 @@ export default class WLPttFsm {
     })
   }
 
-  async checkHistoryList(_context: any, _event: any): Promise<WL_PttAudioItem> {
+  async checkHistoryList(): Promise<WL_PttAudioItem> {
     if (this.historyPttPlayItems?.length) {
       return this.historyPttPlayItems[0]
     }
@@ -448,10 +487,10 @@ export default class WLPttFsm {
     return Promise.reject(new Error('历史音频数据播放完毕'))
   }
 
-  onRequestTalkResult(_context: any, event: any, _actionMeta: any) {
+  onRequestTalkResult({ event }: PttActionArgs) {
     wllog('onRequestTalkResult', event)
     if (this.talkingInfo && this.talkingInfo.callback) {
-      if (event.type === 'error.platform.request_talk') {
+      if (event.type.startsWith('xstate.error.actor')) {
         this.talkingInfo.callback.reject(event.data)
       } else {
         WLPttFsm.pttSeq++
@@ -463,29 +502,27 @@ export default class WLPttFsm {
     }
   }
 
-  stopAndPlayNext(_context: any, _event: any, actionMeta: any) {
-    const metaObject = actionMeta.state.machine.id + '.' + actionMeta.state.value
-    const playType = actionMeta.state.meta[metaObject].playType
+  stopAndPlayNext() {
+    const playType = pttPlayType(this.latestState)
     this.audioManager.stopPlay(playType).finally(() => {
-      this.pttFsmService.send(fsmEvents.FSM_PTT_CHECK_RESOURCE_EVT)
+      this.pttFsmService.send({ type: fsmEvents.FSM_PTT_CHECK_RESOURCE_EVT })
     })
   }
 
-  onTalkInterrupt(_context: any, event: any, _actionMeta: any) {
+  onTalkInterrupt({ event }: PttActionArgs) {
     if (this.talkingInfo && this.talkingInfo.callback) {
       this.talkingInfo.callback.reject(event.data)
     }
   }
 
-  onStopPttPlay(_context: any, _event: any, _actionMeta: any) {
+  onStopPttPlay() {
     this.playingAudioList = []
     this.playingAudioMap.clear()
     this.streamPttPlayItem = null
   }
 
-  stopPlay(_context: any, event: any, actionMeta: any) {
-    const metaObject = actionMeta.state.machine.id + '.' + actionMeta.state.value
-    const playType = actionMeta.state.meta[metaObject].playType
+  stopPlay({ event }: PttActionArgs) {
+    const playType = pttPlayType(this.latestState)
     wllog('stopPlay playType:', playType)
 
     this.onPlayInd(null, playType, WL_PttAudioPlayState.PTT_AUDIO_PLAYING_END)
@@ -503,13 +540,13 @@ export default class WLPttFsm {
           event.type === fsmEvents.FSM_STOP_EVT ||
           event.type === fsmEvents.FSM_PTT_ITEM_PLAY_END_EVT
         ) {
-          this.pttFsmService.send(fsmEvents.FSM_END_BACK_TO_IDLE_EVT)
+          this.pttFsmService.send({ type: fsmEvents.FSM_END_BACK_TO_IDLE_EVT })
         }
       })
     })
   }
 
-  onTalking(_context: any, _event: any, _actionMeta: any) {
+  onTalking() {
     wllog('onTalking')
   }
 
@@ -533,11 +570,11 @@ export default class WLPttFsm {
       this.audioManager.putPlayerOpusData(playerType, null)
       return true
     } else if (audioItem.payloadList.length > audioItem.playIndex) {
-      this.pttFsmService.send(fsmEvents.FSM_FEED_PTT_PAYLOAD_EVT, { data: audioItem })
+      this.pttFsmService.send({ type: fsmEvents.FSM_FEED_PTT_PAYLOAD_EVT, data: audioItem })
       return true
     }
 
-    this.pttFsmService.send(fsmEvents.FSM_PTT_OUT_OF_PAYLOAD_EVT, { to: '.playing' })
+    this.pttFsmService.send({ type: fsmEvents.FSM_PTT_OUT_OF_PAYLOAD_EVT })
 
     return false
   }
@@ -547,7 +584,7 @@ export default class WLPttFsm {
       case WLAudioEvent.WL_AUDIO_FINISH_PLAY_IND:
         {
           wllog('播放完毕...')
-          this.pttFsmService.send(fsmEvents.FSM_PTT_ITEM_PLAY_END_EVT)
+          this.pttFsmService.send({ type: fsmEvents.FSM_PTT_ITEM_PLAY_END_EVT })
         }
         break
 
@@ -654,10 +691,14 @@ export default class WLPttFsm {
   }
 
   async notifyPttDataReady(): Promise<void> {
-    wllog('当前的状态:', this.pttFsmService.state.value, this.pttFsmService.state.historyValue)
+    wllog(
+      '当前的状态:',
+      this.pttFsmService.getSnapshot().value,
+      this.pttFsmService.getSnapshot().historyValue,
+    )
     if (
-      this.pttFsmService.state.matches('idle') ||
-      this.pttFsmService.state.matches('realtimePlaying.waitPayload')
+      this.pttFsmService.getSnapshot().matches('idle') ||
+      this.pttFsmService.getSnapshot().matches('realtimePlaying.waitPayload')
     ) {
       wllog('当前播放数据:', this.playingAudioList.length)
       try {
@@ -668,10 +709,10 @@ export default class WLPttFsm {
           audioItem = await this.getNextPlayingItem()
         }
 
-        if (this.pttFsmService.state.matches('idle')) {
-          this.pttFsmService.send(fsmEvents.FSM_PLAY_REALTIME_EVT, { data: audioItem })
+        if (this.pttFsmService.getSnapshot().matches('idle')) {
+          this.pttFsmService.send({ type: fsmEvents.FSM_PLAY_REALTIME_EVT, data: audioItem })
         } else {
-          this.pttFsmService.send(fsmEvents.FSM_FEED_PTT_PAYLOAD_EVT, { data: audioItem })
+          this.pttFsmService.send({ type: fsmEvents.FSM_FEED_PTT_PAYLOAD_EVT, data: audioItem })
         }
       } catch (e) {
         wlerr('获取数据异常:', e)
@@ -908,7 +949,7 @@ export default class WLPttFsm {
     audioItem.isCompleted = true
     audioItem.priority = 0
 
-    this.pttFsmService.send('FSM_PLAY_SINGLE_EVT', { data: audioItem })
+    this.pttFsmService.send({ type: fsmEvents.FSM_PLAY_SINGLE_EVT, data: audioItem })
     return true
   }
 
@@ -939,7 +980,7 @@ export default class WLPttFsm {
       }
     })
 
-    this.pttFsmService.send('FSM_PLAY_HISTORY_EVT', { data: audioItems })
+    this.pttFsmService.send({ type: fsmEvents.FSM_PLAY_HISTORY_EVT, data: audioItems })
 
     return true
   }
@@ -954,7 +995,7 @@ export default class WLPttFsm {
       talkingInfo.callback.resolve = resolve
       talkingInfo.callback.reject = reject
       talkingInfo.stopByErr = false
-      this.pttFsmService.send(fsmEvents.FSM_REQ_TALK_EVT, { data: talkingInfo })
+      this.pttFsmService.send({ type: fsmEvents.FSM_REQ_TALK_EVT, data: talkingInfo })
     })
   }
 
@@ -963,7 +1004,7 @@ export default class WLPttFsm {
       this.talkingInfo.stopByErr = true
       this.talkingInfo.curMarker = WL_PttPackType.PTT_END_PACK
     }
-    this.pttFsmService.send(fsmEvents.FSM_REL_TALK_EVT)
+    this.pttFsmService.send({ type: fsmEvents.FSM_REL_TALK_EVT })
     return true
   }
 
@@ -972,7 +1013,7 @@ export default class WLPttFsm {
       this.talkingInfo.stopByErr = false
       this.talkingInfo.curMarker = WL_PttPackType.PTT_END_PACK
     }
-    this.pttFsmService.send(fsmEvents.FSM_REL_TALK_EVT)
+    this.pttFsmService.send({ type: fsmEvents.FSM_REL_TALK_EVT })
     return true
   }
 
@@ -1063,6 +1104,6 @@ export default class WLPttFsm {
   }
 
   public playNext() {
-    this.pttFsmService.send(fsmEvents.FSM_STOP_AND_PLAY_NEXT_EVT)
+    this.pttFsmService.send({ type: fsmEvents.FSM_STOP_AND_PLAY_NEXT_EVT })
   }
 }

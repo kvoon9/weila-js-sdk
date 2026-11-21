@@ -2,7 +2,7 @@
 import Network from 'main/weila_network.worker'
 import { fsmEvents, mainFsm } from 'fsm/weila_fsmScript'
 import { WLConfig } from 'main/weila_config'
-import { interpret } from 'xstate'
+import { createActor, fromPromise } from 'xstate'
 import Long from 'long'
 
 import {
@@ -83,6 +83,14 @@ import WLBusinessModule from 'main/weila_business_module'
 const wllog = getLogger('CORE:info')
 const wlerr = getLogger('CORE:err')
 
+// v4 的 onDone/onError 伪事件带 data 字段；v5 分别是 output/error。适配回 v4 形状供处理器使用。
+function doneEventData(event: { type: string; output?: unknown; error?: unknown }): {
+  type: string
+  data: unknown
+} {
+  return { type: event.type, data: 'output' in event ? event.output : event.error }
+}
+
 interface WL_WaitingRspPbMsgInfo {
   resolve(value: any): any
   reject(reason: any): any
@@ -145,53 +153,51 @@ class WeilaCore implements WL_CoreInterface {
     this.waitingTimeoutChecking = false
     this.isLoginReady = false
     this.resolvingSessionProfileKeys = new Set()
-    this.mainFsm = mainFsm
-      .withContext({
-        loginParam: null,
-        core: this,
-      })
-      .withConfig({
-        services: {
-          loadResource: this.loadResource.bind(this),
-          prepareData: this.prepareData.bind(this),
-          loginServer: this.loginServer.bind(this),
-          logout: this.logout.bind(this),
-        },
-        actions: {
-          onResourceLoadFail: this.onResourceLoadFail.bind(this),
-          onLoadingResource: this.onLoadingResource.bind(this),
-          onException: this.onException.bind(this),
-          onReadyEntry: this.onReadyEntry.bind(this),
-          onReadyExit: this.onReadyExit.bind(this),
-          onSysTimeChecking: this.onSysTimeChecking.bind(this),
-          onDataInit: this.onDataInit.bind(this),
-          onDataInited: this.onDataInited.bind(this),
-          onDataPrepareFail: this.onDataPrepareFail.bind(this),
-          onLoginServerSucc: this.onLoginSucc.bind(this),
-          onLoginServerFail: this.onLoginFail.bind(this),
-          connectServer: this.connectServer.bind(this),
-          onConnecting: this.onConnecting.bind(this),
-          onDisconnectInReadyState: this.onDisconnectInReadyState.bind(this),
-          onLoginRetryFail: this.onLoginRetryFail.bind(this),
-          onLoginTryEntry: this.onLoginTryEntry.bind(this),
-        },
-        guards: {
-          isLoginSucc: this.isLoginSucc.bind(this),
-          canRetry: this.canRetry.bind(this),
-        },
-      })
+    this.mainFsm = mainFsm.provide({
+      actors: {
+        loadResource: fromPromise(({ input }) => this.loadResource(input.context, input.event)),
+        prepareData: fromPromise(({ input }) => this.prepareData(input.context, input.event)),
+        loginServer: fromPromise(({ input }) => this.loginServer(input.context, input.event)),
+        logout: fromPromise(({ input }) => this.logout(input.context, input.event)),
+      },
+      actions: {
+        onResourceLoadFail: ({ context, event }) =>
+          this.onResourceLoadFail(context, doneEventData(event)),
+        onLoadingResource: ({ context, event }) =>
+          this.onLoadingResource(context, doneEventData(event)),
+        onException: ({ context, event }) => this.onException(context, doneEventData(event)),
+        onReadyEntry: this.onReadyEntry.bind(this),
+        onReadyExit: this.onReadyExit.bind(this),
+        onSysTimeChecking: this.onSysTimeChecking.bind(this),
+        onDataInit: this.onDataInit.bind(this),
+        onDataInited: this.onDataInited.bind(this),
+        onDataPrepareFail: this.onDataPrepareFail.bind(this),
+        onLoginServerSucc: ({ context, event }) => this.onLoginSucc(context, doneEventData(event)),
+        onLoginServerFail: ({ context, event }) => this.onLoginFail(context, doneEventData(event)),
+        connectServer: this.connectServer.bind(this),
+        onConnecting: this.onConnecting.bind(this),
+        onDisconnectInReadyState: this.onDisconnectInReadyState.bind(this),
+        onLoginRetryFail: this.onLoginRetryFail.bind(this),
+        onLoginTryEntry: this.onLoginTryEntry.bind(this),
+      },
+      guards: {
+        isLoginSucc: ({ context, event }) => this.isLoginSucc(context, event),
+        canRetry: ({ context, event }) => this.canRetry(context, event),
+      },
+    })
 
     // 主要状态机的激活
-    this.mainFsmService = interpret(this.mainFsm)
-      .onTransition((state, event) => {
-        wllog(
-          '事件:%s 从状态:%s ===> 状态:%s',
-          JSON.stringify(event),
-          state.history ? JSON.stringify(state.history.value) : '初始状态',
-          JSON.stringify(state.value),
-        )
-      })
-      .start()
+    this.mainFsmService = createActor(this.mainFsm, { input: { loginParam: null, core: this } })
+    let previousState = this.mainFsmService.getSnapshot()
+    this.mainFsmService.subscribe((state: { value: unknown }) => {
+      wllog(
+        '从状态:%s ===> 状态:%s',
+        JSON.stringify(previousState.value),
+        JSON.stringify(state.value),
+      )
+      previousState = state
+    })
+    this.mainFsmService.start()
 
     this.waitingRspMap = new Map<number, WL_WaitingRspPbMsgInfo>()
     this.pbMsgHandlerList = new Map<number, WL_PbMsgHandler>()
@@ -295,7 +301,7 @@ class WeilaCore implements WL_CoreInterface {
 
     if (!this.waitingTimeoutChecking) {
       setTimeout(() => {
-        this.mainFsmService.send('FSM_SYSTEM_WATCH_TIMEOUT_EVT')
+        this.mainFsmService.send({ type: 'FSM_SYSTEM_WATCH_TIMEOUT_EVT' })
       }, 1000)
       this.waitingTimeoutChecking = true
     }
@@ -315,11 +321,11 @@ class WeilaCore implements WL_CoreInterface {
         {
           const netState = netEvent.eventData as WL_NetworkState
           if (netState === WL_NetworkState.NET_CONNECTED_STATE) {
-            this.mainFsmService.send(fsmEvents.FSM_NET_CONNECTED_IND_EVT)
+            this.mainFsmService.send({ type: fsmEvents.FSM_NET_CONNECTED_IND_EVT })
           } else if (netState === WL_NetworkState.NET_CONNECTING_STATE) {
-            this.mainFsmService.send(fsmEvents.FSM_NET_CONNECTING_IND_EVT)
+            this.mainFsmService.send({ type: fsmEvents.FSM_NET_CONNECTING_IND_EVT })
           } else if (netState === WL_NetworkState.NET_DISCONNECTED_STATE) {
-            this.mainFsmService.send(fsmEvents.FSM_NET_DISCONNECT_IND_EVT)
+            this.mainFsmService.send({ type: fsmEvents.FSM_NET_DISCONNECT_IND_EVT })
 
             const keys = this.waitingRspMap.keys()
             for (let k of keys) {
@@ -352,7 +358,7 @@ class WeilaCore implements WL_CoreInterface {
 
       case WL_NetworkEventID.NET_EXCEPTION_IND_EVT:
         {
-          this.mainFsmService.send(fsmEvents.FSM_NET_EXCEPTION_IND_EVT)
+          this.mainFsmService.send({ type: fsmEvents.FSM_NET_EXCEPTION_IND_EVT })
         }
         break
     }
@@ -431,19 +437,19 @@ class WeilaCore implements WL_CoreInterface {
     }
   }
 
-  private onResourceLoadFail(_context: any, event: any, _actionMeta: any) {
+  private onResourceLoadFail(_context: any, event: any) {
     wlerr('初始加载数据出错', event.data)
   }
 
-  private onLoadingResource(_context: any, _event: any, _actionMeta: any) {
+  private onLoadingResource(_context: any, _event: any) {
     wllog('加载数据成功')
   }
 
-  private onException(_context: any, event: any, _actionMeta: any) {
+  private onException(_context: any, event: any) {
     this.sendExtEvent(WL_ExtEventID.WL_EXT_SYSTEM_EXCEPTION_IND, event.data)
   }
 
-  private onDataInit(_context: any, _event: any, _actionMeta: any) {
+  private onDataInit(_context: any, _event: any) {
     // 对外发出正在准备数据中.
     const ind = {} as WL_DataPrepareInd
     ind.state = WL_DataPrepareState.START_PREPARING
@@ -451,7 +457,7 @@ class WeilaCore implements WL_CoreInterface {
     this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind)
   }
 
-  private onDataInited(_context: any, _event: any, _actionMeta: any) {
+  private onDataInited(_context: any, _event: any) {
     // 对外通知数据已经准备好
     const ind = {} as WL_DataPrepareInd
     ind.state = WL_DataPrepareState.PREPARE_SUCC_END
@@ -459,7 +465,7 @@ class WeilaCore implements WL_CoreInterface {
     this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind)
   }
 
-  private onDataPrepareFail(_context: any, _event: any, _actionMeta: any) {
+  private onDataPrepareFail(_context: any, _event: any) {
     // 因为数据准备失败，登出系统
     this.weila_logout().then((_value) => {})
 
@@ -470,23 +476,23 @@ class WeilaCore implements WL_CoreInterface {
     this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind)
   }
 
-  private onLoginFail(_context: any, event: any, _actionMeta: any) {
+  private onLoginFail(_context: any, event: any) {
     wllog('onLoginFail:', event)
     this.sendNetworkEvent(WL_NetworkEventID.NET_DISCONNECT_EVT, null)
-    this.mainFsmService.send('FSM_LOGIN_PROCEDURE_FAIL_EVT', { data: event.data })
+    this.mainFsmService.send({ type: fsmEvents.FSM_LOGIN_PROCEDURE_FAIL_EVT, data: event.data })
   }
 
-  private onLoginSucc(_context: any, event: any, _actionMeta: any) {
+  private onLoginSucc(_context: any, event: any) {
     const loginResult = event.data as WL_LoginResult
     wllog('onLogin:', event)
     this.loginUserInfo = loginResult.loginUserInfo
     if (loginResult.callback) {
       loginResult.callback.resolve(loginResult.loginUserInfo)
     }
-    this.mainFsmService.send('FSM_LOGIN_PROCEDURE_SUCC_EVT', { data: event.data })
+    this.mainFsmService.send({ type: fsmEvents.FSM_LOGIN_PROCEDURE_SUCC_EVT, data: event.data })
   }
 
-  private onSysTimeChecking(_context: any, _event: any, _actionMeta: any) {
+  private onSysTimeChecking(_context: any, _event: any) {
     wllog(
       '--------->onSysTimeChecking',
       event,
@@ -517,7 +523,7 @@ class WeilaCore implements WL_CoreInterface {
 
       if (this.waitingRspMap.size > 0) {
         setTimeout(() => {
-          this.mainFsmService.send('FSM_SYSTEM_WATCH_TIMEOUT_EVT')
+          this.mainFsmService.send({ type: 'FSM_SYSTEM_WATCH_TIMEOUT_EVT' })
         }, 2000)
         this.waitingTimeoutChecking = true
       } else {
@@ -528,7 +534,7 @@ class WeilaCore implements WL_CoreInterface {
     }
   }
 
-  private onReadyEntry(_context: any, _event: any, _actionMeta: any) {
+  private onReadyEntry(_context: any, _event: any) {
     wllog('系统已经准备好，可以接受任何消息')
     this.isLoginReady = true
     this.heartbeatTimerId = setInterval(() => {
@@ -554,7 +560,7 @@ class WeilaCore implements WL_CoreInterface {
     }, 3600000)
   }
 
-  private onReadyExit(_context: any, _event: any, _actionMeta: any) {
+  private onReadyExit(_context: any, _event: any) {
     wllog('系统没有准备好')
     this.isLoginReady = false
 
@@ -565,13 +571,13 @@ class WeilaCore implements WL_CoreInterface {
     this.refreshTokenTimerId = null
   }
 
-  private onLoginTryEntry(_context: any, event: any, _actionMeta: any) {
+  private onLoginTryEntry(_context: any, event: any) {
     wllog('onLoginTryEntry', event.data, event.type)
     if (event.data && event.data.error) {
       const index = event.data.error.message.search(/.*-MESSAGE:.*:END/)
       wllog('onLoginTryEntry', index)
       if (index !== -1) {
-        this.mainFsmService.send(event.type, { data: event.data })
+        this.mainFsmService.send({ type: event.type, data: event.data })
       }
     }
   }
@@ -587,19 +593,19 @@ class WeilaCore implements WL_CoreInterface {
     return loginResult.loginUserInfo !== undefined
   }
 
-  private connectServer(_context: any, _event: any, _actionMeta: any) {
+  private connectServer(_context: any, _event: any) {
     this.sendNetworkEvent(WL_NetworkEventID.NET_CONNECT_EVT, null)
   }
 
-  private onConnecting(context: any, event: any, actionMeta: any) {
-    wllog('onConnecting:', context, event, actionMeta.state.value)
+  private onConnecting(context: any, event: any) {
+    wllog('onConnecting:', context, event)
   }
 
-  private onDisconnectInReadyState(_context: any, _event: any, _actionMeta: any) {
+  private onDisconnectInReadyState(_context: any, _event: any) {
     // const loginParam = _context.loginParam as WL_LoginParam
   }
 
-  private onLoginRetryFail(context: any, event: any, _actionMeta: any) {
+  private onLoginRetryFail(context: any, event: any) {
     wllog('onLoginRetryFail', event.data)
     const loginParam = context.loginParam as WL_LoginParam
     if (event.data && event.data.error) {
@@ -641,7 +647,7 @@ class WeilaCore implements WL_CoreInterface {
       const callback = {} as WL_PromiseCallback
       callback.resolve = resolve
       callback.reject = reject
-      this.mainFsmService.send(fsmEvents.FSM_LOAD_RESOURCE_EVT, { data: callback })
+      this.mainFsmService.send({ type: fsmEvents.FSM_LOAD_RESOURCE_EVT, data: callback })
     })
   }
 
@@ -669,7 +675,7 @@ class WeilaCore implements WL_CoreInterface {
       params.password = password
       params.countryCode = countryCode
       params.md5 = options.md5 ?? true
-      this.mainFsmService.send(fsmEvents.FSM_LOGIN_SERVER_EVT, { data: params })
+      this.mainFsmService.send({ type: fsmEvents.FSM_LOGIN_SERVER_EVT, data: params })
     })
   }
 
@@ -829,7 +835,7 @@ class WeilaCore implements WL_CoreInterface {
    */
   public async weila_logout(): Promise<boolean> {
     this.sessionModule.clearActiveSessionState()
-    return this.mainFsmService.send('FSM_LOGOUT_EVT')
+    return this.mainFsmService.send({ type: 'FSM_LOGOUT_EVT' })
   }
 
   /**
