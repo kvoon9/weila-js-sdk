@@ -150,20 +150,17 @@ importers:
   packages/core:
     dependencies:
       ali-oss:
-        specifier: ^6.16.0
+        specifier: ^6.23.0
         version: 6.23.0
       crypto-js:
-        specifier: ^4.1.1
+        specifier: ^4.2.0
         version: 4.2.0
       debug:
-        specifier: ^4.3.3
+        specifier: ^4.4.3
         version: 4.4.3
       dexie:
         specifier: ^3.2.0
         version: 3.2.7
-      gently-copy:
-        specifier: ^3.2.0
-        version: 3.2.0
       long:
         specifier: ^5.3.2
         version: 5.3.2
@@ -198,6 +195,9 @@ importers:
       '@types/node':
         specifier: ^22.13.10
         version: 22.19.9
+      gently-copy:
+        specifier: ^3.2.0
+        version: 3.2.0
       jsdom:
         specifier: 'catalog:'
         version: 29.0.2
@@ -2728,6 +2728,7 @@ packages:
 
   crypto-js@4.2.0:
     resolution: {integrity: sha512-KALDyEYgpY+Rlob/iriUtjV6d5Eq+Y191A5g4UqLAi8CyGP9N1+FdVbkc1SxKc2r4YAYqG8JzO2KGL+AizD70Q==}
+    deprecated: Active development of CryptoJS has been discontinued. This library is no longer maintained.
 
   css-select@5.2.2:
     resolution: {integrity: sha512-TizTzUddG/xYLA3NXodFM0fSbNizXjOKhqiQQwvhlspadZokn1KDy0NZFS0wuEubIYAV5/c1/lAr0TaaFXEXzw==}
