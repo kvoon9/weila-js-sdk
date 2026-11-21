@@ -77,10 +77,13 @@ function applySessionExtraProfile(session: WL_IDbSession): boolean {
   if (sessionName) {
     session.sessionName = sessionName
   }
+
   if (sessionAvatar) {
     session.sessionAvatar = sessionAvatar
   }
+
   session.status = WL_IDbSessionStatus.SESSION_ACTIVATE
+
   return true
 }
 
@@ -107,11 +110,13 @@ function inheritSessionProfile(session: WL_IDbSession, existingSession?: WL_IDbS
     existingSession.extra && typeof existingSession.extra === 'object'
       ? { ...existingSession.extra }
       : {}
+
   const { sessionName, sessionAvatar } = getSessionExtraProfile(extra)
 
   if (!sessionName && existingSession.sessionName) {
     extra.sessionName = existingSession.sessionName
   }
+
   if (!sessionAvatar && existingSession.sessionAvatar) {
     extra.sessionAvatar = existingSession.sessionAvatar
   }

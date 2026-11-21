@@ -61,6 +61,7 @@ class WeilaPbLocationWrapper {
     locationMessage.reqGetLocation.sessionInfo = new WL.Location.LocationSessionInfo()
     locationMessage.reqGetLocation.sessionInfo.sessionId = Long.fromValue(sessionInfo.sessionId)
     locationMessage.reqGetLocation.sessionInfo.sessionType = sessionInfo.sessionType
+
     if (userIdList.length) {
       locationMessage.reqGetLocation.userIds = Array.from(userIdList)
     }

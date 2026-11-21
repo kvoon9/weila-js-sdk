@@ -201,6 +201,7 @@ class WeilaDB extends Dexie {
     if (this.instance === null && this.initError) {
       throw this.initError
     }
+
     // SAFETY: init() assigns the instance before callers reach here; a null return is the existing
     // pre-init contract that this public signature already advertises.
     return this.instance as WeilaDB
@@ -247,8 +248,10 @@ class WeilaDB extends Dexie {
           const setting = {} as WL_IDbSetting
           setting.id = WL_IDbSettingID.SETTING_MSG_SENDING_SEQ
           setting.data = 10
+
           return this.settings.put(setting)
         }
+
         return undefined
       })
       .catch((error) => {
@@ -274,6 +277,7 @@ class WeilaDB extends Dexie {
 
     if (isGroupSessionType(session.sessionType)) {
       const groupInfo = await WeilaDB.getInstance().getGroup(session.sessionId)
+
       if (groupInfo) {
         session.sessionName = groupInfo.name
         session.sessionAvatar = groupInfo.avatar || default_group_logo
@@ -283,6 +287,7 @@ class WeilaDB extends Dexie {
       }
     } else if (isIndividualSessionType(session.sessionType)) {
       const userInfo = await WeilaDB.getInstance().getUser(parseInt(session.sessionId))
+
       if (userInfo) {
         session.sessionName = userInfo.nick
         session.sessionAvatar = userInfo.avatar
@@ -293,6 +298,7 @@ class WeilaDB extends Dexie {
     } else if (isServiceSessionType(session.sessionType)) {
       const serviceId = Long.fromValue(session.sessionId).high
       const service = await WeilaDB.getInstance().getService(serviceId)
+
       if (service) {
         session.sessionName = service.name
         session.sessionAvatar = service.avatar
@@ -311,6 +317,7 @@ class WeilaDB extends Dexie {
   ): Promise<WL_IDbSession[]> {
     const sessionCount = sessionRaws.length
     const sessions: WL_IDbSession[] = []
+
     for (let i = 0; i < sessionCount; i++) {
       const raw = sessionRaws[i]
       let session = {} as WL_IDbSession
@@ -322,18 +329,22 @@ class WeilaDB extends Dexie {
       inheritSessionProfile(session, await this.getSession(session.sessionId, session.sessionType))
       wllog('sessionId:%s lastMsgDataRaw:', session.sessionId, raw.latestMsgData)
       const latestMsgData = raw.latestMsgData
+
       if (latestMsgData) {
         const msgDatas: WL_IDbMsgData[] = this.convertFromMsgDataRaws(
           [latestMsgData],
           this.loginUserId,
         )
+
         wllog('sessionId:%s lastMsgData:', session.sessionId, msgDatas)
+
         if (msgDatas.length) {
           session.lastMsgId = msgDatas[0].msgId
           msgDatas[0].combo_id = getMsgDataIdByCombo(msgDatas[0], 0)
           await WeilaDB.getInstance().putMsgData(msgDatas[0])
         }
       }
+
       session.unreadCount = session.lastMsgId > session.readMsgId ? 1 : 0
 
       session = await this.fillSessionInfo(session)
@@ -347,6 +358,7 @@ class WeilaDB extends Dexie {
   public async putSessions(sessions: WL_IDbSession[]): Promise<boolean> {
     const ids = await this.sessions.bulkPut(sessions, { allKeys: true })
     wllog('存入%d个会话', ids.length)
+
     return true
   }
 
@@ -354,6 +366,7 @@ class WeilaDB extends Dexie {
   public async putSession(session: WL_IDbSession): Promise<string> {
     const id = await this.sessions.put(session)
     wllog('存入单个会话，返回id', id)
+
     return id
   }
 
@@ -369,6 +382,7 @@ class WeilaDB extends Dexie {
   ): Promise<WL_IDbSessionSetting | undefined> {
     const comboId = sessionId + '_' + sessionType
     let sessionSetting = await this.session_setting.get(comboId)
+
     if (!sessionSetting) {
       sessionSetting = {} as WL_IDbSessionSetting
       sessionSetting.sessionType = sessionType
@@ -377,8 +391,10 @@ class WeilaDB extends Dexie {
       sessionSetting.tts = false
       sessionSetting.mute = false
       sessionSetting.loactionShared = false
+
       if (isIndividualSessionType(sessionType)) {
         const friendInfo = await this.friends.get(parseInt(sessionId))
+
         if (friendInfo) {
           sessionSetting.tts = friendInfo.tts
           sessionSetting.loactionShared = friendInfo.locationShared
@@ -386,6 +402,7 @@ class WeilaDB extends Dexie {
       } else if (isGroupSessionType(sessionType)) {
         const comboId = sessionId + '_' + this.loginUserId
         const memberInfo = await this.group_members.get(comboId)
+
         if (memberInfo) {
           sessionSetting.tts = memberInfo.tts
           sessionSetting.loactionShared = memberInfo.locationShared
@@ -410,6 +427,7 @@ class WeilaDB extends Dexie {
   ): Promise<boolean> {
     wllog('updateSessionSetting', params)
     const setting = {} as any
+
     if (params.tts !== undefined) {
       setting.tts = params.tts
     }
@@ -425,6 +443,7 @@ class WeilaDB extends Dexie {
     if (params.tts !== undefined || params.loactionShared !== undefined) {
       if (isGroupSessionType(sessionType)) {
         const groupInfo = await this.groups.get(sessionId)
+
         if (groupInfo) {
           const id = groupInfo.groupId + '_' + groupInfo.ownerId
           this.group_members.where('combo_gid_uid').equals(id).modify(setting)
@@ -442,6 +461,7 @@ class WeilaDB extends Dexie {
 
     const id = sessionId + '_' + sessionType
     let sessionSetting = await this.session_setting.get(id)
+
     if (sessionSetting !== undefined) {
       wllog('修改.......', setting)
       await this.session_setting.where('combo_id_type').equals(id).modify(setting)
@@ -465,6 +485,7 @@ class WeilaDB extends Dexie {
     const sessionCombos = comboIds.map((value) => {
       const combo = value.split('_') as any
       combo[1] = parseInt(combo[1])
+
       return combo
     })
 
@@ -478,6 +499,7 @@ class WeilaDB extends Dexie {
   public async getSessions(): Promise<WL_IDbSession[]> {
     const list = await this.sessions.toCollection().toArray()
     wllog(list)
+
     return list
   }
 
@@ -488,6 +510,7 @@ class WeilaDB extends Dexie {
   ): Promise<WL_IDbSession | undefined> {
     const id = sessionId + '_' + sessionType
     const session = await this.sessions.get(id)
+
     return session
   }
 
@@ -495,6 +518,7 @@ class WeilaDB extends Dexie {
   public convertFromGroupRaw(groupRaws: WL.Group.IGroupAttribute[]): WL_IDbGroup[] {
     const count = groupRaws.length
     const groups: WL_IDbGroup[] = []
+
     for (let i = 0; i < count; i++) {
       const raw = groupRaws[i]
       const name = raw.name ?? ''
@@ -532,6 +556,7 @@ class WeilaDB extends Dexie {
   public async putGroups(groups: WL_IDbGroup[]): Promise<boolean> {
     const ids = await this.groups.bulkPut(groups, { allKeys: true })
     wllog('存入%d个群:', ids.length)
+
     return true
   }
 
@@ -539,6 +564,7 @@ class WeilaDB extends Dexie {
   public async putGroup(group: WL_IDbGroup): Promise<string> {
     const id = await this.groups.put(group)
     wllog('存入单个群:', id)
+
     return id
   }
 
@@ -555,6 +581,7 @@ class WeilaDB extends Dexie {
   public async getGroups(groupIds?: string[]): Promise<WL_IDbGroup[]> {
     if (groupIds) {
       const result = await this.groups.bulkGet(groupIds)
+
       return result.filter((value) => {
         return value !== undefined
       })
@@ -587,6 +614,7 @@ class WeilaDB extends Dexie {
   ): WL_IDbMemberInfo[] {
     const count = memberRaws.length
     const memberInfos: WL_IDbMemberInfo[] = []
+
     for (let i = 0; i < count; i++) {
       const raw = memberRaws[i]
       const memberInfo: WL_IDbMemberInfo = {} as WL_IDbMemberInfo
@@ -613,6 +641,7 @@ class WeilaDB extends Dexie {
   public async putMemberInfos(memberInfos: WL_IDbMemberInfo[]): Promise<boolean> {
     const ids = await this.group_members.bulkPut(memberInfos, { allKeys: true })
     wllog('批量存入%d个成员信息', ids.length)
+
     return true
   }
 
@@ -620,6 +649,7 @@ class WeilaDB extends Dexie {
   public async putMemberInfo(memberInfo: WL_IDbMemberInfo): Promise<string> {
     const id = await this.group_members.put(memberInfo)
     wllog('存入成员信息', id)
+
     return id
   }
 
@@ -642,6 +672,7 @@ class WeilaDB extends Dexie {
       .where('groupId')
       .equals(groupId)
       .toArray()
+
     const groupMembers: WL_IDbGroupMember[] = []
     const count = memberInfos.length
 
@@ -650,6 +681,7 @@ class WeilaDB extends Dexie {
     })
 
     const userInfos = await this.getUserInfos(ids)
+
     const allIds = userInfos.map((value) => {
       return value.userId
     })
@@ -675,6 +707,7 @@ class WeilaDB extends Dexie {
     userId: number,
   ): Promise<WL_IDbMemberInfo | undefined> {
     const id = groupId + '_' + userId
+
     return this.group_members.get(id)
   }
 
@@ -685,6 +718,7 @@ class WeilaDB extends Dexie {
   ): Promise<WL_IDbGroupMember | undefined> {
     const id = groupId + '_' + userId
     const memberInfo = await this.group_members.get(id)
+
     if (!memberInfo) {
       return undefined
     }
@@ -699,19 +733,24 @@ class WeilaDB extends Dexie {
   @AsyncTime()
   public async getGroupAdminMembers(groupId: string): Promise<WL_IDbGroupMember[]> {
     const groupMembers: WL_IDbGroupMember[] = []
+
     const memberInfos: WL_IDbMemberInfo[] = await this.group_members
       .where('[groupId+memberType]')
       .equals([groupId, WL_IDbMemberType.ADMIN_MEMBER_TYPE])
       .toArray()
+
     const ids = memberInfos.map((value) => {
       return value.userId
     })
+
     const userInfos = await this.getUserInfos(ids)
+
     const allUserIds = userInfos.map((value) => {
       return value.userId
     })
 
     const count = memberInfos.length
+
     for (let i = 0; i < count; i++) {
       const groupMember = {} as WL_IDbGroupMember
       const index = allUserIds.indexOf(memberInfos[i].userId)
@@ -730,6 +769,7 @@ class WeilaDB extends Dexie {
   public convertFromFriendRaw(friendRaws: WL.Friend.IFriendInfo[]): WL_IDbFriendInfo[] {
     const count = friendRaws.length
     const friendInfos: WL_IDbFriendInfo[] = []
+
     for (let i = 0; i < count; i++) {
       const raw = friendRaws[i]
       const friendInfo = {} as WL_IDbFriendInfo
@@ -753,6 +793,7 @@ class WeilaDB extends Dexie {
   public async putFriendInfos(friendInfos: WL_IDbFriendInfo[]): Promise<boolean> {
     const ids = await this.friends.bulkPut(friendInfos, { allKeys: true })
     wllog('批量存入%d个好友:', ids.length)
+
     return true
   }
 
@@ -760,6 +801,7 @@ class WeilaDB extends Dexie {
   public async putFriendInfo(friendInfo: WL_IDbFriendInfo): Promise<number> {
     const id = await this.friends.put(friendInfo)
     wllog('存入单个好友:', id)
+
     return id
   }
 
@@ -782,12 +824,15 @@ class WeilaDB extends Dexie {
     const ids = friendInfos.map((value) => {
       return value.userId
     })
+
     const userInfos = await this.getUserInfos(ids)
+
     const allIds = userInfos.map((value) => {
       return value.userId
     })
 
     const count = friendInfos.length
+
     for (let i = 0; i < count; i++) {
       const friend: WL_IDbFriend = {} as WL_IDbFriend
       const index = allIds.indexOf(friendInfos[i].userId)
@@ -819,6 +864,7 @@ class WeilaDB extends Dexie {
   @AsyncTime()
   public async getFriend(userId: number): Promise<WL_IDbFriend | undefined> {
     const friendInfo = await this.friends.get(userId)
+
     if (!friendInfo) {
       return undefined
     }
@@ -839,6 +885,7 @@ class WeilaDB extends Dexie {
   public convertFromUserRaw(userRaws: WL.Common.IUserInfo[]): WL_IDbUserInfo[] {
     const count = userRaws.length
     const userInfos: WL_IDbUserInfo[] = []
+
     for (let i = 0; i < count; i++) {
       const raw = userRaws[i]
       const userInfo = {} as WL_IDbUserInfo
@@ -866,6 +913,7 @@ class WeilaDB extends Dexie {
   public async putUserInfos(userInfos: WL_IDbUserInfo[]): Promise<boolean> {
     const ids = await this.users.bulkPut(userInfos, { allKeys: true })
     wllog('批量存入%d个用户信息:', ids.length)
+
     return true
   }
 
@@ -874,6 +922,7 @@ class WeilaDB extends Dexie {
     wllog('存入单个用户信息:', this, userInfo)
     const id = await this.users.put(userInfo)
     wllog('存入单个用户信息:', id)
+
     return id
   }
 
@@ -886,6 +935,7 @@ class WeilaDB extends Dexie {
   public async getUserInfos(userIds?: number[]): Promise<WL_IDbUserInfo[]> {
     if (userIds) {
       const allUsers = await this.users.orderBy('userId').toArray()
+
       return allUsers.filter((value) => {
         return userIds.indexOf(value.userId) !== -1
       })
@@ -902,6 +952,7 @@ class WeilaDB extends Dexie {
   @AsyncTime()
   public async getMsgDataByComboIds(comboIds: string[]): Promise<WL_IDbMsgData[]> {
     const result = await this.msgDatas.bulkGet(comboIds)
+
     return result.filter((value) => {
       return value !== undefined
     })
@@ -930,11 +981,13 @@ class WeilaDB extends Dexie {
     const count = msgDataRaws.length
     const msgDatas: WL_IDbMsgData[] = []
     wllog('msgCount:', count)
+
     for (let i = 0; i < count; i++) {
       const raw = msgDataRaws[i]
       const msgData: WL_IDbMsgData = {} as WL_IDbMsgData
       msgData.created = Long.fromValue(raw.created ?? 0).toNumber()
       msgData.msgId = raw.msgId ?? 0
+
       if (isIndividualSessionType(raw.sessionType ?? 0) && raw.senderId !== myUserId) {
         msgData.senderId = raw.senderId ?? 0
         msgData.sessionId = (raw.senderId ?? 0).toString(10)
@@ -942,6 +995,7 @@ class WeilaDB extends Dexie {
         msgData.senderId = raw.senderId ?? 0
         msgData.sessionId = Long.fromValue(raw.sessionId ?? 0).toString(10)
       }
+
       msgData.sessionType = raw.sessionType ?? 0
       msgData.autoReply = raw.autoReply ?? 0
       msgData.tag = raw.tag ?? undefined
@@ -951,6 +1005,7 @@ class WeilaDB extends Dexie {
         case WL.Session.MessageType.MSG_TYPE_TEXT:
           {
             const textMsgData = TextMsgDataParser.decodeSessionTextMsg(raw.textData!)
+
             if (textMsgData !== undefined) {
               msgData.msgType = textMsgData.msgType
               msgData.textData = textMsgData.textData
@@ -961,6 +1016,7 @@ class WeilaDB extends Dexie {
               msgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR
             }
           }
+
           break
 
         case WL.Session.MessageType.MSG_TYPE_PTT:
@@ -980,6 +1036,7 @@ class WeilaDB extends Dexie {
               msgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR
             }
           }
+
           break
 
         case WL.Session.MessageType.MSG_TYPE_AUDIO:
@@ -990,6 +1047,7 @@ class WeilaDB extends Dexie {
             const audioData = {} as WL_IDbAudioData
             msgData.audioData = audioData
             const audioRaw = raw.audioData
+
             if (audioRaw?.payload && audioRaw.payload.length > 0) {
               audioData.data = audioRaw.payload.slice(0)
               audioData.audioUrl = undefined
@@ -1002,6 +1060,7 @@ class WeilaDB extends Dexie {
               msgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR
             }
           }
+
           break
 
         case WL.Session.MessageType.MSG_TYPE_SERVICE:
@@ -1009,6 +1068,7 @@ class WeilaDB extends Dexie {
             msgData.msgType = WL_IDbMsgDataType.WL_DB_MSG_DATA_SERVICE_TYPE
             msgData.serviceData = raw.serviceData ?? undefined
           }
+
           break
 
         case WL.Session.MessageType.MSG_TYPE_SWITCH:
@@ -1016,6 +1076,7 @@ class WeilaDB extends Dexie {
             msgData.msgType = WL_IDbMsgDataType.WL_DB_MSG_DATA_SWITCH_TYPE
             msgData.switchData = raw.switchData?.serviceData ?? undefined
           }
+
           break
 
         case WL.Session.MessageType.MSG_TYPE_REVOCATION:
@@ -1023,12 +1084,14 @@ class WeilaDB extends Dexie {
             msgData.msgType = WL_IDbMsgDataType.WL_DB_MSG_DATA_WITHDRAW_TYPE
             msgData.withdrawMsgId = raw.revocationMsgId ?? undefined
           }
+
           break
 
         default:
           {
             msgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR
           }
+
           break
       }
 
@@ -1045,8 +1108,10 @@ class WeilaDB extends Dexie {
     if (!msgDatas.length) {
       return []
     }
+
     const ids = await this.msgDatas.bulkPut(msgDatas, { allKeys: true })
     wllog('批量存入%d条消息:', ids.length)
+
     return ids
   }
 
@@ -1058,6 +1123,7 @@ class WeilaDB extends Dexie {
   @AsyncTime()
   public async delMsgDataByComboId(combo_id: string): Promise<void> {
     wllog('删除单个消息:', combo_id)
+
     return this.msgDatas.delete(combo_id)
   }
 
@@ -1065,10 +1131,13 @@ class WeilaDB extends Dexie {
   public async updateMsgDataStatus(combo_id: string, status: WL_IDbMsgDataStatus): Promise<string> {
     return this.transaction<string>('rw', this.msgDatas, async () => {
       const msgData = await this.msgDatas.get(combo_id)
+
       if (!msgData) {
         throw new Error(`消息不存在: ${combo_id}`)
       }
+
       msgData.status = status
+
       return this.msgDatas.put(msgData)
     })
   }
@@ -1083,9 +1152,11 @@ class WeilaDB extends Dexie {
     sessionType: number,
   ): Promise<void> {
     const key = `${sessionId}_${sessionType}`
+
     if (this.cleanedWithdrawSessions.has(key)) {
       return
     }
+
     this.cleanedWithdrawSessions.add(key)
 
     const controls = await this.msgDatas
@@ -1102,11 +1173,13 @@ class WeilaDB extends Dexie {
       for (const control of controls) {
         if (control.withdrawMsgId) {
           const target = await this.getMsgDataByMsgId(sessionId, sessionType, control.withdrawMsgId)
+
           if (target) {
             target.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_WITHDRAW
             await this.msgDatas.put(target)
           }
         }
+
         await this.msgDatas.delete(control.combo_id)
       }
     })
@@ -1120,6 +1193,7 @@ class WeilaDB extends Dexie {
   ): Promise<WL_IDbMsgData[]> {
     await this.applyWithdrawControlMessages(sessionId, sessionType)
     wllog('获取最后%d条消息:', count)
+
     const result = await this.msgDatas
       .orderBy('created')
       .and((x) => {
@@ -1132,6 +1206,7 @@ class WeilaDB extends Dexie {
       .reverse()
       .limit(count)
       .toArray()
+
     return result
   }
 
@@ -1143,10 +1218,13 @@ class WeilaDB extends Dexie {
     count: number,
   ): Promise<WL_IDbMsgData[]> {
     await this.applyWithdrawControlMessages(sessionId, sessionType)
+
     if (fromMsgId < count) {
       count = fromMsgId
     }
+
     wllog('获取从%d获取%d条消息:', fromMsgId, count)
+
     const result = await this.msgDatas
       .orderBy('created')
       .and((x) => {
@@ -1160,6 +1238,7 @@ class WeilaDB extends Dexie {
       .reverse()
       .limit(count)
       .toArray()
+
     return result
   }
 
@@ -1208,6 +1287,7 @@ class WeilaDB extends Dexie {
       .where('[sessionId+sessionType]')
       .equals([sessionId, sessionType])
       .delete()
+
     wllog('批量删除消息%d个', deletedNum)
   }
 
@@ -1222,6 +1302,7 @@ class WeilaDB extends Dexie {
         return x.sessionId === sessionId && x.sessionType === sessionType
       })
       .last()
+
     return msg
   }
 
@@ -1229,6 +1310,7 @@ class WeilaDB extends Dexie {
   public async putNotification(notification: WL_IDbNotification): Promise<number> {
     const id = await this.notifications.put(notification)
     wllog('存入通知消息:', id)
+
     return id
   }
 
@@ -1236,6 +1318,7 @@ class WeilaDB extends Dexie {
   public async putNotifications(notifications: WL_IDbNotification[]): Promise<number[]> {
     const ids = await this.notifications.bulkPut(notifications, { allKeys: true })
     wllog('批量存入%d条通知消息:', ids.length)
+
     return ids
   }
 
@@ -1247,7 +1330,9 @@ class WeilaDB extends Dexie {
       .where('notificationType')
       .anyOf(notificationTypes)
       .sortBy('createTime')
+
     notifications.reverse()
+
     return notifications
   }
 
@@ -1321,15 +1406,18 @@ class WeilaDB extends Dexie {
     serviceSessionInfo.service = this.convertFromServiceRaw(serviceAttribute)
     serviceSessionInfo.staffs = []
     const staffs = this.convertFromStaffRaws(staffAttributes)
+
     const userInfos = this.convertFromUserRaw(
       staffAttributes.map((value) => {
         return value.userInfo ?? {}
       }),
     )
+
     serviceSessionInfo.staffs = staffs.map((value, index) => {
       const staffInfo = {} as WL_IDbServiceStaffInfo
       staffInfo.userData = userInfos[index]
       staffInfo.staff = value
+
       return staffInfo
     })
     serviceSessionInfo.customer = this.convertFromUserRaw([customerUserInfo])[0]
@@ -1363,6 +1451,7 @@ class WeilaDB extends Dexie {
     service.name = serviceRaw.name ?? ''
     service.url = serviceRaw.url ?? ''
     service.createdTime = Long.fromValue(serviceRaw.created ?? 0).toNumber()
+
     return service
   }
 
@@ -1384,6 +1473,7 @@ class WeilaDB extends Dexie {
   @AsyncTime()
   public async getServices(serviceIds: number[]): Promise<WL_IDbService[]> {
     const result = await this.service.bulkGet(serviceIds)
+
     return result.filter((value) => {
       return value !== undefined
     })
@@ -1404,6 +1494,7 @@ class WeilaDB extends Dexie {
       dbStaff.admin = value.admin ?? 0
       dbStaff.isOperator = value.operator === 1
       dbStaff.createdTime = Long.fromValue(value.created ?? 0).toNumber()
+
       return dbStaff
     })
   }
@@ -1421,6 +1512,7 @@ class WeilaDB extends Dexie {
   @AsyncTime()
   public async getServiceStaff(userId: number): Promise<WL_IDbServiceStaffInfo | undefined> {
     const staff = await this.service_staffs.get(userId)
+
     if (!staff) {
       return undefined
     }
@@ -1428,6 +1520,7 @@ class WeilaDB extends Dexie {
     const staffInfo = {} as WL_IDbServiceStaffInfo
     staffInfo.staff = staff
     const userData = await this.users.get(staff.userId)
+
     if (userData) {
       staffInfo.userData = userData
     }
@@ -1445,9 +1538,11 @@ class WeilaDB extends Dexie {
         const staffInfo = {} as WL_IDbServiceStaffInfo
         staffInfo.staff = staff
         const userData = await this.users.get(staff.userId)
+
         if (userData) {
           staffInfo.userData = userData
         }
+
         staffInfos.push(staffInfo)
       }
     }

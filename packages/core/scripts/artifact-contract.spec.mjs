@@ -24,12 +24,14 @@ const baseline = {
 void test('parseEsmExports reads named and declared exports', () => {
   const source =
     'export{WeilaCore,setConfigData as configure};export const WL_BUILD_ID="x";export function helper(){}'
+
   assert.deepEqual(parseEsmExports(source), ['WL_BUILD_ID', 'WeilaCore', 'configure', 'helper'])
 })
 
 void test('parseDtsExports reads interfaces, types, and re-exports', () => {
   const source =
     "export interface WL_Options {}\nexport type ID = string\nexport { WeilaCore } from './main/weila_core'\nexport type { WL_InitOptions } from './main/weila_core'"
+
   assert.deepEqual(parseDtsExports(source), ['ID', 'WL_InitOptions', 'WL_Options', 'WeilaCore'])
 })
 
@@ -39,6 +41,7 @@ void test('compareContract ignores additions and reports removals', () => {
     exports: [...baseline.exports, 'WL_BUILD_ID'],
     files: { ...baseline.files, 'extra.mjs': { bytes: 1, sha256: 'c' } },
   }
+
   assert.deepEqual(compareContract(baseline, current), [])
 
   const missing = {
@@ -48,6 +51,7 @@ void test('compareContract ignores additions and reports removals', () => {
     assets: [],
     files: { 'weilasdk.mjs': baseline.files['weilasdk.mjs'] },
   }
+
   assert.deepEqual(compareContract(baseline, missing), [
     'missing file assets/opuslibs.wasm',
     'missing export setConfigData',
@@ -58,6 +62,7 @@ void test('compareContract ignores additions and reports removals', () => {
 
 void test('collectArtifacts refuses a dist without the entry', () => {
   const directory = mkdtempSync(join(tmpdir(), 'weila-contract-'))
+
   try {
     assert.throws(() => collectArtifacts(directory), /Missing .*weilasdk\.mjs/)
   } finally {

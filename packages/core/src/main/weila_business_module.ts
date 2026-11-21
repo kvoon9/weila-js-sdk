@@ -56,6 +56,7 @@ export default class WLBusinessModule {
                 : null,
             )
           }
+
           break
 
         case WL.Business.BusinessCommandId.BUSINESS_COMMAND_COMMON_GET_STAFF_INVITE:
@@ -68,6 +69,7 @@ export default class WLBusinessModule {
                 : null,
             )
           }
+
           break
 
         case WL.Business.BusinessCommandId.BUSINESS_COMMAND_STAFF_SEARCH_STAFFS:
@@ -80,6 +82,7 @@ export default class WLBusinessModule {
                 : null,
             )
           }
+
           break
 
         case WL.Business.BusinessCommandId.BUSINESS_COMMAND_STAFF_RESET_SESSION:
@@ -95,6 +98,7 @@ export default class WLBusinessModule {
           {
             this.coreInterface.rspPbMsg(serviceHead.seq ?? 0, serviceHead.resultCode ?? 0, true)
           }
+
           break
       }
     } else if (serviceHead.commandType === WL.Service.CommandType.COMMAND_NOTIFY) {
@@ -139,6 +143,7 @@ export default class WLBusinessModule {
               })()
             }
           }
+
           break
 
         case WL.Business.BusinessCommandId.BUSINESS_COMMAND_COMMON_STAFF_INVITE:
@@ -177,6 +182,7 @@ export default class WLBusinessModule {
               staffInvite,
             )
           }
+
           break
 
         case WL.Business.BusinessCommandId.BUSINESS_COMMAND_COMMON_ANSWER_STAFF_INVITE:
@@ -195,6 +201,7 @@ export default class WLBusinessModule {
               commonAnswerStaffInvite,
             )
           }
+
           break
 
         case WL.Business.BusinessCommandId.BUSINESS_COMMAND_STAFF_ACCEPT_SESSION:
@@ -212,6 +219,7 @@ export default class WLBusinessModule {
               staffSessionInfo,
             )
           }
+
           break
 
         case WL.Business.BusinessCommandId.BUSINESS_COMMAND_STAFF_EXIT_SESSION:
@@ -229,6 +237,7 @@ export default class WLBusinessModule {
               staffSessionInfo,
             )
           }
+
           break
 
         case WL.Business.BusinessCommandId.BUSINESS_COMMAND_STAFF_CLOSE_SESSION:
@@ -246,6 +255,7 @@ export default class WLBusinessModule {
               staffSessionInfo,
             )
           }
+
           break
 
         case WL.Business.BusinessCommandId.BUSINESS_COMMAND_STAFF_SESSION_INVITE:
@@ -266,6 +276,7 @@ export default class WLBusinessModule {
               staffSessionInvite,
             )
           }
+
           break
 
         case WL.Business.BusinessCommandId.BUSINESS_COMMAND_STAFF_ANSWER_SESSION_INVITE:
@@ -298,6 +309,7 @@ export default class WLBusinessModule {
               staffAnswerSessionInvite,
             )
           }
+
           break
 
         case WL.Business.BusinessCommandId.BUSINESS_COMMAND_STAFF_REMOVE_SESSION_STAFFS:
@@ -311,6 +323,7 @@ export default class WLBusinessModule {
               Long.fromValue(ntf.sessionId ?? 0).toString(10),
             )
           }
+
           break
       }
     }
@@ -322,8 +335,10 @@ export default class WLBusinessModule {
     const buildMsgRet = WeilaPbBusinessWrapper.buildCommonGetSessionsReq([
       Long.fromValue(sessionId),
     ])
+
     if (buildMsgRet.resultCode === 0) {
       let dbUserInfos = [] as WL_IDbUserInfo[]
+
       const rsp = (await this.coreInterface.sendPbMsg(
         buildMsgRet,
       )) as WL.Business.IRspCommonGetSessions
@@ -343,6 +358,7 @@ export default class WLBusinessModule {
         if (customer) {
           dbUserInfos.push(customer)
         }
+
         await WeilaDB.getInstance().putUserInfos(dbUserInfos)
         await WeilaDB.getInstance().putServiceStaffs(
           WeilaDB.getInstance().convertFromStaffRaws(rawSession.staffAttributes ?? []),
@@ -360,6 +376,7 @@ export default class WLBusinessModule {
 
   public async initService(dbSessionList: WL_IDbSession[]): Promise<boolean> {
     let serviceSessionInfos = [] as WL_IDbServiceSessionInfo[]
+
     if (dbSessionList.length === 0) {
       return true
     }
@@ -373,10 +390,12 @@ export default class WLBusinessModule {
     })
 
     const buildMsgRet = WeilaPbBusinessWrapper.buildCommonGetSessionsReq(sessionIds_long)
+
     if (buildMsgRet.resultCode === 0) {
       const rsp = (await this.coreInterface.sendPbMsg(
         buildMsgRet,
       )) as WL.Business.IRspCommonGetSessions
+
       const services = [] as WL_IDbService[]
       let dbUserInfos = [] as WL_IDbUserInfo[]
       let allStaffs = [] as WL_IDbServiceStaff[]
@@ -394,10 +413,13 @@ export default class WLBusinessModule {
 
       for (let dbSession of dbSessionList) {
         const idx = validServiceSessionIds.indexOf(dbSession.sessionId)
+
         if (idx !== -1) {
           const serviceSessionRaw = sessions[idx]
+
           const serviceSessionInfo =
             WeilaDB.getInstance().convertFromServiceSessionRaw(serviceSessionRaw)
+
           services.push(serviceSessionInfo.service)
           allStaffs.push(
             ...serviceSessionInfo.staffs.map((value) => {
@@ -414,6 +436,7 @@ export default class WLBusinessModule {
           if (customer) {
             dbUserInfos.push(customer)
           }
+
           serviceSessionInfos.push(serviceSessionInfo)
 
           dbSession.latestUpdate = serviceSessionInfo.serviceSession.updatedTime
@@ -446,6 +469,7 @@ export default class WLBusinessModule {
       await WeilaDB.getInstance().putServiceStaffs(allStaffs)
       await WeilaDB.getInstance().putServices(services)
       await WeilaDB.getInstance().putSessions(dbSessionList)
+
       return true
     }
 
@@ -462,9 +486,11 @@ export default class WLBusinessModule {
       userIds,
       content,
     )
+
     if (buildMsgRet.resultCode === 0) {
       return this.coreInterface.sendPbMsg(buildMsgRet)
     }
+
     return Promise.reject(new Error('创建消息出错'))
   }
 
@@ -478,19 +504,24 @@ export default class WLBusinessModule {
       invitorId,
       status,
     )
+
     if (buildMsgRet.resultCode === 0) {
       return this.coreInterface.sendPbMsg(buildMsgRet)
     }
+
     return Promise.reject(new Error('创建消息出错'))
   }
 
   public async commonGetStaffInvite(latestUpdate: number): Promise<WL_StaffInvite[]> {
     const buildMsgRet = WeilaPbBusinessWrapper.buildCommonGetStaffInviteReq(latestUpdate)
+
     if (buildMsgRet.resultCode === 0) {
       const staffInvites = [] as WL_StaffInvite[]
+
       const rsp = (await this.coreInterface.sendPbMsg(
         buildMsgRet,
       )) as WL.Business.IRspCommonGetStaffInvite
+
       if (rsp.invites) {
         for (let invite of rsp.invites) {
           const serviceAttribute = invite.serviceAttribute
@@ -520,11 +551,13 @@ export default class WLBusinessModule {
 
       return staffInvites
     }
+
     return Promise.reject(new Error('创建消息出错'))
   }
 
   public async commonStaffDelete(serviceId: number, userId: number): Promise<boolean> {
     const buildMsgRet = WeilaPbBusinessWrapper.buildCommonStaffDeleteReq(serviceId, userId)
+
     if (buildMsgRet.resultCode === 0) {
       return this.coreInterface.sendPbMsg(buildMsgRet)
     }
@@ -534,6 +567,7 @@ export default class WLBusinessModule {
 
   public async staffAcceptSession(sessionId: string): Promise<boolean> {
     const buildMsgRet = WeilaPbBusinessWrapper.buildStaffAcceptSessionReq(Long.fromValue(sessionId))
+
     if (buildMsgRet.resultCode === 0) {
       return this.coreInterface.sendPbMsg(buildMsgRet)
     }
@@ -543,6 +577,7 @@ export default class WLBusinessModule {
 
   public async staffExitSession(sessionId: string): Promise<boolean> {
     const buildMsgRet = WeilaPbBusinessWrapper.buildStaffExitSessionReq(Long.fromValue(sessionId))
+
     if (buildMsgRet.resultCode === 0) {
       return this.coreInterface.sendPbMsg(buildMsgRet)
     }
@@ -552,6 +587,7 @@ export default class WLBusinessModule {
 
   public async staffCloseSession(sessionId: string): Promise<boolean> {
     const buildMsgRet = WeilaPbBusinessWrapper.buildStaffCloseSessionReq(Long.fromValue(sessionId))
+
     if (buildMsgRet.resultCode === 0) {
       return this.coreInterface.sendPbMsg(buildMsgRet)
     }
@@ -569,6 +605,7 @@ export default class WLBusinessModule {
       userIds,
       content,
     )
+
     if (buildMsgRet.resultCode === 0) {
       return this.coreInterface.sendPbMsg(buildMsgRet)
     }
@@ -584,6 +621,7 @@ export default class WLBusinessModule {
       Long.fromValue(sessionId),
       status,
     )
+
     if (buildMsgRet.resultCode === 0) {
       return this.coreInterface.sendPbMsg(buildMsgRet)
     }
@@ -596,6 +634,7 @@ export default class WLBusinessModule {
       Long.fromValue(sessionId),
       staffIds,
     )
+
     if (buildMsgRet.resultCode === 0) {
       return this.coreInterface.sendPbMsg(buildMsgRet)
     }
@@ -615,8 +654,10 @@ export default class WLBusinessModule {
       pageSize,
       staffClass,
     )
+
     if (buildMsgRet.resultCode === 0) {
       const rsp: WL.Business.IRspStaffSearchStaffs = await this.coreInterface.sendPbMsg(buildMsgRet)
+
       if (rsp.staffs) {
         const staffRaws = rsp.staffs.filter(
           (
@@ -627,6 +668,7 @@ export default class WLBusinessModule {
         )
 
         const staffs = WeilaDB.getInstance().convertFromStaffRaws(staffRaws)
+
         const userInfos = WeilaDB.getInstance().convertFromUserRaw(
           staffRaws.map((value) => {
             return value.userInfo
@@ -640,6 +682,7 @@ export default class WLBusinessModule {
           const staffInfo = {} as WL_IDbServiceStaffInfo
           staffInfo.userData = userInfos[index]
           staffInfo.staff = value
+
           return staffInfo
         })
       }
@@ -652,6 +695,7 @@ export default class WLBusinessModule {
 
   public async staffResetSession(sessionId: string): Promise<boolean> {
     const buildMsgRet = WeilaPbBusinessWrapper.buildStaffResetSessionReq(Long.fromValue(sessionId))
+
     if (buildMsgRet.resultCode === 0) {
       return this.coreInterface.sendPbMsg(buildMsgRet)
     }

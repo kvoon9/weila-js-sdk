@@ -8,6 +8,7 @@ class WeilaPbBusinessWrapper {
     const businessMessage = new WL.Business.BusinessMessage()
     businessMessage.reqCommonGetSessions = new WL.Business.ReqCommonGetSessions()
     businessMessage.reqCommonGetSessions.sessionIds = sessionIds
+
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_BUSINESS,
       WL.Business.BusinessCommandId.BUSINESS_COMMAND_COMMON_GET_SESSION,
@@ -26,6 +27,7 @@ class WeilaPbBusinessWrapper {
     businessMessage.reqCommonStaffInvite.userIds = userIds
     businessMessage.reqCommonStaffInvite.serviceId = serviceId
     businessMessage.reqCommonStaffInvite.content = content
+
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_BUSINESS,
       WL.Business.BusinessCommandId.BUSINESS_COMMAND_COMMON_STAFF_INVITE,
@@ -44,6 +46,7 @@ class WeilaPbBusinessWrapper {
     businessMessage.reqCommonAnswerStaffInvite.serviceId = serviceId
     businessMessage.reqCommonAnswerStaffInvite.invitorId = invitorId
     businessMessage.reqCommonAnswerStaffInvite.status = status
+
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_BUSINESS,
       WL.Business.BusinessCommandId.BUSINESS_COMMAND_COMMON_ANSWER_STAFF_INVITE,
@@ -56,6 +59,7 @@ class WeilaPbBusinessWrapper {
     const businessMessage = new WL.Business.BusinessMessage()
     businessMessage.reqCommonGetStaffInvite = new WL.Business.ReqCommonGetStaffInvite()
     businessMessage.reqCommonGetStaffInvite.latestUpdated = Long.fromValue(latestUpdated)
+
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_BUSINESS,
       WL.Business.BusinessCommandId.BUSINESS_COMMAND_COMMON_GET_STAFF_INVITE,
@@ -68,6 +72,7 @@ class WeilaPbBusinessWrapper {
     const businessMessage = new WL.Business.BusinessMessage()
     businessMessage.reqCommonStaffExit = new WL.Business.ReqCommonStaffExit()
     businessMessage.reqCommonStaffExit.serviceId = serviceId
+
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_BUSINESS,
       WL.Business.BusinessCommandId.BUSINESS_COMMAND_COMMON_STAFF_EXIT,
@@ -81,6 +86,7 @@ class WeilaPbBusinessWrapper {
     businessMessage.reqCommonStaffDelete = new WL.Business.ReqCommonStaffDelete()
     businessMessage.reqCommonStaffDelete.serviceId = serviceId
     businessMessage.reqCommonStaffDelete.userId = userId
+
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_BUSINESS,
       WL.Business.BusinessCommandId.BUSINESS_COMMAND_COMMON_STAFF_DELETE,
@@ -94,6 +100,7 @@ class WeilaPbBusinessWrapper {
     const businessMessage = new WL.Business.BusinessMessage()
     businessMessage.reqStaffAcceptSession = new WL.Business.ReqStaffAcceptSession()
     businessMessage.reqStaffAcceptSession.sessionId = sessionId
+
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_BUSINESS,
       WL.Business.BusinessCommandId.BUSINESS_COMMAND_STAFF_ACCEPT_SESSION,
@@ -106,6 +113,7 @@ class WeilaPbBusinessWrapper {
     const businessMessage = new WL.Business.BusinessMessage()
     businessMessage.reqStaffExitSession = new WL.Business.ReqStaffExitSession()
     businessMessage.reqStaffExitSession.sessionId = sessionId
+
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_BUSINESS,
       WL.Business.BusinessCommandId.BUSINESS_COMMAND_STAFF_EXIT_SESSION,
@@ -118,6 +126,7 @@ class WeilaPbBusinessWrapper {
     const businessMessage = new WL.Business.BusinessMessage()
     businessMessage.reqStaffCloseSession = new WL.Business.ReqStaffCloseSession()
     businessMessage.reqStaffCloseSession.sessionId = sessionId
+
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_BUSINESS,
       WL.Business.BusinessCommandId.BUSINESS_COMMAND_STAFF_CLOSE_SESSION,
@@ -136,6 +145,7 @@ class WeilaPbBusinessWrapper {
     businessMessage.reqStaffSessionInvite.sessionId = sessionId
     businessMessage.reqStaffSessionInvite.staffIds = staffIds
     businessMessage.reqStaffSessionInvite.content = content
+
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_BUSINESS,
       WL.Business.BusinessCommandId.BUSINESS_COMMAND_STAFF_SESSION_INVITE,
@@ -149,6 +159,7 @@ class WeilaPbBusinessWrapper {
     businessMessage.reqStaffAnswerSessionInvite = new WL.Business.ReqStaffAnswerSessionInvite()
     businessMessage.reqStaffAnswerSessionInvite.sessionId = sessionId
     businessMessage.reqStaffAnswerSessionInvite.status = status
+
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_BUSINESS,
       WL.Business.BusinessCommandId.BUSINESS_COMMAND_STAFF_ANSWER_SESSION_INVITE,
@@ -165,6 +176,7 @@ class WeilaPbBusinessWrapper {
     businessMessage.reqStaffRemoveSessionStaff = new WL.Business.ReqStaffRemoveSessionStaff()
     businessMessage.reqStaffRemoveSessionStaff.sessionId = sessionId
     businessMessage.reqStaffRemoveSessionStaff.staffIds = staffIds
+
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_BUSINESS,
       WL.Business.BusinessCommandId.BUSINESS_COMMAND_STAFF_REMOVE_SESSION_STAFFS,
@@ -185,6 +197,7 @@ class WeilaPbBusinessWrapper {
     businessMessage.reqStaffSearchStaffs.class = staffClass
     businessMessage.reqStaffSearchStaffs.pageIndex = pageIndex
     businessMessage.reqStaffSearchStaffs.pageSize = pageSize
+
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_BUSINESS,
       WL.Business.BusinessCommandId.BUSINESS_COMMAND_STAFF_SEARCH_STAFFS,

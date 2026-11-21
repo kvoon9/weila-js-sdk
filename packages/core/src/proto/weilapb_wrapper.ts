@@ -12,6 +12,7 @@ class BuildWeilaMsg {
   ): WLBuildMsgRet {
     const weilaMsgHeader = WeilaMsgHeader.buildWeilaMsgHeader(serviceId, commandId, 0)
     const buildRet: WLBuildMsgRet = { resultCode: 0 }
+
     const serviceMsg = new WL.Service.ServiceMessage({
       serviceHead: {
         commandId: commandId,
@@ -30,52 +31,61 @@ class BuildWeilaMsg {
         {
           serviceMsg.userMessage = msgInstance
         }
+
         break
 
       case WL.Service.ServiceID.SERVICE_BUSINESS:
         {
           serviceMsg.businessMessage = msgInstance
         }
+
         break
 
       case WL.Service.ServiceID.SERVICE_FRIEND:
         {
           serviceMsg.friendMessage = msgInstance
         }
+
         break
 
       case WL.Service.ServiceID.SERVICE_GROUP:
         {
           serviceMsg.groupMessage = msgInstance
         }
+
         break
 
       case WL.Service.ServiceID.SERVICE_LOCATION:
         {
           serviceMsg.locationMessage = msgInstance
         }
+
         break
 
       case WL.Service.ServiceID.SERVICE_SESSION:
         {
           serviceMsg.sessionMessage = msgInstance
         }
+
         break
 
       case WL.Service.ServiceID.SERVICE_LOGIN:
         {
           serviceMsg.loginMessage = msgInstance
         }
+
         break
 
       case WL.Service.ServiceID.SERVICE_SYSTEM:
         {
           serviceMsg.systemMessage = msgInstance
         }
+
         break
 
       default: {
         buildRet.resultCode = -1
+
         return buildRet
       }
     }
@@ -87,6 +97,7 @@ class BuildWeilaMsg {
     buildRet.weilaMsgHeader = weilaMsgHeader.getValue()
 
     const weilaMsgHeaderBuf = weilaMsgHeader.serializeToBuffer()
+
     for (offset = 0; offset < weilaMsgHeader.value.length; offset++) {
       if (offset < WeilaMsgHeader.msgHeaderLen) {
         buildRet.reqData[offset] = weilaMsgHeaderBuf[offset]

@@ -33,6 +33,7 @@ export default class WLUserModule {
               serverMessage.userMessage?.rspGetUserInfo,
             )
           }
+
           break
 
         case WL.User.UserCommandId.USER_COMMAND_SET_CONFIG:
@@ -43,6 +44,7 @@ export default class WLUserModule {
               serverMessage.userMessage?.rspSetConfig,
             )
           }
+
           break
       }
     } else if (serviceHead.commandType === WL.Service.CommandType.COMMAND_NOTIFY) {
@@ -51,10 +53,12 @@ export default class WLUserModule {
 
   public async searchUserByNumber(key: string): Promise<WL_IDbUserInfo[]> {
     const buildRet = WeilaPbUserWrapper.buildGetUserInfoReq(key)
+
     if (buildRet.resultCode === 0) {
       const rspGetUserInfo = (await this.coreInterface.sendPbMsg(
         buildRet,
       )) as WL.User.IRspGetUserInfo
+
       const dbUserList: WL_IDbUserInfo[] = []
 
       if (rspGetUserInfo.userInfoList) {

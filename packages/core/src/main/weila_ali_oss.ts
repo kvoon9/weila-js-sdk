@@ -68,14 +68,19 @@ class AliOssHelper {
       const weilaTokenItem = await WeilaDB.getInstance().getSettingItem(
         WL_IDbSettingID.SETTING_LOGIN_TOKEN,
       )
+
       const weilaToken = weilaTokenItem?.data ?? ''
+
       let response = await fetchWithTimeout('/v1/aliyun/sts?access-token=' + weilaToken, {
         method: 'GET',
       })
+
       const keyData: any = await response.json()
+
       if (keyData.errcode === 0) {
         wllog('关键数据:', keyData)
         this.expireTimeout = keyData.data.Expiration
+
         return {
           accessKeyId: keyData.data.AccessKeyId,
           accessKeySecret: keyData.data.AccessKeySecret,
@@ -144,6 +149,7 @@ class AliOssHelper {
 
     // get user session
     let userStr = 'unknown_'
+
     if (isIndividualSessionType(sessionType)) {
       userStr = 'user_' + sessionId
     } else if (isGroupSessionType(sessionType)) {
@@ -163,7 +169,9 @@ class AliOssHelper {
       senderId +
       '-seq_' +
       this.uploadSeq++
+
     let extResult = fileName.match(/\.([a-z0-9]{1,6})$/)
+
     if (extResult && extResult.length >= 2) {
       url += extResult[0]
     } else {
@@ -179,6 +187,7 @@ class AliOssHelper {
 
   private rejectQueuedUploads(reason: any): void {
     this.isUploading = false
+
     for (const uploadParams of this.uploadingQueue.splice(0)) {
       uploadParams.reject(reason)
     }

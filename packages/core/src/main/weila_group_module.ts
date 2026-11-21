@@ -53,6 +53,7 @@ export default class WLGroupModule {
               serverMessage.groupMessage?.rspGetGroupVersion,
             )
           }
+
           break
 
         case WL.Group.GroupCommandId.GROUP_COMMAND_GET_GROUPATTRIBUTE:
@@ -63,6 +64,7 @@ export default class WLGroupModule {
               serverMessage.groupMessage?.rspGetGroupAttribute,
             )
           }
+
           break
 
         case WL.Group.GroupCommandId.GROUP_COMMAND_GET_GROUPINFO:
@@ -73,6 +75,7 @@ export default class WLGroupModule {
               serverMessage.groupMessage?.rspGetGroupInfo,
             )
           }
+
           break
 
         case WL.Group.GroupCommandId.GROUP_COMMAND_GET_MEMBER_USERINFO:
@@ -83,6 +86,7 @@ export default class WLGroupModule {
               serverMessage.groupMessage?.rspGetMemberUserInfo,
             )
           }
+
           break
 
         case WL.Group.GroupCommandId.GROUP_COMMAND_BROADCAST:
@@ -93,24 +97,28 @@ export default class WLGroupModule {
               serverMessage.groupMessage?.rspGroupBroadcast,
             )
           }
+
           break
 
         case WL.Group.GroupCommandId.GROUP_COMMAND_DELETE_GROUP:
           {
             this.coreInterface.rspPbMsg(serviceHead.seq ?? 0, serviceHead.resultCode ?? 0, true)
           }
+
           break
 
         case WL.Group.GroupCommandId.GROUP_COMMAND_ANSWER_GROUP_INVITE:
           {
             this.coreInterface.rspPbMsg(serviceHead.seq ?? 0, serviceHead.resultCode ?? 0, true)
           }
+
           break
 
         case WL.Group.GroupCommandId.GROUP_COMMAND_DELETE_MEMBER:
           {
             this.coreInterface.rspPbMsg(serviceHead.seq ?? 0, serviceHead.resultCode ?? 0, true)
           }
+
           break
         case WL.Group.GroupCommandId.GROUP_COMMAND_GET_ONLINE_MEMBER:
           {
@@ -120,6 +128,7 @@ export default class WLGroupModule {
               serverMessage.groupMessage?.rspGetGroupOnlineMember,
             )
           }
+
           break
         case WL.Group.GroupCommandId.GROUP_COMMAND_CREATE_GROUP:
           {
@@ -129,11 +138,13 @@ export default class WLGroupModule {
               serverMessage.groupMessage?.rspCreateGroup,
             )
           }
+
           break
         case WL.Group.GroupCommandId.GROUP_COMMAND_ANSWER_GROUP_JOIN:
           {
             this.coreInterface.rspPbMsg(serviceHead.seq ?? 0, serviceHead.resultCode ?? 0, true)
           }
+
           break
 
         case WL.Group.GroupCommandId.GROUP_COMMAND_CHANGE_GROUPATTRIBUTE:
@@ -144,6 +155,7 @@ export default class WLGroupModule {
               serverMessage.groupMessage?.rspChangeGroupAttribute,
             )
           }
+
           break
 
         case WL.Group.GroupCommandId.GROUP_COMMAND_GET_SUB_GROUPATTRIBUTE:
@@ -154,6 +166,7 @@ export default class WLGroupModule {
               serverMessage.groupMessage?.rspGetSubGroupAttribute,
             )
           }
+
           break
 
         case WL.Group.GroupCommandId.GROUP_COMMAND_GROUP_INVITE:
@@ -164,6 +177,7 @@ export default class WLGroupModule {
               serverMessage.groupMessage ? serverMessage.groupMessage.rspGroupInvite : null,
             )
           }
+
           break
 
         case WL.Group.GroupCommandId.GROUP_COMMAND_ADD_SUB_MEMBER:
@@ -174,10 +188,12 @@ export default class WLGroupModule {
               serverMessage.groupMessage ? serverMessage.groupMessage.rspAddSubMember : null,
             )
           }
+
           break
       }
     } else if (serviceHead.commandType === WL.Service.CommandType.COMMAND_NOTIFY) {
       wllog('WLGroupModule', serverMessage)
+
       switch (serviceHead.commandId) {
         case WL.Group.GroupCommandId.GROUP_COMMAND_GROUP_INVITE:
           {
@@ -186,6 +202,7 @@ export default class WLGroupModule {
             if (!ntfGroupInvite) break
 
             const groupInviteInfo = {} as WL_GroupInviteInfo
+
             ;(async () => {
               const groupId = Long.fromValue(ntfGroupInvite.groupId ?? 0).toString(10)
               groupInviteInfo.groupInfo = await this.getGroupAttribute(groupId)
@@ -210,6 +227,7 @@ export default class WLGroupModule {
               )
             })()
           }
+
           break
 
         case WL.Group.GroupCommandId.GROUP_COMMAND_GROUP_JOIN:
@@ -244,6 +262,7 @@ export default class WLGroupModule {
               )
             })()
           }
+
           break
 
         case WL.Group.GroupCommandId.GROUP_COMMAND_CHANGE_GROUPATTRIBUTE:
@@ -261,57 +280,75 @@ export default class WLGroupModule {
               .getGroup(groupId)
               .then(async (value) => {
                 const groupInfo = value as WL_IDbGroup
+
                 if (ntfChangeGroupAttr.version !== undefined) {
                   groupInfo.version = ntfChangeGroupAttr.version ?? 0
                 }
+
                 if (ntfChangeGroupAttr.memberVersion !== undefined) {
                   groupInfo.memberVersion = ntfChangeGroupAttr.memberVersion ?? 0
                 }
+
                 if (ntfChangeGroupAttr.name !== undefined) {
                   groupInfo.name = ntfChangeGroupAttr.name ?? ''
                 }
+
                 if (ntfChangeGroupAttr.avatar !== undefined) {
                   groupInfo.avatar = ntfChangeGroupAttr.avatar ?? ''
                 }
+
                 if (ntfChangeGroupAttr.ownerId !== undefined) {
                   groupInfo.ownerId = ntfChangeGroupAttr.ownerId ?? 0
                 }
+
                 if (ntfChangeGroupAttr.type !== undefined) {
                   groupInfo.groupType = ntfChangeGroupAttr.type ?? 0
                 }
+
                 if (ntfChangeGroupAttr.desc !== undefined) {
                   groupInfo.desc = ntfChangeGroupAttr.desc ?? ''
                 }
+
                 if (ntfChangeGroupAttr.home !== undefined) {
                   groupInfo.home = ntfChangeGroupAttr.home ?? ''
                 }
+
                 if (ntfChangeGroupAttr.latitude !== undefined) {
                   groupInfo.latitude = ntfChangeGroupAttr.latitude ?? ''
                 }
+
                 if (ntfChangeGroupAttr.longitude !== undefined) {
                   groupInfo.longitude = ntfChangeGroupAttr.longitude ?? ''
                 }
+
                 if (ntfChangeGroupAttr.publicType !== undefined) {
                   groupInfo.publicType = ntfChangeGroupAttr.publicType ?? 0
                 }
+
                 if (ntfChangeGroupAttr.authType !== undefined) {
                   groupInfo.authType = ntfChangeGroupAttr.authType ?? 0
                 }
+
                 if (ntfChangeGroupAttr.class !== undefined) {
                   groupInfo.groupClass = ntfChangeGroupAttr.class ?? 0
                 }
+
                 if (ntfChangeGroupAttr.memberLimit !== undefined) {
                   groupInfo.memberLimit = ntfChangeGroupAttr.memberLimit ?? 0
                 }
+
                 if (ntfChangeGroupAttr.memberCount !== undefined) {
                   groupInfo.memberCount = ntfChangeGroupAttr.memberCount ?? 0
                 }
+
                 if (ntfChangeGroupAttr.audioQuality !== undefined) {
                   groupInfo.audioQuality = ntfChangeGroupAttr.audioQuality ?? 0
                 }
+
                 if (ntfChangeGroupAttr.burstType !== undefined) {
                   groupInfo.burstType = ntfChangeGroupAttr.burstType ?? 0
                 }
+
                 if (ntfChangeGroupAttr.shutupStatus !== undefined) {
                   groupInfo.speechEnable = ntfChangeGroupAttr.shutupStatus === 0
                 }
@@ -325,6 +362,7 @@ export default class WLGroupModule {
                 wlerr('保存群属性异常:' + reason)
               })
           }
+
           break
 
         case WL.Group.GroupCommandId.GROUP_COMMAND_CHANGE_MEMBERINFO:
@@ -343,33 +381,42 @@ export default class WLGroupModule {
               .getGroupMemberInfo(groupId, ntfMemberInfo.userId ?? 0)
               .then(async (value) => {
                 const memberInfo = value as WL_IDbMemberInfo
+
                 if (memberInfo) {
                   if (ntfMemberInfo.status !== undefined) {
                     memberInfo.status = ntfMemberInfo.status ?? 0
                   }
+
                   if (ntfMemberInfo.type !== undefined) {
                     memberInfo.memberType = ntfMemberInfo.type ?? 0
                   }
+
                   if (ntfMemberInfo.remark !== undefined) {
                     memberInfo.remark = ntfMemberInfo.remark ?? ''
                   }
+
                   if (ntfMemberInfo.prority !== undefined) {
                     memberInfo.priority = ntfMemberInfo.prority ?? 0
                   }
+
                   if (ntfMemberInfo.shutupStatus !== undefined) {
                     memberInfo.speechEnable = ntfMemberInfo.shutupStatus === 0
                   }
+
                   if (ntfMemberInfo.shutupTimeout !== undefined) {
                     memberInfo.speechDisableTimeout = Long.fromValue(
                       ntfMemberInfo.shutupTimeout ?? 0,
                     ).toNumber()
                   }
+
                   if (ntfMemberInfo.shieldStatus !== undefined) {
                     memberInfo.blockedStatus = ntfMemberInfo.shieldStatus === 1
                   }
+
                   if (ntfMemberInfo.tts !== undefined) {
                     memberInfo.tts = ntfMemberInfo.tts === 1
                   }
+
                   if (ntfMemberInfo.locationShare !== undefined) {
                     memberInfo.locationShared = ntfMemberInfo.locationShare === 1
                   }
@@ -386,6 +433,7 @@ export default class WLGroupModule {
                 wlerr('保存群成员异常:' + reason)
               })
           }
+
           break
 
         case WL.Group.GroupCommandId.GROUP_COMMAND_DELETE_GROUP:
@@ -408,6 +456,7 @@ export default class WLGroupModule {
                 wlerr('删除群失败', reason)
               })
           }
+
           break
 
         case WL.Group.GroupCommandId.GROUP_COMMAND_DELETE_MEMBER:
@@ -433,6 +482,7 @@ export default class WLGroupModule {
                 wlerr('删除群成员异常:' + reason)
               })
           }
+
           break
 
         case WL.Group.GroupCommandId.GROUP_COMMAND_NEW_MEMBER:
@@ -445,14 +495,18 @@ export default class WLGroupModule {
             ;(async () => {
               const groupId = Long.fromValue(ntfNewMember.groupId ?? 0).toString(10)
               const groupInfo = await WeilaDB.getInstance().getGroup(groupId)
+
               if (groupInfo) {
                 const memberInfoList = ntfNewMember.memberInfoList ?? []
                 const userInfoList = ntfNewMember.userInfoList ?? []
+
                 const memberInfos = WeilaDB.getInstance().convertFromMemberRaw(
                   groupId,
                   memberInfoList,
                 )
+
                 const userInfos = WeilaDB.getInstance().convertFromUserRaw(userInfoList)
+
                 if (memberInfos.length) {
                   await WeilaDB.getInstance().putMemberInfos(memberInfos)
                 }
@@ -461,6 +515,7 @@ export default class WLGroupModule {
                   await WeilaDB.getInstance().putUserInfos(userInfos)
                 }
               }
+
               wllog('保存群成员信息')
 
               this.coreInterface.sendExtEvent(
@@ -471,6 +526,7 @@ export default class WLGroupModule {
               wlerr('保存信息出错!', reason)
             })
           }
+
           break
 
         case WL.Group.GroupCommandId.GROUP_COMMAND_ANSWER_GROUP_JOIN:
@@ -505,6 +561,7 @@ export default class WLGroupModule {
               )
             })()
           }
+
           break
 
         case WL.Group.GroupCommandId.GROUP_COMMAND_ANSWER_GROUP_INVITE:
@@ -539,12 +596,14 @@ export default class WLGroupModule {
               )
             })()
           }
+
           break
 
         case WL.Group.GroupCommandId.GROUP_COMMAND_BROADCAST:
           {
             //TODO: 群通知
           }
+
           break
       }
     }
@@ -552,20 +611,26 @@ export default class WLGroupModule {
 
   public async getGroupFromServer(groupId: string): Promise<WL_IDbGroup | undefined> {
     const buildMsgRet = WeilaPBGroupWrapper.buildGetGroupInfoReq(Long.fromValue(groupId), 0)
+
     if (buildMsgRet.resultCode === 0) {
       const rsp = (await this.coreInterface.sendPbMsg(buildMsgRet)) as WL.Group.IRspGetGroupInfo
+
       if (!rsp?.groupAttribute) {
         wlerr('获取群信息失败，服务端未返回群属性:', { groupId, rsp })
+
         return undefined
       }
 
       const groupInfos = WeilaDB.getInstance().convertFromGroupRaw([rsp.groupAttribute])
+
       const memberInfos = WeilaDB.getInstance().convertFromMemberRaw(
         groupId,
         rsp.memberInfoList ?? [],
       )
+
       await WeilaDB.getInstance().putGroup(groupInfos[0])
       await WeilaDB.getInstance().putMemberInfos(memberInfos)
+
       return WeilaDB.getInstance().getGroup(groupId)
     }
 
@@ -593,8 +658,10 @@ export default class WLGroupModule {
       const groupIds = groupVerMsgData.versionInfoList.map((value: WL.Group.GroupVersionInfo) => {
         return value.groupId.toString(10)
       })
+
       wllog('获取的群ids', groupIds)
       const oldGroups = await WeilaDB.getInstance().getGroups()
+
       const invalidGroups = oldGroups
         .filter((value) => {
           return groupIds.indexOf(value.groupId) === -1
@@ -602,7 +669,9 @@ export default class WLGroupModule {
         .map((value) => {
           return value.groupId
         })
+
       wllog('无效群ids', invalidGroups)
+
       if (invalidGroups.length) {
         await WeilaDB.getInstance().delGroups(invalidGroups)
       }
@@ -613,6 +682,7 @@ export default class WLGroupModule {
         wllog('群版本信息:', ver)
         const dbGroup = await WeilaDB.getInstance().getGroup(ver.groupId.toString())
         wllog('获取群信息:', dbGroup)
+
         if (
           !dbGroup ||
           dbGroup.memberVersion !== ver.memberVersion ||
@@ -622,12 +692,15 @@ export default class WLGroupModule {
             Long.fromValue(ver.groupId),
             0,
           )
+
           if (buildGroupInfo.resultCode === 0) {
             const rspGroupInfo = (await this.coreInterface.sendPbMsg(
               buildGroupInfo,
               30000,
             )) as WL.Group.IRspGetGroupInfo
+
             wllog('获取得到群：', rspGroupInfo)
+
             if (!dbGroup || dbGroup.memberVersion !== ver.memberVersion) {
               const groupAttribute = rspGroupInfo.groupAttribute
 
@@ -636,10 +709,12 @@ export default class WLGroupModule {
               const groupId = Long.fromValue(groupAttribute.groupId ?? 0).toString(10)
               groupAttributes.push(groupAttribute)
               const memberInfoList = rspGroupInfo.memberInfoList ?? []
+
               const memberInfos: WL_IDbMemberInfo[] = await dbInstance.convertFromMemberRaw(
                 groupId,
                 memberInfoList,
               )
+
               allMemberInfos.push(...memberInfos)
 
               let userIds: number[] = []
@@ -658,11 +733,13 @@ export default class WLGroupModule {
                   Long.fromValue(groupId),
                   userIds,
                 )
+
                 if (buildGetUser.resultCode === 0) {
                   const userRawInfos = (await this.coreInterface.sendPbMsg(
                     buildGetUser,
                     30000,
                   )) as WL.Group.IRspGetMemberUserInfo
+
                   const userInfos = dbInstance.convertFromUserRaw(userRawInfos.userInfoList ?? [])
                   allUserInfos.push(...userInfos)
                 } else {
@@ -698,12 +775,15 @@ export default class WLGroupModule {
       Long.fromValue(groupId),
       userIds,
     )
+
     if (buildResult.resultCode === 0) {
       const rspMemberInfo = (await this.coreInterface.sendPbMsg(
         buildResult,
       )) as WL.Group.IRspGetMemberUserInfo
+
       const userInfos = WeilaDB.getInstance().convertFromUserRaw(rspMemberInfo.userInfoList ?? [])
       await WeilaDB.getInstance().putUserInfos(userInfos)
+
       return true
     }
 
@@ -731,10 +811,12 @@ export default class WLGroupModule {
       publicType,
       memberUserIdList,
     )
+
     if (buildResult.resultCode === 0) {
       const rspCreateGroup = (await this.coreInterface.sendPbMsg(
         buildResult,
       )) as WL.Group.IRspCreateGroup
+
       const groupAttribute = rspCreateGroup.groupAttribute
 
       if (!groupAttribute) {
@@ -743,6 +825,7 @@ export default class WLGroupModule {
 
       const groupId = Long.fromValue(groupAttribute.groupId ?? 0).toString(10)
       const groupInfos = WeilaDB.getInstance().convertFromGroupRaw([groupAttribute])
+
       const memberInfos = WeilaDB.getInstance().convertFromMemberRaw(
         groupId,
         rspCreateGroup.memberInfoList ?? [],
@@ -752,6 +835,7 @@ export default class WLGroupModule {
 
       await WeilaDB.getInstance().putGroup(groupInfos[0])
       await WeilaDB.getInstance().putMemberInfos(memberInfos)
+
       return (await WeilaDB.getInstance().getGroup(groupId)) ?? null
     }
 
@@ -760,8 +844,10 @@ export default class WLGroupModule {
 
   public async inviteUser(groupId: string, userIdList: number[]): Promise<boolean> {
     const buildResult = WeilaPBGroupWrapper.buildGroupInviteReq(Long.fromValue(groupId), userIdList)
+
     if (buildResult.resultCode === 0) {
       await this.coreInterface.sendPbMsg(buildResult)
+
       return true
     }
 
@@ -770,10 +856,12 @@ export default class WLGroupModule {
 
   public async getGroupOnlineMembers(groupId: string): Promise<number[]> {
     const buildResult = WeilaPBGroupWrapper.buildGetGroupOnlineMemberReq(Long.fromValue(groupId))
+
     if (buildResult.resultCode === 0) {
       const rspOnlineMember = (await this.coreInterface.sendPbMsg(
         buildResult,
       )) as WL.Group.IRspGetGroupOnlineMember
+
       return rspOnlineMember.userIdList ?? []
     }
 
@@ -790,8 +878,10 @@ export default class WLGroupModule {
       inviterId,
       status,
     )
+
     if (buildMsgRet.resultCode === 0) {
       await this.coreInterface.sendPbMsg(buildMsgRet)
+
       return true
     }
 
@@ -804,8 +894,10 @@ export default class WLGroupModule {
       joinId,
       status,
     )
+
     if (buildMsgRet.resultCode === 0) {
       await this.coreInterface.sendPbMsg(buildMsgRet)
+
       return true
     }
 
@@ -814,11 +906,14 @@ export default class WLGroupModule {
 
   public async getGroupAttribute(groupId: string): Promise<WL_IDbGroup> {
     const buildMsgRet = WeilaPBGroupWrapper.buildGetGroupAttributeReq(Long.fromValue(groupId))
+
     if (buildMsgRet.resultCode === 0) {
       const rsp = (await this.coreInterface.sendPbMsg(
         buildMsgRet,
       )) as WL.Group.IRspGetGroupAttribute
+
       const groupInfos = WeilaDB.getInstance().convertFromGroupRaw(rsp.groupAttrList ?? [])
+
       return groupInfos[0]
     }
 
@@ -827,6 +922,7 @@ export default class WLGroupModule {
 
   public async deleteGroupMembers(groupId: string, userIds: number[]): Promise<boolean> {
     const buildMsgRet = WeilaPBGroupWrapper.buildDelGroupMemebrReq(Long.fromValue(groupId), userIds)
+
     if (buildMsgRet.resultCode === 0) {
       const loginUserInfo = this.coreInterface.getLoginUserInfo()
       await this.coreInterface.sendPbMsg(buildMsgRet)
@@ -837,6 +933,7 @@ export default class WLGroupModule {
       } else {
         await WeilaDB.getInstance().delMemberInfos(groupId, userIds)
       }
+
       return true
     }
 
@@ -846,6 +943,7 @@ export default class WLGroupModule {
   public async dismissGroup(groupId: string): Promise<boolean> {
     wllog('删除群ID:', groupId)
     const buildMsgRet = WeilaPBGroupWrapper.buildDelGroupReq(Long.fromValue(groupId))
+
     if (buildMsgRet.resultCode === 0) {
       try {
         await this.coreInterface.sendPbMsg(buildMsgRet)
@@ -871,7 +969,9 @@ export default class WLGroupModule {
       const rsp = (await this.coreInterface.sendPbMsg(
         buildMsgRet,
       )) as WL.Group.IRspChangeGroupAttribute
+
       const groupAttribute = rsp.groupAttribute
+
       if (groupAttribute?.ownerId && groupAttribute.ownerId === ownerUserId) {
         const groupInfo = await WeilaDB.getInstance().getGroup(groupId)
 
@@ -881,6 +981,7 @@ export default class WLGroupModule {
 
         groupInfo.ownerId = ownerUserId
         await WeilaDB.getInstance().putGroup(groupInfo)
+
         return true
       } else {
         return Promise.reject(new Error('修改失败'))
@@ -898,6 +999,7 @@ export default class WLGroupModule {
   ): Promise<boolean> {
     if (subUserId) {
       const groupInfo = await WeilaDB.getInstance().getGroup(groupId)
+
       if (groupInfo === undefined) {
         return Promise.reject(new Error('GroupNotExist'))
       }
@@ -909,8 +1011,10 @@ export default class WLGroupModule {
       password,
       subUserId,
     )
+
     if (buildMsgRet.resultCode === 0) {
       await this.coreInterface.sendPbMsg(buildMsgRet)
+
       return true
     }
 
@@ -934,6 +1038,7 @@ export default class WLGroupModule {
     }
 
     let buildMsgRet: any
+
     if (subUserId) {
       buildMsgRet = WeilaPBGroupWrapper.buildDelGroupMemebrReq(
         Long.fromValue(groupId),
@@ -949,6 +1054,7 @@ export default class WLGroupModule {
     if (buildMsgRet.resultCode === 0) {
       await this.coreInterface.sendPbMsg(buildMsgRet)
       await WeilaDB.getInstance().delGroups([groupId])
+
       return true
     }
 
@@ -961,6 +1067,7 @@ export default class WLGroupModule {
     memberType: number,
   ): Promise<boolean> {
     const memberInfo = await WeilaDB.getInstance().getGroupMemberInfo(groupId, memberUserId)
+
     if (memberInfo) {
       memberInfo.memberType = memberType
       const id = WeilaDB.getInstance().putMemberInfo(memberInfo)
@@ -976,7 +1083,9 @@ export default class WLGroupModule {
     if (buildMsgRet.resultCode === 0) {
       const rspGetSubGroupAttribute: WL.Group.IRspGetSubGroupAttribute =
         await this.coreInterface.sendPbMsg(buildMsgRet)
+
       let groupList: WL_IDbGroup[] = []
+
       if (rspGetSubGroupAttribute.groupAttrList && rspGetSubGroupAttribute.groupAttrList.length) {
         groupList = await WeilaDB.getInstance().convertFromGroupRaw(
           rspGetSubGroupAttribute.groupAttrList,
@@ -991,8 +1100,10 @@ export default class WLGroupModule {
 
   public async addSubDeviceMember(groupId: string, userIds: number[]): Promise<number[]> {
     const buildMsgRet = WeilaPBGroupWrapper.buildAddSubMemberReq(Long.fromValue(groupId), userIds)
+
     if (buildMsgRet.resultCode === 0) {
       const rsp = (await this.coreInterface.sendPbMsg(buildMsgRet)) as WL.Group.IRspAddSubMember
+
       return rsp.failUserIdList ?? []
     }
 
