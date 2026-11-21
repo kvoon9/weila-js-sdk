@@ -2,6 +2,9 @@
   // knip finds unused files, exports and dependencies across the monorepo.
   // Run: pnpm knip  (gate must stay green; fix new findings, don't ignore them)
   "$schema": "https://unpkg.com/knip@6/schema.json",
+  // The CI workflow installs the browser through the Playwright CLI, which knip
+  // cannot resolve from a package import.
+  "ignoreBinaries": ["playwright"],
   // Consumed by `pnpm run up` (taze reads this config at its own entry point)
   "workspaces": {
     ".": {
