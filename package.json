@@ -16,6 +16,7 @@
     "typecheck:tsc": "turbo run typecheck:tsc",
     "typecheck:parity": "node packages/core/scripts/typecheck-parity.mjs",
     "test:run": "turbo run test:run",
+    "test:scripts": "node --test packages/core/scripts/*.spec.mjs scripts/*.spec.mjs",
     "lint": "node packages/core/scripts/lint-budget.mjs",
     "lint:fix": "oxlint --type-aware --fix",
     "lint:budget": "node packages/core/scripts/lint-budget.mjs --write",
