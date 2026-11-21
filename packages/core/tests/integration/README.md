@@ -44,4 +44,5 @@ Later passes add the receive side with a second account, the group, friend, and 
 ## Known limitations
 
 - **Cross-enterprise messaging is server-restricted.** A friend relationship across enterprises can be created. Search, invite, and answer all succeed, and both accounts list each other as friends. Sending a message still returns `RESULT_REQUEST_LIMITED` (result code 22). Keep message tests inside one enterprise. Do not add a cross-enterprise send test until the platform changes this policy.
+- **SDK group creation is blocked for the test account.** `weila_createGroup` returns `RESULT_CONTENT_AUDIT_BLOCK` (42) for every name, group type, and public type tried. Group messaging is deferred until the backend allows it. The console group page is a corp-level list and is not the SDK app group module.
 - **Received audio is server-normalized.** The sender's local row keeps the frame count it sent. The receiver gets an `audioUrl` on the CDN and `frameCount` 0. Assert the URL and a recent `created` time, not the sent frame count.
