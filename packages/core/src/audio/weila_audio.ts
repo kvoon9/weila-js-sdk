@@ -54,6 +54,17 @@ enum WLRecorderState {
 
 const wl_playerName = ['stream ptt', 'history ptt', 'single ptt']
 
+/** Rejects with `message` if `promise` has not settled after `ms` milliseconds. */
+function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+
+  const timeout = new Promise<T>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(message)), ms)
+  })
+
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer))
+}
+
 class WLAudio {
   private audioContext: AudioContext | null
   private playerWorkNode: (AudioWorkletNode | null)[]
@@ -590,38 +601,43 @@ class WLAudio {
       return Promise.reject(e)
     }
 
-    return new Promise<boolean>((resolve, reject) => {
-      // @ts-ignore
-      // oxfmt-ignore
-      navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia
-      // @ts-ignore
-      navigator.getUserMedia(
-        { audio: true },
-        (stream: any) => {
-          this.micMedia = stream
-          this.micSource = this.requireAudioContext().createMediaStreamSource(this.micMedia)
-          this.sendRecorderEvent(WLAudioRecorderEvent.WL_WORKLET_NODE_OPEN_REQ, {
-            sampleRate: sampleRate,
-            bitRate: bitRate,
-          })
-          const callback: WLAudioCallback = { resolve, reject, waitRspTimer: undefined }
-          callback.waitRspTimer = setTimeout(
-            (cb) => {
-              if (cb.reject) {
-                cb.reject(new Error('请求超时'))
-              }
-            },
-            5000,
-            callback,
-          )
-          this.sendingEventListMap.set(WLAudioRecorderEvent.WL_WORKLET_NODE_OPEN_RSP, callback)
-        },
-        (error: any) => {
-          wlerr('getUserMedia', error)
-          reject(error)
-          void this.closeRecorder()
-        },
+    // The legacy callback-based navigator.getUserMedia is removed in current
+    // browsers and never calls back in some embedded or automated contexts,
+    // which used to leave requestTalk pending forever. Use the promise API and
+    // cap the wait so the caller always gets an answer.
+    let mediaStream: MediaStream
+
+    try {
+      mediaStream = await withTimeout(
+        navigator.mediaDevices.getUserMedia({ audio: true }),
+        10_000,
+        '打开麦克风超时',
       )
+    } catch (error) {
+      wlerr('getUserMedia', error)
+      void this.closeRecorder()
+      throw error
+    }
+
+    this.micMedia = mediaStream
+    this.micSource = this.requireAudioContext().createMediaStreamSource(this.micMedia)
+    this.sendRecorderEvent(WLAudioRecorderEvent.WL_WORKLET_NODE_OPEN_REQ, {
+      sampleRate: sampleRate,
+      bitRate: bitRate,
+    })
+
+    return new Promise<boolean>((resolve, reject) => {
+      const callback: WLAudioCallback = { resolve, reject, waitRspTimer: undefined }
+      callback.waitRspTimer = setTimeout(
+        (cb) => {
+          if (cb.reject) {
+            cb.reject(new Error('请求超时'))
+          }
+        },
+        5000,
+        callback,
+      )
+      this.sendingEventListMap.set(WLAudioRecorderEvent.WL_WORKLET_NODE_OPEN_RSP, callback)
     })
   }
 
