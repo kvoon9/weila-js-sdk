@@ -1,6 +1,6 @@
 // @ts-ignore
 import Network from 'main/weila_network.worker'
-import { fsmEvents, mainFsm } from 'fsm/weila_fsmScript'
+import { fsmEvents, mainFsm, systemWatchdogActor } from 'fsm/weila_fsmScript'
 import type { MainActor } from 'fsm/weila_fsmScript'
 import { WLConfig } from 'main/weila_config'
 import { createActor, fromPromise } from 'xstate'
@@ -148,7 +148,6 @@ class WeilaCore implements WL_CoreInterface {
   mainFsmService!: MainActor
   network?: Network
   waitingRspMap: Map<number, WL_WaitingRspPbMsgInfo>
-  waitingTimeoutChecking: boolean
   pbMsgHandlerList: Map<number, WL_PbMsgHandler>
   sendingPbMsgList: WL_SendingPbMsgInfo[]
   loginUserInfo?: WL_IDbUserInfo
@@ -171,7 +170,6 @@ class WeilaCore implements WL_CoreInterface {
 
   constructor() {
     this.emitter = new TinyEmitter()
-    this.waitingTimeoutChecking = false
     this.isLoginReady = false
     this.resolvingSessionProfileKeys = new Set()
     this.mainFsm = mainFsm.provide({
@@ -180,6 +178,7 @@ class WeilaCore implements WL_CoreInterface {
         prepareData: fromPromise(({ input }) => this.prepareData(input.context, input.event)),
         loginServer: fromPromise(({ input }) => this.loginServer(input.context, input.event)),
         logout: fromPromise(({ input }) => this.logout(input.context, input.event)),
+        systemWatchdog: systemWatchdogActor,
       },
       actions: {
         onResourceLoadFail: ({ context, event }) => {
@@ -299,11 +298,7 @@ class WeilaCore implements WL_CoreInterface {
   }
 
   private processSendingPbMsg(): void {
-    wllog(
-      '处理PB消息，队列有%d个等待发送消息',
-      this.sendingPbMsgList.length,
-      this.waitingTimeoutChecking,
-    )
+    wllog('处理PB消息，队列有%d个等待发送消息', this.sendingPbMsgList.length)
 
     if (this.sendingPbMsgList.length > 0) {
       const sendingItem = this.sendingPbMsgList.shift()!
@@ -327,13 +322,6 @@ class WeilaCore implements WL_CoreInterface {
 
     if (this.sendingPbMsgList.length > 0) {
       setTimeout(this.processSendingPbMsg.bind(this), 0)
-    }
-
-    if (!this.waitingTimeoutChecking) {
-      setTimeout(() => {
-        this.mainFsmService.send({ type: 'FSM_SYSTEM_WATCH_TIMEOUT_EVT' })
-      }, 1000)
-      this.waitingTimeoutChecking = true
     }
   }
 
@@ -549,41 +537,30 @@ class WeilaCore implements WL_CoreInterface {
   }
 
   private onSysTimeChecking(_context: any, _event: any) {
-    wllog('--------->onSysTimeChecking', this.waitingRspMap.size, this.waitingTimeoutChecking)
+    if (this.waitingRspMap.size === 0) return
 
-    if (this.waitingRspMap.size > 0) {
-      const timeoutKeyList: number[] = []
+    wllog('--------->onSysTimeChecking', this.waitingRspMap.size)
 
-      const now = new Date().getTime()
+    const timeoutKeyList: number[] = []
 
-      this.waitingRspMap.forEach((value, key) => {
-        wllog('checkSendingMsgItemTimeout:', value.timeout, now)
+    const now = new Date().getTime()
 
-        if (value.timeout <= now) {
-          timeoutKeyList.push(key)
-        }
-      })
+    this.waitingRspMap.forEach((value, key) => {
+      wllog('checkSendingMsgItemTimeout:', value.timeout, now)
 
-      timeoutKeyList.forEach((key) => {
-        const waitingPbMsg = this.waitingRspMap.get(key)
-
-        if (waitingPbMsg) {
-          waitingPbMsg.reject(new Error('消息超时'))
-          this.waitingRspMap.delete(key)
-        }
-      })
-
-      if (this.waitingRspMap.size > 0) {
-        setTimeout(() => {
-          this.mainFsmService.send({ type: 'FSM_SYSTEM_WATCH_TIMEOUT_EVT' })
-        }, 2000)
-        this.waitingTimeoutChecking = true
-      } else {
-        this.waitingTimeoutChecking = false
+      if (value.timeout <= now) {
+        timeoutKeyList.push(key)
       }
-    } else {
-      this.waitingTimeoutChecking = false
-    }
+    })
+
+    timeoutKeyList.forEach((key) => {
+      const waitingPbMsg = this.waitingRspMap.get(key)
+
+      if (waitingPbMsg) {
+        waitingPbMsg.reject(new Error('消息超时'))
+        this.waitingRspMap.delete(key)
+      }
+    })
   }
 
   private onReadyEntry(_context: any, _event: any) {

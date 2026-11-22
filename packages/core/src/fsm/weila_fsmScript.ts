@@ -1,4 +1,4 @@
-import { assign, createMachine, raise } from 'xstate'
+import { assign, createMachine, fromCallback, raise } from 'xstate'
 import type { StateNodeConfig } from 'xstate'
 import type { WeilaCore } from 'main/weila_core'
 import {
@@ -33,6 +33,21 @@ type MainFsmActorEvent =
   | { type: `xstate.error.actor.${string}`; error?: unknown }
 
 type MainFsmEvent = MainFsmUserEvent | MainFsmActorEvent
+
+/** Deadline-check cadence for the message watchdog, in milliseconds. */
+const WATCHDOG_TICK_MS = 2000
+
+/**
+ * Ticks the message watchdog while a state holds it. Leaving the state clears
+ * the interval, so no core-side timer chain or schedule flag exists.
+ */
+const systemWatchdogActor = fromCallback<MainFsmUserEvent>(({ sendBack }) => {
+  const timer = setInterval(() => {
+    sendBack({ type: 'FSM_SYSTEM_WATCH_TIMEOUT_EVT' })
+  }, WATCHDOG_TICK_MS)
+
+  return () => clearInterval(timer)
+})
 
 interface MainFsmSnapshot {
   value: unknown
@@ -87,30 +102,35 @@ const loginProcedureFsm: Record<
         },
       },
       logining: {
-        entry: raise({ type: 'FSM_SYSTEM_WATCH_TIMEOUT_EVT' }),
         on: {
           FSM_SYSTEM_WATCH_TIMEOUT_EVT: {
             actions: ['onSysTimeChecking'],
           },
         },
-        invoke: {
-          src: 'loginServer',
-          id: 'login_server',
-          input: ({ context, event }: { context: MainFsmContext; event: any }) => ({
-            context,
-            event,
-          }),
-          onDone: [
-            {
-              actions: 'onLoginServerSucc',
-            },
-          ],
-          onError: [
-            {
-              actions: 'onLoginServerFail',
-            },
-          ],
-        },
+        invoke: [
+          {
+            src: 'systemWatchdog',
+            id: 'system_watchdog',
+          },
+          {
+            src: 'loginServer',
+            id: 'login_server',
+            input: ({ context, event }: { context: MainFsmContext; event: any }) => ({
+              context,
+              event,
+            }),
+            onDone: [
+              {
+                actions: 'onLoginServerSucc',
+              },
+            ],
+            onError: [
+              {
+                actions: 'onLoginServerFail',
+              },
+            ],
+          },
+        ],
         description: '调用登录接口开始登录\n',
       },
     },
@@ -189,20 +209,26 @@ const mainFsm = createMachine({
     },
     ...loginProcedureFsm,
     dataInit: {
-      entry: ['onDataInit', raise({ type: 'FSM_SYSTEM_WATCH_TIMEOUT_EVT' })],
-      invoke: {
-        src: 'prepareData',
-        id: 'prepare_data',
-        input: ({ context, event }) => ({ context, event }),
-        onDone: {
-          actions: 'onDataInited',
-          target: 'ready',
+      entry: 'onDataInit',
+      invoke: [
+        {
+          src: 'systemWatchdog',
+          id: 'system_watchdog',
         },
-        onError: {
-          actions: 'onDataPrepareFail',
-          target: 'exception',
+        {
+          src: 'prepareData',
+          id: 'prepare_data',
+          input: ({ context, event }) => ({ context, event }),
+          onDone: {
+            actions: 'onDataInited',
+            target: 'ready',
+          },
+          onError: {
+            actions: 'onDataPrepareFail',
+            target: 'exception',
+          },
         },
-      },
+      ],
       on: {
         FSM_SYSTEM_WATCH_TIMEOUT_EVT: {
           actions: ['onSysTimeChecking'],
@@ -236,9 +262,13 @@ const mainFsm = createMachine({
       },
     },
     ready: {
-      entry: ['onReadyEntry', raise({ type: 'FSM_SYSTEM_WATCH_TIMEOUT_EVT' })],
+      entry: 'onReadyEntry',
       exit: 'onReadyExit',
-      description: '准备状态，此时可以做很多事情。\n每隔1秒，检查一下等待消息列表是否超时。',
+      invoke: {
+        src: 'systemWatchdog',
+        id: 'system_watchdog',
+      },
+      description: '准备状态，此时可以做很多事情。\n每隔2秒，检查一下等待消息列表是否超时。',
       on: {
         FSM_SYSTEM_WATCH_TIMEOUT_EVT: {
           actions: ['onSysTimeChecking'],
@@ -558,4 +588,4 @@ const fsmEvents = {
   FSM_REL_TALK_EVT: 'FSM_REL_TALK_EVT',
 } as const
 
-export { mainFsm, pttFsm, fsmEvents, type MainActor }
+export { mainFsm, pttFsm, fsmEvents, systemWatchdogActor, type MainActor }
