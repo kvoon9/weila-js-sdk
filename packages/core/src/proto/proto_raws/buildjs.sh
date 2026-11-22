@@ -11,5 +11,5 @@ pnpm exec oxfmt weilapb.js
 echo 'copying weilapb.js weilapb.d.ts'
 cp weilapb.js ../weilapb.js
 cp weilapb.d.ts ../weilapb.d.ts
-rm -f weilapb.js
+rm -f weilapb.js weilapb.d.ts
 echo 'generating successfully'
