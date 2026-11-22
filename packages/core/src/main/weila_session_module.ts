@@ -156,11 +156,73 @@ function isWithdrawRequest(request: MsgSendRequest): request is MsgSendRequest &
   return request.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_WITHDRAW_TYPE
 }
 
+/** Routes one session response to the waiting sendPbMsg caller. */
+type SessionResponseRoute = (
+  serviceHead: WL.Service.ServiceHead.$Properties,
+  sessionMessage: WL.Session.ISessionMessage | null | undefined,
+) => void
+
 export default class WLSessionModule {
   private sessionList: WL_IDbSession[] = []
   private pttFsm: WLPttFsm
   private curBurstInfo: WL_BurstInfo | null
   private activeSession: WL_ActiveSessionInfo | null
+
+  /**
+   * Response routing per session command. Every command the module awaits
+   * via sendPbMsg must have a route here; a missing route leaves the caller
+   * to die on the watchdog timeout. `weila_session_module.spec.ts` guards
+   * the wrapper's builders against this table. Notifications stay in the
+   * switch below: only COMMAND_RESPONSE traffic is routed through the table.
+   */
+  private readonly responseRoutes = new Map<number, SessionResponseRoute>([
+    [
+      WL.Session.SessionCommandId.SESSION_COMMAND_MSGDATA,
+      (serviceHead, sessionMessage) => {
+        this.coreInterface.rspPbMsg(
+          serviceHead.seq ?? 0,
+          serviceHead.resultCode ?? 0,
+          sessionMessage ? sessionMessage.rspMsg : null,
+        )
+      },
+    ],
+    [
+      WL.Session.SessionCommandId.SESSION_COMMAND_GET_SESSION,
+      (serviceHead, sessionMessage) => {
+        this.coreInterface.rspPbMsg(
+          serviceHead.seq ?? 0,
+          serviceHead.resultCode ?? 0,
+          sessionMessage ? sessionMessage.rspGetSession : null,
+        )
+      },
+    ],
+    [
+      WL.Session.SessionCommandId.SESSION_COMMAND_GET_MSG,
+      (serviceHead, sessionMessage) => {
+        this.coreInterface.rspPbMsg(
+          serviceHead.seq ?? 0,
+          serviceHead.resultCode ?? 0,
+          sessionMessage ? sessionMessage.rspGetMsg : null,
+        )
+      },
+    ],
+    [
+      WL.Session.SessionCommandId.SESSION_COMMAND_READ_MSG,
+      (serviceHead, sessionMessage) => {
+        this.coreInterface.rspPbMsg(
+          serviceHead.seq ?? 0,
+          serviceHead.resultCode ?? 0,
+          sessionMessage ? sessionMessage.rspMsgRead : null,
+        )
+      },
+    ],
+    [
+      WL.Session.SessionCommandId.SESSION_COMMAND_REMOVE_SESSION,
+      (serviceHead) => {
+        this.coreInterface.rspPbMsg(serviceHead.seq ?? 0, serviceHead.resultCode ?? 0, true)
+      },
+    ],
+  ])
 
   constructor(private coreInterface: WL_CoreInterface) {
     this.curBurstInfo = null
@@ -549,57 +611,12 @@ export default class WLSessionModule {
     if (!serviceHead) return
 
     if (serviceHead.commandType === WL.Service.CommandType.COMMAND_RESPONSE) {
-      switch (serviceHead.commandId) {
-        case WL.Session.SessionCommandId.SESSION_COMMAND_MSGDATA:
-          {
-            this.coreInterface.rspPbMsg(
-              serviceHead.seq ?? 0,
-              serviceHead.resultCode ?? 0,
-              serverMessage.sessionMessage?.rspMsg,
-            )
-          }
+      const commandId = serviceHead.commandId
 
-          break
+      if (commandId !== undefined && commandId !== null) {
+        const route = this.responseRoutes.get(commandId)
 
-        case WL.Session.SessionCommandId.SESSION_COMMAND_GET_SESSION:
-          {
-            this.coreInterface.rspPbMsg(
-              serviceHead.seq ?? 0,
-              serviceHead.resultCode ?? 0,
-              serverMessage.sessionMessage?.rspGetSession,
-            )
-          }
-
-          break
-
-        case WL.Session.SessionCommandId.SESSION_COMMAND_GET_MSG:
-          {
-            this.coreInterface.rspPbMsg(
-              serviceHead.seq ?? 0,
-              serviceHead.resultCode ?? 0,
-              serverMessage.sessionMessage?.rspGetMsg,
-            )
-          }
-
-          break
-
-        case WL.Session.SessionCommandId.SESSION_COMMAND_READ_MSG:
-          {
-            this.coreInterface.rspPbMsg(
-              serviceHead.seq ?? 0,
-              serviceHead.resultCode ?? 0,
-              serverMessage.sessionMessage?.rspMsgRead,
-            )
-          }
-
-          break
-
-        case WL.Session.SessionCommandId.SESSION_COMMAND_REMOVE_SESSION:
-          {
-            this.coreInterface.rspPbMsg(serviceHead.seq ?? 0, serviceHead.resultCode ?? 0, true)
-          }
-
-          break
+        if (route) route(serviceHead, serverMessage.sessionMessage)
       }
     } else if (serviceHead.commandType === WL.Service.CommandType.COMMAND_NOTIFY) {
       const sessionMessage = serverMessage.sessionMessage
