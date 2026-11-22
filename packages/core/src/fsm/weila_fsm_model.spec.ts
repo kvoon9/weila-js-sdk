@@ -54,6 +54,7 @@ const ACTOR_NAMES = [
   'prepareData',
   'loginServer',
   'logout',
+  'startPlayback',
   'startTalking',
   'stopTalk',
   'checkPttPlayingList',

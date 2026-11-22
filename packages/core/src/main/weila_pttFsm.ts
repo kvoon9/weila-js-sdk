@@ -1,5 +1,11 @@
 import { fsmEvents, pttFsm } from 'fsm/weila_fsmScript'
-import type { PttFsmContext, PttFsmEvent, PttFsmInput } from 'fsm/weila_fsmScript'
+import type {
+  PttFsmContext,
+  PttFsmEvent,
+  PttFsmInput,
+  StartPlaybackFamily,
+  StartPlaybackInput,
+} from 'fsm/weila_fsmScript'
 import {
   WL_PttAudioItem,
   WL_PttFsmListener,
@@ -67,6 +73,13 @@ type PttActor = {
 /** Ring-tone source, injectable so specs can observe playback orchestration. */
 type WLRingPlayer = { weila_playRing(id: WL_ConfigID): Promise<boolean> }
 
+/** Resolves after the given milliseconds. */
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms)
+  })
+}
+
 export default class WLPttFsm {
   readonly PLAY_DELAY = 200
   private static readonly RECENT_COMPLETED_PTT_LIMIT = 100
@@ -127,6 +140,9 @@ export default class WLPttFsm {
       actors: {
         checkHistoryList: fromPromise(() => this.checkHistoryList()),
         checkPttPlayingList: fromPromise(() => this.checkPttPlayingList()),
+        startPlayback: fromPromise(({ input }: { input: StartPlaybackInput }) =>
+          this.runStartPlayback(input),
+        ),
         startTalking: fromPromise(({ input }: { input: PttFsmEvent }) => this.startTalking(input)),
         stopTalk: fromPromise(() => this.stopTalk()),
       },
@@ -258,37 +274,10 @@ export default class WLPttFsm {
 
   onSinglePlayEntry({ event }: PttActionArgs) {
     wllog('onSinglePlayEntry', event)
-    void this.audioManager.openPlayer(WLPlayerType.WL_PTT_SINGLE_PLAYER, 16000).then((_openRet) => {
-      void this.ringPlayer
-        .weila_playRing(WL_ConfigID.WL_RES_RING_START_PLAY_ID)
-        .then((_playRet) => {
-          wllog('播放铃声成功')
-        })
-        .finally(() => {
-          this.audioManager
-            .startPlay(WLPlayerType.WL_PTT_SINGLE_PLAYER)
-            .then((_startRet) => {
-              //TODO:
-              this.singlePttPlayItem =
-                event.type === 'FSM_PLAY_SINGLE_EVT' ? event.data : this.singlePttPlayItem
-              this.onPlayInd(
-                this.singlePttPlayItem,
-                WLPlayerType.WL_PTT_SINGLE_PLAYER,
-                WL_PttAudioPlayState.PTT_AUDIO_PLAYING_START,
-              )
-              setTimeout(() => {
-                const audioItem = this.singlePttPlayItem
 
-                if (!audioItem) return
-                this.feedAudioPayload(audioItem, audioItem.playerType)
-              }, this.PLAY_DELAY)
-            })
-            .catch((reason) => {
-              //TODO: 执行STOP事件
-              this.pttFsmService.send({ type: fsmEvents.FSM_STOP_EVT, data: reason })
-            })
-        })
-    })
+    if (event.type === 'FSM_PLAY_SINGLE_EVT') {
+      this.singlePttPlayItem = event.data
+    }
   }
 
   onSinglePlayExit({ event }: PttActionArgs) {
@@ -307,47 +296,6 @@ export default class WLPttFsm {
 
     if (event.type === 'FSM_PLAY_REALTIME_EVT') {
       this.streamPttPlayItem = event.data
-      const audioItem = event.data
-
-      this.audioManager
-        .openPlayer(audioItem.playerType, 16000)
-        .then((_openRet) => {
-          void this.ringPlayer
-            .weila_playRing(WL_ConfigID.WL_RES_RING_START_PLAY_ID)
-            .then((_playRet) => {
-              wllog('播放铃声成功')
-            })
-            .finally(() => {
-              void this.audioManager.startPlay(audioItem.playerType).then((startRet) => {
-                wllog('播放器开始:', startRet)
-                const streamItem = this.streamPttPlayItem
-
-                if (!streamItem) return
-                streamItem.msgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_READ
-
-                if (streamItem.shouldSave) {
-                  void WeilaDB.getInstance()
-                    .putMsgData(streamItem.msgData)
-                    .then((value) => {
-                      wllog('更新消息结果', value)
-                    })
-                }
-
-                this.onPlayInd(
-                  audioItem,
-                  audioItem.playerType,
-                  WL_PttAudioPlayState.PTT_AUDIO_PLAYING_START,
-                )
-                setTimeout(() => {
-                  this.feedAudioPayload(audioItem, audioItem.playerType)
-                }, this.PLAY_DELAY)
-              })
-            })
-        })
-        .catch((reason) => {
-          wlerr('打开播放器失败:', reason)
-          this.pttFsmService.send({ type: fsmEvents.FSM_STOP_EVT, data: reason })
-        })
     }
   }
 
@@ -363,6 +311,75 @@ export default class WLPttFsm {
   }
 
   // services
+
+  /** Resolves the item the given family is currently playing, if any. */
+  private playbackItem(family: StartPlaybackFamily): WL_PttAudioItem | null | undefined {
+    if (family === 'realtime') {
+      return this.streamPttPlayItem
+    }
+
+    if (family === 'single') {
+      return this.singlePttPlayItem
+    }
+
+    return this.historyPttPlayItems?.[this.historyPttPlayIndex]
+  }
+
+  /**
+   * Shared playback start for all three families: open the player, play the
+   * start ring, start the player, announce PLAYING_START, then feed the first
+   * payload after PLAY_DELAY. A rejection reaches the machine's onError,
+   * which raises the family's failure event.
+   */
+  private async runStartPlayback(input: StartPlaybackInput): Promise<void> {
+    try {
+      await this.audioManager.openPlayer(input.playerType, 16000)
+
+      try {
+        await this.ringPlayer.weila_playRing(WL_ConfigID.WL_RES_RING_START_PLAY_ID)
+        wllog('播放铃声成功')
+      } catch {
+        // A failed start ring does not stop playback.
+      }
+
+      if (input.family === 'history' && this.audioManager.isPlayerStarted(input.playerType)) {
+        return
+      }
+
+      const startRet = await this.audioManager.startPlay(input.playerType)
+      wllog('播放器开始:', startRet)
+
+      const item = this.playbackItem(input.family)
+
+      if (!item) return
+
+      if (input.family === 'realtime') {
+        item.msgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_READ
+
+        if (item.shouldSave) {
+          void WeilaDB.getInstance()
+            .putMsgData(item.msgData)
+            .then((value) => {
+              wllog('更新消息结果', value)
+            })
+        }
+      }
+
+      this.onPlayInd(item, input.playerType, WL_PttAudioPlayState.PTT_AUDIO_PLAYING_START)
+
+      await delay(this.PLAY_DELAY)
+
+      const feedItem = this.playbackItem(input.family)
+
+      if (feedItem) {
+        this.feedAudioPayload(feedItem, input.playerType)
+      }
+    } catch (reason) {
+      wlerr('启动播放失败:', reason)
+
+      throw reason
+    }
+  }
 
   /** Opens the recorder and plays the start ring before talking. */
   async startTalking(event: PttFsmEvent): Promise<boolean> {
@@ -414,47 +431,6 @@ export default class WLPttFsm {
     if (event.type === fsmEvents.FSM_PLAY_HISTORY_EVT) {
       this.historyPttPlayIndex = 0
       this.historyPttPlayItems = event.data
-      this.audioManager
-        .openPlayer(WLPlayerType.WL_PTT_HISTORY_PLAYER, 16000)
-        .then((_openRet) => {
-          void this.ringPlayer
-            .weila_playRing(WL_ConfigID.WL_RES_RING_START_PLAY_ID)
-            .then((_playRet) => {
-              wllog('播放铃声成功')
-            })
-            .finally(() => {
-              if (!this.audioManager.isPlayerStarted(WLPlayerType.WL_PTT_HISTORY_PLAYER)) {
-                void this.audioManager
-                  .startPlay(WLPlayerType.WL_PTT_HISTORY_PLAYER)
-                  .then((_startRet) => {
-                    wllog('播放器开始:', _startRet)
-
-                    const historyItems = this.historyPttPlayItems
-
-                    if (!historyItems) return
-                    this.onPlayInd(
-                      historyItems[this.historyPttPlayIndex],
-                      WLPlayerType.WL_PTT_HISTORY_PLAYER,
-                      WL_PttAudioPlayState.PTT_AUDIO_PLAYING_START,
-                    )
-
-                    setTimeout(() => {
-                      const items = this.historyPttPlayItems
-
-                      if (!items) return
-                      this.feedAudioPayload(
-                        items[this.historyPttPlayIndex],
-                        WLPlayerType.WL_PTT_HISTORY_PLAYER,
-                      )
-                    }, this.PLAY_DELAY)
-                  })
-              }
-            })
-        })
-        .catch((reason) => {
-          wlerr('打开播放器失败:', reason)
-          this.pttFsmService.send({ type: fsmEvents.FSM_PLAY_END_EVT, data: reason })
-        })
     }
   }
 
