@@ -35,7 +35,168 @@ import { WLGroupAttributeInfo } from 'proto/weilapb_wrapper_data'
 const wllog = getLogger('MOD:group:info')
 const wlerr = getLogger('MOD:group:err')
 
+/** Routes one group response to the waiting sendPbMsg caller. */
+type GroupResponseRoute = (
+  serviceHead: WL.Service.ServiceHead.$Properties,
+  groupMessage: WL.Group.IGroupMessage | null | undefined,
+) => void
+
 export default class WLGroupModule {
+  /**
+   * Response routing per group command. Every command the module awaits via
+   * sendPbMsg must have a route here; a missing route leaves the caller to
+   * die on the watchdog timeout. `weila_group_module.spec.ts` guards the
+   * wrapper's builders against this table.
+   */
+  private readonly responseRoutes = new Map<number, GroupResponseRoute>([
+    [
+      WL.Group.GroupCommandId.GROUP_COMMAND_GET_GROUPVERSION,
+      (serviceHead, groupMessage) => {
+        this.coreInterface.rspPbMsg(
+          serviceHead.seq ?? 0,
+          serviceHead.resultCode ?? 0,
+          groupMessage ? groupMessage.rspGetGroupVersion : null,
+        )
+      },
+    ],
+    [
+      WL.Group.GroupCommandId.GROUP_COMMAND_GET_GROUPATTRIBUTE,
+      (serviceHead, groupMessage) => {
+        this.coreInterface.rspPbMsg(
+          serviceHead.seq ?? 0,
+          serviceHead.resultCode ?? 0,
+          groupMessage ? groupMessage.rspGetGroupAttribute : null,
+        )
+      },
+    ],
+    [
+      WL.Group.GroupCommandId.GROUP_COMMAND_GET_GROUPINFO,
+      (serviceHead, groupMessage) => {
+        this.coreInterface.rspPbMsg(
+          serviceHead.seq ?? 0,
+          serviceHead.resultCode ?? 0,
+          groupMessage ? groupMessage.rspGetGroupInfo : null,
+        )
+      },
+    ],
+    [
+      WL.Group.GroupCommandId.GROUP_COMMAND_GET_MEMBER_USERINFO,
+      (serviceHead, groupMessage) => {
+        this.coreInterface.rspPbMsg(
+          serviceHead.seq ?? 0,
+          serviceHead.resultCode ?? 0,
+          groupMessage ? groupMessage.rspGetMemberUserInfo : null,
+        )
+      },
+    ],
+    [
+      WL.Group.GroupCommandId.GROUP_COMMAND_BROADCAST,
+      (serviceHead, groupMessage) => {
+        this.coreInterface.rspPbMsg(
+          serviceHead.seq ?? 0,
+          serviceHead.resultCode ?? 0,
+          groupMessage ? groupMessage.rspGroupBroadcast : null,
+        )
+      },
+    ],
+    [
+      WL.Group.GroupCommandId.GROUP_COMMAND_DELETE_GROUP,
+      (serviceHead) => {
+        this.coreInterface.rspPbMsg(serviceHead.seq ?? 0, serviceHead.resultCode ?? 0, true)
+      },
+    ],
+    [
+      WL.Group.GroupCommandId.GROUP_COMMAND_ANSWER_GROUP_INVITE,
+      (serviceHead) => {
+        this.coreInterface.rspPbMsg(serviceHead.seq ?? 0, serviceHead.resultCode ?? 0, true)
+      },
+    ],
+    [
+      WL.Group.GroupCommandId.GROUP_COMMAND_DELETE_MEMBER,
+      (serviceHead) => {
+        this.coreInterface.rspPbMsg(serviceHead.seq ?? 0, serviceHead.resultCode ?? 0, true)
+      },
+    ],
+    [
+      WL.Group.GroupCommandId.GROUP_COMMAND_GET_ONLINE_MEMBER,
+      (serviceHead, groupMessage) => {
+        this.coreInterface.rspPbMsg(
+          serviceHead.seq ?? 0,
+          serviceHead.resultCode ?? 0,
+          groupMessage ? groupMessage.rspGetGroupOnlineMember : null,
+        )
+      },
+    ],
+    [
+      WL.Group.GroupCommandId.GROUP_COMMAND_CREATE_GROUP,
+      (serviceHead, groupMessage) => {
+        this.coreInterface.rspPbMsg(
+          serviceHead.seq ?? 0,
+          serviceHead.resultCode ?? 0,
+          groupMessage ? groupMessage.rspCreateGroup : null,
+        )
+      },
+    ],
+    [
+      WL.Group.GroupCommandId.GROUP_COMMAND_ANSWER_GROUP_JOIN,
+      (serviceHead) => {
+        this.coreInterface.rspPbMsg(serviceHead.seq ?? 0, serviceHead.resultCode ?? 0, true)
+      },
+    ],
+    [
+      WL.Group.GroupCommandId.GROUP_COMMAND_CHANGE_GROUPATTRIBUTE,
+      (serviceHead, groupMessage) => {
+        this.coreInterface.rspPbMsg(
+          serviceHead.seq ?? 0,
+          serviceHead.resultCode ?? 0,
+          groupMessage ? groupMessage.rspChangeGroupAttribute : null,
+        )
+      },
+    ],
+    [
+      WL.Group.GroupCommandId.GROUP_COMMAND_GET_SUB_GROUPATTRIBUTE,
+      (serviceHead, groupMessage) => {
+        this.coreInterface.rspPbMsg(
+          serviceHead.seq ?? 0,
+          serviceHead.resultCode ?? 0,
+          groupMessage ? groupMessage.rspGetSubGroupAttribute : null,
+        )
+      },
+    ],
+    [
+      WL.Group.GroupCommandId.GROUP_COMMAND_GROUP_INVITE,
+      (serviceHead, groupMessage) => {
+        this.coreInterface.rspPbMsg(
+          serviceHead.seq ?? 0,
+          serviceHead.resultCode ?? 0,
+          groupMessage ? groupMessage.rspGroupInvite : null,
+        )
+      },
+    ],
+    [
+      WL.Group.GroupCommandId.GROUP_COMMAND_ADD_SUB_MEMBER,
+      (serviceHead, groupMessage) => {
+        this.coreInterface.rspPbMsg(
+          serviceHead.seq ?? 0,
+          serviceHead.resultCode ?? 0,
+          groupMessage ? groupMessage.rspAddSubMember : null,
+        )
+      },
+    ],
+    // joinGroup() has awaited this response since the module was written, but
+    // the old switch had no case for it, so every join died on the watchdog.
+    [
+      WL.Group.GroupCommandId.GROUP_COMMAND_GROUP_JOIN,
+      (serviceHead, groupMessage) => {
+        this.coreInterface.rspPbMsg(
+          serviceHead.seq ?? 0,
+          serviceHead.resultCode ?? 0,
+          groupMessage ? groupMessage.rspGroupJoin : null,
+        )
+      },
+    ],
+  ])
+
   constructor(private coreInterface: WL_CoreInterface) {
     this.coreInterface.registerPbMsgHandler(
       WL.Service.ServiceID.SERVICE_GROUP,
@@ -50,152 +211,12 @@ export default class WLGroupModule {
     if (!serviceHead) return
 
     if (serviceHead.commandType === WL.Service.CommandType.COMMAND_RESPONSE) {
-      switch (serviceHead.commandId) {
-        case WL.Group.GroupCommandId.GROUP_COMMAND_GET_GROUPVERSION:
-          {
-            this.coreInterface.rspPbMsg(
-              serviceHead.seq ?? 0,
-              serviceHead.resultCode ?? 0,
-              serverMessage.groupMessage?.rspGetGroupVersion,
-            )
-          }
+      const commandId = serviceHead.commandId
 
-          break
+      if (commandId !== undefined && commandId !== null) {
+        const route = this.responseRoutes.get(commandId)
 
-        case WL.Group.GroupCommandId.GROUP_COMMAND_GET_GROUPATTRIBUTE:
-          {
-            this.coreInterface.rspPbMsg(
-              serviceHead.seq ?? 0,
-              serviceHead.resultCode ?? 0,
-              serverMessage.groupMessage?.rspGetGroupAttribute,
-            )
-          }
-
-          break
-
-        case WL.Group.GroupCommandId.GROUP_COMMAND_GET_GROUPINFO:
-          {
-            this.coreInterface.rspPbMsg(
-              serviceHead.seq ?? 0,
-              serviceHead.resultCode ?? 0,
-              serverMessage.groupMessage?.rspGetGroupInfo,
-            )
-          }
-
-          break
-
-        case WL.Group.GroupCommandId.GROUP_COMMAND_GET_MEMBER_USERINFO:
-          {
-            this.coreInterface.rspPbMsg(
-              serviceHead.seq ?? 0,
-              serviceHead.resultCode ?? 0,
-              serverMessage.groupMessage?.rspGetMemberUserInfo,
-            )
-          }
-
-          break
-
-        case WL.Group.GroupCommandId.GROUP_COMMAND_BROADCAST:
-          {
-            this.coreInterface.rspPbMsg(
-              serviceHead.seq ?? 0,
-              serviceHead.resultCode ?? 0,
-              serverMessage.groupMessage?.rspGroupBroadcast,
-            )
-          }
-
-          break
-
-        case WL.Group.GroupCommandId.GROUP_COMMAND_DELETE_GROUP:
-          {
-            this.coreInterface.rspPbMsg(serviceHead.seq ?? 0, serviceHead.resultCode ?? 0, true)
-          }
-
-          break
-
-        case WL.Group.GroupCommandId.GROUP_COMMAND_ANSWER_GROUP_INVITE:
-          {
-            this.coreInterface.rspPbMsg(serviceHead.seq ?? 0, serviceHead.resultCode ?? 0, true)
-          }
-
-          break
-
-        case WL.Group.GroupCommandId.GROUP_COMMAND_DELETE_MEMBER:
-          {
-            this.coreInterface.rspPbMsg(serviceHead.seq ?? 0, serviceHead.resultCode ?? 0, true)
-          }
-
-          break
-        case WL.Group.GroupCommandId.GROUP_COMMAND_GET_ONLINE_MEMBER:
-          {
-            this.coreInterface.rspPbMsg(
-              serviceHead.seq ?? 0,
-              serviceHead.resultCode ?? 0,
-              serverMessage.groupMessage?.rspGetGroupOnlineMember,
-            )
-          }
-
-          break
-        case WL.Group.GroupCommandId.GROUP_COMMAND_CREATE_GROUP:
-          {
-            this.coreInterface.rspPbMsg(
-              serviceHead.seq ?? 0,
-              serviceHead.resultCode ?? 0,
-              serverMessage.groupMessage?.rspCreateGroup,
-            )
-          }
-
-          break
-        case WL.Group.GroupCommandId.GROUP_COMMAND_ANSWER_GROUP_JOIN:
-          {
-            this.coreInterface.rspPbMsg(serviceHead.seq ?? 0, serviceHead.resultCode ?? 0, true)
-          }
-
-          break
-
-        case WL.Group.GroupCommandId.GROUP_COMMAND_CHANGE_GROUPATTRIBUTE:
-          {
-            this.coreInterface.rspPbMsg(
-              serviceHead.seq ?? 0,
-              serviceHead.resultCode ?? 0,
-              serverMessage.groupMessage?.rspChangeGroupAttribute,
-            )
-          }
-
-          break
-
-        case WL.Group.GroupCommandId.GROUP_COMMAND_GET_SUB_GROUPATTRIBUTE:
-          {
-            this.coreInterface.rspPbMsg(
-              serviceHead.seq ?? 0,
-              serviceHead.resultCode ?? 0,
-              serverMessage.groupMessage?.rspGetSubGroupAttribute,
-            )
-          }
-
-          break
-
-        case WL.Group.GroupCommandId.GROUP_COMMAND_GROUP_INVITE:
-          {
-            this.coreInterface.rspPbMsg(
-              serviceHead.seq ?? 0,
-              serviceHead.resultCode ?? 0,
-              serverMessage.groupMessage ? serverMessage.groupMessage.rspGroupInvite : null,
-            )
-          }
-
-          break
-
-        case WL.Group.GroupCommandId.GROUP_COMMAND_ADD_SUB_MEMBER:
-          {
-            this.coreInterface.rspPbMsg(
-              serviceHead.seq ?? 0,
-              serviceHead.resultCode ?? 0,
-              serverMessage.groupMessage ? serverMessage.groupMessage.rspAddSubMember : null,
-            )
-          }
-
-          break
+        if (route) route(serviceHead, serverMessage.groupMessage)
       }
     } else if (serviceHead.commandType === WL.Service.CommandType.COMMAND_NOTIFY) {
       wllog('WLGroupModule', serverMessage)
