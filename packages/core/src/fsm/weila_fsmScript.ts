@@ -1,7 +1,12 @@
 import { assign, createMachine, raise } from 'xstate'
 import type { StateNodeConfig } from 'xstate'
 import type { WeilaCore } from 'main/weila_core'
-import { WL_LoginParam } from 'main/weila_internal_data'
+import {
+  WL_LoginParam,
+  WL_PromiseCallback,
+  WL_PttAudioItem,
+  WL_TalkingInfo,
+} from 'main/weila_internal_data'
 import { WLPlayerType } from 'audio/weila_audio_data'
 
 interface MainFsmContext {
@@ -9,7 +14,37 @@ interface MainFsmContext {
   core: WeilaCore | null
 }
 
-type MainFsmEvent = { type: string; data?: any; output?: unknown; error?: unknown }
+/** Explicitly sent or machine-raised events, with their exact payloads. */
+type MainFsmUserEvent =
+  | { type: 'FSM_LOAD_RESOURCE_EVT'; data: WL_PromiseCallback }
+  | { type: 'FSM_LOGIN_SERVER_EVT'; data: WL_LoginParam }
+  | { type: 'FSM_LOGOUT_EVT' }
+  | { type: 'FSM_NET_CONNECTED_IND_EVT' }
+  | { type: 'FSM_NET_CONNECTING_IND_EVT' }
+  | { type: 'FSM_NET_DISCONNECT_IND_EVT' }
+  | { type: 'FSM_NET_EXCEPTION_IND_EVT' }
+  | { type: 'FSM_SYSTEM_WATCH_TIMEOUT_EVT' }
+  | { type: 'FSM_LOGIN_PROCEDURE_FAIL_EVT'; data?: unknown }
+  | { type: 'FSM_LOGIN_PROCEDURE_SUCC_EVT'; data?: unknown }
+
+/** XState's own done/error events delivered to onDone/onError actions. */
+type MainFsmActorEvent =
+  | { type: `xstate.done.actor.${string}`; output?: unknown }
+  | { type: `xstate.error.actor.${string}`; error?: unknown }
+
+type MainFsmEvent = MainFsmUserEvent | MainFsmActorEvent
+
+interface MainFsmSnapshot {
+  value: unknown
+}
+
+// xstate v5 的 Actor 泛型对具体机型实例化过深（TS2589），在使用边界收窄为结构化接口
+type MainActor = {
+  getSnapshot(): MainFsmSnapshot
+  subscribe(observer: (state: MainFsmSnapshot) => void): void
+  send(event: MainFsmUserEvent): void
+  start(): void
+}
 
 const loginProcedureFsm: Record<
   string,
@@ -238,12 +273,26 @@ const mainFsm = createMachine({
   },
 })
 
-export interface PttFsmEvent {
-  type: string
-  data?: any
-  output?: unknown
-  error?: unknown
-}
+export type PttFsmUserEvent =
+  | { type: 'FSM_PLAY_REALTIME_EVT'; data: WL_PttAudioItem }
+  | { type: 'FSM_PLAY_HISTORY_EVT'; data: WL_PttAudioItem[] }
+  | { type: 'FSM_PLAY_SINGLE_EVT'; data: WL_PttAudioItem }
+  | { type: 'FSM_PLAY_NEXT_PTT_ITEM_EVT'; data?: WL_PttAudioItem }
+  | { type: 'FSM_REQ_TALK_EVT'; data: Partial<WL_TalkingInfo> }
+  | { type: 'FSM_REL_TALK_EVT' }
+  | { type: 'FSM_FEED_PTT_PAYLOAD_EVT'; data: WL_PttAudioItem }
+  | { type: 'FSM_PTT_OUT_OF_PAYLOAD_EVT' }
+  | { type: 'FSM_PTT_ITEM_PLAY_END_EVT' }
+  | { type: 'FSM_PTT_CHECK_RESOURCE_EVT' }
+  | { type: 'FSM_STOP_AND_PLAY_NEXT_EVT' }
+  | { type: 'FSM_STOP_EVT'; data?: unknown }
+  | { type: 'FSM_PLAY_END_EVT'; data?: unknown }
+  | { type: 'FSM_END_BACK_TO_IDLE_EVT' }
+
+/** XState's own done/error events delivered to onDone/onError actions. */
+type PttFsmActorEvent = MainFsmActorEvent
+
+export type PttFsmEvent = PttFsmUserEvent | PttFsmActorEvent
 
 export interface PttFsmContext {
   pttCore: unknown
@@ -507,6 +556,6 @@ const fsmEvents = {
   FSM_PLAY_END_EVT: 'FSM_PLAY_END_EVT',
   FSM_STOP_EVT: 'FSM_STOP_EVT',
   FSM_REL_TALK_EVT: 'FSM_REL_TALK_EVT',
-}
+} as const
 
-export { mainFsm, pttFsm, fsmEvents }
+export { mainFsm, pttFsm, fsmEvents, type MainActor, type MainFsmEvent, type MainFsmUserEvent }

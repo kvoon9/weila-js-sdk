@@ -102,8 +102,16 @@ interface WL_PttPacket {
 }
 
 interface WL_PttFsmListener {
-  onPlayInd(audioItem: WL_PttAudioItem | null, playIndData: WL_PttPlayIndData): void
+  onPlayInd(audioItem: WL_PttAudioItem | null | undefined, playIndData: WL_PttPlayIndData): void
   onRecordPttPacketInd(pttPacket: WL_PttPacket): void
+}
+
+interface WL_TalkingInfo {
+  seqOfPackage: number
+  curMarker: WL_PttPackType
+  callback?: WL_PromiseCallback
+  frameBufferCache: Uint8Array[]
+  stopByErr: boolean
 }
 
 export {
@@ -123,4 +131,5 @@ export {
   WL_PttPacket,
   WL_PttFsmListener,
   WL_PttPackType,
+  WL_TalkingInfo,
 }

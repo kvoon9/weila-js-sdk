@@ -1,6 +1,7 @@
 // @ts-ignore
 import Network from 'main/weila_network.worker'
 import { fsmEvents, mainFsm } from 'fsm/weila_fsmScript'
+import type { MainActor } from 'fsm/weila_fsmScript'
 import { WLConfig } from 'main/weila_config'
 import { createActor, fromPromise } from 'xstate'
 import Long from 'long'
@@ -143,8 +144,8 @@ export type WL_FileUploader = (file: File, fileName: string) => Promise<string>
 
 class WeilaCore implements WL_CoreInterface {
   readonly maxRetryLoginTimes = 2
-  mainFsm?: any
-  mainFsmService?: any
+  mainFsm?: typeof mainFsm
+  mainFsmService!: MainActor
   network?: Network
   waitingRspMap: Map<number, WL_WaitingRspPbMsgInfo>
   waitingTimeoutChecking: boolean
@@ -181,17 +182,25 @@ class WeilaCore implements WL_CoreInterface {
         logout: fromPromise(({ input }) => this.logout(input.context, input.event)),
       },
       actions: {
-        onResourceLoadFail: ({ context, event }) => this.onResourceLoadFail(context, event),
+        onResourceLoadFail: ({ context, event }) => {
+          if ('error' in event) this.onResourceLoadFail(context, event)
+        },
         onLoadingResource: this.onLoadingResource.bind(this),
-        onException: ({ context, event }) => this.onException(context, event),
+        onException: ({ context, event }) => {
+          if ('error' in event) this.onException(context, event)
+        },
         onReadyEntry: this.onReadyEntry.bind(this),
         onReadyExit: this.onReadyExit.bind(this),
         onSysTimeChecking: this.onSysTimeChecking.bind(this),
         onDataInit: this.onDataInit.bind(this),
         onDataInited: this.onDataInited.bind(this),
         onDataPrepareFail: this.onDataPrepareFail.bind(this),
-        onLoginServerSucc: ({ context, event }) => this.onLoginSucc(context, event),
-        onLoginServerFail: ({ context, event }) => this.onLoginFail(context, event),
+        onLoginServerSucc: ({ context, event }) => {
+          if ('output' in event) this.onLoginSucc(context, event)
+        },
+        onLoginServerFail: ({ context, event }) => {
+          if ('error' in event) this.onLoginFail(context, event)
+        },
         connectServer: this.connectServer.bind(this),
         onConnecting: this.onConnecting.bind(this),
         onDisconnectInReadyState: this.onDisconnectInReadyState.bind(this),
@@ -615,14 +624,14 @@ class WeilaCore implements WL_CoreInterface {
   }
 
   private onLoginTryEntry(_context: any, event: any) {
-    wllog('onLoginTryEntry', event.data, event.type)
+    wllog('onLoginTryEntry', event)
 
     if (event.data && event.data.error) {
       const index = event.data.error.message.search(/.*-MESSAGE:.*:END/)
       wllog('onLoginTryEntry', index)
 
       if (index !== -1) {
-        this.mainFsmService.send({ type: event.type, data: event.data })
+        this.mainFsmService.send({ type: fsmEvents.FSM_LOGIN_PROCEDURE_FAIL_EVT, data: event.data })
       }
     }
   }
@@ -647,7 +656,7 @@ class WeilaCore implements WL_CoreInterface {
   }
 
   private onLoginRetryFail(context: any, event: any) {
-    wllog('onLoginRetryFail', event.data)
+    wllog('onLoginRetryFail', event)
     const loginParam: WL_LoginParam = context.loginParam
 
     if (event.data && event.data.error) {

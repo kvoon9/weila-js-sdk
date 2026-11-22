@@ -1,12 +1,12 @@
 import { fsmEvents, pttFsm } from 'fsm/weila_fsmScript'
 import type { PttFsmContext, PttFsmEvent } from 'fsm/weila_fsmScript'
 import {
-  WL_PromiseCallback,
   WL_PttAudioItem,
   WL_PttFsmListener,
   WL_PttPacket,
   WL_PttPackType,
   WL_PttPayload,
+  WL_TalkingInfo,
 } from 'main/weila_internal_data'
 import {
   WL_IDbAudioData,
@@ -36,14 +36,6 @@ import {
 
 const wllog = getLogger('FSM:info')
 const wlerr = getLogger('FSM:err')
-
-interface WL_TalkingInfo {
-  seqOfPackage: number
-  curMarker: WL_PttPackType
-  callback?: WL_PromiseCallback
-  frameBufferCache: Uint8Array[]
-  stopByErr: boolean
-}
 
 interface WL_PttMsgDataResult {
   msgData: WL_IDbMsgData
@@ -97,7 +89,7 @@ export default class WLPttFsm {
   singlePttPlayItem: WL_PttAudioItem | null = null
   historyPttPlayItems: WL_PttAudioItem[] | null = null
   historyPttPlayIndex: number
-  talkingInfo: WL_TalkingInfo | null
+  talkingInfo: Partial<WL_TalkingInfo> | null
 
   constructor(private pttFsmListener: WL_PttFsmListener) {
     this.talkingInfo = null
@@ -211,11 +203,12 @@ export default class WLPttFsm {
 
   onPttPayloadPlaying({ context, event }: PttActionArgs) {
     wllog('进入了Playing状态', event, context)
-    const audioItem: WL_PttAudioItem = event.data
 
     if (event.type === 'FSM_FEED_PTT_PAYLOAD_EVT') {
-      this.feedAudioPayload(audioItem, audioItem.playerType)
-    } else if (event.type === 'FSM_PLAY_NEXT_PTT_ITEM_EVT') {
+      this.feedAudioPayload(event.data, event.data.playerType)
+    } else if (event.type === 'FSM_PLAY_NEXT_PTT_ITEM_EVT' && event.data) {
+      const audioItem = event.data
+
       void WeilaRingPlayer.weila_playRing(WL_ConfigID.WL_RES_RING_START_PLAY_ID)
         .then((_playRet) => {
           wllog('播放铃声成功')
@@ -260,7 +253,7 @@ export default class WLPttFsm {
   }
 
   private onPlayInd(
-    audioItem: WL_PttAudioItem | null,
+    audioItem: WL_PttAudioItem | null | undefined,
     playerType: WLPlayerType,
     state: WL_PttAudioPlayState,
   ) {
@@ -284,7 +277,8 @@ export default class WLPttFsm {
             .startPlay(WLPlayerType.WL_PTT_SINGLE_PLAYER)
             .then((_startRet) => {
               //TODO:
-              this.singlePttPlayItem = event.data
+              this.singlePttPlayItem =
+                event.type === 'FSM_PLAY_SINGLE_EVT' ? event.data : this.singlePttPlayItem
               this.onPlayInd(
                 this.singlePttPlayItem,
                 WLPlayerType.WL_PTT_SINGLE_PLAYER,
@@ -317,11 +311,12 @@ export default class WLPttFsm {
   }
 
   onEnterRealtime({ event }: PttActionArgs) {
-    const audioItem: WL_PttAudioItem = event.data
     wllog('onEnterRealtime', event.type, event)
 
     if (event.type === 'FSM_PLAY_REALTIME_EVT') {
-      this.streamPttPlayItem = audioItem
+      this.streamPttPlayItem = event.data
+      const audioItem = event.data
+
       this.audioManager
         .openPlayer(audioItem.playerType, 16000)
         .then((_openRet) => {
@@ -368,16 +363,17 @@ export default class WLPttFsm {
   }
 
   feedData({ event }: PttActionArgs) {
-    const audioItem: WL_PttAudioItem = event.data
-    wllog('喂PTT数据:', audioItem)
-    this.feedAudioPayload(audioItem, audioItem.playerType)
+    if (event.type !== 'FSM_FEED_PTT_PAYLOAD_EVT') return
+
+    wllog('喂PTT数据:', event.data)
+    this.feedAudioPayload(event.data, event.data.playerType)
   }
 
   // services
 
   /** Opens the recorder and plays the start ring before talking. */
   async startTalking(event: PttFsmEvent): Promise<boolean> {
-    this.talkingInfo = event.data
+    this.talkingInfo = event.type === 'FSM_REQ_TALK_EVT' ? (event.data ?? null) : null
     await this.audioManager.openRecorder(16000, 20000)
 
     try {
@@ -480,7 +476,7 @@ export default class WLPttFsm {
     void WeilaRingPlayer.weila_playRing(WL_ConfigID.WL_RES_RING_STOP_PLAY_ID).finally(() => {
       this.pttFsmService.send({ type: fsmEvents.FSM_PTT_CHECK_RESOURCE_EVT })
       this.onPlayInd(
-        event.data,
+        event.type === 'FSM_PLAY_NEXT_PTT_ITEM_EVT' ? event.data : undefined,
         WLPlayerType.WL_PTT_HISTORY_PLAYER,
         WL_PttAudioPlayState.PTT_AUDIO_PLAYING_END,
       )
@@ -499,7 +495,7 @@ export default class WLPttFsm {
     wllog('onRequestTalkResult', event)
 
     if (this.talkingInfo && this.talkingInfo.callback) {
-      if (event.type.startsWith('xstate.error.actor')) {
+      if ('error' in event) {
         this.talkingInfo.callback.reject(event.error)
       } else {
         WLPttFsm.pttSeq++
@@ -599,7 +595,8 @@ export default class WLPttFsm {
         {
           const talkingInfo = this.talkingInfo
 
-          if (!talkingInfo) break
+          // Frames arrive only while talking, after onRequestTalkResult completed the info.
+          if (!talkingInfo?.frameBufferCache) break
 
           if (
             talkingInfo.curMarker === WL_PttPackType.PTT_END_PACK ||
@@ -1070,7 +1067,8 @@ export default class WLPttFsm {
   private packetPttMsg(dataList: Uint8Array[], lastPacket: boolean): void {
     const talkingInfo = this.talkingInfo
 
-    if (!talkingInfo) return
+    // Runs only while talking, i.e. after onRequestTalkResult completed the info.
+    if (!talkingInfo?.frameBufferCache || talkingInfo.curMarker === undefined) return
 
     let offset = 0
     let totalLen = 0
@@ -1112,8 +1110,10 @@ export default class WLPttFsm {
       sourceType: 5,
       frameCount: wlOpusList.length,
       seq: WLPttFsm.pttSeq,
-      seqInPackage: talkingInfo.seqOfPackage++,
+      seqInPackage: talkingInfo.seqOfPackage ?? 0,
     }
+
+    talkingInfo.seqOfPackage = (talkingInfo.seqOfPackage ?? 0) + 1
 
     if (lastPacket) {
       wllog('最后一帧录音, 分段标志:', talkingInfo.curMarker)
@@ -1132,7 +1132,8 @@ export default class WLPttFsm {
   private packetLastPttMsg(): void {
     const talkingInfo = this.talkingInfo
 
-    if (!talkingInfo) return
+    // Before talking is granted the info is still a seed; there is nothing to packet.
+    if (!talkingInfo?.frameBufferCache) return
 
     if (talkingInfo.frameBufferCache.length > 0) {
       while (talkingInfo.frameBufferCache.length >= WLPttFsm.FRAME_COUNT) {

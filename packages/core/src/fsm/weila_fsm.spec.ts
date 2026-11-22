@@ -2,6 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createActor, fromPromise } from 'xstate'
 import type { Actor, AnyEventObject } from 'xstate'
 import { fsmEvents, mainFsm, pttFsm } from './weila_fsmScript'
+import type { WL_LoginParam, WL_PromiseCallback, WL_PttAudioItem } from 'main/weila_internal_data'
+import { WL_IDbMsgDataStatus, WL_IDbMsgDataType } from 'db/weila_db_data'
+import { WLPlayerType } from 'audio/weila_audio_data'
 
 const MAIN_HANDLER_NAMES = [
   'onResourceLoadFail',
@@ -142,14 +145,54 @@ async function settle() {
   await vi.advanceTimersByTimeAsync(0)
 }
 
+/** Actions are stubbed in these tests; payloads only need to satisfy the event types. */
+function promiseCallback(): WL_PromiseCallback {
+  return { resolve: vi.fn(), reject: vi.fn() }
+}
+
+function loginParam(): WL_LoginParam {
+  return {
+    retryCount: 0,
+    account: '70009790',
+    password: 'pw',
+    countryCode: '0',
+    md5: false,
+    callback: promiseCallback(),
+  }
+}
+
+function audioItem(): WL_PttAudioItem {
+  return {
+    id: 'spec-item',
+    msgData: {
+      combo_id: 'spec',
+      senderId: 1,
+      sessionId: '1001',
+      sessionType: 17,
+      msgId: 1,
+      msgType: WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE,
+      created: 0,
+      autoReply: 0,
+      status: WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_NEW,
+    },
+    payloadList: [],
+    playIndex: 0,
+    playerType: WLPlayerType.WL_PTT_STREAM_PLAYER,
+    priority: 0,
+    isCompleted: true,
+    shouldSave: false,
+    recvWaitTimerId: undefined,
+  }
+}
+
 async function reachInited(actor: Actor<typeof mainFsm>) {
-  actor.send({ type: fsmEvents.FSM_LOAD_RESOURCE_EVT })
+  actor.send({ type: fsmEvents.FSM_LOAD_RESOURCE_EVT, data: promiseCallback() })
   await settle()
 }
 
 async function reachReady(actor: Actor<typeof mainFsm>) {
   await reachInited(actor)
-  actor.send({ type: fsmEvents.FSM_LOGIN_SERVER_EVT, data: { account: 'test' } })
+  actor.send({ type: fsmEvents.FSM_LOGIN_SERVER_EVT, data: loginParam() })
   await settle()
   actor.send({ type: fsmEvents.FSM_NET_CONNECTED_IND_EVT })
   await settle()
@@ -195,7 +238,7 @@ describe('main state machine transitions', () => {
       },
     })
 
-    actor.send({ type: fsmEvents.FSM_LOAD_RESOURCE_EVT })
+    actor.send({ type: fsmEvents.FSM_LOAD_RESOURCE_EVT, data: promiseCallback() })
     await settle()
 
     expect(actor.getSnapshot().matches('exception')).toBe(true)
@@ -208,7 +251,7 @@ describe('main state machine transitions', () => {
     const actor = startMainMachine(recording)
 
     await reachInited(actor)
-    actor.send({ type: fsmEvents.FSM_LOGIN_SERVER_EVT, data: { account: '70009790' } })
+    actor.send({ type: fsmEvents.FSM_LOGIN_SERVER_EVT, data: loginParam() })
     await settle()
 
     expect(actor.getSnapshot().matches({ loginProcedure: 'connecting' })).toBe(true)
@@ -221,7 +264,7 @@ describe('main state machine transitions', () => {
     const actor = startMainMachine(recording)
 
     await reachInited(actor)
-    actor.send({ type: fsmEvents.FSM_LOGIN_SERVER_EVT, data: {} })
+    actor.send({ type: fsmEvents.FSM_LOGIN_SERVER_EVT, data: loginParam() })
     await settle()
     actor.send({ type: fsmEvents.FSM_NET_CONNECTED_IND_EVT })
     await settle()
@@ -235,7 +278,7 @@ describe('main state machine transitions', () => {
     const actor = startMainMachine(recording)
 
     await reachInited(actor)
-    actor.send({ type: fsmEvents.FSM_LOGIN_SERVER_EVT, data: {} })
+    actor.send({ type: fsmEvents.FSM_LOGIN_SERVER_EVT, data: loginParam() })
     await settle()
     actor.send({ type: fsmEvents.FSM_NET_EXCEPTION_IND_EVT })
     await settle()
@@ -254,7 +297,7 @@ describe('main state machine transitions', () => {
     const actor = startMainMachine(recording, { guards: { canRetry: () => false } })
 
     await reachInited(actor)
-    actor.send({ type: fsmEvents.FSM_LOGIN_SERVER_EVT, data: {} })
+    actor.send({ type: fsmEvents.FSM_LOGIN_SERVER_EVT, data: loginParam() })
     await settle()
     actor.send({ type: fsmEvents.FSM_NET_DISCONNECT_IND_EVT })
     await settle()
@@ -337,7 +380,7 @@ describe('ptt state machine transitions', () => {
 
     expect(actor.getSnapshot().matches('idle')).toBe(true)
 
-    actor.send({ type: fsmEvents.FSM_PLAY_SINGLE_EVT })
+    actor.send({ type: fsmEvents.FSM_PLAY_SINGLE_EVT, data: audioItem() })
 
     expect(actor.getSnapshot().matches('singlePlaying')).toBe(true)
     expect(recording.fired).toContain('onSinglePlayEntry')
@@ -347,7 +390,7 @@ describe('ptt state machine transitions', () => {
     const recording: Recording = { fired: [], invoked: [] }
     const actor = startPttMachine(recording)
 
-    actor.send({ type: fsmEvents.FSM_PLAY_REALTIME_EVT })
+    actor.send({ type: fsmEvents.FSM_PLAY_REALTIME_EVT, data: audioItem() })
     await settle()
 
     expect(actor.getSnapshot().matches({ realtimePlaying: 'playing' })).toBe(true)
@@ -364,7 +407,7 @@ describe('ptt state machine transitions', () => {
     const recording: Recording = { fired: [], invoked: [] }
     const actor = startPttMachine(recording)
 
-    actor.send({ type: fsmEvents.FSM_REQ_TALK_EVT, data: { callback: {} } })
+    actor.send({ type: fsmEvents.FSM_REQ_TALK_EVT, data: { callback: promiseCallback() } })
     await settle()
 
     expect(recording.invoked).toContain('startTalking')
