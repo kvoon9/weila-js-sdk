@@ -64,19 +64,6 @@ const WeilaPbBusinessWrapper = {
     )
   },
 
-  buildCommonStaffExitReq(serviceId: number): WLBuildMsgRet {
-    const businessMessage = new WL.Business.BusinessMessage()
-    businessMessage.reqCommonStaffExit = new WL.Business.ReqCommonStaffExit()
-    businessMessage.reqCommonStaffExit.serviceId = serviceId
-
-    return BuildWeilaMsg.buildWeilaMsgReq(
-      WL.Service.ServiceID.SERVICE_BUSINESS,
-      WL.Business.BusinessCommandId.BUSINESS_COMMAND_COMMON_STAFF_EXIT,
-      WL.Service.CommandType.COMMAND_REQUEST,
-      businessMessage,
-    )
-  },
-
   buildCommonStaffDeleteReq(serviceId: number, userId: number): WLBuildMsgRet {
     const businessMessage = new WL.Business.BusinessMessage()
     businessMessage.reqCommonStaffDelete = new WL.Business.ReqCommonStaffDelete()

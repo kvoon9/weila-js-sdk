@@ -1,4 +1,4 @@
-import { WLBuildMsgRet, WLChangeFriendInfo } from './weilapb_wrapper_data'
+import { WLBuildMsgRet } from './weilapb_wrapper_data'
 import { WL } from './weilapb'
 import Long from 'long'
 import { BuildWeilaMsg } from './weilapb_wrapper'
@@ -25,19 +25,6 @@ const WeilaPbFriendWrapper = {
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_FRIEND,
       WL.Friend.FriendCommandId.FRIEND_COMMAND_GET_FRIEND_USERINFO,
-      WL.Service.CommandType.COMMAND_REQUEST,
-      friendMessage,
-    )
-  },
-
-  buildGetFriendInvitationInfoReq(latestUpdated: Long): WLBuildMsgRet {
-    const friendMessage = new WL.Friend.FriendMessage()
-    friendMessage.reqGetFriendInviteInfo = new WL.Friend.ReqGetFriendInviteInfo()
-    friendMessage.reqGetFriendInviteInfo.latestUpdated = latestUpdated
-
-    return BuildWeilaMsg.buildWeilaMsgReq(
-      WL.Service.ServiceID.SERVICE_FRIEND,
-      WL.Friend.FriendCommandId.FRIEND_COMMAND_GET_FRIEND_INVITEINFO,
       WL.Service.CommandType.COMMAND_REQUEST,
       friendMessage,
     )
@@ -93,53 +80,6 @@ const WeilaPbFriendWrapper = {
       WL.Service.CommandType.COMMAND_REQUEST,
       friendMessage,
       subUserId,
-    )
-  },
-
-  buildChangeFriendInfoReq(userId: number, changeFriendInfo: WLChangeFriendInfo): WLBuildMsgRet {
-    const friendMessage = new WL.Friend.FriendMessage()
-    friendMessage.reqChangeFriendInfo = new WL.Friend.ReqChangeFriendInfo()
-    friendMessage.reqChangeFriendInfo.userId = userId
-    friendMessage.reqChangeFriendInfo.desc = changeFriendInfo.desc
-    friendMessage.reqChangeFriendInfo.label = changeFriendInfo.label
-    friendMessage.reqChangeFriendInfo.locationShare = changeFriendInfo.locationShared ? 1 : 0
-    friendMessage.reqChangeFriendInfo.remark = changeFriendInfo.remark
-    friendMessage.reqChangeFriendInfo.shieldStatus = changeFriendInfo.bannedStatus ? 1 : 0
-    friendMessage.reqChangeFriendInfo.tts = changeFriendInfo.tts ? 1 : 0
-
-    return BuildWeilaMsg.buildWeilaMsgReq(
-      WL.Service.ServiceID.SERVICE_FRIEND,
-      WL.Friend.FriendCommandId.FRIEND_COMMAND_CHANGE_FRIENDINFO,
-      WL.Service.CommandType.COMMAND_REQUEST,
-      friendMessage,
-    )
-  },
-
-  buildGetFriendBlacklistReq(pageIndex: number, pageCount: number): WLBuildMsgRet {
-    const friendMessage = new WL.Friend.FriendMessage()
-    friendMessage.reqGetFriendBlackList = new WL.Friend.ReqGetFriendBlackList()
-    friendMessage.reqGetFriendBlackList.pageIndex = pageIndex
-    friendMessage.reqGetFriendBlackList.pageSize = pageCount
-
-    return BuildWeilaMsg.buildWeilaMsgReq(
-      WL.Service.ServiceID.SERVICE_FRIEND,
-      WL.Friend.FriendCommandId.FRIEND_COMMAND_GET_BLACKLIST,
-      WL.Service.CommandType.COMMAND_REQUEST,
-      friendMessage,
-    )
-  },
-
-  buildChangeFriendBlacklistReq(userIdList: number[], actionType: number): WLBuildMsgRet {
-    const friendMessage = new WL.Friend.FriendMessage()
-    friendMessage.reqChangeFriendBlackList = new WL.Friend.ReqChangeFriendBlackList()
-    friendMessage.reqChangeFriendBlackList.type = actionType
-    friendMessage.reqChangeFriendBlackList.userIds = Array.from(userIdList)
-
-    return BuildWeilaMsg.buildWeilaMsgReq(
-      WL.Service.ServiceID.SERVICE_FRIEND,
-      WL.Friend.FriendCommandId.FRIEND_COMMAND_CHANGE_BLACKLIST,
-      WL.Service.CommandType.COMMAND_REQUEST,
-      friendMessage,
     )
   },
 
