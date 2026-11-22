@@ -199,7 +199,6 @@ class WeilaCore implements WL_CoreInterface {
         onLoginTryEntry: this.onLoginTryEntry.bind(this),
       },
       guards: {
-        isLoginSucc: ({ context, event }) => this.isLoginSucc(context, event),
         canRetry: ({ context, event }) => this.canRetry(context, event),
       },
     })
@@ -635,12 +634,6 @@ class WeilaCore implements WL_CoreInterface {
     return loginParams.retryCount < this.maxRetryLoginTimes
   }
 
-  private isLoginSucc(_context: any, event: any): boolean {
-    const loginResult: WL_LoginResult = event.data.loginResult
-
-    return loginResult.loginUserInfo !== undefined
-  }
-
   private connectServer(_context: any, _event: any) {
     this.sendNetworkEvent(WL_NetworkEventID.NET_CONNECT_EVT, null)
   }
@@ -889,7 +882,9 @@ class WeilaCore implements WL_CoreInterface {
   public async weila_logout(): Promise<boolean> {
     this.sessionModule.clearActiveSessionState()
 
-    return this.mainFsmService.send({ type: 'FSM_LOGOUT_EVT' })
+    this.mainFsmService.send({ type: 'FSM_LOGOUT_EVT' })
+
+    return true
   }
 
   /**

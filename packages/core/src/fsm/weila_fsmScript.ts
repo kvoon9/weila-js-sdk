@@ -16,19 +16,13 @@ const loginProcedureFsm: Record<
   StateNodeConfig<MainFsmContext, MainFsmEvent, any, any, any, any, any, any, any, any, any>
 > = {
   loginProcedure: {
-    entry: (_context: any, _event: any) => {},
     initial: 'connecting',
     on: {
-      FSM_NET_DISCONNECT_IND_EVT: {
-        actions: (_context: any, _event: any) => {},
-      },
-
       FSM_LOGIN_PROCEDURE_SUCC_EVT: {
         target: 'dataInit',
       },
 
       FSM_LOGIN_PROCEDURE_FAIL_EVT: {
-        actions: (_context: any, _event: any) => {},
         target: 'loginTry',
       },
     },
@@ -39,19 +33,15 @@ const loginProcedureFsm: Record<
         description: '一旦进入此状态，首先执行连接网络',
         after: {
           '10000': {
-            actions: [
-              raise({ type: 'FSM_LOGIN_PROCEDURE_FAIL_EVT' }),
-              (_context: any, _event: any) => {},
-            ],
+            actions: raise({ type: 'FSM_LOGIN_PROCEDURE_FAIL_EVT' }),
           },
         },
         on: {
           FSM_NET_CONNECTED_IND_EVT: {
-            actions: (_context: any, _event: any) => {},
             target: 'logining',
           },
           FSM_NET_CONNECTING_IND_EVT: {
-            actions: ['onConnecting', (_context: any, _event: any) => {}],
+            actions: 'onConnecting',
           },
           FSM_NET_EXCEPTION_IND_EVT: {
             actions: raise({ type: 'FSM_LOGIN_PROCEDURE_FAIL_EVT' }),
@@ -62,10 +52,7 @@ const loginProcedureFsm: Record<
         },
       },
       logining: {
-        entry: [
-          (_context: any, _event: any) => {},
-          raise({ type: 'FSM_SYSTEM_WATCH_TIMEOUT_EVT' }),
-        ],
+        entry: raise({ type: 'FSM_SYSTEM_WATCH_TIMEOUT_EVT' }),
         on: {
           FSM_SYSTEM_WATCH_TIMEOUT_EVT: {
             actions: ['onSysTimeChecking'],
@@ -260,9 +247,6 @@ export interface PttFsmEvent {
 
 export interface PttFsmContext {
   pttCore: unknown
-  singlePlayOrigin: string
-  historyPlayOrigin: string
-  talkOrigin: string
 }
 
 interface PttFsmTypes {
@@ -278,13 +262,7 @@ const pttFsm = createMachine({
   types: pttFsmTypes,
   id: 'PTTMachine',
   initial: 'idle',
-  context: ({ input }) =>
-    input ?? {
-      pttCore: null,
-      singlePlayOrigin: '',
-      historyPlayOrigin: '',
-      talkOrigin: '',
-    },
+  context: ({ input }) => input ?? { pttCore: null },
   states: {
     idle: {
       entry: 'onIdle',
@@ -459,10 +437,6 @@ const pttFsm = createMachine({
       entry: 'onTalking',
       on: {
         FSM_REL_TALK_EVT: 'talkStop',
-        FSM_TALK_INTERRUPT_EVT: {
-          actions: 'onTalkInterrupt',
-          target: 'talkStop',
-        },
       },
     },
     talkStop: {
