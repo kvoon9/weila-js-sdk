@@ -38,8 +38,15 @@ The script builds the package first, then runs Playwright with `playwright.integ
 - Cross-account receive: one account sends a text and an audio message, the peer receives both and emits the new message event.
 - Location send and receive.
 - Session settings, read state, and the active session.
+- PTT talk round trips (`weila_requestTalk` / `weila_releaseTalk`): the talk burst is recorded through the real recorder worklet, stored as a sent audio message, and delivered to the peer with a CDN audio URL.
 
-Later passes add the receive side with a second account, the group, friend, and device domains, and the PTT and connection state machine regressions.
+Later passes add the group and friend domains and the connection state machine regressions.
+
+## Running the PTT tests
+
+The PTT specs need a working microphone. The `coreAudio` fixture launches Chromium with `--use-fake-device-for-media-stream` (a synthetic microphone), `--use-fake-ui-for-media-stream`, and `--autoplay-policy=no-user-gesture-required`. Each test probes `getUserMedia` first and skips with an explicit message when the machine cannot start a capture device, so the suite stays green on hosts without an audio stack.
+
+On macOS this commonly happens when the process hosting Chromium has no microphone permission (System Settings -> Privacy & Security -> Microphone): `getUserMedia` then hangs or rejects with `NotReadableError` even with the fake device. Grant the terminal (or run on a Linux CI host) to execute these tests for real.
 
 ## Known limitations
 

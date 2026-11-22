@@ -93,6 +93,10 @@ export function readIntegrationEnv(): IntegrationEnv | null {
   }
 }
 
+export interface CoreSessionOptions {
+  launchArgs?: string[]
+}
+
 export class CoreSession {
   loginSummary?: LoginSummary
 
@@ -104,9 +108,13 @@ export class CoreSession {
     readonly credentials: AccountCredentials,
   ) {}
 
-  static async open(env: IntegrationEnv, credentials?: AccountCredentials): Promise<CoreSession> {
+  static async open(
+    env: IntegrationEnv,
+    credentials?: AccountCredentials,
+    options: CoreSessionOptions = {},
+  ): Promise<CoreSession> {
     const server = await startServer()
-    const browser = await chromium.launch()
+    const browser = await chromium.launch({ args: options.launchArgs })
     const page = await browser.newPage()
     await page.goto(server.url)
     await page.waitForFunction(() => window['__ready'] === true)
@@ -384,11 +392,70 @@ export class CoreSession {
     )
   }
 
+  async audioInit(): Promise<boolean> {
+    return this.page.evaluate(() => window.weilaCore.weila_audioInit())
+  }
+
+  /** Whether this machine can start a microphone at all (may hang under TCC). */
+  async canCaptureAudio(): Promise<boolean> {
+    return this.page.evaluate(async () => {
+      try {
+        const stream = await Promise.race([
+          navigator.mediaDevices.getUserMedia({ audio: true }),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000)),
+        ])
+
+        for (const track of stream.getTracks()) track.stop()
+
+        return true
+      } catch {
+        return false
+      }
+    })
+  }
+
+  async talk(
+    holdMs: number,
+    sessionId: string,
+    sessionType: number,
+  ): Promise<{ granted: boolean; released: boolean }> {
+    return this.page.evaluate(
+      async (args) => {
+        const granted = await window.weilaCore.weila_requestTalk(args.sessionId, args.sessionType)
+
+        await new Promise((resolve) => setTimeout(resolve, args.holdMs))
+
+        const released = await window.weilaCore.weila_releaseTalk()
+
+        return { granted, released }
+      },
+      { holdMs, sessionId, sessionType },
+    )
+  }
+
   async events(): Promise<Array<{ eventId: number; text: string }>> {
     return this.page.evaluate(() => window.weilaEvents.slice(-50))
   }
 
   async close(): Promise<void> {
+    // End the server session cleanly: the logout handshake closes the DB only
+    // after the server confirmed, so waiting for that frees the account for
+    // the next spec file's login instead of racing a kick notification.
+    if (this.loginSummary) {
+      await this.page.evaluate(() => window.weilaCore?.weila_logout()).catch(() => {})
+      await this.page
+        .waitForFunction(
+          () =>
+            window.weilaCore.weila_get_token().then(
+              () => false,
+              () => true,
+            ),
+          undefined,
+          { timeout: 5000 },
+        )
+        .catch(() => {})
+    }
+
     await this.browser.close()
     await this.server.close()
   }
