@@ -28,7 +28,119 @@ import {
 
 const wllog = getLogger('MOD:business:info')
 
+/** Routes one business response to the waiting sendPbMsg caller. */
+type BusinessResponseRoute = (
+  serviceHead: WL.Service.ServiceHead.$Properties,
+  businessMessage: WL.Business.IBusinessMessage | null | undefined,
+) => void
+
 export default class WLBusinessModule {
+  /**
+   * Response routing per business command. Every command the module awaits
+   * via sendPbMsg must have a route here; a missing route leaves the caller
+   * to die on the watchdog timeout. `weila_business_module.spec.ts` guards
+   * the wrapper's builders against this table.
+   */
+  private readonly responseRoutes = new Map<number, BusinessResponseRoute>([
+    [
+      WL.Business.BusinessCommandId.BUSINESS_COMMAND_COMMON_GET_SESSION,
+      (serviceHead, businessMessage) => {
+        this.coreInterface.rspPbMsg(
+          serviceHead.seq ?? 0,
+          serviceHead.resultCode ?? 0,
+          serviceHead.resultCode === 0 && businessMessage
+            ? businessMessage.rspCommonGetSessions
+            : null,
+        )
+      },
+    ],
+    [
+      WL.Business.BusinessCommandId.BUSINESS_COMMAND_COMMON_GET_STAFF_INVITE,
+      (serviceHead, businessMessage) => {
+        this.coreInterface.rspPbMsg(
+          serviceHead.seq ?? 0,
+          serviceHead.resultCode ?? 0,
+          serviceHead.resultCode === 0 && businessMessage
+            ? businessMessage.rspCommonGetStaffInvite
+            : null,
+        )
+      },
+    ],
+    [
+      WL.Business.BusinessCommandId.BUSINESS_COMMAND_STAFF_SEARCH_STAFFS,
+      (serviceHead, businessMessage) => {
+        this.coreInterface.rspPbMsg(
+          serviceHead.seq ?? 0,
+          serviceHead.resultCode ?? 0,
+          serviceHead.resultCode === 0 && businessMessage
+            ? businessMessage.rspStaffSearchStaffs
+            : null,
+        )
+      },
+    ],
+    // The ten pure-ack commands below only ever forwarded true.
+    [
+      WL.Business.BusinessCommandId.BUSINESS_COMMAND_STAFF_RESET_SESSION,
+      (serviceHead) => {
+        this.coreInterface.rspPbMsg(serviceHead.seq ?? 0, serviceHead.resultCode ?? 0, true)
+      },
+    ],
+    [
+      WL.Business.BusinessCommandId.BUSINESS_COMMAND_STAFF_REMOVE_SESSION_STAFFS,
+      (serviceHead) => {
+        this.coreInterface.rspPbMsg(serviceHead.seq ?? 0, serviceHead.resultCode ?? 0, true)
+      },
+    ],
+    [
+      WL.Business.BusinessCommandId.BUSINESS_COMMAND_STAFF_ANSWER_SESSION_INVITE,
+      (serviceHead) => {
+        this.coreInterface.rspPbMsg(serviceHead.seq ?? 0, serviceHead.resultCode ?? 0, true)
+      },
+    ],
+    [
+      WL.Business.BusinessCommandId.BUSINESS_COMMAND_STAFF_SESSION_INVITE,
+      (serviceHead) => {
+        this.coreInterface.rspPbMsg(serviceHead.seq ?? 0, serviceHead.resultCode ?? 0, true)
+      },
+    ],
+    [
+      WL.Business.BusinessCommandId.BUSINESS_COMMAND_STAFF_CLOSE_SESSION,
+      (serviceHead) => {
+        this.coreInterface.rspPbMsg(serviceHead.seq ?? 0, serviceHead.resultCode ?? 0, true)
+      },
+    ],
+    [
+      WL.Business.BusinessCommandId.BUSINESS_COMMAND_STAFF_EXIT_SESSION,
+      (serviceHead) => {
+        this.coreInterface.rspPbMsg(serviceHead.seq ?? 0, serviceHead.resultCode ?? 0, true)
+      },
+    ],
+    [
+      WL.Business.BusinessCommandId.BUSINESS_COMMAND_STAFF_ACCEPT_SESSION,
+      (serviceHead) => {
+        this.coreInterface.rspPbMsg(serviceHead.seq ?? 0, serviceHead.resultCode ?? 0, true)
+      },
+    ],
+    [
+      WL.Business.BusinessCommandId.BUSINESS_COMMAND_COMMON_STAFF_DELETE,
+      (serviceHead) => {
+        this.coreInterface.rspPbMsg(serviceHead.seq ?? 0, serviceHead.resultCode ?? 0, true)
+      },
+    ],
+    [
+      WL.Business.BusinessCommandId.BUSINESS_COMMAND_COMMON_STAFF_INVITE,
+      (serviceHead) => {
+        this.coreInterface.rspPbMsg(serviceHead.seq ?? 0, serviceHead.resultCode ?? 0, true)
+      },
+    ],
+    [
+      WL.Business.BusinessCommandId.BUSINESS_COMMAND_COMMON_ANSWER_STAFF_INVITE,
+      (serviceHead) => {
+        this.coreInterface.rspPbMsg(serviceHead.seq ?? 0, serviceHead.resultCode ?? 0, true)
+      },
+    ],
+  ])
+
   constructor(private coreInterface: WL_CoreInterface) {
     this.coreInterface.registerPbMsgHandler(
       WL.Service.ServiceID.SERVICE_BUSINESS,
@@ -45,61 +157,12 @@ export default class WLBusinessModule {
     const businessMessage = serverMessage.businessMessage
 
     if (serviceHead.commandType === WL.Service.CommandType.COMMAND_RESPONSE) {
-      switch (serviceHead.commandId) {
-        case WL.Business.BusinessCommandId.BUSINESS_COMMAND_COMMON_GET_SESSION:
-          {
-            this.coreInterface.rspPbMsg(
-              serviceHead.seq ?? 0,
-              serviceHead.resultCode ?? 0,
-              serviceHead.resultCode === 0 && businessMessage
-                ? businessMessage.rspCommonGetSessions
-                : null,
-            )
-          }
+      const commandId = serviceHead.commandId
 
-          break
+      if (commandId !== undefined && commandId !== null) {
+        const route = this.responseRoutes.get(commandId)
 
-        case WL.Business.BusinessCommandId.BUSINESS_COMMAND_COMMON_GET_STAFF_INVITE:
-          {
-            this.coreInterface.rspPbMsg(
-              serviceHead.seq ?? 0,
-              serviceHead.resultCode ?? 0,
-              serviceHead.resultCode === 0 && businessMessage
-                ? businessMessage.rspCommonGetStaffInvite
-                : null,
-            )
-          }
-
-          break
-
-        case WL.Business.BusinessCommandId.BUSINESS_COMMAND_STAFF_SEARCH_STAFFS:
-          {
-            this.coreInterface.rspPbMsg(
-              serviceHead.seq ?? 0,
-              serviceHead.resultCode ?? 0,
-              serviceHead.resultCode === 0 && businessMessage
-                ? businessMessage.rspStaffSearchStaffs
-                : null,
-            )
-          }
-
-          break
-
-        case WL.Business.BusinessCommandId.BUSINESS_COMMAND_STAFF_RESET_SESSION:
-        case WL.Business.BusinessCommandId.BUSINESS_COMMAND_STAFF_REMOVE_SESSION_STAFFS:
-        case WL.Business.BusinessCommandId.BUSINESS_COMMAND_STAFF_ANSWER_SESSION_INVITE:
-        case WL.Business.BusinessCommandId.BUSINESS_COMMAND_STAFF_SESSION_INVITE:
-        case WL.Business.BusinessCommandId.BUSINESS_COMMAND_STAFF_CLOSE_SESSION:
-        case WL.Business.BusinessCommandId.BUSINESS_COMMAND_STAFF_EXIT_SESSION:
-        case WL.Business.BusinessCommandId.BUSINESS_COMMAND_STAFF_ACCEPT_SESSION:
-        case WL.Business.BusinessCommandId.BUSINESS_COMMAND_COMMON_STAFF_DELETE:
-        case WL.Business.BusinessCommandId.BUSINESS_COMMAND_COMMON_STAFF_INVITE:
-        case WL.Business.BusinessCommandId.BUSINESS_COMMAND_COMMON_ANSWER_STAFF_INVITE:
-          {
-            this.coreInterface.rspPbMsg(serviceHead.seq ?? 0, serviceHead.resultCode ?? 0, true)
-          }
-
-          break
+        if (route) route(serviceHead, businessMessage)
       }
     } else if (serviceHead.commandType === WL.Service.CommandType.COMMAND_NOTIFY) {
       if (!businessMessage) return
