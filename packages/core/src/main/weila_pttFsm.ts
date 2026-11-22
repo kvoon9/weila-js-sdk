@@ -1,5 +1,5 @@
 import { fsmEvents, pttFsm } from 'fsm/weila_fsmScript'
-import type { PttFsmContext, PttFsmEvent } from 'fsm/weila_fsmScript'
+import type { PttFsmContext, PttFsmEvent, PttFsmInput } from 'fsm/weila_fsmScript'
 import {
   WL_PttAudioItem,
   WL_PttFsmListener,
@@ -64,13 +64,8 @@ type PttActor = {
   start(): unknown
 }
 
-// 仅从带 playType meta 的停止态调用；与 v4 的 meta[key].playType 取值等价（缺失即运行时报错）
-function pttPlayType(state: PttState): WLPlayerType {
-  const stateValue = typeof state.value === 'string' ? state.value : Object.keys(state.value)[0]
-  const meta = state.getMeta()[state.machine.id + '.' + stateValue]
-
-  return meta!.playType!
-}
+/** Ring-tone source, injectable so specs can observe playback orchestration. */
+type WLRingPlayer = { weila_playRing(id: WL_ConfigID): Promise<boolean> }
 
 export default class WLPttFsm {
   readonly PLAY_DELAY = 200
@@ -79,29 +74,34 @@ export default class WLPttFsm {
   static readonly FRAME_COUNT = 25
   pttFsm: typeof pttFsm
   pttFsmService: PttActor
-  private latestState: PttState
   playingAudioList: string[]
   playingAudioMap: Map<string, WL_PttAudioItem>
   waitingAudioMap: Map<string, WL_PttAudioItem>
   recentCompletedAudioMap: Map<string, WL_IDbMsgData>
   audioManager: WLAudio
+  ringPlayer: WLRingPlayer
   streamPttPlayItem: WL_PttAudioItem | null = null
   singlePttPlayItem: WL_PttAudioItem | null = null
   historyPttPlayItems: WL_PttAudioItem[] | null = null
   historyPttPlayIndex: number
   talkingInfo: Partial<WL_TalkingInfo> | null
 
-  constructor(private pttFsmListener: WL_PttFsmListener) {
+  constructor(
+    private pttFsmListener: WL_PttFsmListener,
+    audioManager?: WLAudio,
+    ringPlayer?: WLRingPlayer,
+  ) {
     this.talkingInfo = null
     this.historyPttPlayIndex = 0
     this.playingAudioList = []
     this.playingAudioMap = new Map<string, WL_PttAudioItem>()
     this.waitingAudioMap = new Map<string, WL_PttAudioItem>()
     this.recentCompletedAudioMap = new Map<string, WL_IDbMsgData>()
-    this.audioManager = new WLAudio()
+    this.audioManager = audioManager ?? new WLAudio()
     this.audioManager.onAudioEvent(this.onAudioMessage.bind(this))
+    this.ringPlayer = ringPlayer ?? WeilaRingPlayer
 
-    const context: PttFsmContext = { pttCore: this }
+    const context: PttFsmInput = { pttCore: this }
 
     this.pttFsm = pttFsm.provide({
       actions: {
@@ -133,16 +133,6 @@ export default class WLPttFsm {
     })
 
     this.pttFsmService = createActor(this.pttFsm, { input: context })
-    this.latestState = this.pttFsmService.getSnapshot()
-    this.pttFsmService.subscribe((state) => {
-      const previous = this.latestState
-      this.latestState = state
-      wllog(
-        '事件:macrostep 从状态:%s ===> 到状态:%s',
-        JSON.stringify(previous.value),
-        JSON.stringify(state.value),
-      )
-    })
     this.pttFsmService.start()
   }
 
@@ -209,7 +199,8 @@ export default class WLPttFsm {
     } else if (event.type === 'FSM_PLAY_NEXT_PTT_ITEM_EVT' && event.data) {
       const audioItem = event.data
 
-      void WeilaRingPlayer.weila_playRing(WL_ConfigID.WL_RES_RING_START_PLAY_ID)
+      void this.ringPlayer
+        .weila_playRing(WL_ConfigID.WL_RES_RING_START_PLAY_ID)
         .then((_playRet) => {
           wllog('播放铃声成功')
         })
@@ -241,7 +232,7 @@ export default class WLPttFsm {
     wllog('after finish', this.playingAudioList, this.playingAudioMap)
 
     this.streamPttPlayItem = null
-    void WeilaRingPlayer.weila_playRing(WL_ConfigID.WL_RES_RING_STOP_PLAY_ID).finally(() => {
+    void this.ringPlayer.weila_playRing(WL_ConfigID.WL_RES_RING_STOP_PLAY_ID).finally(() => {
       this.pttFsmService.send({ type: fsmEvents.FSM_PTT_CHECK_RESOURCE_EVT })
 
       this.onPlayInd(
@@ -268,7 +259,8 @@ export default class WLPttFsm {
   onSinglePlayEntry({ event }: PttActionArgs) {
     wllog('onSinglePlayEntry', event)
     void this.audioManager.openPlayer(WLPlayerType.WL_PTT_SINGLE_PLAYER, 16000).then((_openRet) => {
-      void WeilaRingPlayer.weila_playRing(WL_ConfigID.WL_RES_RING_START_PLAY_ID)
+      void this.ringPlayer
+        .weila_playRing(WL_ConfigID.WL_RES_RING_START_PLAY_ID)
         .then((_playRet) => {
           wllog('播放铃声成功')
         })
@@ -305,7 +297,7 @@ export default class WLPttFsm {
 
   onSinglePlayFinish({ event }: PttActionArgs) {
     wllog('onSinglePlayFinish', event)
-    void WeilaRingPlayer.weila_playRing(WL_ConfigID.WL_RES_RING_STOP_PLAY_ID).finally(() => {
+    void this.ringPlayer.weila_playRing(WL_ConfigID.WL_RES_RING_STOP_PLAY_ID).finally(() => {
       this.pttFsmService.send({ type: fsmEvents.FSM_PLAY_END_EVT })
     })
   }
@@ -320,7 +312,8 @@ export default class WLPttFsm {
       this.audioManager
         .openPlayer(audioItem.playerType, 16000)
         .then((_openRet) => {
-          void WeilaRingPlayer.weila_playRing(WL_ConfigID.WL_RES_RING_START_PLAY_ID)
+          void this.ringPlayer
+            .weila_playRing(WL_ConfigID.WL_RES_RING_START_PLAY_ID)
             .then((_playRet) => {
               wllog('播放铃声成功')
             })
@@ -377,7 +370,7 @@ export default class WLPttFsm {
     await this.audioManager.openRecorder(16000, 20000)
 
     try {
-      await WeilaRingPlayer.weila_playRing(WL_ConfigID.WL_RES_RING_START_RECORD_ID)
+      await this.ringPlayer.weila_playRing(WL_ConfigID.WL_RES_RING_START_RECORD_ID)
     } catch {
       wlerr('播放铃声失败')
     }
@@ -402,7 +395,7 @@ export default class WLPttFsm {
       await this.audioManager.stopRecord()
     } finally {
       try {
-        await WeilaRingPlayer.weila_playRing(WL_ConfigID.WL_RES_RING_STOP_RECORD_ID)
+        await this.ringPlayer.weila_playRing(WL_ConfigID.WL_RES_RING_STOP_RECORD_ID)
       } catch (_e) {
         wlerr('播放结束铣声错误', _e)
       }
@@ -424,7 +417,8 @@ export default class WLPttFsm {
       this.audioManager
         .openPlayer(WLPlayerType.WL_PTT_HISTORY_PLAYER, 16000)
         .then((_openRet) => {
-          void WeilaRingPlayer.weila_playRing(WL_ConfigID.WL_RES_RING_START_PLAY_ID)
+          void this.ringPlayer
+            .weila_playRing(WL_ConfigID.WL_RES_RING_START_PLAY_ID)
             .then((_playRet) => {
               wllog('播放铃声成功')
             })
@@ -473,7 +467,7 @@ export default class WLPttFsm {
       this.historyPttPlayItems.shift()
     }
 
-    void WeilaRingPlayer.weila_playRing(WL_ConfigID.WL_RES_RING_STOP_PLAY_ID).finally(() => {
+    void this.ringPlayer.weila_playRing(WL_ConfigID.WL_RES_RING_STOP_PLAY_ID).finally(() => {
       this.pttFsmService.send({ type: fsmEvents.FSM_PTT_CHECK_RESOURCE_EVT })
       this.onPlayInd(
         event.type === 'FSM_PLAY_NEXT_PTT_ITEM_EVT' ? event.data : undefined,
@@ -507,8 +501,8 @@ export default class WLPttFsm {
     }
   }
 
-  stopAndPlayNext() {
-    const playType = pttPlayType(this.latestState)
+  stopAndPlayNext({ context }: PttActionArgs) {
+    const playType = context.activePlayerType!
     void this.audioManager.stopPlay(playType).finally(() => {
       this.pttFsmService.send({ type: fsmEvents.FSM_PTT_CHECK_RESOURCE_EVT })
     })
@@ -520,8 +514,8 @@ export default class WLPttFsm {
     this.streamPttPlayItem = null
   }
 
-  stopPlay({ event }: PttActionArgs) {
-    const playType = pttPlayType(this.latestState)
+  stopPlay({ event, context }: PttActionArgs) {
+    const playType = context.activePlayerType!
     wllog('stopPlay playType:', playType)
 
     this.onPlayInd(null, playType, WL_PttAudioPlayState.PTT_AUDIO_PLAYING_END)

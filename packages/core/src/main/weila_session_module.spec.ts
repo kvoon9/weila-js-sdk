@@ -1,24 +1,11 @@
+// The session module's constructor builds the real PTT FSM, whose module
+// graph evaluates the audio worklets against globals jsdom lacks; the
+// shared vitest setup shims them so the genuine graph can load.
 import { describe, expect, it, vi } from 'vitest'
 import { WL } from 'proto/weilapb'
 import { WL_CoreInterface, WL_PbMsgHandler } from 'main/weila_internal_data'
 import WLSessionModule from 'main/weila_session_module'
 import { WeilaPBSessionWrapper } from 'proto/weilapb_session_wrapper'
-
-// The session module's constructor builds the real PTT FSM, whose module
-// graph evaluates the audio worklets against globals jsdom lacks. Shim the
-// two worklet-scope globals so the genuine module graph can load; the FSM
-// itself is model-checked in its own suites.
-vi.hoisted(() => {
-  /** Minimal stand-in for the worklet-scope base class; never constructed here. */
-  class AudioWorkletProcessorShim {
-    port: MessagePort | null = null
-  }
-
-  Object.assign(globalThis, {
-    AudioWorkletProcessor: AudioWorkletProcessorShim,
-    registerProcessor: () => {},
-  })
-})
 
 function makeSessionModule() {
   const rspPbMsg = vi.fn()

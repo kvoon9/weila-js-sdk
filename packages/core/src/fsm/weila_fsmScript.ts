@@ -326,11 +326,17 @@ export type PttFsmEvent = PttFsmUserEvent | PttFsmActorEvent
 
 export interface PttFsmContext {
   pttCore: unknown
+  /** Player of the currently active play family; assigned on playing-state entry. */
+  activePlayerType: WLPlayerType | null
+}
+
+export interface PttFsmInput {
+  pttCore: unknown
 }
 
 interface PttFsmTypes {
   context: PttFsmContext
-  input: PttFsmContext
+  input: PttFsmInput
   events: PttFsmEvent
 }
 
@@ -341,7 +347,7 @@ const pttFsm = createMachine({
   types: pttFsmTypes,
   id: 'PTTMachine',
   initial: 'idle',
-  context: ({ input }) => input ?? { pttCore: null },
+  context: ({ input }) => ({ activePlayerType: null, ...(input ?? { pttCore: null }) }),
   states: {
     idle: {
       entry: 'onIdle',
@@ -353,8 +359,11 @@ const pttFsm = createMachine({
       },
     },
     realtimePlaying: {
+      entry: [
+        assign({ activePlayerType: () => WLPlayerType.WL_PTT_STREAM_PLAYER }),
+        'onEnterRealtime',
+      ],
       exit: 'onExitRealtime',
-      entry: 'onEnterRealtime',
       initial: 'playing',
       states: {
         playing: {
@@ -373,9 +382,6 @@ const pttFsm = createMachine({
             FSM_STOP_AND_PLAY_NEXT_EVT: {
               actions: 'stopAndPlayNext',
             },
-          },
-          meta: {
-            playType: WLPlayerType.WL_PTT_STREAM_PLAYER,
           },
         },
         checkPttSource: {
@@ -428,12 +434,12 @@ const pttFsm = createMachine({
         FSM_REQ_TALK_EVT: 'startTalk',
         FSM_END_BACK_TO_IDLE_EVT: 'idle',
       },
-      meta: {
-        playType: WLPlayerType.WL_PTT_STREAM_PLAYER,
-      },
     },
     historyPlaying: {
-      entry: 'onHistoryPlaying',
+      entry: [
+        assign({ activePlayerType: () => WLPlayerType.WL_PTT_HISTORY_PLAYER }),
+        'onHistoryPlaying',
+      ],
       initial: 'playing',
       states: {
         playing: {
@@ -449,9 +455,6 @@ const pttFsm = createMachine({
             FSM_STOP_AND_PLAY_NEXT_EVT: {
               actions: 'stopAndPlayNext',
             },
-          },
-          meta: {
-            playType: WLPlayerType.WL_PTT_HISTORY_PLAYER,
           },
         },
         checkPttSource: {
@@ -493,9 +496,6 @@ const pttFsm = createMachine({
         FSM_PLAY_SINGLE_EVT: 'singlePlaying',
         FSM_END_BACK_TO_IDLE_EVT: 'idle',
       },
-      meta: {
-        playType: WLPlayerType.WL_PTT_HISTORY_PLAYER,
-      },
     },
     startTalk: {
       invoke: {
@@ -527,7 +527,10 @@ const pttFsm = createMachine({
       },
     },
     singlePlaying: {
-      entry: 'onSinglePlayEntry',
+      entry: [
+        assign({ activePlayerType: () => WLPlayerType.WL_PTT_SINGLE_PLAYER }),
+        'onSinglePlayEntry',
+      ],
       exit: 'onSinglePlayExit',
       on: {
         FSM_STOP_EVT: 'singleStopping',
@@ -550,9 +553,6 @@ const pttFsm = createMachine({
         FSM_REQ_TALK_EVT: 'startTalk',
         FSM_PLAY_HISTORY_EVT: 'historyPlaying',
         FSM_END_BACK_TO_IDLE_EVT: 'idle',
-      },
-      meta: {
-        playType: WLPlayerType.WL_PTT_SINGLE_PLAYER,
       },
     },
   },
