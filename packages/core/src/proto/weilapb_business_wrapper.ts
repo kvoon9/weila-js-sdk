@@ -5,9 +5,9 @@ import { WLBuildMsgRet } from './weilapb_wrapper_data'
 
 const WeilaPbBusinessWrapper = {
   buildCommonGetSessionsReq(sessionIds: Long[]): WLBuildMsgRet {
-    const businessMessage = new WL.Business.BusinessMessage()
-    businessMessage.reqCommonGetSessions = new WL.Business.ReqCommonGetSessions()
-    businessMessage.reqCommonGetSessions.sessionIds = sessionIds
+    const businessMessage = WL.Business.BusinessMessage.create({
+      reqCommonGetSessions: { sessionIds },
+    })
 
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_BUSINESS,
@@ -18,11 +18,9 @@ const WeilaPbBusinessWrapper = {
   },
 
   buildCommonStaffInviteReq(serviceId: number, userIds: number[], content?: string): WLBuildMsgRet {
-    const businessMessage = new WL.Business.BusinessMessage()
-    businessMessage.reqCommonStaffInvite = new WL.Business.ReqCommonStaffInvite()
-    businessMessage.reqCommonStaffInvite.userIds = userIds
-    businessMessage.reqCommonStaffInvite.serviceId = serviceId
-    businessMessage.reqCommonStaffInvite.content = content
+    const businessMessage = WL.Business.BusinessMessage.create({
+      reqCommonStaffInvite: { userIds, serviceId, content },
+    })
 
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_BUSINESS,
@@ -37,11 +35,9 @@ const WeilaPbBusinessWrapper = {
     invitorId: number,
     status: number,
   ): WLBuildMsgRet {
-    const businessMessage = new WL.Business.BusinessMessage()
-    businessMessage.reqCommonAnswerStaffInvite = new WL.Business.ReqCommonAnswerStaffInvite()
-    businessMessage.reqCommonAnswerStaffInvite.serviceId = serviceId
-    businessMessage.reqCommonAnswerStaffInvite.invitorId = invitorId
-    businessMessage.reqCommonAnswerStaffInvite.status = status
+    const businessMessage = WL.Business.BusinessMessage.create({
+      reqCommonAnswerStaffInvite: { serviceId, invitorId, status },
+    })
 
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_BUSINESS,
@@ -52,9 +48,9 @@ const WeilaPbBusinessWrapper = {
   },
 
   buildCommonGetStaffInviteReq(latestUpdated: number): WLBuildMsgRet {
-    const businessMessage = new WL.Business.BusinessMessage()
-    businessMessage.reqCommonGetStaffInvite = new WL.Business.ReqCommonGetStaffInvite()
-    businessMessage.reqCommonGetStaffInvite.latestUpdated = Long.fromValue(latestUpdated)
+    const businessMessage = WL.Business.BusinessMessage.create({
+      reqCommonGetStaffInvite: { latestUpdated: Long.fromValue(latestUpdated) },
+    })
 
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_BUSINESS,
@@ -65,9 +61,9 @@ const WeilaPbBusinessWrapper = {
   },
 
   buildCommonStaffExitReq(serviceId: number): WLBuildMsgRet {
-    const businessMessage = new WL.Business.BusinessMessage()
-    businessMessage.reqCommonStaffExit = new WL.Business.ReqCommonStaffExit()
-    businessMessage.reqCommonStaffExit.serviceId = serviceId
+    const businessMessage = WL.Business.BusinessMessage.create({
+      reqCommonStaffExit: { serviceId },
+    })
 
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_BUSINESS,
@@ -78,10 +74,9 @@ const WeilaPbBusinessWrapper = {
   },
 
   buildCommonStaffDeleteReq(serviceId: number, userId: number): WLBuildMsgRet {
-    const businessMessage = new WL.Business.BusinessMessage()
-    businessMessage.reqCommonStaffDelete = new WL.Business.ReqCommonStaffDelete()
-    businessMessage.reqCommonStaffDelete.serviceId = serviceId
-    businessMessage.reqCommonStaffDelete.userId = userId
+    const businessMessage = WL.Business.BusinessMessage.create({
+      reqCommonStaffDelete: { serviceId, userId },
+    })
 
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_BUSINESS,
@@ -93,9 +88,9 @@ const WeilaPbBusinessWrapper = {
 
   // 客服接口
   buildStaffAcceptSessionReq(sessionId: Long): WLBuildMsgRet {
-    const businessMessage = new WL.Business.BusinessMessage()
-    businessMessage.reqStaffAcceptSession = new WL.Business.ReqStaffAcceptSession()
-    businessMessage.reqStaffAcceptSession.sessionId = sessionId
+    const businessMessage = WL.Business.BusinessMessage.create({
+      reqStaffAcceptSession: { sessionId },
+    })
 
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_BUSINESS,
@@ -106,9 +101,9 @@ const WeilaPbBusinessWrapper = {
   },
 
   buildStaffExitSessionReq(sessionId: Long): WLBuildMsgRet {
-    const businessMessage = new WL.Business.BusinessMessage()
-    businessMessage.reqStaffExitSession = new WL.Business.ReqStaffExitSession()
-    businessMessage.reqStaffExitSession.sessionId = sessionId
+    const businessMessage = WL.Business.BusinessMessage.create({
+      reqStaffExitSession: { sessionId },
+    })
 
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_BUSINESS,
@@ -119,9 +114,9 @@ const WeilaPbBusinessWrapper = {
   },
 
   buildStaffCloseSessionReq(sessionId: Long): WLBuildMsgRet {
-    const businessMessage = new WL.Business.BusinessMessage()
-    businessMessage.reqStaffCloseSession = new WL.Business.ReqStaffCloseSession()
-    businessMessage.reqStaffCloseSession.sessionId = sessionId
+    const businessMessage = WL.Business.BusinessMessage.create({
+      reqStaffCloseSession: { sessionId },
+    })
 
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_BUSINESS,
@@ -132,11 +127,9 @@ const WeilaPbBusinessWrapper = {
   },
 
   buildStaffSessionInviteReq(sessionId: Long, staffIds: number[], content?: string): WLBuildMsgRet {
-    const businessMessage = new WL.Business.BusinessMessage()
-    businessMessage.reqStaffSessionInvite = new WL.Business.ReqStaffSessionInvite()
-    businessMessage.reqStaffSessionInvite.sessionId = sessionId
-    businessMessage.reqStaffSessionInvite.staffIds = staffIds
-    businessMessage.reqStaffSessionInvite.content = content
+    const businessMessage = WL.Business.BusinessMessage.create({
+      reqStaffSessionInvite: { sessionId, staffIds, content },
+    })
 
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_BUSINESS,
@@ -147,10 +140,9 @@ const WeilaPbBusinessWrapper = {
   },
 
   buildStaffAnswerSessionInviteReq(sessionId: Long, status: number): WLBuildMsgRet {
-    const businessMessage = new WL.Business.BusinessMessage()
-    businessMessage.reqStaffAnswerSessionInvite = new WL.Business.ReqStaffAnswerSessionInvite()
-    businessMessage.reqStaffAnswerSessionInvite.sessionId = sessionId
-    businessMessage.reqStaffAnswerSessionInvite.status = status
+    const businessMessage = WL.Business.BusinessMessage.create({
+      reqStaffAnswerSessionInvite: { sessionId, status },
+    })
 
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_BUSINESS,
@@ -161,10 +153,9 @@ const WeilaPbBusinessWrapper = {
   },
 
   buildStaffRemoveSessionStaffReq(sessionId: Long, staffIds: number[]): WLBuildMsgRet {
-    const businessMessage = new WL.Business.BusinessMessage()
-    businessMessage.reqStaffRemoveSessionStaff = new WL.Business.ReqStaffRemoveSessionStaff()
-    businessMessage.reqStaffRemoveSessionStaff.sessionId = sessionId
-    businessMessage.reqStaffRemoveSessionStaff.staffIds = staffIds
+    const businessMessage = WL.Business.BusinessMessage.create({
+      reqStaffRemoveSessionStaff: { sessionId, staffIds },
+    })
 
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_BUSINESS,
@@ -180,12 +171,14 @@ const WeilaPbBusinessWrapper = {
     pageSize: number,
     staffClass?: number,
   ): WLBuildMsgRet {
-    const businessMessage = new WL.Business.BusinessMessage()
-    businessMessage.reqStaffSearchStaffs = new WL.Business.ReqStaffSearchStaffs()
-    businessMessage.reqStaffSearchStaffs.serviceId = serviceId
-    businessMessage.reqStaffSearchStaffs.class = staffClass
-    businessMessage.reqStaffSearchStaffs.pageIndex = pageIndex
-    businessMessage.reqStaffSearchStaffs.pageSize = pageSize
+    const businessMessage = WL.Business.BusinessMessage.create({
+      reqStaffSearchStaffs: {
+        serviceId,
+        class: staffClass,
+        pageIndex,
+        pageSize,
+      },
+    })
 
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_BUSINESS,
@@ -196,9 +189,9 @@ const WeilaPbBusinessWrapper = {
   },
 
   buildStaffResetSessionReq(sessionId: Long): WLBuildMsgRet {
-    const businessMessage = new WL.Business.BusinessMessage()
-    businessMessage.reqStaffResetSession = new WL.Business.ReqStaffResetSession()
-    businessMessage.reqStaffResetSession.sessionId = sessionId
+    const businessMessage = WL.Business.BusinessMessage.create({
+      reqStaffResetSession: { sessionId },
+    })
 
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_BUSINESS,
