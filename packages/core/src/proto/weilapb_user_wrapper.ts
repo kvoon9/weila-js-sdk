@@ -4,9 +4,9 @@ import { BuildWeilaMsg } from './weilapb_wrapper'
 
 const WeilaPbUserWrapper = {
   buildGetUserInfoReq(key: string): WLBuildMsgRet {
-    const userMessage = new WL.User.UserMessage()
-    userMessage.reqGetUserInfo = new WL.User.ReqGetUserInfo()
-    userMessage.reqGetUserInfo.key = key
+    const userMessage = WL.User.UserMessage.create({
+      reqGetUserInfo: { key },
+    })
 
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_USER,
@@ -17,12 +17,14 @@ const WeilaPbUserWrapper = {
   },
 
   buildChangeUserInfoReq(changeUserInfo: WLChangeUserInfoData): WLBuildMsgRet {
-    const userMessage = new WL.User.UserMessage()
-    userMessage.reqChangeUserInfo = new WL.User.ReqChangeUserInfo()
-    userMessage.reqChangeUserInfo.avatar = changeUserInfo.avatar
-    userMessage.reqChangeUserInfo.nick = changeUserInfo.nick
-    userMessage.reqChangeUserInfo.sex = changeUserInfo.sex
-    userMessage.reqChangeUserInfo.signature = changeUserInfo.signature
+    const userMessage = WL.User.UserMessage.create({
+      reqChangeUserInfo: {
+        avatar: changeUserInfo.avatar,
+        nick: changeUserInfo.nick,
+        sex: changeUserInfo.sex,
+        signature: changeUserInfo.signature,
+      },
+    })
 
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_USER,
@@ -33,8 +35,7 @@ const WeilaPbUserWrapper = {
   },
 
   buildGetConfigReq(): WLBuildMsgRet {
-    const userMessage = new WL.User.UserMessage()
-    userMessage.reqGetConfig = new WL.User.ReqGetConfig()
+    const userMessage = WL.User.UserMessage.create({ reqGetConfig: {} })
 
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_USER,
@@ -45,11 +46,9 @@ const WeilaPbUserWrapper = {
   },
 
   buildSetConfigReq(userId: number, key: string, value: string, subUserId: number): WLBuildMsgRet {
-    const userMessage = new WL.User.UserMessage()
-    userMessage.reqSetConfig = new WL.User.ReqSetConfig()
-    userMessage.reqSetConfig.name = key
-    userMessage.reqSetConfig.userId = userId
-    userMessage.reqSetConfig.content = value
+    const userMessage = WL.User.UserMessage.create({
+      reqSetConfig: { name: key, userId, content: value },
+    })
 
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_USER,

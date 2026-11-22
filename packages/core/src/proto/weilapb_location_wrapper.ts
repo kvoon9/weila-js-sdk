@@ -16,32 +16,30 @@ const WeilaPbLocationWrapper = {
     extensionType: number,
     extensionBody?: string,
   ): WLBuildMsgRet {
-    const locationMessage = new WL.Location.LocationMessage()
-    locationMessage.reqReportLocation = new WL.Location.ReqReportLocation()
-    locationMessage.reqReportLocation.appid = appId
-    locationMessage.reqReportLocation.extensionType = extensionType
-    locationMessage.reqReportLocation.extensionBody = extensionBody
-    locationMessage.reqReportLocation.locationInfo = new WL.Location.LocationInfo()
-    locationMessage.reqReportLocation.locationInfo.clientType = locationInfo.clientType
-    locationMessage.reqReportLocation.locationInfo.locationType = locationInfo.locationType
-    locationMessage.reqReportLocation.locationInfo.userId = locationInfo.userId
-    locationMessage.reqReportLocation.locationInfo.locationParam = new WL.Location.LocationParam()
-    locationMessage.reqReportLocation.locationInfo.locationParam.latitude = locationInfo.latitude
-    locationMessage.reqReportLocation.locationInfo.locationParam.altitude = locationInfo.altitude
-    locationMessage.reqReportLocation.locationInfo.locationParam.direction = locationInfo.direction
-    locationMessage.reqReportLocation.locationInfo.locationParam.longitude = locationInfo.longitude
-    locationMessage.reqReportLocation.locationInfo.locationParam.radius = locationInfo.radius
-    locationMessage.reqReportLocation.locationInfo.locationParam.speed = locationInfo.speed
-    locationMessage.reqReportLocation.locationInfo.locationParam.timestamp = Long.fromValue(
-      locationInfo.timestamp,
-    )
-
-    locationMessage.reqReportLocation.sessionInfos = []
-    sessionInfoList.forEach((value) => {
-      locationMessage.reqReportLocation!.sessionInfos!.push({
-        sessionId: Long.fromValue(value.sessionId),
-        sessionType: value.sessionType,
-      })
+    const locationMessage = WL.Location.LocationMessage.create({
+      reqReportLocation: {
+        appid: appId,
+        extensionType,
+        extensionBody,
+        locationInfo: {
+          clientType: locationInfo.clientType,
+          locationType: locationInfo.locationType,
+          userId: locationInfo.userId,
+          locationParam: {
+            latitude: locationInfo.latitude,
+            altitude: locationInfo.altitude,
+            direction: locationInfo.direction,
+            longitude: locationInfo.longitude,
+            radius: locationInfo.radius,
+            speed: locationInfo.speed,
+            timestamp: Long.fromValue(locationInfo.timestamp),
+          },
+        },
+        sessionInfos: sessionInfoList.map((value) => ({
+          sessionId: Long.fromValue(value.sessionId),
+          sessionType: value.sessionType,
+        })),
+      },
     })
 
     return BuildWeilaMsg.buildWeilaMsgReq(
@@ -53,15 +51,18 @@ const WeilaPbLocationWrapper = {
   },
 
   buildGetLocationReq(sessionInfo: WLSessionInfo, userIdList: number[]): WLBuildMsgRet {
-    const locationMessage = new WL.Location.LocationMessage()
-    locationMessage.reqGetLocation = new WL.Location.ReqGetLocation()
-    locationMessage.reqGetLocation.sessionInfo = new WL.Location.LocationSessionInfo()
-    locationMessage.reqGetLocation.sessionInfo.sessionId = Long.fromValue(sessionInfo.sessionId)
-    locationMessage.reqGetLocation.sessionInfo.sessionType = sessionInfo.sessionType
+    const reqGetLocation: WL.Location.ReqGetLocation.$Properties = {
+      sessionInfo: {
+        sessionId: Long.fromValue(sessionInfo.sessionId),
+        sessionType: sessionInfo.sessionType,
+      },
+    }
 
     if (userIdList.length) {
-      locationMessage.reqGetLocation.userIds = Array.from(userIdList)
+      reqGetLocation.userIds = Array.from(userIdList)
     }
+
+    const locationMessage = WL.Location.LocationMessage.create({ reqGetLocation })
 
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_LOCATION,
@@ -76,18 +77,20 @@ const WeilaPbLocationWrapper = {
     locationControl: WLLocationControl,
     userIdList: number[],
   ): WLBuildMsgRet {
-    const locationMessage = new WL.Location.LocationMessage()
-    locationMessage.reqLocationControl = new WL.Location.ReqLocationControl()
-    locationMessage.reqLocationControl.locationControl = new WL.Location.LocationControl()
-    locationMessage.reqLocationControl.locationControl.duration = locationControl.duration
-    locationMessage.reqLocationControl.locationControl.frequency = locationControl.frequency
-    locationMessage.reqLocationControl.locationControl.status = locationControl.status
-
-    locationMessage.reqLocationControl.sessionInfo = new WL.Location.LocationSessionInfo()
-    locationMessage.reqLocationControl.sessionInfo.sessionId = Long.fromValue(sessionInfo.sessionId)
-    locationMessage.reqLocationControl.sessionInfo.sessionType = sessionInfo.sessionType
-
-    locationMessage.reqLocationControl.userIds = Array.from(userIdList)
+    const locationMessage = WL.Location.LocationMessage.create({
+      reqLocationControl: {
+        locationControl: {
+          duration: locationControl.duration,
+          frequency: locationControl.frequency,
+          status: locationControl.status,
+        },
+        sessionInfo: {
+          sessionId: Long.fromValue(sessionInfo.sessionId),
+          sessionType: sessionInfo.sessionType,
+        },
+        userIds: Array.from(userIdList),
+      },
+    })
 
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_LOCATION,
