@@ -1,6 +1,6 @@
 import { WL } from './weilapb'
 import { BuildWeilaMsg } from './weilapb_wrapper'
-import { WLBuildMsgRet, WLGroupAttributeInfo } from './weilapb_wrapper_data'
+import { WLBuildMsgRet, WLGroupAttributeInfo, WLGroupMemberInfo } from './weilapb_wrapper_data'
 import Long from 'long'
 
 const WeilaPBGroupWrapper = {
@@ -109,6 +109,28 @@ const WeilaPBGroupWrapper = {
     )
   },
 
+  buildChangeGroupMemberInfoReq(groupId: Long, memberInfo: WLGroupMemberInfo): WLBuildMsgRet {
+    const groupMessage = new WL.Group.GroupMessage()
+    groupMessage.reqChangeMemberInfo = new WL.Group.ReqChangeMemberInfo()
+    groupMessage.reqChangeMemberInfo.groupId = groupId
+    groupMessage.reqChangeMemberInfo.locationShare = memberInfo.locationShared ? 1 : 0
+    groupMessage.reqChangeMemberInfo.memberId = memberInfo.userId
+    groupMessage.reqChangeMemberInfo.prority = memberInfo.priority
+    groupMessage.reqChangeMemberInfo.remark = memberInfo.remark
+    groupMessage.reqChangeMemberInfo.shieldStatus = memberInfo.bannedStatus
+    groupMessage.reqChangeMemberInfo.shutupStatus = memberInfo.speechAvailable ? 0 : 1
+    groupMessage.reqChangeMemberInfo.shutupDuration = memberInfo.speechDisableTimeout
+    groupMessage.reqChangeMemberInfo.tts = memberInfo.tts ? 1 : 0
+    groupMessage.reqChangeMemberInfo.type = memberInfo.memberType
+
+    return BuildWeilaMsg.buildWeilaMsgReq(
+      WL.Service.ServiceID.SERVICE_GROUP,
+      WL.Group.GroupCommandId.GROUP_COMMAND_CHANGE_MEMBERINFO,
+      WL.Service.CommandType.COMMAND_REQUEST,
+      groupMessage,
+    )
+  },
+
   buildGetGroupMemberInfoReq(groupId: Long, userIdList: number[]): WLBuildMsgRet {
     const groupMessage = new WL.Group.GroupMessage()
     groupMessage.reqGetMemberUserInfo = new WL.Group.ReqGetMemberUserInfo()
@@ -151,6 +173,19 @@ const WeilaPBGroupWrapper = {
     )
   },
 
+  buildGetGroupInvitationReq(lastUpdateTime: Long): WLBuildMsgRet {
+    const groupMessage = new WL.Group.GroupMessage()
+    groupMessage.reqGetGroupInviteInfo = new WL.Group.ReqGetGroupInviteInfo()
+    groupMessage.reqGetGroupInviteInfo.latestUpdated = lastUpdateTime
+
+    return BuildWeilaMsg.buildWeilaMsgReq(
+      WL.Service.ServiceID.SERVICE_GROUP,
+      WL.Group.GroupCommandId.GROUP_COMMAND_GET_GROUP_INVITEINFO,
+      WL.Service.CommandType.COMMAND_REQUEST,
+      groupMessage,
+    )
+  },
+
   buildGroupInviteReq(groupId: Long, userIdList: number[]): WLBuildMsgRet {
     const groupMessage = new WL.Group.GroupMessage()
     groupMessage.reqGroupInvite = new WL.Group.ReqGroupInvite()
@@ -175,6 +210,20 @@ const WeilaPBGroupWrapper = {
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_GROUP,
       WL.Group.GroupCommandId.GROUP_COMMAND_ANSWER_GROUP_INVITE,
+      WL.Service.CommandType.COMMAND_REQUEST,
+      groupMessage,
+    )
+  },
+
+  buildGroupGetJoinInfoReq(lasteUpdate: Long, groupIdList: Long[]): WLBuildMsgRet {
+    const groupMessage = new WL.Group.GroupMessage()
+    groupMessage.reqGetGroupJoinInfo = new WL.Group.ReqGetGroupJoinInfo()
+    groupMessage.reqGetGroupJoinInfo.latestUpdated = lasteUpdate
+    groupMessage.reqGetGroupJoinInfo.groupIds = Array.from(groupIdList)
+
+    return BuildWeilaMsg.buildWeilaMsgReq(
+      WL.Service.ServiceID.SERVICE_GROUP,
+      WL.Group.GroupCommandId.GROUP_COMMAND_GET_GROUP_JOININFO,
       WL.Service.CommandType.COMMAND_REQUEST,
       groupMessage,
     )
@@ -211,6 +260,137 @@ const WeilaPBGroupWrapper = {
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_GROUP,
       WL.Group.GroupCommandId.GROUP_COMMAND_ANSWER_GROUP_JOIN,
+      WL.Service.CommandType.COMMAND_REQUEST,
+      groupMessage,
+    )
+  },
+
+  buildGroupBroadcastReq(groupId: Long, status: number): WLBuildMsgRet {
+    const groupMessage = new WL.Group.GroupMessage()
+    groupMessage.reqGroupBroadcast = new WL.Group.ReqGroupBroadcast()
+    groupMessage.reqGroupBroadcast.groupId = groupId
+    groupMessage.reqGroupBroadcast.status = status
+
+    return BuildWeilaMsg.buildWeilaMsgReq(
+      WL.Service.ServiceID.SERVICE_GROUP,
+      WL.Group.GroupCommandId.GROUP_COMMAND_BROADCAST,
+      WL.Service.CommandType.COMMAND_REQUEST,
+      groupMessage,
+    )
+  },
+
+  buildGroupGetBlacklistReq(groupId: Long, pageIndex: number, pageCount: number): WLBuildMsgRet {
+    const groupMessage = new WL.Group.GroupMessage()
+    groupMessage.reqGetGroupBlackList = new WL.Group.ReqGetGroupBlackList()
+    groupMessage.reqGetGroupBlackList.groupId = groupId
+    groupMessage.reqGetGroupBlackList.pageIndex = pageIndex
+    groupMessage.reqGetGroupBlackList.pageSize = pageCount
+
+    return BuildWeilaMsg.buildWeilaMsgReq(
+      WL.Service.ServiceID.SERVICE_GROUP,
+      WL.Group.GroupCommandId.GROUP_COMMAND_GET_BLACKLIST,
+      WL.Service.CommandType.COMMAND_REQUEST,
+      groupMessage,
+    )
+  },
+
+  buildGroupChangeBlacklistReq(
+    groupId: Long,
+    userIdList: number[],
+    actionType: number,
+  ): WLBuildMsgRet {
+    const groupMessage = new WL.Group.GroupMessage()
+    groupMessage.reqChangeGroupBlackList = new WL.Group.ReqChangeGroupBlackList()
+    groupMessage.reqChangeGroupBlackList.groupId = groupId
+    groupMessage.reqChangeGroupBlackList.type = actionType
+    groupMessage.reqChangeGroupBlackList.userIdList = Array.from(userIdList)
+
+    return BuildWeilaMsg.buildWeilaMsgReq(
+      WL.Service.ServiceID.SERVICE_GROUP,
+      WL.Group.GroupCommandId.GROUP_COMMAND_CHANGE_BLACKLIST,
+      WL.Service.CommandType.COMMAND_REQUEST,
+      groupMessage,
+    )
+  },
+
+  buildGetGroupMemberChangeLogReq(groupId: Long): WLBuildMsgRet {
+    const groupMessage = new WL.Group.GroupMessage()
+    groupMessage.reqGetGroupMemberChangeLog = new WL.Group.ReqGetGroupMemberChangeLog()
+    groupMessage.reqGetGroupMemberChangeLog.groupId = groupId
+
+    return BuildWeilaMsg.buildWeilaMsgReq(
+      WL.Service.ServiceID.SERVICE_GROUP,
+      WL.Group.GroupCommandId.GROUP_COMMAND_GET_MEMBER_CHANGE_LOG,
+      WL.Service.CommandType.COMMAND_REQUEST,
+      groupMessage,
+    )
+  },
+
+  buildGetGroupNoticeReq(groupId: Long, latestUpdated: Long): WLBuildMsgRet {
+    const groupMessage = new WL.Group.GroupMessage()
+    groupMessage.reqGetNotice = new WL.Group.ReqGetNotice()
+    groupMessage.reqGetNotice.groupId = groupId
+    groupMessage.reqGetNotice.latestUpdated = latestUpdated
+
+    return BuildWeilaMsg.buildWeilaMsgReq(
+      WL.Service.ServiceID.SERVICE_GROUP,
+      WL.Group.GroupCommandId.GROUP_COMMAND_GET_NOTICE,
+      WL.Service.CommandType.COMMAND_REQUEST,
+      groupMessage,
+    )
+  },
+
+  buildAddGroupNoticeReq(groupId: Long, notice: string): WLBuildMsgRet {
+    const groupMessage = new WL.Group.GroupMessage()
+    groupMessage.reqAddNotice = new WL.Group.ReqAddNotice()
+    groupMessage.reqAddNotice.groupId = groupId
+    groupMessage.reqAddNotice.notice = notice
+
+    return BuildWeilaMsg.buildWeilaMsgReq(
+      WL.Service.ServiceID.SERVICE_GROUP,
+      WL.Group.GroupCommandId.GROUP_COMMAND_ADD_NOTICE,
+      WL.Service.CommandType.COMMAND_REQUEST,
+      groupMessage,
+    )
+  },
+
+  buildChangeGroupNoticeReq(groupId: Long, noticeId: Long, notice: string): WLBuildMsgRet {
+    const groupMessage = new WL.Group.GroupMessage()
+    groupMessage.reqChangeNotice = new WL.Group.ReqChangeNotice()
+    groupMessage.reqChangeNotice.groupId = groupId
+    groupMessage.reqChangeNotice.noticeId = noticeId
+    groupMessage.reqChangeNotice.notice = notice
+
+    return BuildWeilaMsg.buildWeilaMsgReq(
+      WL.Service.ServiceID.SERVICE_GROUP,
+      WL.Group.GroupCommandId.GROUP_COMMAND_CHANGE_NOTICE,
+      WL.Service.CommandType.COMMAND_REQUEST,
+      groupMessage,
+    )
+  },
+
+  buildDeleteGroupNoticeReq(groupId: Long, noticeId: Long): WLBuildMsgRet {
+    const groupMessage = new WL.Group.GroupMessage()
+    groupMessage.reqDeleteNotice = new WL.Group.ReqDeleteNotice()
+    groupMessage.reqDeleteNotice.groupId = groupId
+    groupMessage.reqDeleteNotice.noticeId = noticeId
+
+    return BuildWeilaMsg.buildWeilaMsgReq(
+      WL.Service.ServiceID.SERVICE_GROUP,
+      WL.Group.GroupCommandId.GROUP_COMMAND_DELETE_NOTICE,
+      WL.Service.CommandType.COMMAND_REQUEST,
+      groupMessage,
+    )
+  },
+
+  buildGetGroupDetailReq(groupId: Long): WLBuildMsgRet {
+    const groupMessage = new WL.Group.GroupMessage()
+    groupMessage.reqGetGroupDetail = new WL.Group.ReqGetGroupDetail()
+    groupMessage.reqGetGroupDetail.groupId = groupId
+
+    return BuildWeilaMsg.buildWeilaMsgReq(
+      WL.Service.ServiceID.SERVICE_GROUP,
+      WL.Group.GroupCommandId.GROUP_COMMAND_GET_GROUPDETAIL,
       WL.Service.CommandType.COMMAND_REQUEST,
       groupMessage,
     )

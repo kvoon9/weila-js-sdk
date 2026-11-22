@@ -84,6 +84,19 @@ const WeilaPBLoginWrapper = {
     )
   },
 
+  buildGetExtensionInfoReq(subUserId: number): WLBuildMsgRet {
+    const loginMsg = new WL.Login.LoginMessage()
+    loginMsg.reqGetExtensionInfo = new WL.Login.ReqGetExtensionInfo()
+
+    return BuildWeilaMsg.buildWeilaMsgReq(
+      WL.Service.ServiceID.SERVICE_LOGIN,
+      WL.Login.LoginCommandId.LOGIN_COMMAND_GET_EXTENSIONINFO,
+      WL.Service.CommandType.COMMAND_REQUEST,
+      loginMsg,
+      subUserId,
+    )
+  },
+
   buildGetExtensionListReq(): WLBuildMsgRet {
     const loginMsg = new WL.Login.LoginMessage()
     loginMsg.reqGetExtensionList = new WL.Login.ReqGetExtensionList()
@@ -112,6 +125,58 @@ const WeilaPBLoginWrapper = {
       WL.Service.CommandType.COMMAND_REQUEST,
       loginMsg,
       subUserId,
+    )
+  },
+
+  buildShutdownExtensionReq(subUserId: number): WLBuildMsgRet {
+    const loginMsg = new WL.Login.LoginMessage()
+    loginMsg.reqShutdownExtension = new WL.Login.ReqShutdownExtension()
+
+    return BuildWeilaMsg.buildWeilaMsgReq(
+      WL.Service.ServiceID.SERVICE_LOGIN,
+      WL.Login.LoginCommandId.LOGIN_COMMAND_SHUTDOWN_EXTENSION,
+      WL.Service.CommandType.COMMAND_REQUEST,
+      loginMsg,
+      subUserId,
+    )
+  },
+
+  buildLockExtensionReq(subUserId: number): WLBuildMsgRet {
+    const loginMsg = new WL.Login.LoginMessage()
+    loginMsg.reqLockExtension = new WL.Login.ReqLockExtension()
+
+    return BuildWeilaMsg.buildWeilaMsgReq(
+      WL.Service.ServiceID.SERVICE_LOGIN,
+      WL.Login.LoginCommandId.LOGIN_COMMAND_LOCK_EXTENSION,
+      WL.Service.CommandType.COMMAND_REQUEST,
+      loginMsg,
+      subUserId,
+    )
+  },
+
+  buildUnlockExtensionReq(subUserId: number): WLBuildMsgRet {
+    const loginMsg = new WL.Login.LoginMessage()
+    loginMsg.reqUnlockExtension = new WL.Login.ReqUnlockExtension()
+
+    return BuildWeilaMsg.buildWeilaMsgReq(
+      WL.Service.ServiceID.SERVICE_LOGIN,
+      WL.Login.LoginCommandId.LOGIN_COMMAND_UNLOCK_EXTENSION,
+      WL.Service.CommandType.COMMAND_REQUEST,
+      loginMsg,
+      subUserId,
+    )
+  },
+
+  buildGetTokenReq(token: string): WLBuildMsgRet {
+    const loginMsg = new WL.Login.LoginMessage()
+    loginMsg.reqToken = new WL.Login.ReqToken()
+    loginMsg.reqToken.token = token
+
+    return BuildWeilaMsg.buildWeilaMsgReq(
+      WL.Service.ServiceID.SERVICE_LOGIN,
+      WL.Login.LoginCommandId.LOGIN_COMMAND_TOKEN,
+      WL.Service.CommandType.COMMAND_REQUEST,
+      loginMsg,
     )
   },
 
