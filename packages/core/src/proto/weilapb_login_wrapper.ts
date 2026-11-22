@@ -13,17 +13,24 @@ const WeilaPBLoginWrapper = {
     appKey: string,
     md5: boolean = true,
   ): WLBuildMsgRet {
-    const loginMsg = new WL.Login.LoginMessage()
-    loginMsg.reqLoginApp = new WL.Login.ReqLoginApp()
-    loginMsg.reqLoginApp.account = account
-    loginMsg.reqLoginApp.password = md5 ? MD5(password).toString() : password
-    loginMsg.reqLoginApp.countryCode = countryCode
-
     const et = '' + (Math.floor(Date.now() / 1000) + 20)
-    const signature = { et, app_id: appId, sign: MD5(et + appKey).toString() }
-    loginMsg.reqLoginApp.signature = JSON.stringify(signature)
-    loginMsg.reqLoginApp.pduVersion = 4
-    loginMsg.reqLoginApp.clientType = WL.Common.ClientType.CLIENT_WINDOWS
+
+    const signature = JSON.stringify({
+      et,
+      app_id: appId,
+      sign: MD5(et + appKey).toString(),
+    })
+
+    const loginMsg = WL.Login.LoginMessage.create({
+      reqLoginApp: {
+        account,
+        password: md5 ? MD5(password).toString() : password,
+        countryCode,
+        signature,
+        pduVersion: 4,
+        clientType: WL.Common.ClientType.CLIENT_WINDOWS,
+      },
+    })
 
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_LOGIN,
@@ -34,8 +41,7 @@ const WeilaPBLoginWrapper = {
   },
 
   buildLogoutReq(): WLBuildMsgRet {
-    const loginMsg = new WL.Login.LoginMessage()
-    loginMsg.reqLogout = new WL.Login.ReqLogout()
+    const loginMsg = WL.Login.LoginMessage.create({ reqLogout: {} })
 
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_LOGIN,
@@ -46,9 +52,9 @@ const WeilaPBLoginWrapper = {
   },
 
   buildHeartbeatReq(): WLBuildMsgRet {
-    const loginMsg = new WL.Login.LoginMessage()
-    loginMsg.reqHeartbeat = new WL.Login.ReqHeartbeat()
-    loginMsg.reqHeartbeat.serverTime = Long.fromNumber(Date.now(), true)
+    const loginMsg = WL.Login.LoginMessage.create({
+      reqHeartbeat: { serverTime: Long.fromNumber(Date.now(), true) },
+    })
 
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_LOGIN,
@@ -59,9 +65,9 @@ const WeilaPBLoginWrapper = {
   },
 
   buildBindExtensionReq(verifyCode: string): WLBuildMsgRet {
-    const loginMsg = new WL.Login.LoginMessage()
-    loginMsg.reqBindExtension = new WL.Login.ReqBindExtension()
-    loginMsg.reqBindExtension.verificationCode = verifyCode
+    const loginMsg = WL.Login.LoginMessage.create({
+      reqBindExtension: { verificationCode: verifyCode },
+    })
 
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_LOGIN,
@@ -72,8 +78,7 @@ const WeilaPBLoginWrapper = {
   },
 
   buildUnbindExtensionReq(subUserId: number): WLBuildMsgRet {
-    const loginMsg = new WL.Login.LoginMessage()
-    loginMsg.reqUnbindExtension = new WL.Login.ReqUnbindExtension()
+    const loginMsg = WL.Login.LoginMessage.create({ reqUnbindExtension: {} })
 
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_LOGIN,
@@ -85,8 +90,7 @@ const WeilaPBLoginWrapper = {
   },
 
   buildGetExtensionInfoReq(subUserId: number): WLBuildMsgRet {
-    const loginMsg = new WL.Login.LoginMessage()
-    loginMsg.reqGetExtensionInfo = new WL.Login.ReqGetExtensionInfo()
+    const loginMsg = WL.Login.LoginMessage.create({ reqGetExtensionInfo: {} })
 
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_LOGIN,
@@ -98,8 +102,7 @@ const WeilaPBLoginWrapper = {
   },
 
   buildGetExtensionListReq(): WLBuildMsgRet {
-    const loginMsg = new WL.Login.LoginMessage()
-    loginMsg.reqGetExtensionList = new WL.Login.ReqGetExtensionList()
+    const loginMsg = WL.Login.LoginMessage.create({ reqGetExtensionList: {} })
 
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_LOGIN,
@@ -114,10 +117,9 @@ const WeilaPBLoginWrapper = {
     configKey: string,
     configValue: string,
   ): WLBuildMsgRet {
-    const loginMsg = new WL.Login.LoginMessage()
-    loginMsg.reqSetExtensionConfig = new WL.Login.ReqSetExtensionConfig()
-    loginMsg.reqSetExtensionConfig.name = configKey
-    loginMsg.reqSetExtensionConfig.content = configValue
+    const loginMsg = WL.Login.LoginMessage.create({
+      reqSetExtensionConfig: { name: configKey, content: configValue },
+    })
 
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_LOGIN,
@@ -129,8 +131,7 @@ const WeilaPBLoginWrapper = {
   },
 
   buildShutdownExtensionReq(subUserId: number): WLBuildMsgRet {
-    const loginMsg = new WL.Login.LoginMessage()
-    loginMsg.reqShutdownExtension = new WL.Login.ReqShutdownExtension()
+    const loginMsg = WL.Login.LoginMessage.create({ reqShutdownExtension: {} })
 
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_LOGIN,
@@ -142,8 +143,7 @@ const WeilaPBLoginWrapper = {
   },
 
   buildLockExtensionReq(subUserId: number): WLBuildMsgRet {
-    const loginMsg = new WL.Login.LoginMessage()
-    loginMsg.reqLockExtension = new WL.Login.ReqLockExtension()
+    const loginMsg = WL.Login.LoginMessage.create({ reqLockExtension: {} })
 
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_LOGIN,
@@ -155,8 +155,7 @@ const WeilaPBLoginWrapper = {
   },
 
   buildUnlockExtensionReq(subUserId: number): WLBuildMsgRet {
-    const loginMsg = new WL.Login.LoginMessage()
-    loginMsg.reqUnlockExtension = new WL.Login.ReqUnlockExtension()
+    const loginMsg = WL.Login.LoginMessage.create({ reqUnlockExtension: {} })
 
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_LOGIN,
@@ -168,9 +167,7 @@ const WeilaPBLoginWrapper = {
   },
 
   buildGetTokenReq(token: string): WLBuildMsgRet {
-    const loginMsg = new WL.Login.LoginMessage()
-    loginMsg.reqToken = new WL.Login.ReqToken()
-    loginMsg.reqToken.token = token
+    const loginMsg = WL.Login.LoginMessage.create({ reqToken: { token } })
 
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_LOGIN,
@@ -181,8 +178,7 @@ const WeilaPBLoginWrapper = {
   },
 
   buildRefreshTokenReq(): WLBuildMsgRet {
-    const loginMsg = new WL.Login.LoginMessage()
-    loginMsg.reqRefreshAccessToken = new WL.Login.ReqRefreshAccessToken()
+    const loginMsg = WL.Login.LoginMessage.create({ reqRefreshAccessToken: {} })
 
     return BuildWeilaMsg.buildWeilaMsgReq(
       WL.Service.ServiceID.SERVICE_LOGIN,
