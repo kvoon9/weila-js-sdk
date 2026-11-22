@@ -132,6 +132,17 @@ export default class WLLoginModule {
           }
 
           break
+
+        case WL.Login.LoginCommandId.LOGIN_COMMAND_REFRESH_ACCESS_TOKEN:
+          {
+            this.coreInterface.rspPbMsg(
+              serviceHead.seq ?? 0,
+              serviceHead.resultCode ?? 0,
+              serverMessage.loginMessage ? serverMessage.loginMessage.rspRefreshAccessToken : null,
+            )
+          }
+
+          break
       }
     } else if (serviceHead.commandType === WL.Service.CommandType.COMMAND_NOTIFY) {
       switch (serviceHead.commandId) {
