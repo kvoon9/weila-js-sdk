@@ -26,7 +26,70 @@ import {
 const wllog = getLogger('MOD:friend:info')
 const wlerr = getLogger('MOD:friend:err')
 
+/** Routes one friend response to the waiting sendPbMsg caller. */
+type FriendResponseRoute = (
+  serviceHead: WL.Service.ServiceHead.$Properties,
+  friendMessage: WL.Friend.IFriendMessage | null | undefined,
+) => void
+
 export default class WLFriendModule {
+  /**
+   * Response routing per friend command. Every command the module awaits
+   * via sendPbMsg must have a route here; a missing route leaves the caller
+   * to die on the watchdog timeout. `weila_friend_module.spec.ts` guards
+   * the wrapper's builders against this table.
+   */
+  private readonly responseRoutes = new Map<number, FriendResponseRoute>([
+    [
+      WL.Friend.FriendCommandId.FRIEND_COMMAND_GET_FRIENDINFO,
+      (serviceHead, friendMessage) => {
+        this.coreInterface.rspPbMsg(
+          serviceHead.seq ?? 0,
+          serviceHead.resultCode ?? 0,
+          friendMessage ? friendMessage.rspGetFriendInfo : null,
+        )
+      },
+    ],
+    [
+      WL.Friend.FriendCommandId.FRIEND_COMMAND_GET_FRIEND_USERINFO,
+      (serviceHead, friendMessage) => {
+        this.coreInterface.rspPbMsg(
+          serviceHead.seq ?? 0,
+          serviceHead.resultCode ?? 0,
+          friendMessage ? friendMessage.rspGetFriendUserInfo : null,
+        )
+      },
+    ],
+    [
+      WL.Friend.FriendCommandId.FRIEND_COMMAND_ANSWER_FRIEND_INVITE,
+      (serviceHead) => {
+        this.coreInterface.rspPbMsg(serviceHead.seq ?? 0, serviceHead.resultCode ?? 0, true)
+      },
+    ],
+    [
+      WL.Friend.FriendCommandId.FRIEND_COMMAND_DELETE_FRIEND,
+      (serviceHead) => {
+        this.coreInterface.rspPbMsg(serviceHead.seq ?? 0, serviceHead.resultCode ?? 0, true)
+      },
+    ],
+    [
+      WL.Friend.FriendCommandId.FRIEND_COMMAND_FRIEND_INVITE,
+      (serviceHead) => {
+        this.coreInterface.rspPbMsg(serviceHead.seq ?? 0, serviceHead.resultCode ?? 0, true)
+      },
+    ],
+    [
+      WL.Friend.FriendCommandId.FRIEND_COMMAND_GET_ONLINE_FRIEND,
+      (serviceHead, friendMessage) => {
+        this.coreInterface.rspPbMsg(
+          serviceHead.seq ?? 0,
+          serviceHead.resultCode ?? 0,
+          friendMessage ? friendMessage.rspGetOnlineFriend : null,
+        )
+      },
+    ],
+  ])
+
   constructor(private coreInterface: WL_CoreInterface) {
     this.coreInterface.registerPbMsgHandler(
       WL.Service.ServiceID.SERVICE_FRIEND,
@@ -41,60 +104,12 @@ export default class WLFriendModule {
     if (!serviceHead) return
 
     if (serviceHead.commandType === WL.Service.CommandType.COMMAND_RESPONSE) {
-      switch (serviceHead.commandId) {
-        case WL.Friend.FriendCommandId.FRIEND_COMMAND_GET_FRIENDINFO:
-          {
-            this.coreInterface.rspPbMsg(
-              serviceHead.seq ?? 0,
-              serviceHead.resultCode ?? 0,
-              serverMessage.friendMessage ? serverMessage.friendMessage.rspGetFriendInfo : null,
-            )
-          }
+      const commandId = serviceHead.commandId
 
-          break
+      if (commandId !== undefined && commandId !== null) {
+        const route = this.responseRoutes.get(commandId)
 
-        case WL.Friend.FriendCommandId.FRIEND_COMMAND_GET_FRIEND_USERINFO:
-          {
-            this.coreInterface.rspPbMsg(
-              serviceHead.seq ?? 0,
-              serviceHead.resultCode ?? 0,
-              serverMessage.friendMessage ? serverMessage.friendMessage.rspGetFriendUserInfo : null,
-            )
-          }
-
-          break
-
-        case WL.Friend.FriendCommandId.FRIEND_COMMAND_ANSWER_FRIEND_INVITE:
-          {
-            this.coreInterface.rspPbMsg(serviceHead.seq ?? 0, serviceHead.resultCode ?? 0, true)
-          }
-
-          break
-
-        case WL.Friend.FriendCommandId.FRIEND_COMMAND_DELETE_FRIEND:
-          {
-            this.coreInterface.rspPbMsg(serviceHead.seq ?? 0, serviceHead.resultCode ?? 0, true)
-          }
-
-          break
-
-        case WL.Friend.FriendCommandId.FRIEND_COMMAND_FRIEND_INVITE:
-          {
-            this.coreInterface.rspPbMsg(serviceHead.seq ?? 0, serviceHead.resultCode ?? 0, true)
-          }
-
-          break
-
-        case WL.Friend.FriendCommandId.FRIEND_COMMAND_GET_ONLINE_FRIEND:
-          {
-            this.coreInterface.rspPbMsg(
-              serviceHead.seq ?? 0,
-              serviceHead.resultCode ?? 0,
-              serverMessage.friendMessage ? serverMessage.friendMessage.rspGetOnlineFriend : null,
-            )
-          }
-
-          break
+        if (route) route(serviceHead, serverMessage.friendMessage)
       }
     } else if (serviceHead.commandType === WL.Service.CommandType.COMMAND_NOTIFY) {
       wllog('好友的通知信息', serverMessage)
