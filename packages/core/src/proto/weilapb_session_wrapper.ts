@@ -57,6 +57,27 @@ const WeilaPBSessionWrapper = {
     )
   },
 
+  buildMsgGetUnReadReq(
+    sessionId: Long,
+    sessionType: number,
+    fromMsgId: number,
+    toMsgId: number,
+  ): WLBuildMsgRet {
+    const sessionMessage = new WL.Session.SessionMessage()
+    sessionMessage.reqGetUnreadMsg = new WL.Session.ReqGetUnreadMsg()
+    sessionMessage.reqGetUnreadMsg.sessionId = sessionId
+    sessionMessage.reqGetUnreadMsg.sessionType = sessionType
+    sessionMessage.reqGetUnreadMsg.fromMsgId = fromMsgId
+    sessionMessage.reqGetUnreadMsg.toMsgId = toMsgId
+
+    return BuildWeilaMsg.buildWeilaMsgReq(
+      WL.Service.ServiceID.SERVICE_SESSION,
+      WL.Session.SessionCommandId.SESSION_COMMAND_GET_UNREAD_MSG,
+      WL.Service.CommandType.COMMAND_REQUEST,
+      sessionMessage,
+    )
+  },
+
   buildMsgGetMsgReq(
     sessionId: Long,
     sessionType: number,
@@ -75,6 +96,36 @@ const WeilaPBSessionWrapper = {
       WL.Session.SessionCommandId.SESSION_COMMAND_GET_MSG,
       WL.Service.CommandType.COMMAND_REQUEST,
       sessionMessage,
+    )
+  },
+
+  buildBurstControlReq(sessionId: Long, sessionType: number, burstType: number): WLBuildMsgRet {
+    const sessionMessage = new WL.Session.SessionMessage()
+    sessionMessage.reqBurstControl = new WL.Session.ReqBurstControl()
+    sessionMessage.reqBurstControl.sessionId = sessionId
+    sessionMessage.reqBurstControl.sessionType = sessionType
+    sessionMessage.reqBurstControl.burstType = burstType
+
+    return BuildWeilaMsg.buildWeilaMsgReq(
+      WL.Service.ServiceID.SERVICE_SESSION,
+      WL.Session.SessionCommandId.SESSION_COMMAND_BURST_CONTROL,
+      WL.Service.CommandType.COMMAND_REQUEST,
+      sessionMessage,
+    )
+  },
+
+  buildMonitorControlReq(status: number, duration: number, subUserId: number): WLBuildMsgRet {
+    const sessionMessage = new WL.Session.SessionMessage()
+    sessionMessage.reqMonitorControl = new WL.Session.ReqMonitorControl()
+    sessionMessage.reqMonitorControl.status = status
+    sessionMessage.reqMonitorControl.duration = duration
+
+    return BuildWeilaMsg.buildWeilaMsgReq(
+      WL.Service.ServiceID.SERVICE_SESSION,
+      WL.Session.SessionCommandId.SESSION_COMMAND_MONITOR_CONTROL,
+      WL.Service.CommandType.COMMAND_REQUEST,
+      sessionMessage,
+      subUserId,
     )
   },
 
@@ -319,6 +370,42 @@ const WeilaPBSessionWrapper = {
       data,
       0,
       WL_IDbMsgDataType.WL_DB_MSG_DATA_PTT_TYPE,
+    )
+  },
+
+  buildServiceSessionMsgReq(
+    sessionId: Long,
+    sessionType: number,
+    senderId: number,
+    autoReply: boolean,
+    data: string,
+  ): WLBuildMsgRet {
+    return this.buildMsgDataReq(
+      sessionId,
+      sessionType,
+      senderId,
+      autoReply,
+      data,
+      0,
+      WL_IDbMsgDataType.WL_DB_MSG_DATA_SERVICE_TYPE,
+    )
+  },
+
+  buildSwitchSessionMsgReq(
+    sessionId: Long,
+    sessionType: number,
+    senderId: number,
+    autoReply: boolean,
+    data: string,
+  ): WLBuildMsgRet {
+    return this.buildMsgDataReq(
+      sessionId,
+      sessionType,
+      senderId,
+      autoReply,
+      data,
+      0,
+      WL_IDbMsgDataType.WL_DB_MSG_DATA_SWITCH_TYPE,
     )
   },
 
