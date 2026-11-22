@@ -273,7 +273,7 @@ const mainFsm = createMachine({
   },
 })
 
-export type PttFsmUserEvent =
+type PttFsmUserEvent =
   | { type: 'FSM_PLAY_REALTIME_EVT'; data: WL_PttAudioItem }
   | { type: 'FSM_PLAY_HISTORY_EVT'; data: WL_PttAudioItem[] }
   | { type: 'FSM_PLAY_SINGLE_EVT'; data: WL_PttAudioItem }
@@ -558,4 +558,4 @@ const fsmEvents = {
   FSM_REL_TALK_EVT: 'FSM_REL_TALK_EVT',
 } as const
 
-export { mainFsm, pttFsm, fsmEvents, type MainActor, type MainFsmEvent, type MainFsmUserEvent }
+export { mainFsm, pttFsm, fsmEvents, type MainActor }
