@@ -334,6 +334,15 @@ export interface PttFsmInput {
   pttCore: unknown
 }
 
+/** Which play family a startPlayback invocation belongs to. */
+export type StartPlaybackFamily = 'realtime' | 'single' | 'history'
+
+/** Input for the shared startPlayback actor that begins one playback. */
+export interface StartPlaybackInput {
+  family: StartPlaybackFamily
+  playerType: WLPlayerType
+}
+
 interface PttFsmTypes {
   context: PttFsmContext
   input: PttFsmInput
@@ -365,6 +374,24 @@ const pttFsm = createMachine({
       ],
       exit: 'onExitRealtime',
       initial: 'playing',
+      invoke: {
+        src: 'startPlayback',
+        id: 'start_playback',
+        input: ({ event }: { event: PttFsmEvent }): StartPlaybackInput => ({
+          family: 'realtime',
+          playerType:
+            event.type === 'FSM_PLAY_REALTIME_EVT' && event.data
+              ? event.data.playerType
+              : WLPlayerType.WL_PTT_STREAM_PLAYER,
+        }),
+        onError: {
+          actions: raise(({ event }: { event: { type: string; error?: unknown } }) => ({
+            type: 'FSM_STOP_EVT',
+            data: event.error,
+          })),
+          description: '启动播放失败，停止本次播放',
+        },
+      },
       states: {
         playing: {
           entry: 'onPttPayloadPlaying',
@@ -441,6 +468,21 @@ const pttFsm = createMachine({
         'onHistoryPlaying',
       ],
       initial: 'playing',
+      invoke: {
+        src: 'startPlayback',
+        id: 'start_playback',
+        input: (): StartPlaybackInput => ({
+          family: 'history',
+          playerType: WLPlayerType.WL_PTT_HISTORY_PLAYER,
+        }),
+        onError: {
+          actions: raise(({ event }: { event: { type: string; error?: unknown } }) => ({
+            type: 'FSM_PLAY_END_EVT',
+            data: event.error,
+          })),
+          description: '启动播放失败，结束本次播放',
+        },
+      },
       states: {
         playing: {
           entry: 'onPttPayloadPlaying',
@@ -532,6 +574,21 @@ const pttFsm = createMachine({
         'onSinglePlayEntry',
       ],
       exit: 'onSinglePlayExit',
+      invoke: {
+        src: 'startPlayback',
+        id: 'start_playback',
+        input: (): StartPlaybackInput => ({
+          family: 'single',
+          playerType: WLPlayerType.WL_PTT_SINGLE_PLAYER,
+        }),
+        onError: {
+          actions: raise(({ event }: { event: { type: string; error?: unknown } }) => ({
+            type: 'FSM_STOP_EVT',
+            data: event.error,
+          })),
+          description: '启动播放失败，停止本次播放',
+        },
+      },
       on: {
         FSM_STOP_EVT: 'singleStopping',
         FSM_REQ_TALK_EVT: 'singleStopping',

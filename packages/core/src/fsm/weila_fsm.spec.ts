@@ -131,8 +131,14 @@ function startMainMachine(
 function startPttMachine(recording: Recording): Actor<typeof pttFsm> {
   const machine = pttFsm.provide({
     actors: stubServices(
-      ['checkHistoryList', 'checkPttPlayingList', 'startTalking', 'stopTalk'],
-      { checkHistoryList: null, checkPttPlayingList: null, startTalking: true, stopTalk: true },
+      ['checkHistoryList', 'checkPttPlayingList', 'startPlayback', 'startTalking', 'stopTalk'],
+      {
+        checkHistoryList: null,
+        checkPttPlayingList: null,
+        startPlayback: null,
+        startTalking: true,
+        stopTalk: true,
+      },
       {},
       recording,
     ),
