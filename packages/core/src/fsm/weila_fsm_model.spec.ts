@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createActor, fromPromise } from 'xstate'
+import { createActor, fromCallback, fromPromise } from 'xstate'
 import { fsmEvents, mainFsm, pttFsm } from './weila_fsmScript'
 
 /**
@@ -59,6 +59,13 @@ const ACTOR_NAMES = [
   'checkPttPlayingList',
   'checkHistoryList',
 ]
+
+/**
+ * The watchdog ticks on a real interval, which would inject unsolicited
+ * events mid-exploration; the stub stays silent, so the explorer's own event
+ * sends remain the only driver.
+ */
+const SILENT_ACTORS = { systemWatchdog: fromCallback(() => {}) }
 
 /** Every named action/guard both machines reference. */
 const HANDLER_NAMES = [
@@ -151,16 +158,19 @@ type MakeActor = (fired: string[]) => ModelActor
 function stubbedMainActor(rejectActors: boolean, fired: string[]): ModelActor {
   return createActor(
     mainFsm.provide({
-      actors: Object.fromEntries(
-        ACTOR_NAMES.map((name) => [
-          name,
-          fromPromise(async () => {
-            if (rejectActors) throw new Error('stub-rejected')
+      actors: {
+        ...Object.fromEntries(
+          ACTOR_NAMES.map((name) => [
+            name,
+            fromPromise(async () => {
+              if (rejectActors) throw new Error('stub-rejected')
 
-            return true
-          }),
-        ]),
-      ),
+              return true
+            }),
+          ]),
+        ),
+        ...SILENT_ACTORS,
+      },
       actions: Object.fromEntries(
         HANDLER_NAMES.map((name) => [
           name,

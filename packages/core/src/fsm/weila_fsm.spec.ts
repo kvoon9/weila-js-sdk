@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { createActor, fromPromise } from 'xstate'
+import { createActor, fromCallback, fromPromise } from 'xstate'
 import type { Actor, AnyEventObject } from 'xstate'
 import { fsmEvents, mainFsm, pttFsm } from './weila_fsmScript'
 import type { WL_LoginParam, WL_PromiseCallback, WL_PttAudioItem } from 'main/weila_internal_data'
@@ -99,12 +99,15 @@ function startMainMachine(
   } = {},
 ): Actor<typeof mainFsm> {
   const machine = mainFsm.provide({
-    actors: stubServices(
-      ['loadResource', 'loginServer', 'prepareData', 'logout'],
-      { loadResource: true, loginServer: {}, prepareData: true, logout: true },
-      overrides.services ?? {},
-      recording,
-    ),
+    actors: {
+      ...stubServices(
+        ['loadResource', 'loginServer', 'prepareData', 'logout'],
+        { loadResource: true, loginServer: {}, prepareData: true, logout: true },
+        overrides.services ?? {},
+        recording,
+      ),
+      systemWatchdog: fromCallback(() => {}),
+    },
     actions: namedStubs(MAIN_HANDLER_NAMES, recording),
     guards: {
       canRetry: () => true,
