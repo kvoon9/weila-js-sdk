@@ -41,7 +41,6 @@ const PTT_HANDLER_NAMES = [
   'stopPlay',
   'onStopPttPlay',
   'onRequestTalkResult',
-  'onTalkInterrupt',
   'stopAndPlayNext',
 ]
 
@@ -105,7 +104,6 @@ function startMainMachine(
     ),
     actions: namedStubs(MAIN_HANDLER_NAMES, recording),
     guards: {
-      isLoginSucc: () => true,
       canRetry: () => true,
       ...overrides.guards,
     },
@@ -136,7 +134,7 @@ function startPttMachine(recording: Recording): Actor<typeof pttFsm> {
   })
 
   return createActor(machine, {
-    input: { pttCore: null, singlePlayOrigin: '', historyPlayOrigin: '', talkOrigin: '' },
+    input: { pttCore: null },
   }).start()
 }
 

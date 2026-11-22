@@ -109,12 +109,7 @@ export default class WLPttFsm {
     this.audioManager = new WLAudio()
     this.audioManager.onAudioEvent(this.onAudioMessage.bind(this))
 
-    const context: PttFsmContext = {
-      pttCore: this,
-      singlePlayOrigin: '',
-      historyPlayOrigin: '',
-      talkOrigin: '',
-    }
+    const context: PttFsmContext = { pttCore: this }
 
     this.pttFsm = pttFsm.provide({
       actions: {
@@ -135,7 +130,6 @@ export default class WLPttFsm {
         stopPlay: this.stopPlay.bind(this),
         onStopPttPlay: this.onStopPttPlay.bind(this),
         onRequestTalkResult: this.onRequestTalkResult.bind(this),
-        onTalkInterrupt: this.onTalkInterrupt.bind(this),
         stopAndPlayNext: this.stopAndPlayNext.bind(this),
       },
       actors: {
@@ -278,9 +272,8 @@ export default class WLPttFsm {
     this.pttFsmListener.onPlayInd(audioItem, playIndData)
   }
 
-  onSinglePlayEntry({ context, event }: PttActionArgs) {
+  onSinglePlayEntry({ event }: PttActionArgs) {
     wllog('onSinglePlayEntry', event)
-    context.singlePlayOrigin = event.type
     void this.audioManager.openPlayer(WLPlayerType.WL_PTT_SINGLE_PLAYER, 16000).then((_openRet) => {
       void WeilaRingPlayer.weila_playRing(WL_ConfigID.WL_RES_RING_START_PLAY_ID)
         .then((_playRet) => {
@@ -428,11 +421,10 @@ export default class WLPttFsm {
     return this.getNextPlayingItem()
   }
 
-  onHistoryPlaying({ context, event }: PttActionArgs) {
+  onHistoryPlaying({ event }: PttActionArgs) {
     if (event.type === fsmEvents.FSM_PLAY_HISTORY_EVT) {
       this.historyPttPlayIndex = 0
       this.historyPttPlayItems = event.data
-      context.historyPlayOrigin = event.type
       this.audioManager
         .openPlayer(WLPlayerType.WL_PTT_HISTORY_PLAYER, 16000)
         .then((_openRet) => {
@@ -524,12 +516,6 @@ export default class WLPttFsm {
     void this.audioManager.stopPlay(playType).finally(() => {
       this.pttFsmService.send({ type: fsmEvents.FSM_PTT_CHECK_RESOURCE_EVT })
     })
-  }
-
-  onTalkInterrupt({ event }: PttActionArgs) {
-    if (this.talkingInfo && this.talkingInfo.callback) {
-      this.talkingInfo.callback.reject(event.data)
-    }
   }
 
   onStopPttPlay() {
@@ -1166,12 +1152,7 @@ export default class WLPttFsm {
   }
 
   public stopPlayAudio() {
-    try {
-      this.pttFsmService.send({ type: fsmEvents.FSM_STOP_EVT })
-    } catch (e) {
-      wllog('pttFsmService.send fail', e)
-      this.pttFsmService.send({ type: fsmEvents.FSM_STOP_EVT })
-    }
+    this.pttFsmService.send({ type: fsmEvents.FSM_STOP_EVT })
   }
 
   public playNext() {
