@@ -54,6 +54,20 @@ enum WLRecorderState {
 
 const wl_playerName = ['stream ptt', 'history ptt', 'single ptt']
 
+/**
+ * State restored when a player request times out. Without it the player is
+ * wedged in its transient "ing" state forever and every later call rejects
+ * with a state check, so one timeout kills audio until a page reload.
+ */
+const playRequestTimeoutState: Partial<Record<WLAudioPlayerEvent, WLPlayerState>> = {
+  [WLAudioPlayerEvent.WL_WORKLET_NODE_OPEN_REQ]: WLPlayerState.WL_PLAYER_CLOSED,
+  [WLAudioPlayerEvent.WL_WORKLET_NODE_START_REQ]: WLPlayerState.WL_PLAYER_STOPPED,
+  [WLAudioPlayerEvent.WL_WORKLET_NODE_PAUSE_REQ]: WLPlayerState.WL_PLAYER_STARTED,
+  [WLAudioPlayerEvent.WL_WORKLET_NODE_RESUME_REQ]: WLPlayerState.WL_PLAYER_PAUSED,
+  [WLAudioPlayerEvent.WL_WORKLET_NODE_STOP_REQ]: WLPlayerState.WL_PLAYER_STOPPED,
+  [WLAudioPlayerEvent.WL_WORKLET_NODE_CLOSE_REQ]: WLPlayerState.WL_PLAYER_CLOSED,
+}
+
 /** Rejects with `message` if `promise` has not settled after `ms` milliseconds. */
 function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined
@@ -277,6 +291,7 @@ class WLAudio {
       callback.waitRspTimer = setTimeout(
         (cb) => {
           if (cb.reject) {
+            this.playState[playerType] = WLPlayerState.WL_PLAYER_CLOSED
             cb.reject(new Error('请求超时 1'))
           }
         },
@@ -303,6 +318,7 @@ class WLAudio {
         callback.waitRspTimer = setTimeout(
           (cb) => {
             if (cb.reject) {
+              this.playState[playerType] = playRequestTimeoutState[reqEvent]!
               cb.reject(new Error('请求超时'))
             }
           },
