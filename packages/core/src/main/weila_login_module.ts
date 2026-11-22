@@ -25,7 +25,115 @@ import {
 const wllog = getLogger('MOD:login:info')
 const wlerr = getLogger('MOD:login:err')
 
+/** Routes one login response to the waiting sendPbMsg caller. */
+type LoginResponseRoute = (
+  serviceHead: WL.Service.ServiceHead.$Properties,
+  loginMessage: WL.Login.ILoginMessage | null | undefined,
+) => void
+
 export default class WLLoginModule {
+  /**
+   * Response routing per login command. Every command the module awaits via
+   * sendPbMsg must have a route here; a missing route leaves the caller to
+   * die on the watchdog timeout exactly like the token refresh once did.
+   * `weila_login_module.spec.ts` guards the wrapper's builders against this
+   * table.
+   */
+  private readonly responseRoutes = new Map<number, LoginResponseRoute>([
+    [
+      WL.Login.LoginCommandId.LOGIN_COMMAND_LOGIN_APP,
+      (serviceHead, loginMessage) => {
+        const respond = () => {
+          this.coreInterface.rspPbMsg(
+            serviceHead.seq ?? 0,
+            serviceHead.resultCode ?? 0,
+            loginMessage ? loginMessage.rspLoginApp : null,
+          )
+        }
+
+        if (serviceHead.resultCode === 0) {
+          void WeilaDB.init(loginMessage!.rspLoginApp!.userInfo!.userId!.toString(), 3)
+            .catch((error) => {
+              wlerr('初始化数据库失败:', error)
+            })
+            .finally(respond)
+
+          return
+        }
+
+        respond()
+      },
+    ],
+    [
+      WL.Login.LoginCommandId.LOGIN_COMMAND_LOGOUT,
+      (serviceHead) => {
+        this.coreInterface.rspPbMsg(
+          serviceHead.seq ?? 0,
+          serviceHead.resultCode ?? 0,
+          serviceHead.resultCode === 0,
+        )
+        WeilaDB.close()
+      },
+    ],
+    [
+      WL.Login.LoginCommandId.LOGIN_COMMAND_HEARTBEAT,
+      (serviceHead) => {
+        wllog('收到心跳响应')
+        this.coreInterface.rspPbMsg(serviceHead.seq ?? 0, serviceHead.resultCode ?? 0, null)
+      },
+    ],
+    [
+      WL.Login.LoginCommandId.LOGIN_COMMAND_GET_EXTENSIONLIST,
+      (serviceHead, loginMessage) => {
+        this.coreInterface.rspPbMsg(
+          serviceHead.seq ?? 0,
+          serviceHead.resultCode ?? 0,
+          loginMessage ? loginMessage.rspGetExtensionList : null,
+        )
+      },
+    ],
+    [
+      WL.Login.LoginCommandId.LOGIN_COMMAND_SET_EXTENSION_CONFIG,
+      (serviceHead, loginMessage) => {
+        this.coreInterface.rspPbMsg(
+          serviceHead.seq ?? 0,
+          serviceHead.resultCode ?? 0,
+          loginMessage ? loginMessage.rspSetExtensionConfig : null,
+        )
+      },
+    ],
+    [
+      WL.Login.LoginCommandId.LOGIN_COMMAND_BIND_EXTENSION,
+      (serviceHead, loginMessage) => {
+        this.coreInterface.rspPbMsg(
+          serviceHead.seq ?? 0,
+          serviceHead.resultCode ?? 0,
+          loginMessage ? loginMessage.rspBindExtension : null,
+        )
+      },
+    ],
+    [
+      WL.Login.LoginCommandId.LOGIN_COMMAND_UNBIND_EXTENSION,
+      (serviceHead, loginMessage) => {
+        this.coreInterface.rspPbMsg(
+          serviceHead.seq ?? 0,
+          serviceHead.resultCode ?? 0,
+          loginMessage ? loginMessage.rspUnbindExtension : null,
+        )
+      },
+    ],
+    [
+      WL.Login.LoginCommandId.LOGIN_COMMAND_REFRESH_ACCESS_TOKEN,
+      (serviceHead, loginMessage) => {
+        this.coreInterface.rspPbMsg(
+          serviceHead.seq ?? 0,
+          serviceHead.resultCode ?? 0,
+          loginMessage ? loginMessage.rspRefreshAccessToken : null,
+        )
+      },
+    ],
+  ])
+
   constructor(private coreInterface: WL_CoreInterface) {
     this.coreInterface.registerPbMsgHandler(
       WL.Service.ServiceID.SERVICE_LOGIN,
@@ -40,109 +148,12 @@ export default class WLLoginModule {
     if (!serviceHead) return
 
     if (serviceHead.commandType === WL.Service.CommandType.COMMAND_RESPONSE) {
-      switch (serviceHead.commandId) {
-        case WL.Login.LoginCommandId.LOGIN_COMMAND_LOGIN_APP:
-          {
-            const respond = () => {
-              this.coreInterface.rspPbMsg(
-                serviceHead.seq ?? 0,
-                serviceHead.resultCode ?? 0,
-                serverMessage.loginMessage ? serverMessage.loginMessage.rspLoginApp : null,
-              )
-            }
+      const commandId = serviceHead.commandId
 
-            if (serviceHead.resultCode === 0) {
-              void WeilaDB.init(
-                serverMessage.loginMessage!.rspLoginApp!.userInfo!.userId!.toString(),
-                3,
-              )
-                .catch((error) => {
-                  wlerr('初始化数据库失败:', error)
-                })
-                .finally(respond)
+      if (commandId !== undefined && commandId !== null) {
+        const route = this.responseRoutes.get(commandId)
 
-              break
-            }
-
-            respond()
-          }
-
-          break
-
-        case WL.Login.LoginCommandId.LOGIN_COMMAND_LOGOUT:
-          {
-            this.coreInterface.rspPbMsg(
-              serviceHead.seq ?? 0,
-              serviceHead.resultCode ?? 0,
-              serviceHead.resultCode === 0,
-            )
-            WeilaDB.close()
-          }
-
-          break
-
-        case WL.Login.LoginCommandId.LOGIN_COMMAND_HEARTBEAT:
-          {
-            wllog('收到心跳响应')
-            this.coreInterface.rspPbMsg(serviceHead.seq ?? 0, serviceHead.resultCode ?? 0, null)
-          }
-
-          break
-
-        case WL.Login.LoginCommandId.LOGIN_COMMAND_GET_EXTENSIONLIST:
-          {
-            this.coreInterface.rspPbMsg(
-              serviceHead.seq ?? 0,
-              serviceHead.resultCode ?? 0,
-              serverMessage.loginMessage ? serverMessage.loginMessage.rspGetExtensionList : null,
-            )
-          }
-
-          break
-
-        case WL.Login.LoginCommandId.LOGIN_COMMAND_SET_EXTENSION_CONFIG:
-          {
-            this.coreInterface.rspPbMsg(
-              serviceHead.seq ?? 0,
-              serviceHead.resultCode ?? 0,
-              serverMessage.loginMessage ? serverMessage.loginMessage.rspSetExtensionConfig : null,
-            )
-          }
-
-          break
-
-        case WL.Login.LoginCommandId.LOGIN_COMMAND_BIND_EXTENSION:
-          {
-            this.coreInterface.rspPbMsg(
-              serviceHead.seq ?? 0,
-              serviceHead.resultCode ?? 0,
-              serverMessage.loginMessage ? serverMessage.loginMessage.rspBindExtension : null,
-            )
-          }
-
-          break
-
-        case WL.Login.LoginCommandId.LOGIN_COMMAND_UNBIND_EXTENSION:
-          {
-            this.coreInterface.rspPbMsg(
-              serviceHead.seq ?? 0,
-              serviceHead.resultCode ?? 0,
-              serverMessage.loginMessage ? serverMessage.loginMessage.rspUnbindExtension : null,
-            )
-          }
-
-          break
-
-        case WL.Login.LoginCommandId.LOGIN_COMMAND_REFRESH_ACCESS_TOKEN:
-          {
-            this.coreInterface.rspPbMsg(
-              serviceHead.seq ?? 0,
-              serviceHead.resultCode ?? 0,
-              serverMessage.loginMessage ? serverMessage.loginMessage.rspRefreshAccessToken : null,
-            )
-          }
-
-          break
+        if (route) route(serviceHead, serverMessage.loginMessage)
       }
     } else if (serviceHead.commandType === WL.Service.CommandType.COMMAND_NOTIFY) {
       switch (serviceHead.commandId) {
