@@ -62,6 +62,9 @@ class Network {
         wllog('SOCKET已连接')
         eventData = WL_NetworkState.NET_CONNECTED_STATE
         this.isConnected = true
+
+        // Flush frames that were queued while the socket was not open.
+        setTimeout(this.processSending.bind(this), 0)
       }
 
       const netEvent: WL_NetworkEvent = {
@@ -122,6 +125,8 @@ class Network {
   private onSocketClose(event: CloseEvent): void {
     wllog('SOCKET关闭:', JSON.stringify(event))
 
+    // Unexpected close: keep queued frames so they flush after the FSM
+    // reconnects, as long as that happens inside the request timeout window.
     if (this.socket) {
       const closeEvent = event
       this.socket = undefined
@@ -151,6 +156,10 @@ class Network {
       this.socket.close(code, reason || 'normal close')
       this.socket = undefined
       this.isConnected = false
+
+      // An explicit disconnect starts a fresh session on the next connect;
+      // frames queued for the old session must not leak into it.
+      this.sendingPbMsgList = []
     }
   }
 
@@ -194,15 +203,20 @@ class Network {
   }
 
   private processSending(): void {
-    if (this.sendingPbMsgList.length > 0) {
-      const data = this.sendingPbMsgList.shift()!
-      const socket = this.socket
+    const socket = this.socket
 
-      if (this.isConnected && socket && socket.readyState === WebSocket.OPEN) {
-        wllog('发送了数据')
-        socket.send(data)
-        setTimeout(this.processSending.bind(this), 0)
-      }
+    // Check the socket before dequeuing: shifting first would silently drop
+    // frames that arrive while the socket is connecting or reconnecting.
+    if (!this.isConnected || !socket || socket.readyState !== WebSocket.OPEN) {
+      return
+    }
+
+    const data = this.sendingPbMsgList.shift()
+
+    if (data !== undefined) {
+      wllog('发送了数据')
+      socket.send(data)
+      setTimeout(this.processSending.bind(this), 0)
     }
   }
 
