@@ -541,12 +541,7 @@ class WeilaCore implements WL_CoreInterface {
   }
 
   private onSysTimeChecking(_context: any, _event: any) {
-    wllog(
-      '--------->onSysTimeChecking',
-      event,
-      this.waitingRspMap.size,
-      this.waitingTimeoutChecking,
-    )
+    wllog('--------->onSysTimeChecking', this.waitingRspMap.size, this.waitingTimeoutChecking)
 
     if (this.waitingRspMap.size > 0) {
       const timeoutKeyList: number[] = []

@@ -57,6 +57,11 @@ export default class WeilaMsgHeader {
       WeilaMsgHeader.globalSeqNum += 1
     }
 
+    // NOTE(protocol): seqNum is written as a signed 16-bit int, so the
+    // on-wire value is wrong past 32,767. Correlation survives on the
+    // protobuf serviceHead.seq (uint32). Widening this field is a cross
+    // client wire change and needs the other Weila client teams.
+
     return weilaMsgHeader
   }
 
