@@ -15,6 +15,9 @@ export default defineConfig({
       proto: path.resolve(root, 'src/proto'),
     },
   },
+  // The wasm import in weila_config registers a resource URL, matching the
+  // rspack asset/resource semantics; resolve it as an asset instead of ESM.
+  assetsInclude: ['**/*.wasm'],
   test: {
     environment: 'jsdom',
     include: ['src/**/*.spec.ts'],
