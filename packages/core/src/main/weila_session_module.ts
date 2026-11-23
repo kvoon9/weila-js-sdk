@@ -38,6 +38,7 @@ import { getLogger } from 'log/weila_log'
 import WLPttFsm from 'main/weila_pttFsm'
 import {
   decompositionAudioData,
+  fetchAudioDataFromUrl,
   fetchWithTimeout,
   getAppKeyAndId,
   getMsgDataIdByCombo,
@@ -823,10 +824,64 @@ export default class WLSessionModule {
       await WeilaDB.getInstance().putMsgDatas(msgDatas)
       wllog('从服务器中获取会话%d条消息成功', msgDatas.length)
 
+      void this.prefetchAudioData(msgDatas)
+
       return true
     }
 
     return Promise.reject('创建读取消息异常:' + buildResult.resultCode)
+  }
+
+  /** Combo ids with an audio prefetch in flight, so repeated history pulls do not refetch. */
+  private readonly audioPrefetchInFlight = new Set<string>()
+
+  /**
+   * 后台补齐历史音频消息的音频数据：逐条取回、写库，并广播
+   * WL_EXT_MSG_AUDIO_READY_IND，让界面能显示时长、点击即播。
+   * 取回失败（如服务器已删除该文件）只记日志，点击播放时由 playSingle
+   * 的失败通知兜底。串行取回，避免一次翻页并发打出几十个请求。
+   * @param msgDatas 刚入库的消息列表
+   */
+  private prefetchAudioData(msgDatas: WL_IDbMsgData[]): Promise<void> {
+    return msgDatas.reduce(
+      (chain, msgData) => chain.then(() => this.prefetchAudioMsgData(msgData)),
+      Promise.resolve(),
+    )
+  }
+
+  /**
+   * 取回单条音频消息的数据；不是音频、已有数据或正在取的消息直接跳过。
+   * @param msgData 待补齐的消息
+   */
+  private async prefetchAudioMsgData(msgData: WL_IDbMsgData): Promise<void> {
+    const audioUrl = msgData.audioData?.audioUrl
+
+    if (
+      msgData.msgType !== WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE ||
+      !audioUrl ||
+      msgData.audioData?.data ||
+      this.audioPrefetchInFlight.has(msgData.combo_id)
+    ) {
+      return
+    }
+
+    this.audioPrefetchInFlight.add(msgData.combo_id)
+
+    try {
+      const audioData = await fetchAudioDataFromUrl(audioUrl)
+
+      if (audioData?.data) {
+        msgData.audioData = audioData
+
+        await WeilaDB.getInstance().putMsgData(msgData)
+
+        this.coreInterface.sendExtEvent(WL_ExtEventID.WL_EXT_MSG_AUDIO_READY_IND, msgData)
+      }
+    } catch (e) {
+      wlerr('后台获取音频数据异常:', e)
+    } finally {
+      this.audioPrefetchInFlight.delete(msgData.combo_id)
+    }
   }
 
   public async getMsgDatas(

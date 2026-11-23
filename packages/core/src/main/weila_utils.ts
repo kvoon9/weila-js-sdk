@@ -1,7 +1,7 @@
 import { WL } from 'proto/weilapb'
 import { getLogger } from 'log/weila_log'
 import { WL_PttPayload } from 'main/weila_internal_data'
-import { WL_IDbMsgData } from 'db/weila_db_data'
+import { WL_IDbAudioData, WL_IDbMsgData } from 'db/weila_db_data'
 import { dbEnum } from 'db/db_enum'
 
 const wllog = getLogger('UTIL:info')
@@ -814,6 +814,34 @@ function getWebsocketAddr(): string {
   return process.env.WSS ?? ''
 }
 
+/**
+ * 取回一个音频消息 URL 指向的音频数据：去掉文件头 10 字节后按帧解析出帧数。
+ * 取回失败或响应非 2xx 时记日志并返回 undefined。
+ * @param url 音频文件地址
+ * @returns 解析出的音频数据，含 data 与 frameCount
+ */
+async function fetchAudioDataFromUrl(url: string): Promise<WL_IDbAudioData | undefined> {
+  const audioData: WL_IDbAudioData = { frameCount: 0 }
+
+  try {
+    const result = await fetchWithTimeout(url, { method: 'GET', mode: 'cors' }, 5000)
+
+    if (result.ok) {
+      const data = await result.arrayBuffer()
+      audioData.data = new Uint8Array(data.slice(10))
+      audioData.frameCount = calculateOpusDataFrame(audioData.data)
+
+      return audioData
+    }
+
+    wlerr('获取音频数据失败 HTTP:%d 地址:%s', result.status, url)
+  } catch (e) {
+    wlerr('获取数据异常', e)
+  }
+
+  return undefined
+}
+
 function decompositionAudioData(pttData: Uint8Array): WL_PttPayload[] {
   let offset = 0
   let sizeOfOpusData = 0
@@ -958,6 +986,7 @@ function getMsgDataIdByCombo(msgData: WL_IDbMsgData, seq: number): string {
 
 export {
   fetchWithTimeout,
+  fetchAudioDataFromUrl,
   getPbResultCodeMassage,
   getErrorMsg,
   AsyncTime,
