@@ -1,5 +1,6 @@
 // @ts-ignore
 import Network from 'main/weila_network.worker'
+import WeilaPbDispatcher from 'main/weila_pb_dispatcher'
 import { fsmEvents, mainFsm, systemWatchdogActor } from 'fsm/weila_fsmScript'
 import type { MainActor } from 'fsm/weila_fsmScript'
 import { WLConfig } from 'main/weila_config'
@@ -55,11 +56,7 @@ import {
 } from 'db/weila_db_data'
 import { dbEnum } from 'db/db_enum'
 import { getLogger } from 'log/weila_log'
-import {
-  fetchAudioDataFromUrl,
-  getMsgDataIdByCombo,
-  getPbResultCodeMassage,
-} from 'main/weila_utils'
+import { fetchAudioDataFromUrl, getMsgDataIdByCombo } from 'main/weila_utils'
 import WLLoginModule from 'main/weila_login_module'
 import WLSessionModule from 'main/weila_session_module'
 import WLFriendModule from 'main/weila_friend_module'
@@ -113,20 +110,6 @@ function isMessagesRequest(request: WL_SubscribeRequest): request is WL_Subscrib
   return request.topic === 'messages'
 }
 
-interface WL_WaitingRspPbMsgInfo {
-  resolve(value: any): any
-  reject(reason: any): any
-  pbMsgData: WL_PbMsgData
-  timeout: number
-}
-
-interface WL_SendingPbMsgInfo {
-  resolve(value: any): any
-  reject(reason: any): any
-  buildPbMsg: WLBuildMsgRet
-  timeout?: number
-}
-
 export interface WL_InitOptions {
   appId?: string
   appKey?: string
@@ -148,9 +131,8 @@ class WeilaCore implements WL_CoreInterface {
   mainFsm?: typeof mainFsm
   mainFsmService!: MainActor
   network?: Network
-  waitingRspMap: Map<number, WL_WaitingRspPbMsgInfo>
+  pbDispatcher: WeilaPbDispatcher
   pbMsgHandlerList: Map<number, WL_PbMsgHandler>
-  sendingPbMsgList: WL_SendingPbMsgInfo[]
   loginUserInfo?: WL_IDbUserInfo
   loginModule: WLLoginModule
   sessionModule: WLSessionModule
@@ -225,9 +207,10 @@ class WeilaCore implements WL_CoreInterface {
     })
     this.mainFsmService.start()
 
-    this.waitingRspMap = new Map<number, WL_WaitingRspPbMsgInfo>()
+    this.pbDispatcher = new WeilaPbDispatcher((reqData) => {
+      this.sendNetworkEvent(WL_NetworkEventID.NET_SEND_DATA_EVT, reqData)
+    })
     this.pbMsgHandlerList = new Map<number, WL_PbMsgHandler>()
-    this.sendingPbMsgList = []
 
     this.network = new Network()
     this.network.addEventListener('message', this.onNetworkMessage.bind(this))
@@ -258,22 +241,7 @@ class WeilaCore implements WL_CoreInterface {
   }
 
   rspPbMsg(seq: number, resultCode: number, data: any): void {
-    if (this.waitingRspMap.has(seq)) {
-      const sendingItem = this.waitingRspMap.get(seq)
-      this.waitingRspMap.delete(seq)
-
-      if (sendingItem) {
-        if (resultCode === 0) {
-          sendingItem.resolve(data)
-        } else {
-          let errorMessage = 'RET_CODE:' + resultCode + '-MESSAGE:'
-          const msg = getPbResultCodeMassage(dbEnum<WL.Service.ResultCode>(resultCode))
-          errorMessage += msg ? msg : '未知错误码'
-          errorMessage += ':END'
-          sendingItem.reject(new Error(errorMessage))
-        }
-      }
-    }
+    this.pbDispatcher.rspPbMsg(seq, resultCode, data)
   }
 
   async executeCoreFunc(funcName: string, ...argvs: any[]): Promise<any> {
@@ -285,45 +253,7 @@ class WeilaCore implements WL_CoreInterface {
   }
 
   sendPbMsg(buildPbMsg: WLBuildMsgRet, timeout?: number): Promise<any> {
-    return new Promise<any>((resolve, reject) => {
-      const sendingItem: WL_SendingPbMsgInfo = {
-        resolve,
-        reject,
-        buildPbMsg,
-        timeout: timeout ? timeout : 6000,
-      }
-
-      this.sendingPbMsgList.push(sendingItem)
-      setTimeout(this.processSendingPbMsg.bind(this), 0)
-    })
-  }
-
-  private processSendingPbMsg(): void {
-    wllog('处理PB消息，队列有%d个等待发送消息', this.sendingPbMsgList.length)
-
-    if (this.sendingPbMsgList.length > 0) {
-      const sendingItem = this.sendingPbMsgList.shift()!
-      const weilaMsgHeader = sendingItem.buildPbMsg.weilaMsgHeader
-
-      if (!weilaMsgHeader) return
-
-      const waitingItem: WL_WaitingRspPbMsgInfo = {
-        resolve: sendingItem.resolve,
-        reject: sendingItem.reject,
-        pbMsgData: {
-          header: weilaMsgHeader,
-          pbMsgData: sendingItem.buildPbMsg.reqData,
-        },
-        timeout: new Date().getTime() + (sendingItem.timeout ?? 0),
-      }
-
-      this.waitingRspMap.set(weilaMsgHeader.seqNum, waitingItem)
-      this.sendNetworkEvent(WL_NetworkEventID.NET_SEND_DATA_EVT, sendingItem.buildPbMsg.reqData)
-    }
-
-    if (this.sendingPbMsgList.length > 0) {
-      setTimeout(this.processSendingPbMsg.bind(this), 0)
-    }
+    return this.pbDispatcher.sendPbMsg(buildPbMsg, timeout)
   }
 
   private sendNetworkEvent(eventId: WL_NetworkEventID, eventData: any) {
@@ -345,17 +275,7 @@ class WeilaCore implements WL_CoreInterface {
             this.mainFsmService.send({ type: fsmEvents.FSM_NET_CONNECTING_IND_EVT })
           } else if (netState === WL_NetworkState.NET_DISCONNECTED_STATE) {
             this.mainFsmService.send({ type: fsmEvents.FSM_NET_DISCONNECT_IND_EVT })
-
-            const keys = this.waitingRspMap.keys()
-
-            for (let k of keys) {
-              const waitingRsp = this.waitingRspMap.get(k)
-
-              if (waitingRsp) {
-                waitingRsp.reject(new Error('网络失去连接'))
-                this.waitingRspMap.delete(k)
-              }
-            }
+            this.pbDispatcher.rejectAll('网络失去连接')
           }
         }
 
@@ -538,30 +458,7 @@ class WeilaCore implements WL_CoreInterface {
   }
 
   private onSysTimeChecking(_context: any, _event: any) {
-    if (this.waitingRspMap.size === 0) return
-
-    wllog('--------->onSysTimeChecking', this.waitingRspMap.size)
-
-    const timeoutKeyList: number[] = []
-
-    const now = new Date().getTime()
-
-    this.waitingRspMap.forEach((value, key) => {
-      wllog('checkSendingMsgItemTimeout:', value.timeout, now)
-
-      if (value.timeout <= now) {
-        timeoutKeyList.push(key)
-      }
-    })
-
-    timeoutKeyList.forEach((key) => {
-      const waitingPbMsg = this.waitingRspMap.get(key)
-
-      if (waitingPbMsg) {
-        waitingPbMsg.reject(new Error('消息超时'))
-        this.waitingRspMap.delete(key)
-      }
-    })
+    this.pbDispatcher.checkTimeouts()
   }
 
   private onReadyEntry(_context: any, _event: any) {
