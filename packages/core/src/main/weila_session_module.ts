@@ -824,8 +824,6 @@ export default class WLSessionModule {
       await WeilaDB.getInstance().putMsgDatas(msgDatas)
       wllog('从服务器中获取会话%d条消息成功', msgDatas.length)
 
-      void this.prefetchAudioData(msgDatas)
-
       return true
     }
 
@@ -836,11 +834,12 @@ export default class WLSessionModule {
   private readonly audioPrefetchInFlight = new Set<string>()
 
   /**
-   * 后台补齐历史音频消息的音频数据：逐条取回、写库，并广播
-   * WL_EXT_MSG_AUDIO_READY_IND，让界面能显示时长、点击即播。
-   * 取回失败（如服务器已删除该文件）只记日志，点击播放时由 playSingle
-   * 的失败通知兜底。串行取回，避免一次翻页并发打出几十个请求。
-   * @param msgDatas 刚入库的消息列表
+   * 后台补齐读取结果里缺数据的音频消息：逐条取回、写库，并广播
+   * WL_EXT_MSG_AUDIO_READY_IND，让界面能显示时长、点击即播。挂在
+   * getMsgDatas 的读取结果上，因此新拉取的行和库内已有的旧行都会被
+   * 补齐。取回失败（如服务器已删除该文件）只记日志，点击播放时由
+   * playSingle 的失败通知兜底。串行取回，避免一次翻页并发打出几十个请求。
+   * @param msgDatas 读取到的消息列表
    */
   private prefetchAudioData(msgDatas: WL_IDbMsgData[]): Promise<void> {
     return msgDatas.reduce(
@@ -909,11 +908,15 @@ export default class WLSessionModule {
       await this.getMsgDataFromServer(sessionId, sessionType, startMsgId, count)
     }
 
-    if (startMsgId) {
-      return WeilaDB.getInstance().getMsgDatasWithRange(sessionId, sessionType, startMsgId, count)
-    }
+    const result = startMsgId
+      ? await WeilaDB.getInstance().getMsgDatasWithRange(sessionId, sessionType, startMsgId, count)
+      : await WeilaDB.getInstance().getLastMsgDatas(sessionId, sessionType, count)
 
-    return WeilaDB.getInstance().getLastMsgDatas(sessionId, sessionType, count)
+    // 挂在读取结果上而不是入库路径上：库内早于预取功能存在的行、以及
+    // 任何缺数据的音频行，都会在每次读取时被补齐。
+    void this.prefetchAudioData(result)
+
+    return result
   }
 
   public async setSessionMsgRead(
