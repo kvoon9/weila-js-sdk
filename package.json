@@ -29,7 +29,9 @@
     "prepare": "simple-git-hooks",
     "lint:staged": "nano-staged",
     "contract:baseline": "node packages/core/scripts/artifact-contract.mjs --write",
-    "contract:check": "node packages/core/scripts/artifact-contract.mjs"
+    "contract:check": "node packages/core/scripts/artifact-contract.mjs",
+    "api:snapshot": "tsnapi packages/core",
+    "api:snapshot:update": "tsnapi packages/core -u"
   },
   "devDependencies": {
     "@oxlint/plugins": "catalog:",
@@ -44,6 +46,7 @@
     "playwright": "1.59.1",
     "simple-git-hooks": "catalog:",
     "taze": "catalog:",
+    "tsnapi": "catalog:",
     "turbo": "^2.9.18"
   },
   "simple-git-hooks": {
