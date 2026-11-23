@@ -34,10 +34,6 @@ function handleCreate() {
   emit('created', groupName.value.trim(), isPublic.value)
 }
 
-function handleCreated() {
-  handleClose()
-}
-
 function handleCreateFailed(errMessage: string) {
   error.value = errMessage
   creating.value = false
@@ -51,7 +47,7 @@ function setCreating(value: boolean) {
 }
 
 defineExpose({
-  handleCreated,
+  handleCreated: handleClose,
   handleCreateFailed,
   setCreating,
 })

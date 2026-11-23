@@ -63,14 +63,14 @@ packages/core/
 ├── test/               # Empty test directory
 ├── .env                # Environment variables
 ├── tsconfig.json       # TypeScript configuration
-├── rspack.config.cjs   # Rspack build configuration
-├── rspack.worklets.config.cjs
+├── rspack.config.mts   # Rspack build configuration
+├── rspack.worklets.config.mts
 └── worklet-inline-loader.cjs
 ```
 
 ### Module Path Aliases
 
-Configured in both `tsconfig.json` and `rspack.config.cjs`:
+Configured in both `tsconfig.json` and `rspack.config.mts`:
 
 - `fsm/*` → `src/fsm/*`
 - `log/*` → `src/log/*`
@@ -189,12 +189,12 @@ public weila_onEvent(callback: WL_ExtEventCallback): void {
 
 - Worker files use `.worker.ts` suffix (e.g., `weila_network.worker.ts`)
 - Import with `@ts-ignore` directive: `// @ts-ignore\nimport Network from 'main/weila_network.worker';`
-- Configured with `worker-rspack-loader` in `rspack.config.cjs` and inlined as a Blob
+- Configured with `worker-rspack-loader` in `rspack.config.mts` and inlined as a Blob
 
 ### Worklets (Audio)
 
 - Worklet files use `.worklet.js` suffix
-- `rspack.worklets.config.cjs` builds each worklet as a standalone IIFE, and `worklet-inline-loader.cjs` embeds the result as a Blob URL factory
+- `rspack.worklets.config.mts` builds each worklet as a standalone IIFE, and `worklet-inline-loader.cjs` embeds the result as a Blob URL factory
 
 ### Binary Assets
 
@@ -204,7 +204,7 @@ public weila_onEvent(callback: WL_ExtEventCallback): void {
 
 ### Environment Variables
 
-- Loaded from `.env` in `rspack.config.cjs` and injected with `rspack.DefinePlugin`
+- Loaded from `.env` in `rspack.config.mts` and injected with `rspack.DefinePlugin`
 - Defined in `.env` file (not committed to git)
 - Accessible via `process.env.VARIABLE_NAME`
 

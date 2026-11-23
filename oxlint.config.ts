@@ -1,0 +1,145 @@
+import { defineConfig } from 'oxlint'
+
+/** Files that oxlint parses as JavaScript, TypeScript, or Vue. */
+const SOURCE_FILES = ['**/*.{js,jsx,ts,tsx,mjs,cjs,vue}']
+
+/**
+ * The `eslint-plugin-slop` subset that `@antfu/eslint-config` enables through its
+ * `antislop` option. `slop/no-static-only-class` is absent there, so it stays off here.
+ */
+const SLOP_RULES = {
+  'slop/max-comment-length': 'error',
+  'slop/no-chained-type-assertions': 'error',
+  'slop/no-jargon': 'error',
+  'slop/no-trivial-functions': 'error',
+  'slop/no-trivial-type-aliases': 'error',
+  'slop/prefer-jsdoc': 'error',
+} as const
+
+/**
+ * The `eslint-plugin-sonarjs` subset that `@antfu/eslint-config` enables through `antislop`.
+ *
+ * `cognitive-complexity` (threshold 15) and `no-invariant-returns` stay off for now. Core
+ * still has 20 functions above the threshold plus two public success booleans that always
+ * return `true`; enabling either rule would raise the lint budget the gate forbids raising.
+ * Turn them on as part of the refactor that clears those findings.
+ */
+const SONAR_RULES = {
+  'sonarjs/cognitive-complexity': 'off',
+  'sonarjs/no-all-duplicated-branches': 'error',
+  'sonarjs/no-collapsible-if': 'error',
+  'sonarjs/no-commented-code': 'error',
+  'sonarjs/no-dead-store': 'error',
+  'sonarjs/no-duplicated-branches': 'error',
+  'sonarjs/no-element-overwrite': 'error',
+  'sonarjs/no-empty-collection': 'error',
+  'sonarjs/no-gratuitous-expressions': 'error',
+  'sonarjs/no-identical-conditions': 'error',
+  'sonarjs/no-identical-expressions': 'error',
+  'sonarjs/no-identical-functions': 'error',
+  'sonarjs/no-invariant-returns': 'off',
+  'sonarjs/no-inverted-boolean-check': 'error',
+  'sonarjs/no-redundant-boolean': 'error',
+  'sonarjs/no-redundant-jump': 'error',
+  'sonarjs/no-unused-collection': 'error',
+  'sonarjs/no-use-of-empty-return-value': 'error',
+  'sonarjs/prefer-single-boolean-return': 'error',
+} as const
+
+export default defineConfig({
+  plugins: ['typescript', 'unicorn', 'oxc', 'import'],
+  env: {
+    browser: true,
+    es2024: true,
+  },
+  categories: {
+    correctness: 'error',
+    suspicious: 'warn',
+    perf: 'warn',
+  },
+  jsPlugins: [
+    {
+      name: 'anti-slop',
+      specifier: './packages/core/tools/oxlint/anti-slop/index.ts',
+    },
+    'eslint-plugin-slop',
+    'eslint-plugin-sonarjs',
+  ],
+  settings: {
+    slop: {
+      inspection: 'full',
+    },
+  },
+  ignorePatterns: [
+    'dist/',
+    'node_modules/',
+    '*.d.ts',
+    'pnpm-lock.yaml',
+    // Emscripten output and the handwritten worklets it feeds predate the lint gate.
+    'packages/core/src/audio/opus.js',
+    'packages/core/src/audio/*.worklet.js',
+    // Generated protocol code.
+    'packages/core/src/proto/weilapb.js',
+    'packages/core/tools/oxlint/anti-slop/**',
+    // Built worklet bundles.
+    'playgrounds/vue3/public/**',
+  ],
+  overrides: [
+    {
+      files: SOURCE_FILES,
+      rules: {
+        // Antfu enables this rule universally; oxlint applies it to every file it parses.
+        'slop/no-em-dash': 'error',
+        ...SLOP_RULES,
+        ...SONAR_RULES,
+      },
+    },
+    {
+      files: ['**/*.vue'],
+      plugins: ['vue'],
+    },
+    {
+      files: ['**/test/**', '**/*.test.ts', '**/*.spec.ts'],
+      rules: {
+        'no-console': 'off',
+      },
+    },
+    {
+      files: ['**/playgrounds/**'],
+      rules: {
+        'no-console': 'off',
+      },
+    },
+    {
+      files: ['packages/core/**'],
+      rules: {
+        'anti-slop/no-array-filter-map': 'warn',
+        'anti-slop/no-chained-type-assertions': 'warn',
+        'anti-slop/no-conditional-empty-object-spread': 'warn',
+        'anti-slop/no-known-value-widening': 'warn',
+        'anti-slop/no-module-mocking': 'warn',
+        'anti-slop/no-object-parameters': 'warn',
+        'anti-slop/no-reduce-accumulator-copy': 'warn',
+        'anti-slop/no-reflect-apply': 'warn',
+        'anti-slop/no-reflect-get': 'warn',
+        'anti-slop/no-runtime-typeof': 'warn',
+        'anti-slop/no-shape-in-symbol-names': 'warn',
+        'anti-slop/no-unknown-parameters': 'warn',
+        'anti-slop/no-unknown-returns': 'warn',
+        'anti-slop/no-unknown-type-aliases': 'warn',
+        'anti-slop/no-unsafe-dictionary-type': 'warn',
+        'anti-slop/no-widen-then-assert': 'warn',
+        'anti-slop/require-readable-spacing': 'warn',
+        'anti-slop/require-safety-comment-for-type-assertion': 'warn',
+        'no-shadow': 'warn',
+        'no-unused-vars': 'warn',
+        'import/default': 'warn',
+        'typescript/no-useless-default-assignment': 'warn',
+        'typescript/no-floating-promises': 'warn',
+        'typescript/await-thenable': 'warn',
+        'typescript/unbound-method': 'warn',
+        'typescript/no-base-to-string': 'warn',
+      },
+    },
+  ],
+})

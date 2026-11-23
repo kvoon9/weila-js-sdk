@@ -742,10 +742,8 @@ function getResultCodeFromError(errorMsg: string): number {
   const pattern = /RET_CODE:(.*)-MESSAGE:/i
   const result = errorMsg.match(pattern)
 
-  if (result) {
-    if (result.length > 1) {
-      return parseInt(result[1])
-    }
+  if (result && result.length > 1) {
+    return parseInt(result[1])
   }
 
   return -1

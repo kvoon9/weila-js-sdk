@@ -440,8 +440,6 @@ export default class WLBusinessModule {
   }
 
   public async initService(dbSessionList: WL_IDbSession[]): Promise<boolean> {
-    let serviceSessionInfos: WL_IDbServiceSessionInfo[] = []
-
     if (dbSessionList.length === 0) {
       return true
     }
@@ -499,8 +497,6 @@ export default class WLBusinessModule {
           if (customer) {
             dbUserInfos.push(customer)
           }
-
-          serviceSessionInfos.push(serviceSessionInfo)
 
           dbSession.latestUpdate = serviceSessionInfo.serviceSession.updatedTime
           dbSession.sessionName = serviceSessionInfo.service.name

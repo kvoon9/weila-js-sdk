@@ -1816,11 +1816,8 @@ class WeilaCore implements WL_CoreInterface {
 
       const handler: WL_ExtEventCallback = (eventId: WL_ExtEventID, eventData: any) => {
         if (
-          eventId === WL_ExtEventID.WL_EXT_DATA_PREPARE_IND &&
-          eventData?.state === WL_DataPrepareState.PREPARE_SUCC_END
-        ) {
-          cb(this.weila_getSessions())
-        } else if (
+          (eventId === WL_ExtEventID.WL_EXT_DATA_PREPARE_IND &&
+            eventData?.state === WL_DataPrepareState.PREPARE_SUCC_END) ||
           eventId === WL_ExtEventID.WL_EXT_NEW_SESSION_OPEN_IND ||
           eventId === WL_ExtEventID.WL_EXT_SESSION_UPDATED_IND
         ) {

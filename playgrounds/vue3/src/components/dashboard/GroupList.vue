@@ -18,10 +18,6 @@ function handleSelect(group: GroupItem) {
 function handleCreate() {
   emit('create')
 }
-
-function handleRefresh() {
-  refetch()
-}
 </script>
 
 <template>
@@ -33,7 +29,7 @@ function handleRefresh() {
       <h2 class="text-base font-semibold text-neutral-900">群组</h2>
       <div class="flex items-center gap-1">
         <button
-          @click="handleRefresh"
+          @click="refetch()"
           class="p-1.5 rounded hover:bg-neutral-100 text-neutral-500 hover:text-neutral-700 transition-colors"
           title="刷新"
         >
@@ -60,7 +56,7 @@ function handleRefresh() {
       <div v-else-if="error" class="flex items-center justify-center h-full">
         <div class="text-red-500 text-center px-4">
           <p class="mb-2">加载失败</p>
-          <button @click="handleRefresh" class="text-sm text-blue-500 hover:underline">重试</button>
+          <button @click="refetch()" class="text-sm text-blue-500 hover:underline">重试</button>
         </div>
       </div>
 

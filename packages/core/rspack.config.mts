@@ -1,28 +1,39 @@
-const fs = require('node:fs')
-const path = require('node:path')
-const { execSync } = require('node:child_process')
-const rspack = require('@rspack/core')
+import { execSync } from 'node:child_process'
+import { existsSync, readFileSync } from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { DefinePlugin, type Configuration } from '@rspack/core'
 
-const ROOT = __dirname
+const ROOT = path.dirname(fileURLToPath(import.meta.url))
 const SRC = path.resolve(ROOT, 'src')
-const ENV_KEYS = ['APPID', 'APPKEY', 'WSS']
+const ENV_KEYS = ['APPID', 'APPKEY', 'WSS'] as const
 
-function readEnv() {
-  const file = path.resolve(ROOT, '.env')
-  const values = {}
-
-  if (!fs.existsSync(file)) return values
-
-  for (const line of fs.readFileSync(file, 'utf8').split(/\r?\n/)) {
-    const match = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/)
-
-    if (match) values[match[1]] = match[2].replace(/^['"]|['"]$/g, '')
-  }
-
-  return values
+interface Env {
+  APPID?: string
+  APPKEY?: string
+  WSS?: string
 }
 
-function buildId() {
+function readEnv(): Env {
+  const file = path.resolve(ROOT, '.env')
+  const values = new Map<string, string>()
+
+  if (!existsSync(file)) return {}
+
+  for (const line of readFileSync(file, 'utf8').split(/\r?\n/)) {
+    const match = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/)
+
+    if (match) values.set(match[1], match[2].replace(/^['"]|['"]$/g, ''))
+  }
+
+  return {
+    APPID: values.get('APPID'),
+    APPKEY: values.get('APPKEY'),
+    WSS: values.get('WSS'),
+  }
+}
+
+function buildId(): string {
   try {
     return execSync('git rev-parse --short HEAD', { cwd: ROOT }).toString().trim()
   } catch {
@@ -33,17 +44,16 @@ function buildId() {
 const env = readEnv()
 
 for (const key of ENV_KEYS) {
-  if (!(key in env))
+  if (env[key] === undefined)
     console.warn(
       `[rspack] ${key} is not set. Defining an empty string; pass appId and appKey at init.`,
     )
 }
 
-module.exports = {
+export default {
   mode: 'production',
   context: SRC,
   stats: { children: true, errorDetails: true },
-  experiments: { outputModule: true },
   entry: {
     weilasdk: { import: './weilasdk.ts', library: { type: 'module' } },
     weilasdk_data: { import: './weilasdk_data.ts', library: { type: 'module' } },
@@ -53,6 +63,7 @@ module.exports = {
   output: {
     path: path.resolve(ROOT, 'dist'),
     filename: '[name].mjs',
+    module: true,
     globalObject: 'globalThis',
     publicPath: '/',
     assetModuleFilename: 'assets/[name][ext]',
@@ -106,7 +117,7 @@ module.exports = {
     ],
   },
   plugins: [
-    new rspack.DefinePlugin({
+    new DefinePlugin({
       'process.env.APPID': JSON.stringify(env.APPID ?? ''),
       'process.env.APPKEY': JSON.stringify(env.APPKEY ?? ''),
       'process.env.DEBUG': JSON.stringify(''),
@@ -115,4 +126,4 @@ module.exports = {
       'process.env.WSS': JSON.stringify(env.WSS ?? ''),
     }),
   ],
-}
+} satisfies Configuration
