@@ -396,10 +396,10 @@ class WLAudio {
   public pausePlay(playerType: WLPlayerType): Promise<boolean> {
     wllog('播放器:%d 暂停播放', playerType)
 
-    if (
-      this.playState[playerType] !== WLPlayerState.WL_PLAYER_STARTED &&
-      this.playState[playerType] !== WLPlayerState.WL_PLAYER_STARTING
-    ) {
+    // Only a settled player pauses: a pause landing during STARTING would
+    // replace the worklet's starting state and swallow the START_RSP,
+    // leaving the playback-start chain waiting forever.
+    if (this.playState[playerType] !== WLPlayerState.WL_PLAYER_STARTED) {
       return Promise.reject(new Error('播放器状态不正确:' + this.playState[playerType]))
     }
 
@@ -416,10 +416,7 @@ class WLAudio {
   public resumePlay(playerType: WLPlayerType): Promise<boolean> {
     wllog('播放器:%d 恢复播放', playerType)
 
-    if (
-      this.playState[playerType] !== WLPlayerState.WL_PLAYER_PAUSED &&
-      this.playState[playerType] !== WLPlayerState.WL_PLAYER_PAUSING
-    ) {
+    if (this.playState[playerType] !== WLPlayerState.WL_PLAYER_PAUSED) {
       return Promise.reject(new Error('播放器状态不正确:' + this.playState[playerType]))
     }
 
