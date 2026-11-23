@@ -29,6 +29,8 @@
     },
   },
   "ignore": [
+    // tsnapi commits public-API snapshots under __snapshots__/tsnapi/
+    "**/__snapshots__/**",
     // Generated build output, gitignored but present on disk after builds
     "**/dist/**",
     // AudioWorklet bundles fetched at runtime by URL (see docs/AUDIO_PLAYBACK_FLOW.md)
