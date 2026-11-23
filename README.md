@@ -40,6 +40,19 @@ SDK 采用模块化设计，以 `WeilaCore` 为核心，下设多个功能模块
 npm install weilasdk
 ```
 
+### 预览版本
+
+每个 PR 和 `main` 分支的最新提交都会通过 [pkg.pr.new](https://github.com/stackblitz-labs/pkg.pr.new) 发布预览包，无需等待正式发版。pkg.pr.new 机器人会在 PR 中评论当前提交的安装命令，也可以按下面的格式手动安装：
+
+```bash
+pnpm add https://pkg.pr.new/kvoon9/weila-js-sdk/@vois/weila-sdk-core@<PR 编号或 commit SHA>
+pnpm add https://pkg.pr.new/kvoon9/weila-js-sdk/@vois/weila-sdk-ui@<PR 编号或 commit SHA>
+```
+
+预览包的版本号是 `0.0.0-preview-<sha>`，不会与 npm 上的正式版本冲突。UI 预览包依赖同一提交的 core 预览包。
+
+仓库管理员需要先在仓库上安装 [pkg.pr.new GitHub App](https://github.com/apps/pkg-pr-new)，预览发布才会生效。
+
 ### 导出项说明
 
 SDK 入口点主要导出以下内容：
