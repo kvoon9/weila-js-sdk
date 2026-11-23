@@ -322,69 +322,12 @@ class WeilaCore implements WL_CoreInterface {
    * @param audioMsgData 单条语音消息
    */
   public async weila_playSingle(audioMsgData: WL_IDbMsgData): Promise<boolean> {
-    if (
-      audioMsgData.msgType !== WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE &&
-      audioMsgData.msgType !== WL_IDbMsgDataType.WL_DB_MSG_DATA_PTT_TYPE
-    ) {
+    const ready = await this.sessionModule.prepareSinglePlayback(audioMsgData)
+
+    if (!ready) {
       this.notifySinglePlayFailed(audioMsgData)
 
       return false
-    }
-
-    if (audioMsgData.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE) {
-      const audioData = audioMsgData.audioData
-
-      if (audioData && !audioData.data && audioData.audioUrl) {
-        const audioUrl = audioData.audioUrl.replace(/^http(?!s)/, 'https')
-
-        try {
-          audioMsgData.audioData = await this.weila_fetchAudioData(audioUrl)
-
-          if (!audioMsgData.audioData) {
-            audioMsgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR
-            audioMsgData.audioData = {
-              audioUrl: audioUrl,
-              frameCount: 0,
-            }
-          }
-        } catch {
-          audioMsgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR
-          audioMsgData.audioData = {
-            audioUrl: audioUrl,
-            frameCount: 0,
-          }
-        } finally {
-          await WeilaDB.getInstance().putMsgData(audioMsgData)
-        }
-
-        if (audioMsgData.status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR) {
-          this.notifySinglePlayFailed(audioMsgData)
-
-          return false
-        }
-      }
-    } else {
-      const pttData = audioMsgData.pttData
-
-      if (!pttData) {
-        this.notifySinglePlayFailed(audioMsgData)
-
-        return false
-      }
-
-      audioMsgData.msgType = WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE
-      audioMsgData.audioData = {
-        frameCount: pttData.frameCount,
-        data: pttData.data,
-      }
-
-      await WeilaDB.getInstance().putMsgData(audioMsgData)
-
-      if (audioMsgData.status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR) {
-        this.notifySinglePlayFailed(audioMsgData)
-
-        return false
-      }
     }
 
     return this.sessionModule.playSingleAudioItem(audioMsgData)

@@ -1339,6 +1339,71 @@ export default class WLSessionModule {
     return this.pttFsm.playSingle(msgData)
   }
 
+  /**
+   * 单条语音播放前的准备：URL 音频按需取回并落库，PTT 消息转换为
+   * 音频数据。消息对象就地补全。
+   * @param audioMsgData 待播放消息
+   * @returns 可以进入播放时为 true，无法播放时为 false
+   */
+  public async prepareSinglePlayback(audioMsgData: WL_IDbMsgData): Promise<boolean> {
+    if (
+      audioMsgData.msgType !== WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE &&
+      audioMsgData.msgType !== WL_IDbMsgDataType.WL_DB_MSG_DATA_PTT_TYPE
+    ) {
+      return false
+    }
+
+    if (audioMsgData.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE) {
+      const audioData = audioMsgData.audioData
+
+      if (audioData && !audioData.data && audioData.audioUrl) {
+        const audioUrl = audioData.audioUrl.replace(/^http(?!s)/, 'https')
+
+        try {
+          audioMsgData.audioData = await fetchAudioDataFromUrl(audioUrl)
+
+          if (!audioMsgData.audioData) {
+            audioMsgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR
+            audioMsgData.audioData = {
+              audioUrl: audioUrl,
+              frameCount: 0,
+            }
+          }
+        } catch {
+          audioMsgData.status = WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR
+          audioMsgData.audioData = {
+            audioUrl: audioUrl,
+            frameCount: 0,
+          }
+        } finally {
+          await WeilaDB.getInstance().putMsgData(audioMsgData)
+        }
+
+        if (audioMsgData.status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR) {
+          return false
+        }
+      }
+
+      return true
+    }
+
+    const pttData = audioMsgData.pttData
+
+    if (!pttData) {
+      return false
+    }
+
+    audioMsgData.msgType = WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE
+    audioMsgData.audioData = {
+      frameCount: pttData.frameCount,
+      data: pttData.data,
+    }
+
+    await WeilaDB.getInstance().putMsgData(audioMsgData)
+
+    return audioMsgData.status !== WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR
+  }
+
   public async playHistoryAudioItems(msgDatas: WL_IDbMsgData[]): Promise<boolean> {
     return this.pttFsm.playHistory(msgDatas)
   }
