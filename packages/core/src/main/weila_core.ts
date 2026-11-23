@@ -601,7 +601,7 @@ class WeilaCore implements WL_CoreInterface {
     this.refreshTokenTimerId = null
   }
 
-  private onLoginTryEntry(_context: any, event: any) {
+  private onLoginTryEntry({ event }: { event: any }) {
     wllog('onLoginTryEntry', event)
 
     if (event.data && event.data.error) {
@@ -625,7 +625,7 @@ class WeilaCore implements WL_CoreInterface {
     this.sendNetworkEvent(WL_NetworkEventID.NET_CONNECT_EVT, null)
   }
 
-  private onConnecting(context: any, event: any) {
+  private onConnecting({ context, event }: { context: any; event: any }) {
     wllog('onConnecting:', context, event)
   }
 
@@ -633,9 +633,16 @@ class WeilaCore implements WL_CoreInterface {
     // const loginParam = _context.loginParam as WL_LoginParam
   }
 
-  private onLoginRetryFail(context: any, event: any) {
+  private onLoginRetryFail({ context, event }: { context: any; event: any }) {
     wllog('onLoginRetryFail', event)
-    const loginParam: WL_LoginParam = context.loginParam
+
+    const loginParam: WL_LoginParam | null = context.loginParam
+
+    if (!loginParam) {
+      context.loginParam = null
+
+      return
+    }
 
     if (event.data && event.data.error) {
       loginParam.callback.reject(event.data.error)
