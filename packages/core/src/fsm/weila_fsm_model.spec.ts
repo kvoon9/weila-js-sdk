@@ -55,6 +55,7 @@ const ACTOR_NAMES = [
   'loginServer',
   'logout',
   'startPlayback',
+  'finishStop',
   'startTalking',
   'stopTalk',
   'checkPttPlayingList',
@@ -451,8 +452,24 @@ describe('ptt machine formal model', () => {
   })
 
   it('handles every event constant the ptt fsm sends', () => {
-    const dead = PTT_EVENT_NAMES.filter((type) => !exploration.handledEvents.has(type))
+    // END_BACK_TO_IDLE is now raised inside the machine when a stop finishes
+    // (pendingStopEvent), so no caller sends it any more and the sent-event
+    // credit never sees it. Its routing is checked by the settle assertions
+    // below: every STOP/PLAY_END path settles back to idle.
+    const machineRaised = new Set<string>([fsmEvents.FSM_END_BACK_TO_IDLE_EVT])
+
+    const dead = PTT_EVENT_NAMES.filter(
+      (type) => !machineRaised.has(type) && !exploration.handledEvents.has(type),
+    )
 
     expect(dead, 'event constants the ptt machine never handles').toEqual([])
+  })
+
+  it('routes a finished stop back to idle through the raised event', () => {
+    const settledToIdle = exploration.steps.filter((step) => {
+      return step.event === `(${fsmEvents.FSM_STOP_EVT})` && step.to === '"idle"'
+    })
+
+    expect(settledToIdle.length).toBeGreaterThan(0)
   })
 })
