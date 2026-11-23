@@ -106,6 +106,8 @@ const HANDLER_NAMES = [
   'onStopPttPlay',
   'onRequestTalkResult',
   'stopAndPlayNext',
+  'onPausePlay',
+  'onResumePlay',
 ]
 
 /** Events the core sends to the main machine. */
@@ -134,6 +136,8 @@ const PTT_EVENT_NAMES = [
   fsmEvents.FSM_PTT_ITEM_PLAY_END_EVT,
   fsmEvents.FSM_PTT_CHECK_RESOURCE_EVT,
   fsmEvents.FSM_STOP_AND_PLAY_NEXT_EVT,
+  fsmEvents.FSM_PAUSE_PLAY_EVT,
+  fsmEvents.FSM_RESUME_PLAY_EVT,
   fsmEvents.FSM_STOP_EVT,
   fsmEvents.FSM_PLAY_END_EVT,
   fsmEvents.FSM_END_BACK_TO_IDLE_EVT,

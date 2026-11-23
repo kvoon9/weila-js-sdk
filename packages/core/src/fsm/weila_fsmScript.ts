@@ -315,6 +315,8 @@ type PttFsmUserEvent =
   | { type: 'FSM_PTT_ITEM_PLAY_END_EVT' }
   | { type: 'FSM_PTT_CHECK_RESOURCE_EVT' }
   | { type: 'FSM_STOP_AND_PLAY_NEXT_EVT' }
+  | { type: 'FSM_PAUSE_PLAY_EVT' }
+  | { type: 'FSM_RESUME_PLAY_EVT' }
   | { type: 'FSM_STOP_EVT'; data?: unknown }
   | { type: 'FSM_PLAY_END_EVT'; data?: unknown }
   | { type: 'FSM_END_BACK_TO_IDLE_EVT' }
@@ -601,6 +603,12 @@ const pttFsm = createMachine({
         FSM_FEED_PTT_PAYLOAD_EVT: {
           actions: 'feedData',
         },
+        FSM_PAUSE_PLAY_EVT: {
+          actions: 'onPausePlay',
+        },
+        FSM_RESUME_PLAY_EVT: {
+          actions: 'onResumePlay',
+        },
       },
     },
     singleStopping: {
@@ -642,6 +650,8 @@ const fsmEvents = {
 
   FSM_PLAY_END_EVT: 'FSM_PLAY_END_EVT',
   FSM_STOP_EVT: 'FSM_STOP_EVT',
+  FSM_PAUSE_PLAY_EVT: 'FSM_PAUSE_PLAY_EVT',
+  FSM_RESUME_PLAY_EVT: 'FSM_RESUME_PLAY_EVT',
   FSM_REL_TALK_EVT: 'FSM_REL_TALK_EVT',
 } as const
 

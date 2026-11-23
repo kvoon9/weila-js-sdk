@@ -13,7 +13,8 @@
     "*.d.ts",
     "pnpm-lock.yaml",
     "**/*.wasm",
-    "**/*.wav"
+    "**/*.wav",
+    "playgrounds/vue3/public/*.iife.js"
   ],
   "overrides": [
     {

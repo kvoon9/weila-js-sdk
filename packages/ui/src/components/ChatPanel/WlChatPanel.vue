@@ -76,6 +76,9 @@ const emit = defineEmits<{
 const messageInput = ref('')
 const pttStatus = ref<'idle' | 'recording' | 'processing'>('idle')
 const playingAudioId = ref<string | null>(null)
+const pausedAudioId = ref<string | null>(null)
+const playProgressMs = ref<number | null>(null)
+let progressTimer: ReturnType<typeof setInterval> | null = null
 const realtimePttMessage = ref<WL_IDbMsgData | null>(null)
 const realtimePttPlaying = ref(false)
 const previewImage = ref<string | null>(null)
@@ -228,6 +231,8 @@ const handleAudioPlayInd = (event: WL_PttPlayInd) => {
 
   if (indData.state === WL_PttAudioPlayState.PTT_AUDIO_PLAYING_END) {
     playingAudioId.value = null
+    pausedAudioId.value = null
+    playProgressMs.value = null
     void finishRealtimePttPlayback()
   }
 }
@@ -276,6 +281,14 @@ onBeforeUnmount(() => {
 
 async function handleAudioPlay(msg: WL_IDbMsgData) {
   try {
+    // A paused message resumes from where it stopped instead of restarting.
+    if (pausedAudioId.value === msg.combo_id) {
+      pausedAudioId.value = null
+      props.core?.weila_resumeSingle()
+
+      return
+    }
+
     const audioMsg = toRaw(msg)
     await props.core?.weila_stopSingle()
     const played = await props.core?.weila_playSingle(audioMsg)
@@ -294,10 +307,40 @@ async function handleAudioPlay(msg: WL_IDbMsgData) {
   }
 }
 
-function handleAudioPause() {
-  playingAudioId.value = null
-  props.core?.weila_stopSingle()
+function handleAudioPause(msg: WL_IDbMsgData) {
+  if (playingAudioId.value !== msg.combo_id) return
+
+  pausedAudioId.value = msg.combo_id
+  props.core?.weila_pauseSingle()
 }
+
+/** Polls the single player's position while a message is active. */
+function stopProgressPolling() {
+  if (progressTimer !== null) {
+    clearInterval(progressTimer)
+    progressTimer = null
+  }
+}
+
+watch(playingAudioId, (id, _old, onCleanup) => {
+  stopProgressPolling()
+
+  if (!id) {
+    playProgressMs.value = null
+
+    return
+  }
+
+  playProgressMs.value = 0
+  progressTimer = setInterval(() => {
+    props.core?.weila_getSinglePlayProgress().then((ms) => {
+      playProgressMs.value = ms
+    })
+  }, 250)
+  onCleanup(stopProgressPolling)
+})
+
+onBeforeUnmount(stopProgressPolling)
 
 function openUrl(url: string) {
   window.open(url, '_blank', 'noopener,noreferrer')
@@ -607,6 +650,8 @@ async function handlePttStop() {
             :has-more="hasMore"
             :loading="messagesLoading"
             :playing-audio-id="playingAudioId"
+            :paused-audio-id="pausedAudioId"
+            :play-progress-ms="playProgressMs"
             :show-forward="showForward"
             :can-forward="canForward"
             :show-withdraw="showWithdraw"

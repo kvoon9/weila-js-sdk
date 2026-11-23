@@ -30,6 +30,10 @@ export interface WlMsgListProps {
   loading?: boolean
   /** 当前正在播放的音频消息 combo_id */
   playingAudioId?: string | null
+  /** 播放已暂停的音频消息 combo_id */
+  pausedAudioId?: string | null
+  /** 当前播放到的毫秒数 */
+  playProgressMs?: number | null
   /** 置顶警告文案 */
   warning?: string
   /** 是否显示转发按钮 */
@@ -47,6 +51,8 @@ const props = withDefaults(defineProps<WlMsgListProps>(), {
   hasMore: false,
   loading: false,
   playingAudioId: null,
+  pausedAudioId: null,
+  playProgressMs: null,
   warning: '',
   showForward: false,
   canForward: undefined,
@@ -329,6 +335,12 @@ watch(
             :msg="msg"
             :is-self="isSelf(msg)"
             :playing="playingAudioId === msg.combo_id"
+            :paused="pausedAudioId === msg.combo_id"
+            :progress-ms="
+              playingAudioId === msg.combo_id || pausedAudioId === msg.combo_id
+                ? playProgressMs
+                : null
+            "
             @play="emit('audio-play', msg)"
             @pause="emit('audio-pause', msg)"
           />

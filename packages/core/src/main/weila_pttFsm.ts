@@ -136,6 +136,8 @@ export default class WLPttFsm {
         onStopPttPlay: this.onStopPttPlay.bind(this),
         onRequestTalkResult: this.onRequestTalkResult.bind(this),
         stopAndPlayNext: this.stopAndPlayNext.bind(this),
+        onPausePlay: this.onPausePlay.bind(this),
+        onResumePlay: this.onResumePlay.bind(this),
       },
       actors: {
         checkHistoryList: fromPromise(() => this.checkHistoryList()),
@@ -488,6 +490,24 @@ export default class WLPttFsm {
     this.playingAudioList = []
     this.playingAudioMap.clear()
     this.streamPttPlayItem = null
+  }
+
+  /** Pauses the single player in place; the machine stays in singlePlaying. */
+  onPausePlay() {
+    wllog('onPausePlay')
+
+    this.audioManager.pausePlay(WLPlayerType.WL_PTT_SINGLE_PLAYER).catch((reason) => {
+      wlerr('暂停播放失败:', reason)
+    })
+  }
+
+  /** Resumes the single player from the paused position. */
+  onResumePlay() {
+    wllog('onResumePlay')
+
+    this.audioManager.resumePlay(WLPlayerType.WL_PTT_SINGLE_PLAYER).catch((reason) => {
+      wlerr('恢复播放失败:', reason)
+    })
   }
 
   stopPlay({ event, context }: PttActionArgs) {
@@ -1128,5 +1148,23 @@ export default class WLPttFsm {
 
   public playNext() {
     this.pttFsmService.send({ type: fsmEvents.FSM_STOP_AND_PLAY_NEXT_EVT })
+  }
+
+  /** Pauses the current single playback in place. */
+  public pausePlayAudio() {
+    this.pttFsmService.send({ type: fsmEvents.FSM_PAUSE_PLAY_EVT })
+  }
+
+  /** Resumes the paused single playback from where it stopped. */
+  public resumePlayAudio() {
+    this.pttFsmService.send({ type: fsmEvents.FSM_RESUME_PLAY_EVT })
+  }
+
+  /**
+   * 已播放的毫秒数，按单发播放器消费的 PCM 帧换算；暂停期间冻结。
+   * @returns 已播放毫秒数，播放器未启动时为 0
+   */
+  public async getPlayProgressMs(): Promise<number> {
+    return this.audioManager.getPlayerPlayedMs(WLPlayerType.WL_PTT_SINGLE_PLAYER)
   }
 }

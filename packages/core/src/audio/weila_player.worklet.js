@@ -38,6 +38,7 @@ class WLPlayerWorklet extends AudioWorkletProcessor {
     this.encodedDataList = []
     this.workerName = ''
     this.playerType = options.processorOptions.playerType
+    this.playedFrames = 0
 
     wllog('worker name:%s playerType:%d', options.processorOptions.workerName, this.playerType)
   }
@@ -233,6 +234,15 @@ class WLPlayerWorklet extends AudioWorkletProcessor {
           this.noMoreData = false
           this.pcmRingBuffer.clear()
           this.encodedDataList = []
+          this.playedFrames = 0
+        }
+        break
+
+      case WLAudioPlayerEvent.WL_WORKLET_NODE_POS_REQ:
+        {
+          this.sendEvent(WLAudioPlayerEvent.WL_WORKLET_NODE_POS_RSP, {
+            frames: this.playedFrames,
+          })
         }
         break
 
@@ -335,6 +345,8 @@ class WLPlayerWorklet extends AudioWorkletProcessor {
       output.forEach((value) => {
         this.pcmRingBuffer.pull(value)
       })
+
+      this.playedFrames += output.length
     } else {
       if (this.noMoreData) {
         wllog('已经没有coded数据了, 还剩', this.pcmRingBuffer.frameAvailable)
@@ -344,6 +356,8 @@ class WLPlayerWorklet extends AudioWorkletProcessor {
           output.forEach((value) => {
             value.set(buffer, 0)
           })
+
+          this.playedFrames += buffer.length
         } else {
           this.sendEvent(WLAudioPlayerEvent.WL_WORKLET_NODE_FINISH_PLAY, {
             playerType: this.playerType,

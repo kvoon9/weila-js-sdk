@@ -45,6 +45,8 @@ const PTT_HANDLER_NAMES = [
   'onStopPttPlay',
   'onRequestTalkResult',
   'stopAndPlayNext',
+  'onPausePlay',
+  'onResumePlay',
 ]
 
 interface Recording {

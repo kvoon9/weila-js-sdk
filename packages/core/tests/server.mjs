@@ -24,7 +24,9 @@ export async function startServer() {
           ? join(PACKAGE, path)
           : path.startsWith('/assets/')
             ? join(PACKAGE, 'dist', path)
-            : null
+            : path === '/weila_player.worklet.iife.js' || path === '/weila_recorder.worklet.iife.js'
+              ? join(PACKAGE, 'dist', 'worklets', path.slice(1))
+              : null
 
     if (!file) {
       response.writeHead(404).end()
