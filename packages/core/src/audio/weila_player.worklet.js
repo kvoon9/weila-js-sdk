@@ -342,11 +342,15 @@ class WLPlayerWorklet extends AudioWorkletProcessor {
     }
 
     if (this.pcmRingBuffer && this.pcmRingBuffer.frameAvailable >= output.length) {
+      // pull() returns the frames it actually consumed for this channel;
+      // output.length is the channel count, never the frame count.
+      let pulled = 0
+
       output.forEach((value) => {
-        this.pcmRingBuffer.pull(value)
+        pulled = this.pcmRingBuffer.pull(value)
       })
 
-      this.playedFrames += output.length
+      this.playedFrames += pulled
     } else {
       if (this.noMoreData) {
         wllog('已经没有coded数据了, 还剩', this.pcmRingBuffer.frameAvailable)
