@@ -38,6 +38,7 @@
     "oxfmt": "catalog:",
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",
+    "pkg-pr-new": "0.0.94",
     "playwright": "1.59.1",
     "simple-git-hooks": "catalog:",
     "taze": "catalog:",
