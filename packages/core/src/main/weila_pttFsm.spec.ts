@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { WLAudio } from 'audio/weila_audio'
-import { WLPlayerType } from 'audio/weila_audio_data'
+import { WLAudioEvent, WLPlayerType } from 'audio/weila_audio_data'
 import { WL_ConfigID } from 'main/weila_config'
 import WLPttFsm from 'main/weila_pttFsm'
 import { WL_IDbMsgData, WL_IDbMsgDataStatus, WL_IDbMsgDataType } from 'db/weila_db_data'
@@ -60,16 +60,34 @@ class RecordingAudioManager extends WLAudio {
   pausePlay = vi.fn(async (_playerType: WLPlayerType) => true)
   resumePlay = vi.fn(async (_playerType: WLPlayerType) => true)
   getPlayerPlayedMs = vi.fn(async (_playerType: WLPlayerType) => 0)
+  init = vi.fn(async () => true)
+  openRecorder = vi.fn(async (_sampleRate: number, _bufferSize: number) => true)
+  startRecord = vi.fn(async () => true)
+  stopRecord = vi.fn(async () => true)
+  closeRecorder = vi.fn(async () => true)
+  audioListeners: Array<(event: number, data: any) => void> = []
+  addAudioEventListener = vi.fn((listener: (event: number, data: any) => void) => {
+    this.audioListeners.push(listener)
+  })
+  removeAudioEventListener = vi.fn((listener: (event: number, data: any) => void) => {
+    this.audioListeners = this.audioListeners.filter((entry) => entry !== listener)
+  })
+  emitRecorderFrame(data: Uint8Array): void {
+    for (const listener of this.audioListeners) {
+      listener(WLAudioEvent.WL_AUDIO_OPUS_CODED_DATA_IND, data)
+    }
+  }
 }
 
 function makePttFsm() {
   const audio = new RecordingAudioManager()
   const ringPlayer = { weila_playRing: vi.fn(async (_id: WL_ConfigID) => true) }
   const onPlayInd = vi.fn()
+  const onRecordPttPacketInd = vi.fn()
 
   const listener: WL_PttFsmListener = {
     onPlayInd,
-    onRecordPttPacketInd: vi.fn(),
+    onRecordPttPacketInd,
   }
 
   const fsm = new WLPttFsm(listener, audio, ringPlayer)
@@ -79,7 +97,7 @@ function makePttFsm() {
     visited.push(JSON.stringify(state.value))
   })
 
-  return { audio, ringPlayer, onPlayInd, fsm, visited }
+  return { audio, ringPlayer, onPlayInd, onRecordPttPacketInd, fsm, visited }
 }
 
 /** PLAY_DELAY plus slack, with the intermediate microtasks flushed. */
@@ -321,5 +339,111 @@ describe('WLPttFsm playback-start chains', () => {
     await vi.advanceTimersByTimeAsync(60)
 
     expect(await outcome).toBe('stopPlayAudio timeout')
+  })
+})
+
+function talkFrame(index: number): Uint8Array {
+  return new Uint8Array([0x20, index & 0xff, 0x11, 0x22])
+}
+
+async function startTalking(makeResult: ReturnType<typeof makePttFsm>): Promise<void> {
+  const request = makeResult.fsm.requestTalk()
+
+  await vi.advanceTimersByTimeAsync(300)
+  await expect(request).resolves.toBe(true)
+  expect(makeResult.fsm.pttFsmService.getSnapshot().matches('talking')).toBe(true)
+}
+
+describe('WLPttFsm recording burst', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('buckets 25 frames into one first packet', async () => {
+    const result = makePttFsm()
+
+    await startTalking(result)
+
+    for (let i = 0; i < 25; i++) {
+      result.audio.emitRecorderFrame(talkFrame(i))
+    }
+
+    await vi.advanceTimersByTimeAsync(0)
+
+    expect(result.onRecordPttPacketInd).toHaveBeenCalledTimes(1)
+
+    const packet = result.onRecordPttPacketInd.mock.calls[0][0]
+
+    expect(packet.frameCount).toBe(25)
+    expect(packet.mark).toBe(0)
+    expect(packet.seqInPackage).toBe(0)
+    expect(packet.data).toHaveLength(25 * 5)
+  })
+
+  it('flushes the tail as a last packet on release', async () => {
+    const result = makePttFsm()
+
+    await startTalking(result)
+
+    for (let i = 0; i < 30; i++) {
+      result.audio.emitRecorderFrame(talkFrame(i))
+    }
+
+    void result.fsm.releaseTalk()
+    await vi.advanceTimersByTimeAsync(300)
+
+    // One full packet at 25, then the 5-frame tail marked as the last packet.
+    expect(result.onRecordPttPacketInd).toHaveBeenCalledTimes(2)
+
+    const tail = result.onRecordPttPacketInd.mock.calls[1][0]
+
+    expect(tail.frameCount).toBe(5)
+    expect(tail.mark).toBe(2)
+    expect(tail.seqInPackage).toBe(1)
+    expect(result.fsm.pttFsmService.getSnapshot().matches('idle')).toBe(true)
+  })
+
+  it('does not emit a tail packet when released by error', async () => {
+    const result = makePttFsm()
+
+    await startTalking(result)
+
+    for (let i = 0; i < 3; i++) {
+      result.audio.emitRecorderFrame(talkFrame(i))
+    }
+
+    void result.fsm.releaseTalkByError()
+    await vi.advanceTimersByTimeAsync(300)
+
+    expect(result.onRecordPttPacketInd).not.toHaveBeenCalled()
+    expect(result.fsm.pttFsmService.getSnapshot().matches('idle')).toBe(true)
+  })
+
+  it('stops accepting frames once the talk is released', async () => {
+    const result = makePttFsm()
+
+    await startTalking(result)
+
+    for (let i = 0; i < 10; i++) {
+      result.audio.emitRecorderFrame(talkFrame(i))
+    }
+
+    void result.fsm.releaseTalk()
+    await vi.advanceTimersByTimeAsync(300)
+
+    const emittedAfterRelease = result.onRecordPttPacketInd.mock.calls.length
+
+    for (let i = 0; i < 25; i++) {
+      result.audio.emitRecorderFrame(talkFrame(i))
+    }
+
+    await vi.advanceTimersByTimeAsync(0)
+
+    expect(result.onRecordPttPacketInd.mock.calls.length).toBe(emittedAfterRelease)
+    expect(result.audio.removeAudioEventListener).toHaveBeenCalled()
   })
 })

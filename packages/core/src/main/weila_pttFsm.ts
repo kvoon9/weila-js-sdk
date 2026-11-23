@@ -3,6 +3,8 @@ import type {
   PttFsmContext,
   PttFsmEvent,
   PttFsmInput,
+  PttFsmUserEvent,
+  PttTalkBurst,
   StartPlaybackFamily,
   StartPlaybackInput,
 } from 'fsm/weila_fsmScript'
@@ -11,7 +13,6 @@ import {
   WL_PttFsmListener,
   WL_PttPackType,
   WL_PttPayload,
-  WL_TalkingInfo,
 } from 'main/weila_internal_data'
 import {
   WL_IDbAudioData,
@@ -21,7 +22,7 @@ import {
 } from 'db/weila_db_data'
 import { WeilaDB } from 'db/weila_db'
 import { getLogger } from 'log/weila_log'
-import { createActor, fromPromise } from 'xstate'
+import { createActor, fromCallback, fromPromise } from 'xstate'
 import type { StateValue } from 'xstate'
 import { WLAudio } from 'audio/weila_audio'
 import { WLAudioEvent, WLPlayerType } from 'audio/weila_audio_data'
@@ -97,14 +98,12 @@ export default class WLPttFsm {
   singlePttPlayItem: WL_PttAudioItem | null = null
   historyPttPlayItems: WL_PttAudioItem[] | null = null
   historyPttPlayIndex: number
-  talkingInfo: Partial<WL_TalkingInfo> | null
 
   constructor(
     private pttFsmListener: WL_PttFsmListener,
     audioManager?: WLAudio,
     ringPlayer?: WLRingPlayer,
   ) {
-    this.talkingInfo = null
     this.historyPttPlayIndex = 0
     this.playingAudioList = []
     this.playingAudioMap = new Map<string, WL_PttAudioItem>()
@@ -138,6 +137,12 @@ export default class WLPttFsm {
         stopAndPlayNext: this.stopAndPlayNext.bind(this),
         onPausePlay: this.onPausePlay.bind(this),
         onResumePlay: this.onResumePlay.bind(this),
+        appendBurstFrame: this.appendBurstFrame.bind(this),
+        emitBurstPacket: this.emitBurstPacket.bind(this),
+        onReleaseTalk: this.onReleaseTalk.bind(this),
+      },
+      guards: {
+        burstPacketFull: ({ context }: { context: PttFsmContext }) => this.burstPacketFull(context),
       },
       actors: {
         checkHistoryList: fromPromise(() => this.checkHistoryList()),
@@ -148,8 +153,19 @@ export default class WLPttFsm {
         finishStop: fromPromise(({ input }: { input: { playerType: WLPlayerType | null } }) =>
           this.finishStopPlayback(input),
         ),
-        startTalking: fromPromise(({ input }: { input: PttFsmEvent }) => this.startTalking(input)),
-        stopTalk: fromPromise(() => this.stopTalk()),
+        startTalking: fromPromise(() => this.startTalking()),
+        stopTalk: fromPromise(({ input }: { input: PttTalkBurst | null }) => this.stopTalk(input)),
+        recorderFrames: fromCallback<PttFsmUserEvent>(({ sendBack }) => {
+          const listener = (event: WLAudioEvent, data: any) => {
+            if (event === WLAudioEvent.WL_AUDIO_OPUS_CODED_DATA_IND) {
+              sendBack({ type: 'FSM_PTT_CODED_DATA_EVT', data })
+            }
+          }
+
+          this.audioManager.addAudioEventListener(listener)
+
+          return () => this.audioManager.removeAudioEventListener(listener)
+        }),
       },
     })
 
@@ -387,8 +403,7 @@ export default class WLPttFsm {
   }
 
   /** Opens the recorder and plays the start ring before talking. */
-  async startTalking(event: PttFsmEvent): Promise<boolean> {
-    this.talkingInfo = event.type === 'FSM_REQ_TALK_EVT' ? (event.data ?? null) : null
+  async startTalking(): Promise<boolean> {
     await this.audioManager.openRecorder(16000, 20000)
 
     try {
@@ -408,9 +423,9 @@ export default class WLPttFsm {
     return true
   }
 
-  async stopTalk(): Promise<boolean> {
-    if (this.talkingInfo && !this.talkingInfo.stopByErr) {
-      this.packetLastPttMsg()
+  async stopTalk(talk: PttTalkBurst | null): Promise<boolean> {
+    if (talk?.frameBuffer && !talk.stopByErr && talk.curMarker !== null) {
+      this.flushTalkBurst(talk)
     }
 
     try {
@@ -466,20 +481,99 @@ export default class WLPttFsm {
     return Promise.reject(new Error('历史音频数据播放完毕'))
   }
 
-  onRequestTalkResult({ event }: PttActionArgs) {
+  onRequestTalkResult({ context, event }: PttActionArgs) {
     wllog('onRequestTalkResult', event)
 
-    if (this.talkingInfo && this.talkingInfo.callback) {
-      if ('error' in event) {
-        this.talkingInfo.callback.reject(event.error)
-      } else {
-        WLPttFsm.pttSeq++
-        this.talkingInfo.seqOfPackage = 0
-        this.talkingInfo.curMarker = WL_PttPackType.PTT_FIRST_PACK
-        this.talkingInfo.callback.resolve(true)
-        this.talkingInfo.frameBufferCache = []
-      }
+    const talk = context.talk
+
+    if (!talk) return
+
+    if ('error' in event) {
+      talk.callback.reject(event.error)
+
+      return
     }
+
+    WLPttFsm.pttSeq++
+    talk.seqOfPackage = 0
+    talk.curMarker = WL_PttPackType.PTT_FIRST_PACK
+    talk.frameBuffer = []
+    talk.callback.resolve(true)
+  }
+
+  /** Appends one coded frame into the live burst; drops it outside a granted talk. */
+  appendBurstFrame({ context, event }: PttActionArgs) {
+    if (event.type !== 'FSM_PTT_CODED_DATA_EVT') return
+
+    const talk = context.talk
+
+    if (!talk?.frameBuffer) return
+
+    if (
+      talk.curMarker === WL_PttPackType.PTT_END_PACK ||
+      talk.curMarker === WL_PttPackType.PTT_WHOLE_PACK
+    ) {
+      return
+    }
+
+    talk.frameBuffer.push(event.data)
+  }
+
+  /** Packs one full burst packet and emits it upstream. */
+  emitBurstPacket({ context }: PttActionArgs) {
+    const talk = context.talk
+
+    if (!talk?.frameBuffer || talk.curMarker === null) return
+
+    const frames = talk.frameBuffer.slice(0, WLPttFsm.FRAME_COUNT)
+
+    talk.frameBuffer.splice(0, WLPttFsm.FRAME_COUNT)
+    this.packTalkFrames(talk, frames, false)
+  }
+
+  /** Records the release decision on the burst and closes it for new frames. */
+  onReleaseTalk({ context, event }: PttActionArgs) {
+    const talk = context.talk
+
+    if (!talk || event.type !== 'FSM_REL_TALK_EVT') return
+
+    talk.stopByErr = event.data?.stopByErr ?? false
+
+    if (talk.curMarker !== null) {
+      talk.curMarker = WL_PttPackType.PTT_END_PACK
+    }
+  }
+
+  /** Guard: the next frame completes a full packet. */
+  burstPacketFull(context: PttFsmContext): boolean {
+    return (context.talk?.frameBuffer?.length ?? 0) >= WLPttFsm.FRAME_COUNT - 1
+  }
+
+  /** Emits every remaining burst frame: full packets first, then the tail as last. */
+  private flushTalkBurst(talk: PttTalkBurst): void {
+    const frames = talk.frameBuffer!
+
+    while (frames.length >= WLPttFsm.FRAME_COUNT) {
+      const packetFrames = frames.slice(0, WLPttFsm.FRAME_COUNT)
+
+      frames.splice(0, WLPttFsm.FRAME_COUNT)
+      this.packTalkFrames(talk, packetFrames, false)
+    }
+
+    this.packTalkFrames(talk, frames.length > 0 ? frames : [], true)
+  }
+
+  /** 用打包纯函数组装一包并上报，同时推进分段与序号状态。 */
+  private packTalkFrames(talk: PttTalkBurst, frames: Uint8Array[], lastPacket: boolean): void {
+    const { packet, nextState } = packPttPacket(
+      frames,
+      { curMarker: talk.curMarker!, seqOfPackage: talk.seqOfPackage, seq: WLPttFsm.pttSeq },
+      lastPacket,
+    )
+
+    talk.seqOfPackage = nextState.seqOfPackage
+    talk.curMarker = nextState.curMarker
+    this.pttFsmListener.onRecordPttPacketInd(packet)
   }
 
   stopAndPlayNext({ context }: PttActionArgs) {
@@ -576,36 +670,12 @@ export default class WLPttFsm {
     return false
   }
 
-  private onAudioMessage(event: WLAudioEvent, data: any): void {
+  private onAudioMessage(event: WLAudioEvent, _data: any): void {
     switch (event) {
       case WLAudioEvent.WL_AUDIO_FINISH_PLAY_IND:
         {
           wllog('播放完毕...')
           this.pttFsmService.send({ type: fsmEvents.FSM_PTT_ITEM_PLAY_END_EVT })
-        }
-
-        break
-
-      case WLAudioEvent.WL_AUDIO_OPUS_CODED_DATA_IND:
-        {
-          const talkingInfo = this.talkingInfo
-
-          // Frames arrive only while talking, after onRequestTalkResult completed the info.
-          if (!talkingInfo?.frameBufferCache) break
-
-          if (
-            talkingInfo.curMarker === WL_PttPackType.PTT_END_PACK ||
-            talkingInfo.curMarker === WL_PttPackType.PTT_WHOLE_PACK
-          ) {
-            break
-          }
-
-          talkingInfo.frameBufferCache.push(data)
-
-          if (talkingInfo.frameBufferCache.length >= 25) {
-            this.packetPttMsg(talkingInfo.frameBufferCache.slice(0, WLPttFsm.FRAME_COUNT), false)
-            talkingInfo.frameBufferCache.splice(0, WLPttFsm.FRAME_COUNT)
-          }
         }
 
         break
@@ -1028,86 +1098,23 @@ export default class WLPttFsm {
     await this.initAudio()
 
     return new Promise<boolean>((resolve, reject) => {
-      const talkingInfo: Partial<WL_TalkingInfo> = {
-        callback: { resolve, reject },
-        stopByErr: false,
-      }
-
-      this.pttFsmService.send({ type: fsmEvents.FSM_REQ_TALK_EVT, data: talkingInfo })
+      this.pttFsmService.send({
+        type: fsmEvents.FSM_REQ_TALK_EVT,
+        data: { callback: { resolve, reject }, stopByErr: false },
+      })
     })
   }
 
   async releaseTalkByError(): Promise<boolean> {
-    if (this.talkingInfo) {
-      this.talkingInfo.stopByErr = true
-      this.talkingInfo.curMarker = WL_PttPackType.PTT_END_PACK
-    }
-
-    this.pttFsmService.send({ type: fsmEvents.FSM_REL_TALK_EVT })
+    this.pttFsmService.send({ type: fsmEvents.FSM_REL_TALK_EVT, data: { stopByErr: true } })
 
     return true
   }
 
   async releaseTalk(): Promise<boolean> {
-    if (this.talkingInfo) {
-      this.talkingInfo.stopByErr = false
-      this.talkingInfo.curMarker = WL_PttPackType.PTT_END_PACK
-    }
-
-    this.pttFsmService.send({ type: fsmEvents.FSM_REL_TALK_EVT })
+    this.pttFsmService.send({ type: fsmEvents.FSM_REL_TALK_EVT, data: { stopByErr: false } })
 
     return true
-  }
-
-  private packetPttMsg(dataList: Uint8Array[], lastPacket: boolean): void {
-    const talkingInfo = this.talkingInfo
-
-    // Runs only while talking, i.e. after onRequestTalkResult completed the info.
-    if (!talkingInfo?.frameBufferCache || talkingInfo.curMarker === undefined) return
-
-    wllog('打包%d ptt语音并发送最后一个包', dataList.length, lastPacket)
-
-    if (lastPacket) {
-      wllog('最后一帧录音, 分段标志:', talkingInfo.curMarker)
-    }
-
-    const { packet, nextState } = packPttPacket(
-      dataList,
-      {
-        curMarker: talkingInfo.curMarker,
-        seqOfPackage: talkingInfo.seqOfPackage ?? 0,
-        seq: WLPttFsm.pttSeq,
-      },
-      lastPacket,
-    )
-
-    talkingInfo.seqOfPackage = nextState.seqOfPackage
-    talkingInfo.curMarker = nextState.curMarker
-
-    this.pttFsmListener.onRecordPttPacketInd(packet)
-  }
-
-  private packetLastPttMsg(): void {
-    const talkingInfo = this.talkingInfo
-
-    // Before talking is granted the info is still a seed; there is nothing to packet.
-    if (!talkingInfo?.frameBufferCache) return
-
-    if (talkingInfo.frameBufferCache.length > 0) {
-      while (talkingInfo.frameBufferCache.length >= WLPttFsm.FRAME_COUNT) {
-        this.packetPttMsg(
-          talkingInfo.frameBufferCache.slice(0, WLPttFsm.FRAME_COUNT),
-          talkingInfo.frameBufferCache.length === WLPttFsm.FRAME_COUNT,
-        )
-        talkingInfo.frameBufferCache.splice(0, WLPttFsm.FRAME_COUNT)
-      }
-
-      if (talkingInfo.frameBufferCache.length > 0) {
-        this.packetPttMsg(talkingInfo.frameBufferCache, true)
-      }
-    } else {
-      this.packetPttMsg([], true)
-    }
   }
 
   public stopPlayAudio() {

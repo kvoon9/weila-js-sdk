@@ -162,6 +162,16 @@ class WLAudio {
     this.emitter.on('event', callback)
   }
 
+  /** Subscribes an audio event listener that can be removed again. */
+  public addAudioEventListener(callback: WLEventCallback): void {
+    this.emitter.on('event', callback)
+  }
+
+  /** Removes a listener previously added with addAudioEventListener. */
+  public removeAudioEventListener(callback: WLEventCallback): void {
+    this.emitter.off('event', callback)
+  }
+
   private sendAudioEvent(event: number, data: any): void {
     this.emitter.emit('event', event, data)
   }
