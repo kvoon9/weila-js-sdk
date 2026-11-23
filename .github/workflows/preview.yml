@@ -26,4 +26,4 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec turbo run build --force --filter=@vois/weila-sdk-core --filter=@vois/weila-sdk-ui
-      - run: pnpm exec pkg-pr-new publish --pnpm --previewVersion ./packages/core ./packages/ui
+      - run: pnpm exec pkg-pr-new publish --pnpm --previewVersion --packageManager=pnpm ./packages/core ./packages/ui
