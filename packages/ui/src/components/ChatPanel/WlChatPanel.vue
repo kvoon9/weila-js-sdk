@@ -333,9 +333,14 @@ watch(playingAudioId, (id, _old, onCleanup) => {
 
   playProgressMs.value = 0
   progressTimer = setInterval(() => {
-    props.core?.weila_getSinglePlayProgress().then((ms) => {
-      playProgressMs.value = ms
-    })
+    props.core
+      ?.weila_getSinglePlayProgress()
+      .then((ms) => {
+        playProgressMs.value = ms
+      })
+      .catch(() => {
+        // A player that cannot answer (closed mid-poll) keeps the last value.
+      })
   }, 250)
   onCleanup(stopProgressPolling)
 })

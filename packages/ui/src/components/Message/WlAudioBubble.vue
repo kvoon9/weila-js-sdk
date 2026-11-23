@@ -31,7 +31,9 @@ const emit = defineEmits<{
 const duration = computed(() => calculateAudioDuration(props.msg.audioData?.frameCount ?? 0))
 
 const handleClick = () => {
-  if (props.playing) {
+  // A paused bubble must ask for playback again, or it can never resume:
+  // clicking it while paused previously emitted another pause.
+  if (props.playing && !props.paused) {
     emit('pause')
   } else {
     emit('play')
@@ -49,12 +51,27 @@ function formatClock(ms: number): string {
   return `${minutes}:${String(seconds).padStart(2, '0')}`
 }
 
+/**
+ * Elapsed time under a minute shows tenths, so a one-second voice message
+ * visibly moves instead of sitting at 0:00 for its whole lifetime.
+ */
+function formatElapsed(ms: number, totalMs: number): string {
+  if (totalMs >= 60_000) return formatClock(ms)
+
+  const tenths = Math.floor((ms % 1000) / 100)
+  const totalSeconds = Math.floor(ms / 1000)
+
+  return `${formatClock(totalSeconds * 1000)}.${tenths}`
+}
+
 /** Playing (or paused) shows a live position; idle keeps the plain duration. */
 const timeLabel = computed(() => {
   if (props.playing || props.paused) {
     if (props.progressMs === null || !hasDuration.value) return ''
 
-    return `${formatClock(props.progressMs)} / ${formatClock(duration.value * 1000)}`
+    const totalMs = duration.value * 1000
+
+    return `${formatElapsed(props.progressMs, totalMs)} / ${formatClock(totalMs)}`
   }
 
   return hasDuration.value ? formattedDuration.value : ''
