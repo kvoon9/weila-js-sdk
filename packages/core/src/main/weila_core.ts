@@ -205,10 +205,10 @@ class WeilaCore implements WL_CoreInterface {
         onConnecting: this.onConnecting.bind(this),
         onDisconnectInReadyState: this.onDisconnectInReadyState.bind(this),
         onLoginRetryFail: this.onLoginRetryFail.bind(this),
-        onLoginTryEntry: this.onLoginTryEntry.bind(this),
       },
       guards: {
         canRetry: ({ context, event }) => this.canRetry(context, event),
+        isDefinitiveRejection: ({ event }) => this.isDefinitiveRejection(event),
       },
     })
 
@@ -601,17 +601,11 @@ class WeilaCore implements WL_CoreInterface {
     this.refreshTokenTimerId = null
   }
 
-  private onLoginTryEntry({ event }: { event: any }) {
-    wllog('onLoginTryEntry', event)
+  /** 服务器明确拒绝（错误消息带 RET_CODE...MESSAGE...END 结构）的失败不再重试 */
+  private isDefinitiveRejection(event: any): boolean {
+    const message = `${event?.data?.error?.message ?? ''}`
 
-    if (event.data && event.data.error) {
-      const index = event.data.error.message.search(/.*-MESSAGE:.*:END/)
-      wllog('onLoginTryEntry', index)
-
-      if (index !== -1) {
-        this.mainFsmService.send({ type: fsmEvents.FSM_LOGIN_PROCEDURE_FAIL_EVT, data: event.data })
-      }
-    }
+    return message.search(/.*-MESSAGE:.*:END/) !== -1
   }
 
   private canRetry(context: any, _event: any): boolean {
