@@ -317,6 +317,7 @@ describe('WLPttFsm playback-start chains', () => {
       () => 'resolved',
       (error: Error) => error.message,
     )
+
     await vi.advanceTimersByTimeAsync(60)
 
     expect(await outcome).toBe('stopPlayAudio timeout')
