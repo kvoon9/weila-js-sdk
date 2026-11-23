@@ -1348,24 +1348,9 @@ export default class WLSessionModule {
   }
 
   public stopPlayAudio(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      this.pttFsm.stopPlayAudio()
-      const maxWaitTime = 5000
-      const checkInterval = 50
-      let elapsed = 0
+    this.pttFsm.stopPlayAudio()
 
-      const timer = setInterval(() => {
-        elapsed += checkInterval
-
-        if (this.isPttFsmIdle()) {
-          clearInterval(timer)
-          resolve()
-        } else if (elapsed >= maxWaitTime) {
-          clearInterval(timer)
-          reject(new Error('stopPlayAudio timeout'))
-        }
-      }, checkInterval)
-    })
+    return this.pttFsm.waitForIdle(5000)
   }
 
   /** Pauses the current single playback in place. */

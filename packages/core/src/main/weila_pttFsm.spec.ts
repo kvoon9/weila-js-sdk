@@ -283,4 +283,37 @@ describe('WLPttFsm playback-start chains', () => {
     expect(audio.closePlayer).toHaveBeenCalledWith(WLPlayerType.WL_PTT_SINGLE_PLAYER)
     expect(fsm.pttFsmService.getSnapshot().matches('idle')).toBe(true)
   })
+
+  it('waitForIdle resolves once the stop chain completes', async () => {
+    const { fsm } = makePttFsm()
+    const item = makeItem(WLPlayerType.WL_PTT_SINGLE_PLAYER)
+
+    fsm.pttFsmService.send({ type: fsmEvents.FSM_PLAY_SINGLE_EVT, data: item })
+    await advancePastPlayDelay()
+    expect(fsm.pttFsmService.getSnapshot().matches('singlePlaying')).toBe(true)
+
+    fsm.stopPlayAudio()
+
+    await expect(fsm.waitForIdle(5000)).resolves.toBeUndefined()
+    expect(fsm.pttFsmService.getSnapshot().matches('idle')).toBe(true)
+  })
+
+  it('waitForIdle resolves immediately when the machine is already idle', async () => {
+    const { fsm } = makePttFsm()
+
+    await expect(fsm.waitForIdle()).resolves.toBeUndefined()
+  })
+
+  it('waitForIdle rejects after the timeout when the machine stays busy', async () => {
+    const { fsm } = makePttFsm()
+    const item = makeItem(WLPlayerType.WL_PTT_SINGLE_PLAYER)
+
+    fsm.pttFsmService.send({ type: fsmEvents.FSM_PLAY_SINGLE_EVT, data: item })
+    await advancePastPlayDelay()
+
+    const pending = fsm.waitForIdle(50)
+    await vi.advanceTimersByTimeAsync(60)
+
+    await expect(pending).rejects.toThrow('stopPlayAudio timeout')
+  })
 })
