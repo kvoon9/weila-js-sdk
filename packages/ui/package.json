@@ -3,6 +3,11 @@
   "version": "0.0.3",
   "private": false,
   "description": "集成了 Weila SDK 的 UI 组件",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kvoon9/weila-js-sdk.git",
+    "directory": "packages/ui"
+  },
   "files": [
     "dist"
   ],
