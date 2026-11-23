@@ -65,7 +65,7 @@ interface PttActionArgs {
 // xstate v5 的 Actor 泛型对具体机型实例化过深（TS2589），在使用边界收窄为结构化接口
 type PttActor = {
   getSnapshot(): PttState
-  subscribe(observer: (state: PttState) => void): unknown
+  subscribe(observer: (state: PttState) => void): { unsubscribe(): void }
   send(event: PttFsmEvent): void
   start(): unknown
 }
@@ -1149,6 +1149,35 @@ export default class WLPttFsm {
 
   public stopPlayAudio() {
     this.pttFsmService.send({ type: fsmEvents.FSM_STOP_EVT })
+  }
+
+  /**
+   * 等待机器回到空闲：事件驱动，替代对快照的定时轮询。
+   * @param timeoutMs 最长等待毫秒数
+   * @returns 回到空闲时兑现，超时拒绝
+   */
+  public waitForIdle(timeoutMs = 5000): Promise<void> {
+    if (this.pttFsmService.getSnapshot().matches('idle')) {
+      return Promise.resolve()
+    }
+
+    return new Promise<void>((resolve, reject) => {
+      const finish = (settled: () => void) => {
+        clearTimeout(timer)
+        subscription.unsubscribe()
+        settled()
+      }
+
+      const timer = setTimeout(() => {
+        finish(() => reject(new Error('stopPlayAudio timeout')))
+      }, timeoutMs)
+
+      const subscription = this.pttFsmService.subscribe((state) => {
+        if (state.matches('idle')) {
+          finish(resolve)
+        }
+      })
+    })
   }
 
   public playNext() {
