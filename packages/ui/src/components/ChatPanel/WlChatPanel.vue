@@ -278,10 +278,16 @@ async function handleAudioPlay(msg: WL_IDbMsgData) {
   try {
     const audioMsg = toRaw(msg)
     await props.core?.weila_stopSingle()
-    await props.core?.weila_playSingle(audioMsg)
+    const played = await props.core?.weila_playSingle(audioMsg)
     if (audioMsg.audioData) {
       msg.audioData = { ...audioMsg.audioData }
     }
+
+    // A refused play (e.g. the audio file is gone from the server) already
+    // emitted its PLAYING_END; flipping the bubble to playing here would
+    // override that clear and leave it stuck.
+    if (played === false) return
+
     playingAudioId.value = msg.combo_id
   } catch (err) {
     console.error('[WlChatPanel] Failed to play audio:', err)

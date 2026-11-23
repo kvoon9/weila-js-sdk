@@ -76,6 +76,8 @@ import {
   WL_DataPrepareState,
   WL_ExtEventCallback,
   WL_ExtEventID,
+  WL_PttAudioPlaySource,
+  WL_PttAudioPlayState,
   WL_SubscribeMap,
   WL_SubscribeTopic,
 } from 'main/weila_external_data'
@@ -724,6 +726,8 @@ class WeilaCore implements WL_CoreInterface {
       audioMsgData.msgType !== WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE &&
       audioMsgData.msgType !== WL_IDbMsgDataType.WL_DB_MSG_DATA_PTT_TYPE
     ) {
+      this.notifySinglePlayFailed(audioMsgData)
+
       return false
     }
 
@@ -754,13 +758,19 @@ class WeilaCore implements WL_CoreInterface {
         }
 
         if (audioMsgData.status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR) {
+          this.notifySinglePlayFailed(audioMsgData)
+
           return false
         }
       }
     } else {
       const pttData = audioMsgData.pttData
 
-      if (!pttData) return false
+      if (!pttData) {
+        this.notifySinglePlayFailed(audioMsgData)
+
+        return false
+      }
 
       audioMsgData.msgType = WL_IDbMsgDataType.WL_DB_MSG_DATA_AUDIO_TYPE
       audioMsgData.audioData = {
@@ -771,11 +781,28 @@ class WeilaCore implements WL_CoreInterface {
       await WeilaDB.getInstance().putMsgData(audioMsgData)
 
       if (audioMsgData.status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_ERR) {
+        this.notifySinglePlayFailed(audioMsgData)
+
         return false
       }
     }
 
     return this.sessionModule.playSingleAudioItem(audioMsgData)
+  }
+
+  /**
+   * 一次没能开始的播放也要给终点通知：按单发家族发出 PLAYING_END，
+   * 否则调用方的播放态（如UI的播放指示）会一直挂着
+   * @param msgData 播放失败的消息
+   */
+  private notifySinglePlayFailed(msgData: WL_IDbMsgData): void {
+    this.sendExtEvent(WL_ExtEventID.WL_EXT_PTT_PLAY_IND, {
+      msgData,
+      indData: {
+        source: WL_PttAudioPlaySource.PTT_AUDIO_SRC_SINGLE,
+        state: WL_PttAudioPlayState.PTT_AUDIO_PLAYING_END,
+      },
+    })
   }
 
   /**
@@ -2179,6 +2206,8 @@ class WeilaCore implements WL_CoreInterface {
 
         return audioData
       }
+
+      wlerr('获取音频数据失败 HTTP:%d 地址:%s', result.status, newUrl)
     } catch (e) {
       wlerr('获取数据异常', e)
     }
