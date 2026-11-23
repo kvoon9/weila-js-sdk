@@ -15,7 +15,7 @@ interface MainFsmContext {
 }
 
 /** Explicitly sent or machine-raised events, with their exact payloads. */
-type MainFsmUserEvent =
+export type MainFsmUserEvent =
   | { type: 'FSM_LOAD_RESOURCE_EVT'; data: WL_PromiseCallback }
   | { type: 'FSM_LOGIN_SERVER_EVT'; data: WL_LoginParam }
   | { type: 'FSM_LOGOUT_EVT' }
