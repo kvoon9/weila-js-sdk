@@ -204,7 +204,8 @@ export function useMessageHistory(
   const handleEvent: WL_ExtEventCallback = (eventId, eventData) => {
     if (
       eventId !== WL_ExtEventID.WL_EXT_NEW_MSG_RECV_IND &&
-      eventId !== WL_ExtEventID.WL_EXT_MSG_SEND_IND
+      eventId !== WL_ExtEventID.WL_EXT_MSG_SEND_IND &&
+      eventId !== WL_ExtEventID.WL_EXT_MSG_AUDIO_READY_IND
     ) {
       return
     }

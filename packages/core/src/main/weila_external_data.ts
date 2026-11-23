@@ -121,6 +121,8 @@ enum WL_ExtEventID {
   WL_EXT_DEVICE_BINDING_ANSWER_IND,
   /*! 被踢出通知 WL_KickoutInfo */
   WL_EXT_KICKOUT_IND,
+  /*! 音频消息的数据已在后台取回（时长可显示、点击即播），数据是补齐后的 WL_IDbMsgData */
+  WL_EXT_MSG_AUDIO_READY_IND,
 }
 
 interface WL_KickoutInfo {

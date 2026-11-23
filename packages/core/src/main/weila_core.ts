@@ -56,8 +56,7 @@ import {
 import { dbEnum } from 'db/db_enum'
 import { getLogger } from 'log/weila_log'
 import {
-  calculateOpusDataFrame,
-  fetchWithTimeout,
+  fetchAudioDataFromUrl,
   getMsgDataIdByCombo,
   getPbResultCodeMassage,
 } from 'main/weila_utils'
@@ -2191,28 +2190,7 @@ class WeilaCore implements WL_CoreInterface {
    * @param url
    */
   public async weila_fetchAudioData(url: string): Promise<WL_IDbAudioData | undefined> {
-    const audioData: WL_IDbAudioData = { frameCount: 0 }
-    // let matchResult = url.match(/(http|https):\/\/([^\/]+)\/(.+)/i);
-    // const newUrl = '/audio/' + matchResult[3];
-    const newUrl = url
-
-    try {
-      const result = await fetchWithTimeout(newUrl, { method: 'GET', mode: 'cors' }, 5000)
-
-      if (result.ok) {
-        const data = await result.arrayBuffer()
-        audioData.data = new Uint8Array(data.slice(10))
-        audioData.frameCount = calculateOpusDataFrame(audioData.data)
-
-        return audioData
-      }
-
-      wlerr('获取音频数据失败 HTTP:%d 地址:%s', result.status, newUrl)
-    } catch (e) {
-      wlerr('获取数据异常', e)
-    }
-
-    return undefined
+    return fetchAudioDataFromUrl(url)
   }
 
   /**
