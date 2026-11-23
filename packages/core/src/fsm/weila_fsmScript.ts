@@ -330,6 +330,8 @@ export interface PttFsmContext {
   pttCore: unknown
   /** Player of the currently active play family; assigned on playing-state entry. */
   activePlayerType: WLPlayerType | null
+  /** Event replayed once a stop completes: the play that interrupted, or back-to-idle. */
+  pendingStopEvent: PttFsmUserEvent | null
 }
 
 export interface PttFsmInput {
@@ -354,11 +356,62 @@ interface PttFsmTypes {
 // XState 5 reads `types` only for inference; the value itself is never observed at runtime.
 const pttFsmTypes: PttFsmTypes = Object.create(null)
 
+/** Triggers whose original event is replayed once the stop completes. */
+const STOP_REPLAY_EVENTS = new Set<string>([
+  'FSM_PLAY_SINGLE_EVT',
+  'FSM_PLAY_HISTORY_EVT',
+  'FSM_REQ_TALK_EVT',
+])
+
+/** Shared stopping-state shape: announce the end, stop and close, then route. */
+const stoppingState: StateNodeConfig<
+  PttFsmContext,
+  PttFsmEvent,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any
+> = {
+  entry: [
+    assign({
+      pendingStopEvent: ({ event }: { event: PttFsmEvent }): PttFsmEvent => {
+        return STOP_REPLAY_EVENTS.has(event.type) ? event : { type: 'FSM_END_BACK_TO_IDLE_EVT' }
+      },
+    }),
+    'stopPlay',
+  ],
+  invoke: {
+    src: 'finishStop',
+    id: 'finish_stop',
+    input: ({ context }: { context: PttFsmContext }) => ({
+      playerType: context.activePlayerType,
+    }),
+    onDone: {
+      actions: raise(
+        ({ context }: { context: PttFsmContext }) =>
+          context.pendingStopEvent ?? { type: 'FSM_END_BACK_TO_IDLE_EVT' },
+      ),
+    },
+    onError: {
+      actions: raise({ type: 'FSM_END_BACK_TO_IDLE_EVT' }),
+      description: '停止流程异常时仍回到空闲，避免状态悬挂',
+    },
+  },
+}
+
 const pttFsm = createMachine({
   types: pttFsmTypes,
   id: 'PTTMachine',
   initial: 'idle',
-  context: ({ input }) => ({ activePlayerType: null, ...(input ?? { pttCore: null }) }),
+  context: ({ input }) => ({
+    activePlayerType: null,
+    pendingStopEvent: null,
+    ...(input ?? { pttCore: null }),
+  }),
   states: {
     idle: {
       entry: 'onIdle',
@@ -456,7 +509,7 @@ const pttFsm = createMachine({
       },
     },
     realtimeStop: {
-      entry: 'stopPlay',
+      ...stoppingState,
       on: {
         FSM_PLAY_HISTORY_EVT: 'historyPlaying',
         FSM_PLAY_SINGLE_EVT: 'singlePlaying',
@@ -534,7 +587,7 @@ const pttFsm = createMachine({
       },
     },
     historyStopping: {
-      entry: 'stopPlay',
+      ...stoppingState,
       on: {
         FSM_REQ_TALK_EVT: 'startTalk',
         FSM_PLAY_SINGLE_EVT: 'singlePlaying',
@@ -612,7 +665,7 @@ const pttFsm = createMachine({
       },
     },
     singleStopping: {
-      entry: 'stopPlay',
+      ...stoppingState,
       on: {
         FSM_PLAY_SINGLE_EVT: 'singlePlaying',
         FSM_REQ_TALK_EVT: 'startTalk',

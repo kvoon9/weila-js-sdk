@@ -145,6 +145,9 @@ export default class WLPttFsm {
         startPlayback: fromPromise(({ input }: { input: StartPlaybackInput }) =>
           this.runStartPlayback(input),
         ),
+        finishStop: fromPromise(({ input }: { input: { playerType: WLPlayerType | null } }) =>
+          this.finishStopPlayback(input),
+        ),
         startTalking: fromPromise(({ input }: { input: PttFsmEvent }) => this.startTalking(input)),
         stopTalk: fromPromise(() => this.stopTalk()),
       },
@@ -510,29 +513,31 @@ export default class WLPttFsm {
     })
   }
 
-  stopPlay({ event, context }: PttActionArgs) {
+  /** Announces the end of playback; the machine's finishStop actor stops and closes. */
+  stopPlay({ context }: PttActionArgs) {
     const playType = context.activePlayerType!
     wllog('stopPlay playType:', playType)
 
     this.onPlayInd(null, playType, WL_PttAudioPlayState.PTT_AUDIO_PLAYING_END)
+  }
 
-    void this.audioManager.stopPlay(playType).finally(() => {
-      void this.audioManager.closePlayer(playType).finally(() => {
-        if (
-          event.type === fsmEvents.FSM_PLAY_SINGLE_EVT ||
-          event.type === fsmEvents.FSM_PLAY_HISTORY_EVT ||
-          event.type === fsmEvents.FSM_REQ_TALK_EVT
-        ) {
-          this.pttFsmService.send(event)
-        } else if (
-          event.type === fsmEvents.FSM_PLAY_END_EVT ||
-          event.type === fsmEvents.FSM_STOP_EVT ||
-          event.type === fsmEvents.FSM_PTT_ITEM_PLAY_END_EVT
-        ) {
-          this.pttFsmService.send({ type: fsmEvents.FSM_END_BACK_TO_IDLE_EVT })
-        }
-      })
-    })
+  /** Stops and closes the active player; failures are logged, the stop still completes. */
+  async finishStopPlayback(input: { playerType: WLPlayerType | null }): Promise<void> {
+    const playerType = input.playerType
+
+    if (playerType === null) return
+
+    try {
+      await this.audioManager.stopPlay(playerType)
+    } catch (reason) {
+      wlerr('停止播放失败:', reason)
+    }
+
+    try {
+      await this.audioManager.closePlayer(playerType)
+    } catch (reason) {
+      wlerr('关闭播放器失败:', reason)
+    }
   }
 
   onTalking() {
