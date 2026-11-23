@@ -11,6 +11,7 @@ concurrency:
 
 permissions:
   contents: read
+  pull-requests: write
 
 jobs:
   publish:
@@ -26,4 +27,22 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec turbo run build --force --filter=@vois/weila-sdk-core --filter=@vois/weila-sdk-ui
-      - run: pnpm exec pkg-pr-new publish --pnpm --previewVersion --packageManager=pnpm ./packages/core ./packages/ui
+      - id: publish
+        run: pnpm exec pkg-pr-new publish --pnpm --previewVersion --comment=off ./packages/core ./packages/ui
+      - if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          GH_TOKEN: ${{ github.token }}
+          URLS: ${{ steps.publish.outputs.urls }}
+        run: |
+          {
+            echo '## 预览包'
+            echo
+            echo 'pnpm 11 起默认禁止 URL 形式的传递依赖。UI 预览包依赖同一提交的 core 预览包，所以安装时加上 `--config.block-exotic-subdeps=false`。'
+            echo
+            echo '```bash'
+            echo "pnpm add --config.block-exotic-subdeps=false $URLS"
+            echo '```'
+            echo
+            echo "_commit: ${{ github.event.pull_request.head.sha }}_"
+          } > preview-comment.md
+          gh pr comment ${{ github.event.pull_request.number }} --edit-last --create-if-none --body-file preview-comment.md
