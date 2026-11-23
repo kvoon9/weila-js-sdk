@@ -9,7 +9,6 @@ import type {
 import {
   WL_PttAudioItem,
   WL_PttFsmListener,
-  WL_PttPacket,
   WL_PttPackType,
   WL_PttPayload,
   WL_TalkingInfo,
@@ -33,6 +32,7 @@ import {
   decompositionAudioData,
   fetchWithTimeout,
   getOpusDataListFromPttData,
+  packPttPacket,
 } from 'main/weila_utils'
 import {
   WL_PttAudioPlaySource,
@@ -1065,63 +1065,26 @@ export default class WLPttFsm {
     // Runs only while talking, i.e. after onRequestTalkResult completed the info.
     if (!talkingInfo?.frameBufferCache || talkingInfo.curMarker === undefined) return
 
-    let offset = 0
-    let totalLen = 0
-    let currentLen = 0
-    const wlOpusList = []
     wllog('打包%d ptt语音并发送最后一个包', dataList.length, lastPacket)
-
-    while (dataList.length) {
-      const opusRawData = dataList.shift()!
-      const wlOpusData = new Uint8Array(opusRawData.length + 4)
-      const flag = opusRawData[0]
-      wlOpusData[0] = flag
-
-      if (flag & 0x80) {
-        const wlOpusDataView = new DataView(wlOpusData.buffer)
-        wlOpusDataView.setUint16(1, opusRawData.length - 1, false)
-        wlOpusData.set(opusRawData.subarray(1), 3)
-        totalLen += opusRawData.length + 2
-        currentLen = opusRawData.length + 2
-      } else {
-        wlOpusData[1] = opusRawData.length - 1
-        wlOpusData.set(opusRawData.subarray(1), 2)
-        totalLen += opusRawData.length + 1
-        currentLen = opusRawData.length + 1
-      }
-
-      wlOpusList.push(wlOpusData.subarray(0, currentLen))
-    }
-
-    const outputMsgData = new Uint8Array(totalLen)
-    wlOpusList.forEach((value) => {
-      outputMsgData.set(value, offset)
-      offset += value.length
-    })
-
-    const pttMsgData: WL_PttPacket = {
-      mark: talkingInfo.curMarker,
-      data: outputMsgData,
-      sourceType: 5,
-      frameCount: wlOpusList.length,
-      seq: WLPttFsm.pttSeq,
-      seqInPackage: talkingInfo.seqOfPackage ?? 0,
-    }
-
-    talkingInfo.seqOfPackage = (talkingInfo.seqOfPackage ?? 0) + 1
 
     if (lastPacket) {
       wllog('最后一帧录音, 分段标志:', talkingInfo.curMarker)
-
-      if (talkingInfo.curMarker === WL_PttPackType.PTT_FIRST_PACK) {
-        pttMsgData.mark = WL_PttPackType.PTT_WHOLE_PACK
-      } else {
-        pttMsgData.mark = WL_PttPackType.PTT_END_PACK
-      }
     }
 
-    talkingInfo.curMarker = lastPacket ? WL_PttPackType.PTT_END_PACK : WL_PttPackType.PTT_INTER_PACK
-    this.pttFsmListener.onRecordPttPacketInd(pttMsgData)
+    const { packet, nextState } = packPttPacket(
+      dataList,
+      {
+        curMarker: talkingInfo.curMarker,
+        seqOfPackage: talkingInfo.seqOfPackage ?? 0,
+        seq: WLPttFsm.pttSeq,
+      },
+      lastPacket,
+    )
+
+    talkingInfo.seqOfPackage = nextState.seqOfPackage
+    talkingInfo.curMarker = nextState.curMarker
+
+    this.pttFsmListener.onRecordPttPacketInd(packet)
   }
 
   private packetLastPttMsg(): void {

@@ -2,6 +2,8 @@ import { WL } from 'proto/weilapb'
 import { getLogger } from 'log/weila_log'
 import { WL_PttPayload } from 'main/weila_internal_data'
 import { WL_IDbAudioData, WL_IDbMsgData } from 'db/weila_db_data'
+import { WL_PttPackType } from 'main/weila_internal_data'
+import type { WL_PttPacket } from 'main/weila_internal_data'
 import { dbEnum } from 'db/db_enum'
 
 const wllog = getLogger('UTIL:info')
@@ -810,6 +812,92 @@ function getAppKeyAndId(): any {
   }
 }
 
+/** 一次录音打包的分段状态。 */
+interface WL_PttPackState {
+  curMarker: WL_PttPackType
+  seqOfPackage: number
+  seq: number
+}
+
+/** 一次录音打包的产物与推进后的状态。 */
+interface WL_PttPackResult {
+  packet: WL_PttPacket
+  nextState: WL_PttPackState
+}
+
+/**
+ * 把一批录音帧组装成一个 PTT 包：每帧前加标志与变长长度，末包改写
+ * 分段标志（单包升级为整包），并推进下一包的分段与序号状态。
+ * @param frames 待打包的帧，不修改输入
+ * @param state 当前的分段与序号状态
+ * @param lastPacket 是否为本次录音的最后一包
+ * @returns 组装好的包与推进后的状态
+ */
+function packPttPacket(
+  frames: Uint8Array[],
+  state: WL_PttPackState,
+  lastPacket: boolean,
+): WL_PttPackResult {
+  let totalLen = 0
+  const wlOpusList: Uint8Array[] = []
+
+  for (const opusRawData of frames) {
+    const wlOpusData = new Uint8Array(opusRawData.length + 4)
+    const flag = opusRawData[0]
+    let currentLen = 0
+
+    wlOpusData[0] = flag
+
+    if (flag & 0x80) {
+      const wlOpusDataView = new DataView(wlOpusData.buffer)
+      wlOpusDataView.setUint16(1, opusRawData.length - 1, false)
+      wlOpusData.set(opusRawData.subarray(1), 3)
+      totalLen += opusRawData.length + 2
+      currentLen = opusRawData.length + 2
+    } else {
+      wlOpusData[1] = opusRawData.length - 1
+      wlOpusData.set(opusRawData.subarray(1), 2)
+      totalLen += opusRawData.length + 1
+      currentLen = opusRawData.length + 1
+    }
+
+    wlOpusList.push(wlOpusData.subarray(0, currentLen))
+  }
+
+  const data = new Uint8Array(totalLen)
+  let offset = 0
+
+  for (const value of wlOpusList) {
+    data.set(value, offset)
+    offset += value.length
+  }
+
+  let mark = state.curMarker
+
+  if (lastPacket) {
+    mark =
+      state.curMarker === WL_PttPackType.PTT_FIRST_PACK
+        ? WL_PttPackType.PTT_WHOLE_PACK
+        : WL_PttPackType.PTT_END_PACK
+  }
+
+  return {
+    packet: {
+      mark,
+      data,
+      sourceType: 5,
+      frameCount: wlOpusList.length,
+      seq: state.seq,
+      seqInPackage: state.seqOfPackage,
+    },
+    nextState: {
+      curMarker: lastPacket ? WL_PttPackType.PTT_END_PACK : WL_PttPackType.PTT_INTER_PACK,
+      seqOfPackage: state.seqOfPackage + 1,
+      seq: state.seq,
+    },
+  }
+}
+
 function getWebsocketAddr(): string {
   return process.env.WSS ?? ''
 }
@@ -998,6 +1086,7 @@ function getMsgDataIdByCombo(msgData: WL_IDbMsgData, seq: number): string {
 
 export {
   fetchWithTimeout,
+  packPttPacket,
   fetchAudioDataFromUrl,
   getPbResultCodeMassage,
   getErrorMsg,
