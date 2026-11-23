@@ -311,9 +311,14 @@ describe('WLPttFsm playback-start chains', () => {
     fsm.pttFsmService.send({ type: fsmEvents.FSM_PLAY_SINGLE_EVT, data: item })
     await advancePastPlayDelay()
 
-    const pending = fsm.waitForIdle(50)
+    // Attach the handler before the timer fires, or the rejection escapes
+    // as unhandled before the assertion can observe it.
+    const outcome = fsm.waitForIdle(50).then(
+      () => 'resolved',
+      (error: Error) => error.message,
+    )
     await vi.advanceTimersByTimeAsync(60)
 
-    await expect(pending).rejects.toThrow('stopPlayAudio timeout')
+    expect(await outcome).toBe('stopPlayAudio timeout')
   })
 })
