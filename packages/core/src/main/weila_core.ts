@@ -2,16 +2,15 @@
 import Network from 'main/weila_network.worker'
 import WeilaPbDispatcher from 'main/weila_pb_dispatcher'
 import WeilaNetworkGateway from 'main/weila_network_gateway'
-import { fsmEvents, mainFsm, systemWatchdogActor } from 'fsm/weila_fsmScript'
+import WeilaMainFsmHost from 'main/weila_main_fsm_host'
+import { fsmEvents, mainFsm } from 'fsm/weila_fsmScript'
 import type { MainActor } from 'fsm/weila_fsmScript'
-import { WLConfig } from 'main/weila_config'
-import { createActor, fromPromise } from 'xstate'
+import { createActor } from 'xstate'
 import Long from 'long'
 
 import {
   WL_CoreInterface,
   WL_LoginParam,
-  WL_LoginResult,
   WL_NetworkEvent,
   WL_NetworkEventID,
   WL_PbMsgHandler,
@@ -51,7 +50,6 @@ import {
   WL_IDbUserInfo,
   isGroupSessionType,
   isIndividualSessionType,
-  isServiceSessionType,
 } from 'db/weila_db_data'
 import { dbEnum } from 'db/db_enum'
 import { getLogger } from 'log/weila_log'
@@ -66,7 +64,6 @@ import { WeilaDB } from 'db/weila_db'
 import { TinyEmitter } from 'tiny-emitter'
 import {
   WL_AnswerStatus,
-  WL_DataPrepareInd,
   WL_DataPrepareState,
   WL_ExtEventCallback,
   WL_ExtEventID,
@@ -142,8 +139,6 @@ class WeilaCore implements WL_CoreInterface {
   userModule: WLUserModule
   isLoginReady: boolean
   emitter: TinyEmitter
-  heartbeatTimerId: any
-  refreshTokenTimerId: any
   profileResolver?: WL_ProfileResolver
   groupProfileResolver?: WL_GroupProfileResolver
   sessionProfileResolver?: WL_SessionProfileResolver
@@ -154,58 +149,6 @@ class WeilaCore implements WL_CoreInterface {
     this.emitter = new TinyEmitter()
     this.isLoginReady = false
     this.resolvingSessionProfileKeys = new Set()
-    this.mainFsm = mainFsm.provide({
-      actors: {
-        loadResource: fromPromise(({ input }) => this.loadResource(input.context, input.event)),
-        prepareData: fromPromise(({ input }) => this.prepareData(input.context, input.event)),
-        loginServer: fromPromise(({ input }) => this.loginServer(input.context, input.event)),
-        logout: fromPromise(({ input }) => this.logout(input.context, input.event)),
-        systemWatchdog: systemWatchdogActor,
-      },
-      actions: {
-        onResourceLoadFail: ({ context, event }) => {
-          if ('error' in event) this.onResourceLoadFail(context, event)
-        },
-        onLoadingResource: this.onLoadingResource.bind(this),
-        onException: ({ context, event }) => {
-          if ('error' in event) this.onException(context, event)
-        },
-        onReadyEntry: this.onReadyEntry.bind(this),
-        onReadyExit: this.onReadyExit.bind(this),
-        onSysTimeChecking: this.onSysTimeChecking.bind(this),
-        onDataInit: this.onDataInit.bind(this),
-        onDataInited: this.onDataInited.bind(this),
-        onDataPrepareFail: this.onDataPrepareFail.bind(this),
-        onLoginServerSucc: ({ context, event }) => {
-          if ('output' in event) this.onLoginSucc(context, event)
-        },
-        onLoginServerFail: ({ context, event }) => {
-          if ('error' in event) this.onLoginFail(context, event)
-        },
-        connectServer: this.connectServer.bind(this),
-        onConnecting: this.onConnecting.bind(this),
-        onDisconnectInReadyState: this.onDisconnectInReadyState.bind(this),
-        onLoginRetryFail: this.onLoginRetryFail.bind(this),
-      },
-      guards: {
-        canRetry: ({ context, event }) => this.canRetry(context, event),
-        isDefinitiveRejection: ({ event }) => this.isDefinitiveRejection(event),
-      },
-    })
-
-    // 主要状态机的激活
-    this.mainFsmService = createActor(this.mainFsm, { input: { loginParam: null, core: this } })
-    let previousState = this.mainFsmService.getSnapshot()
-    this.mainFsmService.subscribe((state: { value: unknown }) => {
-      wllog(
-        '从状态:%s ===> 状态:%s',
-        JSON.stringify(previousState.value),
-        JSON.stringify(state.value),
-      )
-      previousState = state
-    })
-    this.mainFsmService.start()
-
     this.pbDispatcher = new WeilaPbDispatcher((reqData) => {
       this.sendNetworkEvent(WL_NetworkEventID.NET_SEND_DATA_EVT, reqData)
     })
@@ -226,6 +169,41 @@ class WeilaCore implements WL_CoreInterface {
     this.sessionModule = new WLSessionModule(this)
     this.locationModule = new WLLocationModule(this)
     this.userModule = new WLUserModule(this)
+
+    // 状态机在模块之后构建：宿主的依赖可以直接取到已构造的模块。
+    this.mainFsm = new WeilaMainFsmHost({
+      sendNetworkEvent: (event, data) => this.sendNetworkEvent(event, data),
+      sendExtEvent: (event, data) => this.sendExtEvent(event, data),
+      sendToFsm: (event) => this.mainFsmService.send(event),
+      setLoginUserInfo: (userInfo) => {
+        this.loginUserInfo = userInfo
+      },
+      setLoginReady: (ready) => {
+        this.isLoginReady = ready
+      },
+      requestLogout: () => this.weila_logout(),
+      checkWaitingTimeouts: () => this.pbDispatcher.checkTimeouts(),
+      maxRetryLoginTimes: this.maxRetryLoginTimes,
+      loginModule: this.loginModule,
+      friendModule: this.friendModule,
+      groupModule: this.groupModule,
+      businessModule: this.businessModule,
+      sessionModule: this.sessionModule,
+    }).buildMachine()
+
+    // 主要状态机的激活
+    this.mainFsmService = createActor(this.mainFsm, { input: { loginParam: null, core: this } })
+
+    const previousState = { current: this.mainFsmService.getSnapshot() }
+    this.mainFsmService.subscribe((state: { value: unknown }) => {
+      wllog(
+        '从状态:%s ===> 状态:%s',
+        JSON.stringify(previousState.current.value),
+        JSON.stringify(state.value),
+      )
+      previousState.current = state
+    })
+    this.mainFsmService.start()
   }
 
   sendExtEvent(event: WL_ExtEventID, data: any): void {
@@ -267,243 +245,6 @@ class WeilaCore implements WL_CoreInterface {
 
   private onNetworkMessage(event: MessageEvent<WL_NetworkEvent>) {
     this.networkGateway.onNetworkMessage(event)
-  }
-
-  private async loadResource(_context: any, event: any): Promise<any> {
-    const callback = event.data
-
-    try {
-      await WLConfig.loadResource()
-      callback.resolve(true)
-      wllog('加载数据成功')
-    } catch (e) {
-      wlerr('加载数据失败', e)
-      callback.reject(e)
-
-      return Promise.reject(e)
-    }
-
-    return true
-  }
-
-  private async prepareData(_context: any, _event: any): Promise<boolean> {
-    const ind: WL_DataPrepareInd = {
-      state: WL_DataPrepareState.PREPARE_PROGRESS_IND,
-      msg: 'SDK.FriendInit',
-    }
-
-    this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind)
-    await this.friendModule.initFriends()
-    ind.msg = 'SDK.GroupInit'
-    this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind)
-    await this.groupModule.initGroups()
-    ind.msg = 'SDK.SessionInit'
-    this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind)
-    await this.sessionModule.initSessions()
-    ind.msg = 'SDK.ExtensionInit'
-    this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind)
-    await this.loginModule.initExtension()
-
-    ind.msg = 'SDK.Services'
-    this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind)
-    const sessionList = this.sessionModule.getSessionList()
-
-    try {
-      await this.businessModule.initService(
-        sessionList.filter((value) => {
-          return isServiceSessionType(value.sessionType)
-        }),
-      )
-    } catch (e) {
-      wlerr('初始化服务失败:', e)
-    }
-
-    return true
-  }
-
-  private async logout(_context: any, _event: any): Promise<boolean> {
-    return this.loginModule.logoutReq()
-  }
-
-  private async loginServer(context: any, _event: any): Promise<WL_LoginResult> {
-    const loginParam: WL_LoginParam = context.loginParam
-    const loginResult: WL_LoginResult = { callback: loginParam.callback }
-
-    loginParam.retryCount++
-
-    try {
-      wllog('开始登陆')
-      loginResult.loginUserInfo = await this.loginModule.loginReq(
-        loginParam.account,
-        loginParam.password,
-        loginParam.countryCode,
-        loginParam.md5,
-      )
-      wllog('loginServer succ', loginResult)
-
-      return loginResult
-    } catch (e) {
-      loginResult.error = e
-      wllog('loginServer error', loginResult, e)
-
-      return Promise.reject(loginResult)
-    }
-  }
-
-  private onResourceLoadFail(_context: any, event: { error?: unknown }) {
-    wlerr('初始加载数据出错', event.error)
-  }
-
-  private onLoadingResource(_context: any, _event: any) {
-    wllog('加载数据成功')
-  }
-
-  private onException(_context: any, event: { error?: unknown }) {
-    this.sendExtEvent(WL_ExtEventID.WL_EXT_SYSTEM_EXCEPTION_IND, event.error)
-  }
-
-  private onDataInit(_context: any, _event: any) {
-    // 对外发出正在准备数据中.
-    const ind: WL_DataPrepareInd = {
-      state: WL_DataPrepareState.START_PREPARING,
-      msg: 'Commons.startPrepare',
-    }
-
-    this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind)
-  }
-
-  private onDataInited(_context: any, _event: any) {
-    // 对外通知数据已经准备好
-    const ind: WL_DataPrepareInd = {
-      state: WL_DataPrepareState.PREPARE_SUCC_END,
-      msg: 'Commons.prepareFinishSucc',
-    }
-
-    this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind)
-  }
-
-  private onDataPrepareFail(_context: any, _event: any) {
-    // 因为数据准备失败，登出系统
-    void this.weila_logout().then((_value) => {})
-
-    //通知外部，出现异常，并告知异常信息
-    const ind: WL_DataPrepareInd = {
-      state: WL_DataPrepareState.PREPARE_FAIL_END,
-      msg: 'Commons.prepareFinishFail',
-    }
-
-    this.sendExtEvent(WL_ExtEventID.WL_EXT_DATA_PREPARE_IND, ind)
-  }
-
-  private onLoginFail(_context: any, event: { error?: unknown }) {
-    wllog('onLoginFail:', event)
-    this.sendNetworkEvent(WL_NetworkEventID.NET_DISCONNECT_EVT, null)
-    this.mainFsmService.send({
-      type: fsmEvents.FSM_LOGIN_PROCEDURE_FAIL_EVT,
-      data: event.error,
-    })
-  }
-
-  private onLoginSucc(_context: any, event: { output?: any }) {
-    const loginResult: WL_LoginResult = event.output
-    wllog('onLogin:', event)
-    this.loginUserInfo = loginResult.loginUserInfo
-
-    if (loginResult.callback) {
-      loginResult.callback.resolve(loginResult.loginUserInfo)
-    }
-
-    this.mainFsmService.send({
-      type: fsmEvents.FSM_LOGIN_PROCEDURE_SUCC_EVT,
-      data: event.output,
-    })
-  }
-
-  private onSysTimeChecking(_context: any, _event: any) {
-    this.pbDispatcher.checkTimeouts()
-  }
-
-  private onReadyEntry(_context: any, _event: any) {
-    wllog('系统已经准备好，可以接受任何消息')
-    this.isLoginReady = true
-    this.heartbeatTimerId = setInterval(() => {
-      this.loginModule
-        .sendHeartbeat()
-        .then((_value) => {
-          wllog('发送心跳成功')
-        })
-        .catch((reason) => {
-          wlerr('发送心跳失败', reason)
-        })
-    }, 59000)
-
-    this.refreshTokenTimerId = setInterval(() => {
-      this.loginModule
-        .refreshToken()
-        .then((_value) => {
-          wllog('刷新token成功')
-        })
-        .catch((reason) => {
-          wlerr('刷新token失败:', reason)
-        })
-    }, 3600000)
-  }
-
-  private onReadyExit(_context: any, _event: any) {
-    wllog('系统没有准备好')
-    this.isLoginReady = false
-
-    clearInterval(this.heartbeatTimerId)
-    this.heartbeatTimerId = null
-
-    clearInterval(this.refreshTokenTimerId)
-    this.refreshTokenTimerId = null
-  }
-
-  /** 服务器明确拒绝（错误消息带 RET_CODE...MESSAGE...END 结构）的失败不再重试 */
-  private isDefinitiveRejection(event: any): boolean {
-    const message = `${event?.data?.error?.message ?? ''}`
-
-    return message.search(/.*-MESSAGE:.*:END/) !== -1
-  }
-
-  private canRetry(context: any, _event: any): boolean {
-    const loginParams: WL_LoginParam = context.loginParam
-    wllog('canRetry', loginParams)
-
-    return loginParams.retryCount < this.maxRetryLoginTimes
-  }
-
-  private connectServer(_context: any, _event: any) {
-    this.sendNetworkEvent(WL_NetworkEventID.NET_CONNECT_EVT, null)
-  }
-
-  private onConnecting({ context, event }: { context: any; event: any }) {
-    wllog('onConnecting:', context, event)
-  }
-
-  private onDisconnectInReadyState(_context: any, _event: any) {
-    // const loginParam = _context.loginParam as WL_LoginParam
-  }
-
-  private onLoginRetryFail({ context, event }: { context: any; event: any }) {
-    wllog('onLoginRetryFail', event)
-
-    const loginParam: WL_LoginParam | null = context.loginParam
-
-    if (!loginParam) {
-      context.loginParam = null
-
-      return
-    }
-
-    if (event.data && event.data.error) {
-      loginParam.callback.reject(event.data.error)
-    } else {
-      loginParam.callback.reject(new Error('登陆尝试多次失败'))
-    }
-
-    context.loginParam = null
   }
 
   /**
