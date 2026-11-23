@@ -106,14 +106,6 @@ interface WL_PttFsmListener {
   onRecordPttPacketInd(pttPacket: WL_PttPacket): void
 }
 
-interface WL_TalkingInfo {
-  seqOfPackage: number
-  curMarker: WL_PttPackType
-  callback?: WL_PromiseCallback
-  frameBufferCache: Uint8Array[]
-  stopByErr: boolean
-}
-
 export {
   WL_PromiseCallback,
   default_user_logo,
@@ -131,5 +123,4 @@ export {
   WL_PttPacket,
   WL_PttFsmListener,
   WL_PttPackType,
-  WL_TalkingInfo,
 }

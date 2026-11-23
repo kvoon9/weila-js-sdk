@@ -46,6 +46,9 @@ const PTT_HANDLER_NAMES = [
   'stopAndPlayNext',
   'onPausePlay',
   'onResumePlay',
+  'appendBurstFrame',
+  'emitBurstPacket',
+  'onReleaseTalk',
 ]
 
 interface Recording {
@@ -53,7 +56,7 @@ interface Recording {
   invoked: string[]
 }
 
-type MainService = (context: any, event: AnyEventObject) => Promise<any>
+type MainService = (context: any, event?: AnyEventObject) => Promise<any>
 
 function namedStubs(names: string[], recording: Recording) {
   const stubs: Record<string, () => void> = {}
@@ -84,7 +87,8 @@ function stubServices(
       async ({ input }: { input: { context: any; event: AnyEventObject } }) => {
         recording.invoked.push(name)
 
-        return impl(input.context, input.event)
+        // The stopTalk actor's input is the burst snapshot, which can be null.
+        return impl(input?.context, input?.event)
       },
     )
   }
@@ -140,6 +144,7 @@ function startPttMachine(recording: Recording): Actor<typeof pttFsm> {
         'finishStop',
         'startTalking',
         'stopTalk',
+        'recorderFrames',
       ],
       {
         checkHistoryList: null,
@@ -148,11 +153,13 @@ function startPttMachine(recording: Recording): Actor<typeof pttFsm> {
         finishStop: null,
         startTalking: true,
         stopTalk: true,
+        recorderFrames: null,
       },
       {},
       recording,
     ),
     actions: namedStubs(PTT_HANDLER_NAMES, recording),
+    guards: { burstPacketFull: () => false },
   })
 
   return createActor(machine, {
@@ -442,7 +449,10 @@ describe('ptt state machine transitions', () => {
     const recording: Recording = { fired: [], invoked: [] }
     const actor = startPttMachine(recording)
 
-    actor.send({ type: fsmEvents.FSM_REQ_TALK_EVT, data: { callback: promiseCallback() } })
+    actor.send({
+      type: fsmEvents.FSM_REQ_TALK_EVT,
+      data: { callback: promiseCallback(), stopByErr: false },
+    })
     await settle()
 
     expect(recording.invoked).toContain('startTalking')

@@ -58,6 +58,7 @@ const ACTOR_NAMES = [
   'finishStop',
   'startTalking',
   'stopTalk',
+  'recorderFrames',
   'checkPttPlayingList',
   'checkHistoryList',
 ]
@@ -108,6 +109,9 @@ const HANDLER_NAMES = [
   'stopAndPlayNext',
   'onPausePlay',
   'onResumePlay',
+  'appendBurstFrame',
+  'emitBurstPacket',
+  'onReleaseTalk',
 ]
 
 /** Events the core sends to the main machine. */
@@ -130,6 +134,7 @@ const PTT_EVENT_NAMES = [
   fsmEvents.FSM_PLAY_HISTORY_EVT,
   fsmEvents.FSM_PLAY_SINGLE_EVT,
   fsmEvents.FSM_REQ_TALK_EVT,
+  fsmEvents.FSM_PTT_CODED_DATA_EVT,
   fsmEvents.FSM_REL_TALK_EVT,
   fsmEvents.FSM_FEED_PTT_PAYLOAD_EVT,
   fsmEvents.FSM_PTT_OUT_OF_PAYLOAD_EVT,
@@ -184,7 +189,11 @@ function stubbedMainActor(rejectActors: boolean, fired: string[]): ModelActor {
           },
         ]),
       ),
-      guards: { canRetry: () => true, isDefinitiveRejection: () => false },
+      guards: {
+        canRetry: () => true,
+        isDefinitiveRejection: () => false,
+        burstPacketFull: () => false,
+      },
     }),
     { input: { loginParam: null, core: null } },
   )
@@ -212,6 +221,7 @@ function stubbedPttActor(rejectActors: boolean, fired: string[]): ModelActor {
           },
         ]),
       ),
+      guards: { burstPacketFull: () => false },
     }),
     { input: { pttCore: null } },
   )

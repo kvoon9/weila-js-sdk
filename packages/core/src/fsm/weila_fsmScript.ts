@@ -5,7 +5,7 @@ import {
   WL_LoginParam,
   WL_PromiseCallback,
   WL_PttAudioItem,
-  WL_TalkingInfo,
+  WL_PttPackType,
 } from 'main/weila_internal_data'
 import { WLPlayerType } from 'audio/weila_audio_data'
 
@@ -310,13 +310,14 @@ const mainFsm = createMachine({
   },
 })
 
-type PttFsmUserEvent =
+export type PttFsmUserEvent =
   | { type: 'FSM_PLAY_REALTIME_EVT'; data: WL_PttAudioItem }
   | { type: 'FSM_PLAY_HISTORY_EVT'; data: WL_PttAudioItem[] }
   | { type: 'FSM_PLAY_SINGLE_EVT'; data: WL_PttAudioItem }
   | { type: 'FSM_PLAY_NEXT_PTT_ITEM_EVT'; data?: WL_PttAudioItem }
-  | { type: 'FSM_REQ_TALK_EVT'; data: Partial<WL_TalkingInfo> }
-  | { type: 'FSM_REL_TALK_EVT' }
+  | { type: 'FSM_REQ_TALK_EVT'; data: { callback: WL_PromiseCallback; stopByErr: boolean } }
+  | { type: 'FSM_REL_TALK_EVT'; data?: { stopByErr: boolean } }
+  | { type: 'FSM_PTT_CODED_DATA_EVT'; data: Uint8Array }
   | { type: 'FSM_FEED_PTT_PAYLOAD_EVT'; data: WL_PttAudioItem }
   | { type: 'FSM_PTT_OUT_OF_PAYLOAD_EVT' }
   | { type: 'FSM_PTT_ITEM_PLAY_END_EVT' }
@@ -333,12 +334,24 @@ type PttFsmActorEvent = MainFsmActorEvent
 
 export type PttFsmEvent = PttFsmUserEvent | PttFsmActorEvent
 
+/** Live recording burst, owned by machine context from request until stop. */
+export interface PttTalkBurst {
+  callback: WL_PromiseCallback
+  stopByErr: boolean
+  /** Set once the talk is granted; frames arriving before the grant are dropped. */
+  curMarker: WL_PttPackType | null
+  seqOfPackage: number
+  frameBuffer: Uint8Array[] | null
+}
+
 export interface PttFsmContext {
   pttCore: unknown
   /** Player of the currently active play family; assigned on playing-state entry. */
   activePlayerType: WLPlayerType | null
   /** Event replayed once a stop completes: the play that interrupted, or back-to-idle. */
   pendingStopEvent: PttFsmUserEvent | null
+  /** Recording burst state seeded by requestTalk and released with the talk. */
+  talk: PttTalkBurst | null
 }
 
 export interface PttFsmInput {
@@ -417,6 +430,7 @@ const pttFsm = createMachine({
   context: ({ input }) => ({
     activePlayerType: null,
     pendingStopEvent: null,
+    talk: null,
     ...(input ?? { pttCore: null }),
   }),
   states: {
@@ -426,7 +440,22 @@ const pttFsm = createMachine({
         FSM_PLAY_REALTIME_EVT: 'realtimePlaying',
         FSM_PLAY_HISTORY_EVT: 'historyPlaying',
         FSM_PLAY_SINGLE_EVT: 'singlePlaying',
-        FSM_REQ_TALK_EVT: 'startTalk',
+        FSM_REQ_TALK_EVT: {
+          target: 'startTalk',
+          actions: assign({
+            talk: ({ event }: { event: PttFsmEvent }): PttTalkBurst | null => {
+              if (event.type !== 'FSM_REQ_TALK_EVT' || !event.data) return null
+
+              return {
+                callback: event.data.callback,
+                stopByErr: event.data.stopByErr,
+                curMarker: null,
+                seqOfPackage: 0,
+                frameBuffer: null,
+              }
+            },
+          }),
+        },
       },
     },
     realtimePlaying: {
@@ -618,14 +647,31 @@ const pttFsm = createMachine({
     },
     talking: {
       entry: 'onTalking',
+      invoke: {
+        src: 'recorderFrames',
+        id: 'recorder_frames',
+      },
       on: {
-        FSM_REL_TALK_EVT: 'talkStop',
+        FSM_REL_TALK_EVT: {
+          actions: 'onReleaseTalk',
+          target: 'talkStop',
+        },
+        FSM_PTT_CODED_DATA_EVT: [
+          {
+            guard: 'burstPacketFull',
+            actions: ['appendBurstFrame', 'emitBurstPacket'],
+          },
+          {
+            actions: 'appendBurstFrame',
+          },
+        ],
       },
     },
     talkStop: {
       invoke: {
         src: 'stopTalk',
         id: 'release_talk',
+        input: ({ context }: { context: PttFsmContext }) => context.talk,
         onDone: 'idle',
         onError: 'idle',
       },
@@ -713,6 +759,7 @@ const fsmEvents = {
   FSM_PAUSE_PLAY_EVT: 'FSM_PAUSE_PLAY_EVT',
   FSM_RESUME_PLAY_EVT: 'FSM_RESUME_PLAY_EVT',
   FSM_REL_TALK_EVT: 'FSM_REL_TALK_EVT',
+  FSM_PTT_CODED_DATA_EVT: 'FSM_PTT_CODED_DATA_EVT',
 } as const
 
 export { mainFsm, pttFsm, fsmEvents, systemWatchdogActor, type MainActor }
