@@ -72,9 +72,17 @@ const loginProcedureFsm: Record<
         target: 'dataInit',
       },
 
-      FSM_LOGIN_PROCEDURE_FAIL_EVT: {
-        target: 'loginTry',
-      },
+      FSM_LOGIN_PROCEDURE_FAIL_EVT: [
+        {
+          guard: 'isDefinitiveRejection',
+          actions: 'onLoginRetryFail',
+          target: 'inited',
+          description: '服务器明确拒绝的失败不再重试',
+        },
+        {
+          target: 'loginTry',
+        },
+      ],
     },
 
     states: {
@@ -241,7 +249,6 @@ const mainFsm = createMachine({
     loginTry: {
       description:
         '登录尝试状态，会自动启动每2秒重新返回登录流程。如果尝试次数超了或失败因为特殊原因，则不应该尝试了\n',
-      entry: 'onLoginTryEntry',
       on: {
         FSM_LOGIN_PROCEDURE_FAIL_EVT: {
           actions: 'onLoginRetryFail',

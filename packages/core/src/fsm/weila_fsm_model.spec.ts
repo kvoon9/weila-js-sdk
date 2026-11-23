@@ -87,7 +87,6 @@ const HANDLER_NAMES = [
   'onConnecting',
   'onDisconnectInReadyState',
   'onLoginRetryFail',
-  'onLoginTryEntry',
   'canRetry',
   'onIdle',
   'onPttPayloadPlaying',
@@ -185,7 +184,7 @@ function stubbedMainActor(rejectActors: boolean, fired: string[]): ModelActor {
           },
         ]),
       ),
-      guards: { canRetry: () => true },
+      guards: { canRetry: () => true, isDefinitiveRejection: () => false },
     }),
     { input: { loginParam: null, core: null } },
   )

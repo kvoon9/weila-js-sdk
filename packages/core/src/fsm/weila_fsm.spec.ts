@@ -23,7 +23,6 @@ const MAIN_HANDLER_NAMES = [
   'onConnecting',
   'onDisconnectInReadyState',
   'onLoginRetryFail',
-  'onLoginTryEntry',
 ]
 
 const PTT_HANDLER_NAMES = [
@@ -113,6 +112,7 @@ function startMainMachine(
     actions: namedStubs(MAIN_HANDLER_NAMES, recording),
     guards: {
       canRetry: () => true,
+      isDefinitiveRejection: () => false,
       ...overrides.guards,
     },
   })
@@ -303,7 +303,6 @@ describe('main state machine transitions', () => {
     await settle()
 
     expect(actor.getSnapshot().matches('loginTry')).toBe(true)
-    expect(recording.fired).toContain('onLoginTryEntry')
 
     await vi.advanceTimersByTimeAsync(2000)
 
@@ -324,6 +323,23 @@ describe('main state machine transitions', () => {
     expect(actor.getSnapshot().matches('loginTry')).toBe(true)
 
     await vi.advanceTimersByTimeAsync(2000)
+
+    expect(actor.getSnapshot().matches('inited')).toBe(true)
+    expect(recording.fired).toContain('onLoginRetryFail')
+  })
+
+  it('treats a definitive server rejection as final without entering loginTry', async () => {
+    const recording: Recording = { fired: [], invoked: [] }
+
+    const actor = startMainMachine(recording, {
+      guards: { isDefinitiveRejection: () => true },
+    })
+
+    await reachInited(actor)
+    actor.send({ type: fsmEvents.FSM_LOGIN_SERVER_EVT, data: loginParam() })
+    await settle()
+    actor.send({ type: fsmEvents.FSM_NET_EXCEPTION_IND_EVT })
+    await settle()
 
     expect(actor.getSnapshot().matches('inited')).toBe(true)
     expect(recording.fired).toContain('onLoginRetryFail')
