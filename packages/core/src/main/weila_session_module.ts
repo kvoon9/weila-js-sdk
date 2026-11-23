@@ -1368,6 +1368,24 @@ export default class WLSessionModule {
     })
   }
 
+  /** Pauses the current single playback in place. */
+  public pausePlayAudio(): void {
+    this.pttFsm.pausePlayAudio()
+  }
+
+  /** Resumes the paused single playback from where it stopped. */
+  public resumePlayAudio(): void {
+    this.pttFsm.resumePlayAudio()
+  }
+
+  /**
+   * 已播放的毫秒数，按单发播放器消费的 PCM 帧换算；暂停期间冻结。
+   * @returns 已播放毫秒数，播放器未启动时为 0
+   */
+  public getSinglePlayProgressMs(): Promise<number> {
+    return this.pttFsm.getPlayProgressMs()
+  }
+
   private async onPttPlayInd(
     audioItem: WL_PttAudioItem | null,
     indData: WL_PttPlayIndData,

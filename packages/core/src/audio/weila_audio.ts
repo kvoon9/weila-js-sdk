@@ -234,6 +234,24 @@ class WLAudio {
         }
 
         break
+
+      case WLAudioPlayerEvent.WL_WORKLET_NODE_POS_RSP:
+        {
+          const callback = this.sendingEventListMap.get(ev.event)
+
+          if (callback) {
+            this.sendingEventListMap.delete(ev.event)
+
+            if (callback.waitRspTimer) {
+              clearTimeout(callback.waitRspTimer)
+              callback.waitRspTimer = null
+            }
+
+            callback.resolve(ev.data?.frames ?? 0)
+          }
+        }
+
+        break
     }
   }
 
@@ -485,6 +503,33 @@ class WLAudio {
       wllog('播放器:%d 播放最后一帧', playerType)
       this.sendPlayerEvent(playerType, WLAudioPlayerEvent.WL_WORKLET_NODE_END_DATA, null)
     }
+  }
+
+  /**
+   * 查询一个播放器已播放的毫秒数（按已消费的 PCM 帧数换算）。暂停期间
+   * 数值冻结，重新开始播放后从零计。
+   * @param playerType 播放器类型
+   * @returns 已播放毫秒数
+   */
+  public async getPlayerPlayedMs(playerType: WLPlayerType): Promise<number> {
+    return new Promise<number>((resolve, reject) => {
+      this.sendPlayerEvent(playerType, WLAudioPlayerEvent.WL_WORKLET_NODE_POS_REQ, null)
+
+      const callback: WLAudioCallback = { resolve, reject, waitRspTimer: undefined }
+      callback.waitRspTimer = setTimeout(
+        (cb) => {
+          if (cb.reject) {
+            this.sendingEventListMap.delete(WLAudioPlayerEvent.WL_WORKLET_NODE_POS_RSP)
+            cb.reject(new Error('查询播放进度超时'))
+          }
+        },
+        2000,
+        callback,
+      )
+      this.sendingEventListMap.set(WLAudioPlayerEvent.WL_WORKLET_NODE_POS_RSP, callback)
+    }).then((frames) => {
+      return Math.round((frames / this.playSampleRate[playerType]) * 1000)
+    })
   }
 
   private sendRecorderEvent(event: WLAudioRecorderEvent, data: any): void {

@@ -819,6 +819,28 @@ class WeilaCore implements WL_CoreInterface {
   }
 
   /**
+   * 暂停单条语音的播放，播放位置保留在原地
+   */
+  public weila_pauseSingle(): void {
+    this.sessionModule.pausePlayAudio()
+  }
+
+  /**
+   * 恢复已暂停的单条语音，从上次暂停的位置继续播放
+   */
+  public weila_resumeSingle(): void {
+    this.sessionModule.resumePlayAudio()
+  }
+
+  /**
+   * 查询单条语音当前播放到的毫秒数；暂停期间数值冻结，未在播放时为 0
+   * @returns 已播放毫秒数
+   */
+  public weila_getSinglePlayProgress(): Promise<number> {
+    return this.sessionModule.getSinglePlayProgressMs()
+  }
+
+  /**
    * 播放历史语音，播放一组的语音
    * @param audioMsgDatas 一组的语音
    */

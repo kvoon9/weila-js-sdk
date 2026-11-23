@@ -57,6 +57,9 @@ class RecordingAudioManager extends WLAudio {
   putPlayerOpusData = vi.fn((_playerType: WLPlayerType, _data: Uint8Array[] | null) => {})
   stopPlay = vi.fn(async (_playerType: WLPlayerType) => true)
   closePlayer = vi.fn(async (_playerType: WLPlayerType) => true)
+  pausePlay = vi.fn(async (_playerType: WLPlayerType) => true)
+  resumePlay = vi.fn(async (_playerType: WLPlayerType) => true)
+  getPlayerPlayedMs = vi.fn(async (_playerType: WLPlayerType) => 0)
 }
 
 function makePttFsm() {
@@ -239,5 +242,45 @@ describe('WLPttFsm playback-start chains', () => {
 
     expect(audio.startPlay).not.toHaveBeenCalled()
     expect(audio.putPlayerOpusData).not.toHaveBeenCalled()
+  })
+
+  it('single: pause holds the state and resume goes back to playing', async () => {
+    const { audio, fsm } = makePttFsm()
+    const item = makeItem(WLPlayerType.WL_PTT_SINGLE_PLAYER)
+
+    fsm.pttFsmService.send({ type: fsmEvents.FSM_PLAY_SINGLE_EVT, data: item })
+    await advancePastPlayDelay()
+
+    audio.pausePlay.mockClear()
+    audio.resumePlay.mockClear()
+
+    // Pause stays inside singlePlaying; only the player is paused.
+    fsm.pttFsmService.send({ type: fsmEvents.FSM_PAUSE_PLAY_EVT })
+
+    expect(audio.pausePlay).toHaveBeenCalledWith(WLPlayerType.WL_PTT_SINGLE_PLAYER)
+    expect(audio.resumePlay).not.toHaveBeenCalled()
+    expect(fsm.pttFsmService.getSnapshot().matches('singlePlaying')).toBe(true)
+
+    // Resume continues in the same state through the single player.
+    fsm.pttFsmService.send({ type: fsmEvents.FSM_RESUME_PLAY_EVT })
+
+    expect(audio.resumePlay).toHaveBeenCalledWith(WLPlayerType.WL_PTT_SINGLE_PLAYER)
+    expect(fsm.pttFsmService.getSnapshot().matches('singlePlaying')).toBe(true)
+  })
+
+  it('single: a stop after pause still completes the stop chain', async () => {
+    const { audio, fsm } = makePttFsm()
+    const item = makeItem(WLPlayerType.WL_PTT_SINGLE_PLAYER)
+
+    fsm.pttFsmService.send({ type: fsmEvents.FSM_PLAY_SINGLE_EVT, data: item })
+    await advancePastPlayDelay()
+
+    fsm.pttFsmService.send({ type: fsmEvents.FSM_PAUSE_PLAY_EVT })
+    fsm.pttFsmService.send({ type: fsmEvents.FSM_STOP_EVT })
+    await advancePastPlayDelay()
+
+    expect(audio.stopPlay).toHaveBeenCalledWith(WLPlayerType.WL_PTT_SINGLE_PLAYER)
+    expect(audio.closePlayer).toHaveBeenCalledWith(WLPlayerType.WL_PTT_SINGLE_PLAYER)
+    expect(fsm.pttFsmService.getSnapshot().matches('idle')).toBe(true)
   })
 })

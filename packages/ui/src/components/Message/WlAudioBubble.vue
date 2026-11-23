@@ -10,11 +10,17 @@ export interface WlAudioBubbleProps {
   isSelf?: boolean
   /** 是否正在播放 */
   playing?: boolean
+  /** 播放已暂停，位置保留 */
+  paused?: boolean
+  /** 当前播放到的毫秒数，播放或暂停时显示为进度 */
+  progressMs?: number | null
 }
 
 const props = withDefaults(defineProps<WlAudioBubbleProps>(), {
   isSelf: false,
   playing: false,
+  paused: false,
+  progressMs: null,
 })
 
 const emit = defineEmits<{
@@ -34,6 +40,28 @@ const handleClick = () => {
 
 const hasDuration = computed(() => duration.value > 0)
 const formattedDuration = computed(() => `${Math.floor(duration.value)}"`)
+
+function formatClock(ms: number): string {
+  const totalSeconds = Math.floor(ms / 1000)
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+
+  return `${minutes}:${String(seconds).padStart(2, '0')}`
+}
+
+/** Playing (or paused) shows a live position; idle keeps the plain duration. */
+const timeLabel = computed(() => {
+  if (props.playing || props.paused) {
+    if (props.progressMs === null || !hasDuration.value) return ''
+
+    return `${formatClock(props.progressMs)} / ${formatClock(duration.value * 1000)}`
+  }
+
+  return hasDuration.value ? formattedDuration.value : ''
+})
+
+/** The wave animates only while actually playing, not while paused. */
+const animating = computed(() => props.playing && !props.paused)
 
 // const bubbleStyle = computed(() => {
 //   const clampedDuration = Math.min(Math.max(duration.value, 1), 60);
@@ -58,7 +86,7 @@ const formattedDuration = computed(() => `${Math.floor(duration.value)}"`)
     >
       <!-- Play/Pause Icon -->
       <div class="shrink-0 flex items-center justify-center">
-        <span v-if="playing" class="icon-[carbon--pause-filled] size-5"></span>
+        <span v-if="animating" class="icon-[carbon--pause-filled] size-5"></span>
         <span v-else class="icon-[carbon--play-filled] size-5"></span>
       </div>
 
@@ -70,7 +98,7 @@ const formattedDuration = computed(() => `${Math.floor(duration.value)}"`)
         <div
           class="wl-audio-bar"
           :class="{
-            'wl-audio-bar-playing': playing,
+            'wl-audio-bar-playing': animating,
             'bg-white': isSelf,
             'bg-neutral-900': !isSelf,
           }"
@@ -79,7 +107,7 @@ const formattedDuration = computed(() => `${Math.floor(duration.value)}"`)
         <div
           class="wl-audio-bar"
           :class="{
-            'wl-audio-bar-playing': playing,
+            'wl-audio-bar-playing': animating,
             'bg-white': isSelf,
             'bg-neutral-900': !isSelf,
           }"
@@ -88,7 +116,7 @@ const formattedDuration = computed(() => `${Math.floor(duration.value)}"`)
         <div
           class="wl-audio-bar"
           :class="{
-            'wl-audio-bar-playing': playing,
+            'wl-audio-bar-playing': animating,
             'bg-white': isSelf,
             'bg-neutral-900': !isSelf,
           }"
@@ -97,7 +125,7 @@ const formattedDuration = computed(() => `${Math.floor(duration.value)}"`)
         <div
           class="wl-audio-bar"
           :class="{
-            'wl-audio-bar-playing': playing,
+            'wl-audio-bar-playing': animating,
             'bg-white': isSelf,
             'bg-neutral-900': !isSelf,
           }"
@@ -105,9 +133,9 @@ const formattedDuration = computed(() => `${Math.floor(duration.value)}"`)
         ></div>
       </div>
 
-      <!-- Duration -->
-      <div v-if="hasDuration" class="shrink-0 font-medium pl-1">
-        {{ formattedDuration }}
+      <!-- Duration / progress -->
+      <div v-if="timeLabel" class="shrink-0 font-medium pl-1">
+        {{ timeLabel }}
       </div>
     </div>
   </div>
