@@ -13,15 +13,6 @@ import {
 import type { WL_IDbUserInfo } from '@vois/weila-sdk-core'
 import type { WL_ExtEventCallback } from '@vois/weila-sdk-core'
 
-// Encrypt with md5-based key derivation
-function encrypt(str: string): string {
-  return btoa(str)
-}
-
-function decrypt(encoded: string): string {
-  return atob(encoded)
-}
-
 // Encrypted credential storage
 const storedCredentials = useLocalStorage<{
   account: string
@@ -32,12 +23,12 @@ const storedCredentials = useLocalStorage<{
     read: (v) => {
       if (!v) return null
       try {
-        return JSON.parse(decrypt(v))
+        return JSON.parse(atob(v))
       } catch {
         return null
       }
     },
-    write: (v) => (v ? encrypt(JSON.stringify(v)) : ''),
+    write: (v) => (v ? btoa(JSON.stringify(v)) : ''),
   },
 })
 
@@ -157,7 +148,7 @@ export const useWeilaStore = defineStore('weila', () => {
   }
 })
 
-// Pinia HMR —— 替代手动 import.meta.hot.dispose/data 模式
+// Pinia HMR：替代手动 import.meta.hot.dispose/data 模式
 // if (import.meta.hot) {
 //   import.meta.hot.accept(acceptHMRUpdate(useWeilaStore, import.meta.hot))
 // }

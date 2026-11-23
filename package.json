@@ -2,6 +2,7 @@
   "name": "@weilasdk/monorepo",
   "private": true,
   "description": "Weila Web SDK monorepo (@weilasdk/core, @weilasdk/ui)",
+  "type": "module",
   "scripts": {
     "build": "turbo run build",
     "build:core": "turbo run build --filter=@vois/weila-sdk-core",
@@ -33,6 +34,7 @@
   "devDependencies": {
     "@oxlint/plugins": "catalog:",
     "eslint-plugin-slop": "catalog:",
+    "eslint-plugin-sonarjs": "catalog:",
     "knip": "catalog:",
     "nano-staged": "catalog:",
     "oxfmt": "catalog:",
@@ -55,7 +57,7 @@
     "*.{json,jsonc,md,mdx,css,pcss,html,yml,yaml}": "oxfmt --check"
   },
   "engines": {
-    "node": ">=18",
+    "node": ">=22.18",
     "pnpm": ">=9"
   },
   "packageManager": "pnpm@10.33.0"

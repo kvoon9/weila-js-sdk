@@ -7,7 +7,7 @@ This monorepo contains the Weila Web SDK and its related packages. The project i
 ## Package Manager
 
 - **Tool**: pnpm
-- **Node Version**: ≥ 18
+- **Node Version**: ≥ 22.18 (the TypeScript Oxlint and Oxfmt configs use Node's built-in type stripping)
 - **pnpm Version**: ≥ 9
 - **Lockfile**: `pnpm-lock.yaml` (root)
 
@@ -64,6 +64,13 @@ Run these commands from the root directory using pnpm:
   ```bash
   pnpm knip
   ```
+
+## Lint and Format
+
+- `oxlint.config.ts` is the single Oxlint config. It registers the vendored `anti-slop` plugin, `eslint-plugin-slop`, and `eslint-plugin-sonarjs`.
+- The slop rules mirror the rule set that `@antfu/eslint-config` enables through its `antislop` option, including `slop/no-em-dash` on every source file. Sonarjs mirrors the same `antislop` subset, except `sonarjs/cognitive-complexity` and `sonarjs/no-invariant-returns`, which stay off until their existing findings are refactored.
+- `oxfmt.config.ts` is the single formatter config.
+- Both configs are TypeScript and load through Node, so they need Node 22.18 or newer.
 
 ## Git Hooks
 

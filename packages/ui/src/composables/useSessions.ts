@@ -160,13 +160,13 @@ export function useSessions(
     // WL_EXT_NEW_SESSION_OPEN_IND: new session created
     else if (eventId === WL_ExtEventID.WL_EXT_NEW_SESSION_OPEN_IND) {
       scheduleBackgroundRefresh()
-    } else if (eventId === WL_ExtEventID.WL_EXT_NEW_MSG_RECV_IND) {
+    } else if (
+      eventId === WL_ExtEventID.WL_EXT_NEW_MSG_RECV_IND ||
+      eventId === WL_ExtEventID.WL_EXT_SESSION_UPDATED_IND
+    ) {
       if (isRealtimePttData(eventData)) return
       scheduleBackgroundRefresh()
     } else if (eventId === WL_ExtEventID.WL_EXT_MSG_SEND_IND) {
-      scheduleBackgroundRefresh()
-    } else if (eventId === WL_ExtEventID.WL_EXT_SESSION_UPDATED_IND) {
-      if (isRealtimePttData(eventData)) return
       scheduleBackgroundRefresh()
     } else if (eventId === WL_ExtEventID.WL_EXT_GROUP_MODIFIED_IND) {
       // 群资料变更后清空了 session 缓存，需要重新拉取让 resolver 刷新

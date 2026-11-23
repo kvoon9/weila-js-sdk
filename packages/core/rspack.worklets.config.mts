@@ -1,9 +1,11 @@
-const path = require('node:path')
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import type { Configuration } from '@rspack/core'
 
-const ROOT = __dirname
+const ROOT = path.dirname(fileURLToPath(import.meta.url))
 const SRC = path.resolve(ROOT, 'src')
 
-module.exports = {
+export default {
   mode: 'production',
   context: path.resolve(SRC, 'audio'),
   entry: {
@@ -46,4 +48,4 @@ module.exports = {
       { test: /\.js$/, include: SRC, type: 'javascript/esm' },
     ],
   },
-}
+} satisfies Configuration

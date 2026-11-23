@@ -142,8 +142,6 @@ const isVideo = (msg: WL_IDbMsgData) => msg.msgType === WL_IDbMsgDataType.WL_DB_
 const isSupportedForwardType = (msg: WL_IDbMsgData) =>
   isText(msg) || isAudio(msg) || isImage(msg) || isVideo(msg) || isLocation(msg) || isFile(msg)
 
-const isSupportedCopyType = (msg: WL_IDbMsgData) => isText(msg)
-
 const isWithdrawMsg = (msg: WL_IDbMsgData) =>
   msg.msgType === WL_IDbMsgDataType.WL_DB_MSG_DATA_WITHDRAW_TYPE ||
   msg.status === WL_IDbMsgDataStatus.WL_DB_MSG_DATA_STATUS_WITHDRAW
@@ -156,7 +154,7 @@ function canShowForward(msg: WL_IDbMsgData) {
 }
 
 function canShowCopy(msg: WL_IDbMsgData) {
-  return isSupportedCopyType(msg) && !!msg.textData && !isWithdrawMsg(msg)
+  return isText(msg) && !!msg.textData && !isWithdrawMsg(msg)
 }
 
 function canShowWithdraw(msg: WL_IDbMsgData) {
