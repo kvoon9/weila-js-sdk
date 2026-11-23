@@ -1,6 +1,7 @@
 // @ts-ignore
 import Network from 'main/weila_network.worker'
 import WeilaPbDispatcher from 'main/weila_pb_dispatcher'
+import WeilaNetworkGateway from 'main/weila_network_gateway'
 import { fsmEvents, mainFsm, systemWatchdogActor } from 'fsm/weila_fsmScript'
 import type { MainActor } from 'fsm/weila_fsmScript'
 import { WLConfig } from 'main/weila_config'
@@ -13,8 +14,6 @@ import {
   WL_LoginResult,
   WL_NetworkEvent,
   WL_NetworkEventID,
-  WL_NetworkState,
-  WL_PbMsgData,
   WL_PbMsgHandler,
   WL_PromiseCallback,
 } from 'main/weila_internal_data'
@@ -63,7 +62,6 @@ import WLFriendModule from 'main/weila_friend_module'
 import WLGroupModule from 'main/weila_group_module'
 import WLLocationModule from 'main/weila_location_module'
 import WLUserModule from 'main/weila_user_module'
-import { WL } from 'proto/weilapb'
 import { WeilaDB } from 'db/weila_db'
 import { TinyEmitter } from 'tiny-emitter'
 import {
@@ -132,6 +130,7 @@ class WeilaCore implements WL_CoreInterface {
   mainFsmService!: MainActor
   network?: Network
   pbDispatcher: WeilaPbDispatcher
+  networkGateway: WeilaNetworkGateway
   pbMsgHandlerList: Map<number, WL_PbMsgHandler>
   loginUserInfo?: WL_IDbUserInfo
   loginModule: WLLoginModule
@@ -211,6 +210,11 @@ class WeilaCore implements WL_CoreInterface {
       this.sendNetworkEvent(WL_NetworkEventID.NET_SEND_DATA_EVT, reqData)
     })
     this.pbMsgHandlerList = new Map<number, WL_PbMsgHandler>()
+    this.networkGateway = new WeilaNetworkGateway({
+      sendToFsm: (event) => this.mainFsmService.send(event),
+      dispatcher: this.pbDispatcher,
+      pbMsgHandlers: this.pbMsgHandlerList,
+    })
 
     this.network = new Network()
     this.network.addEventListener('message', this.onNetworkMessage.bind(this))
@@ -262,49 +266,7 @@ class WeilaCore implements WL_CoreInterface {
   }
 
   private onNetworkMessage(event: MessageEvent<WL_NetworkEvent>) {
-    const netEvent = event.data
-
-    switch (netEvent.eventId) {
-      case WL_NetworkEventID.NET_STATE_IND_EVT:
-        {
-          const netState: WL_NetworkState = netEvent.eventData
-
-          if (netState === WL_NetworkState.NET_CONNECTED_STATE) {
-            this.mainFsmService.send({ type: fsmEvents.FSM_NET_CONNECTED_IND_EVT })
-          } else if (netState === WL_NetworkState.NET_CONNECTING_STATE) {
-            this.mainFsmService.send({ type: fsmEvents.FSM_NET_CONNECTING_IND_EVT })
-          } else if (netState === WL_NetworkState.NET_DISCONNECTED_STATE) {
-            this.mainFsmService.send({ type: fsmEvents.FSM_NET_DISCONNECT_IND_EVT })
-            this.pbDispatcher.rejectAll('网络失去连接')
-          }
-        }
-
-        break
-
-      case WL_NetworkEventID.NET_MSG_RECV_IND_EVT:
-        {
-          const msgData: WL_PbMsgData = netEvent.eventData
-          const serverMessage = WL.Service.ServiceMessage.decode(msgData.pbMsgData)
-
-          const serviceHead = serverMessage.serviceHead
-          const serviceId = serviceHead?.serviceId ?? 0
-
-          if (serviceHead && this.pbMsgHandlerList.has(serviceId)) {
-            const handler = this.pbMsgHandlerList.get(serviceId)
-
-            if (handler) handler(serverMessage)
-          }
-        }
-
-        break
-
-      case WL_NetworkEventID.NET_EXCEPTION_IND_EVT:
-        {
-          this.mainFsmService.send({ type: fsmEvents.FSM_NET_EXCEPTION_IND_EVT })
-        }
-
-        break
-    }
+    this.networkGateway.onNetworkMessage(event)
   }
 
   private async loadResource(_context: any, event: any): Promise<any> {
