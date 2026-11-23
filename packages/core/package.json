@@ -6,6 +6,11 @@
   "keywords": [],
   "license": "VOIS",
   "author": "Jack Chen",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kvoon9/weila-js-sdk.git",
+    "directory": "packages/core"
+  },
   "files": [
     "dist"
   ],
