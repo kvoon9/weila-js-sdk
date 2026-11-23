@@ -1,5 +1,56 @@
 import { describe, expect, it } from 'vitest'
-import { calculateAudioDuration, getErrorMsg } from './weila_utils'
+import {
+  calculateAudioDuration,
+  calculateOpusDataFrame,
+  decompositionAudioData,
+  getErrorMsg,
+  getOpusDataFrameCount,
+  getOpusDataListFromPttData,
+} from './weila_utils'
+
+/**
+ * The wire format per frame is a flag byte, a length field (two bytes for
+ * flag & 0x80, one otherwise), then the payload. A long frame that is not
+ * the first frame must have its length read at the frame's own offset; the
+ * parsers once read absolute bytes 1-2 and misparsed every such frame.
+ */
+function buildFrames(): Uint8Array {
+  const shortFrame = [0x00, 0x03, 0x11, 0x12, 0x13]
+  const longFrame = [0x80, 0x00, 0x05, 0x21, 0x22, 0x23, 0x24, 0x25]
+
+  return new Uint8Array([...shortFrame, ...longFrame, ...shortFrame])
+}
+
+describe('opus frame parsers', () => {
+  it('count every frame including a long frame after the first', () => {
+    const frames = buildFrames()
+
+    expect(calculateOpusDataFrame(frames)).toBe(3)
+    expect(getOpusDataFrameCount(frames)).toBe(3)
+  })
+
+  it('split frames at their own offsets, preserving flags and payloads', () => {
+    const frames = buildFrames()
+
+    const split = getOpusDataListFromPttData(frames)
+
+    expect(split.map((frame) => Array.from(frame))).toEqual([
+      [0x00, 0x11, 0x12, 0x13],
+      [0x80, 0x21, 0x22, 0x23, 0x24, 0x25],
+      [0x00, 0x11, 0x12, 0x13],
+    ])
+  })
+
+  it('decompose the whole buffer into one payload for a short sequence', () => {
+    const frames = buildFrames()
+
+    const payloads = decompositionAudioData(frames)
+
+    expect(payloads).toHaveLength(1)
+    expect(Array.from(payloads[0].data)).toEqual(Array.from(frames))
+    expect(payloads[0].frameCount).toBe(3)
+  })
+})
 
 describe('calculateAudioDuration', () => {
   it('returns 0 for an empty or negative frame count', () => {

@@ -1,5 +1,8 @@
 import { WLConfig, WL_ConfigID } from 'main/weila_config'
 
+/** One ring element for the whole page: a new ring replaces the last one. */
+let ringAudio: HTMLAudioElement | null = null
+
 const WeilaRingPlayer = {
   ringCache: new Map<number, string>(),
 
@@ -20,20 +23,19 @@ const WeilaRingPlayer = {
       this.ringCache.set(id, url)
     }
 
-    return new Promise<boolean>((resolve, reject) => {
-      const audio = document.createElement('audio')
-      audio.id = 'ring'
-      audio.src = url
-      audio.preload = 'auto'
-      audio
-        .play()
-        .then(() => {
-          resolve(true)
-        })
-        .catch(() => {
-          reject('播放铃声失败')
-        })
-    })
+    if (!ringAudio) {
+      ringAudio = document.createElement('audio')
+      ringAudio.id = 'ring'
+      ringAudio.preload = 'auto'
+    }
+
+    ringAudio.pause()
+    ringAudio.src = url
+
+    return ringAudio
+      .play()
+      .then(() => true)
+      .catch(() => Promise.reject('播放铃声失败'))
   },
 }
 

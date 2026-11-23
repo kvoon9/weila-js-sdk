@@ -857,8 +857,11 @@ function decompositionAudioData(pttData: Uint8Array): WL_PttPayload[] {
     offset += 1
 
     if (flag & 0x80) {
-      const dataView = new DataView(pttData.buffer)
-      sizeOfOpusData = dataView.getUint16(1, false) + 1
+      // The 2-byte length sits right after the flag at the CURRENT frame's
+      // offset; reading absolute bytes 1-2 misparses every long frame that
+      // is not the first one.
+      const dataView = new DataView(pttData.buffer, pttData.byteOffset)
+      sizeOfOpusData = dataView.getUint16(offset, false) + 1
       offset += 2
     } else {
       sizeOfOpusData = pttData[offset] + 1
@@ -902,8 +905,11 @@ function getOpusDataFrameCount(pttData: Uint8Array): number {
     offset += 1
 
     if (flag & 0x80) {
-      const dataView = new DataView(pttData.buffer)
-      sizeOfOpusData = dataView.getUint16(1, false) + 1
+      // The 2-byte length sits right after the flag at the CURRENT frame's
+      // offset; reading absolute bytes 1-2 misparses every long frame that
+      // is not the first one.
+      const dataView = new DataView(pttData.buffer, pttData.byteOffset)
+      sizeOfOpusData = dataView.getUint16(offset, false) + 1
       offset += 2
     } else {
       sizeOfOpusData = pttData[offset] + 1
@@ -927,8 +933,11 @@ function getOpusDataListFromPttData(pttData: Uint8Array): Uint8Array[] {
     offset += 1
 
     if (flag & 0x80) {
-      const dataView = new DataView(pttData.buffer)
-      sizeOfOpusData = dataView.getUint16(1, false) + 1
+      // The 2-byte length sits right after the flag at the CURRENT frame's
+      // offset; reading absolute bytes 1-2 misparses every long frame that
+      // is not the first one.
+      const dataView = new DataView(pttData.buffer, pttData.byteOffset)
+      sizeOfOpusData = dataView.getUint16(offset, false) + 1
       offset += 2
     } else {
       sizeOfOpusData = pttData[offset] + 1
@@ -955,8 +964,11 @@ function calculateOpusDataFrame(opusData: Uint8Array): number {
     offset += 1
 
     if (flag & 0x80) {
-      const dataView = new DataView(opusData.buffer)
-      sizeOfOpusData = dataView.getUint16(1, false) + 1
+      // The 2-byte length sits right after the flag at the CURRENT frame's
+      // offset; reading absolute bytes 1-2 misparses every long frame that
+      // is not the first one.
+      const dataView = new DataView(opusData.buffer, opusData.byteOffset)
+      sizeOfOpusData = dataView.getUint16(offset, false) + 1
       offset += 2
     } else {
       sizeOfOpusData = opusData[offset] + 1
